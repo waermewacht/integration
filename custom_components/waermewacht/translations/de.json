@@ -104,6 +104,15 @@
               "gas_price": "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
               "gas_base_price": "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt."
             }
+          },
+          "heat_load": {
+            "name": "Heizlast (optional)",
+            "data": {
+              "design_outdoor_temp": "Normaußentemperatur"
+            },
+            "data_description": {
+              "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin."
+            }
           }
         }
       }
@@ -113,6 +122,12 @@
     "source": {
       "options": {
         "manual": "Manuell"
+      }
+    },
+    "curve_scope": {
+      "options": {
+        "heating": "Heizen",
+        "heating_dhw": "Heizen und Warmwasser"
       }
     },
     "month": {
@@ -232,6 +247,15 @@
       "gas_savings_season": {
         "name": "Ersparnis ggü. Gaskessel Saison"
       },
+      "performance_curve_heating": {
+        "name": "AZ-Kennlinie Heizen"
+      },
+      "heat_load_per_kelvin": {
+        "name": "Heizlast je Kelvin"
+      },
+      "heat_load_design": {
+        "name": "Heizlast bei Normaußentemperatur"
+      },
       "starts_today": {
         "name": "Starts heute"
       },
@@ -280,6 +304,9 @@
     "start_after_end": {
       "message": "Der Beginn muss vor dem Ende liegen."
     },
+    "no_outdoor": {
+      "message": "Dafür braucht es eine Außentemperatur bei den Entitäten."
+    },
     "no_recorder": {
       "message": "Der Bericht braucht den Recorder (Langzeitstatistik)."
     }
@@ -310,6 +337,50 @@
         "end": {
           "name": "Ende",
           "description": "Ohne: jetzt."
+        }
+      }
+    },
+    "performance_curve": {
+      "name": "AZ-Kennlinie",
+      "description": "Arbeitszahl je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand (mindestens 7 Tage je Klasse).",
+      "fields": {
+        "config_entry": {
+          "name": "Wärmepumpe",
+          "description": "Der Wärmewacht-Eintrag."
+        },
+        "start": {
+          "name": "Beginn",
+          "description": "Ohne: Beginn der laufenden Saison. Saisons mit verschiedener Heizkurve nicht mischen."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Ohne: jetzt."
+        },
+        "scope": {
+          "name": "Umfang",
+          "description": "Heizen oder Heizen und Warmwasser."
+        }
+      }
+    },
+    "heat_load": {
+      "name": "Heizlast",
+      "description": "Energiesignatur: Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur (Wochen unter 12 °C).",
+      "fields": {
+        "config_entry": {
+          "name": "Wärmepumpe",
+          "description": "Der Wärmewacht-Eintrag."
+        },
+        "start": {
+          "name": "Beginn",
+          "description": "Ohne: die letzte vollständige Saison."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Ohne: Ende der letzten vollständigen Saison, mit Beginn: jetzt."
+        },
+        "design_outdoor_temp": {
+          "name": "Normaußentemperatur",
+          "description": "Ohne: die aus den Einstellungen."
         }
       }
     }

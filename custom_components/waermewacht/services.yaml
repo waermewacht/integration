@@ -11,3 +11,45 @@ report:
     end:
       selector:
         datetime:
+performance_curve:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    start:
+      selector:
+        datetime:
+    end:
+      selector:
+        datetime:
+    scope:
+      default: heating
+      selector:
+        select:
+          translation_key: curve_scope
+          options:
+            - heating
+            - heating_dhw
+heat_load:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    start:
+      selector:
+        datetime:
+    end:
+      selector:
+        datetime:
+    design_outdoor_temp:
+      selector:
+        number:
+          min: -30
+          max: 5
+          step: 0.1
+          unit_of_measurement: "°C"
+          mode: box

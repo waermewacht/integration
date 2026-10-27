@@ -99,6 +99,15 @@
       "gas_savings_season": {
         "default": "mdi:piggy-bank-outline"
       },
+      "performance_curve_heating": {
+        "default": "mdi:chart-bell-curve-cumulative"
+      },
+      "heat_load_per_kelvin": {
+        "default": "mdi:home-thermometer-outline"
+      },
+      "heat_load_design": {
+        "default": "mdi:home-thermometer"
+      },
       "starts_today": {
         "default": "mdi:counter"
       },
@@ -146,6 +155,12 @@
   "services": {
     "report": {
       "service": "mdi:file-chart-outline"
+    },
+    "performance_curve": {
+      "service": "mdi:chart-bell-curve-cumulative"
+    },
+    "heat_load": {
+      "service": "mdi:home-thermometer"
     }
   }
 }

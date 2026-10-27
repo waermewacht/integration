@@ -2,6 +2,9 @@
 
 ## Unveröffentlicht
 
+- **AZ-Kennlinie Heizen:** Arbeitszahl je 2-K-Klasse der Tagesmitteltemperatur, laufende und vorige Saison getrennt, als Attribute für ein Diagramm (Beispiel mit apexcharts-card im README). Aktion `performance_curve` für beliebige Zeiträume.
+- **Heizlast aus der Energiesignatur:** Heizlast je Kelvin und, mit der neuen Einstellung Normaußentemperatur, die Heizlast bei Normaußentemperatur. Aktion `heat_load`.
+
 - **Strom-Grundpreis** als optionale Einstellung für einen eigenen Wärmepumpenzähler: anteilig in Stromkosten, Wärmekosten und Gasvergleich.
 
 ## 0.1.0b5 – 2026-10-27

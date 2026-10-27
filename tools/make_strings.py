@@ -60,6 +60,21 @@ SENSORS = {
         "Ersparnis ggü. Gaskessel Saison",
         "mdi:piggy-bank-outline",
     ),
+    "performance_curve_heating": (
+        "Performance curve heating",
+        "AZ-Kennlinie Heizen",
+        "mdi:chart-bell-curve-cumulative",
+    ),
+    "heat_load_per_kelvin": (
+        "Heat load per kelvin",
+        "Heizlast je Kelvin",
+        "mdi:home-thermometer-outline",
+    ),
+    "heat_load_design": (
+        "Heat load at design temperature",
+        "Heizlast bei Normaußentemperatur",
+        "mdi:home-thermometer",
+    ),
     "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
     "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
     "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
@@ -373,12 +388,39 @@ def build(lang: int) -> dict:
                                 ),
                             },
                         },
+                        "heat_load": {
+                            "name": t(("Heat load (optional)", "Heizlast (optional)")),
+                            "data": {
+                                "design_outdoor_temp": t(
+                                    (
+                                        "Design outdoor temperature",
+                                        "Normaußentemperatur",
+                                    )
+                                ),
+                            },
+                            "data_description": {
+                                "design_outdoor_temp": t(
+                                    (
+                                        "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+                                        "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+                                    )
+                                ),
+                            },
+                        },
                     },
                 }
             }
         },
         "selector": {
             "source": {"options": {"manual": t(("Manual", "Manuell"))}},
+            "curve_scope": {
+                "options": {
+                    "heating": t(("Heating", "Heizen")),
+                    "heating_dhw": t(
+                        ("Heating and hot water", "Heizen und Warmwasser")
+                    ),
+                }
+            },
             "month": {
                 "options": {
                     str(i + 1): (MONTHS_EN, MONTHS_DE)[lang][i] for i in range(12)
@@ -395,6 +437,14 @@ def build(lang: int) -> dict:
                     (
                         "The start must be before the end.",
                         "Der Beginn muss vor dem Ende liegen.",
+                    )
+                )
+            },
+            "no_outdoor": {
+                "message": t(
+                    (
+                        "This needs an outdoor temperature in the entities.",
+                        "Dafür braucht es eine Außentemperatur bei den Entitäten.",
                     )
                 )
             },
@@ -459,7 +509,92 @@ def build(lang: int) -> dict:
                         "description": t(("Without: now.", "Ohne: jetzt.")),
                     },
                 },
-            }
+            },
+            "performance_curve": {
+                "name": t(("Performance curve", "AZ-Kennlinie")),
+                "description": t(
+                    (
+                        "Ratio per 2-K class of the daily mean outdoor temperature, without standby (at least 7 days per class).",
+                        "Arbeitszahl je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand (mindestens 7 Tage je Klasse).",
+                    )
+                ),
+                "fields": {
+                    "config_entry": {
+                        "name": t(("Heat pump", "Wärmepumpe")),
+                        "description": t(
+                            ("The Wärmewacht entry.", "Der Wärmewacht-Eintrag.")
+                        ),
+                    },
+                    "start": {
+                        "name": t(("Start", "Beginn")),
+                        "description": t(
+                            (
+                                "Without: start of the current season. Do not mix seasons with different heating curves.",
+                                "Ohne: Beginn der laufenden Saison. Saisons mit verschiedener Heizkurve nicht mischen.",
+                            )
+                        ),
+                    },
+                    "end": {
+                        "name": t(("End", "Ende")),
+                        "description": t(("Without: now.", "Ohne: jetzt.")),
+                    },
+                    "scope": {
+                        "name": t(("Scope", "Umfang")),
+                        "description": t(
+                            (
+                                "Heating, or heating and hot water.",
+                                "Heizen oder Heizen und Warmwasser.",
+                            )
+                        ),
+                    },
+                },
+            },
+            "heat_load": {
+                "name": t(("Heat load", "Heizlast")),
+                "description": t(
+                    (
+                        "Energy signature: weekly heating power over the weekly mean outdoor temperature (weeks below 12 °C).",
+                        "Energiesignatur: Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur (Wochen unter 12 °C).",
+                    )
+                ),
+                "fields": {
+                    "config_entry": {
+                        "name": t(("Heat pump", "Wärmepumpe")),
+                        "description": t(
+                            ("The Wärmewacht entry.", "Der Wärmewacht-Eintrag.")
+                        ),
+                    },
+                    "start": {
+                        "name": t(("Start", "Beginn")),
+                        "description": t(
+                            (
+                                "Without: the last complete season.",
+                                "Ohne: die letzte vollständige Saison.",
+                            )
+                        ),
+                    },
+                    "end": {
+                        "name": t(("End", "Ende")),
+                        "description": t(
+                            (
+                                "Without: end of the last complete season, or now with a start.",
+                                "Ohne: Ende der letzten vollständigen Saison, mit Beginn: jetzt.",
+                            )
+                        ),
+                    },
+                    "design_outdoor_temp": {
+                        "name": t(
+                            ("Design outdoor temperature", "Normaußentemperatur")
+                        ),
+                        "description": t(
+                            (
+                                "Without: the one from the settings.",
+                                "Ohne: die aus den Einstellungen.",
+                            )
+                        ),
+                    },
+                },
+            },
         },
     }
 
@@ -475,7 +610,11 @@ def icons() -> dict:
             "binary_sensor": {k: {"default": v[2]} for k, v in BINARY.items()},
             "sensor": sensor,
         },
-        "services": {"report": {"service": "mdi:file-chart-outline"}},
+        "services": {
+            "report": {"service": "mdi:file-chart-outline"},
+            "performance_curve": {"service": "mdi:chart-bell-curve-cumulative"},
+            "heat_load": {"service": "mdi:home-thermometer"},
+        },
     }
 
 

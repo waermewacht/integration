@@ -113,6 +113,7 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Strompreis | – | Optional, ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
 | Strom-Grundpreis | – | Optional, €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
 | Gas-Arbeitspreis | – | Optional, ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
+| Normaußentemperatur | – | Optional, °C nach DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Für die Heizlast bei Normaußentemperatur. |
 | Gas-Grundpreis | – | Optional, €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
 
 Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
@@ -210,6 +211,51 @@ Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts
 - **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der im Feld gemessene Wirkungsgrad von Brennwertkesseln (Jagnow/Wolff, DBU 2004).
 - **Kein CO₂-Vergleich:** Er hinge zu stark an Annahmen (Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom).
 - **Preise** gelten fest. Dynamische Tarife folgen mit dem Bericht.
+
+### Kennlinie und Heizlast
+
+Mit einer Außentemperatur bei den Entitäten. Wärmewacht rechnet 2 Minuten nach dem Start und dann täglich gegen 3 Uhr, aus der Langzeitstatistik.
+
+| Entität | Einheit | Bedeutung |
+| --- | --- | --- |
+| AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen `current` (laufende Saison) und `previous` (vorige Saison). |
+| Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
+| Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
+
+- **Kennlinie:** Arbeitszahl Heizen je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand. Eine Klasse braucht mindestens 7 Tage, dünne Randklassen werden zur Nachbarklasse gezogen. Laufende und vorige Saison bleiben getrennt: Eine geänderte Heizkurve würde sonst beide verwischen.
+- **Heizlast (Energiesignatur):** Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur, nur Wochen unter 12 °C. Sie braucht mindestens 8 Wochen, 10 K Spanne und 5 Frosttage, sonst bleibt der Wert leer und die Attribute nennen den Grund (`reasons`). „Gemessen“ (`measured_kw`, mit inneren und solaren Gewinnen) und „normgerecht“ (`standard_kw`) stehen beide in den Attributen.
+- **Aktionen** für beliebige Zeiträume: `waermewacht.performance_curve` (Heizen oder Heizen und Warmwasser) und `waermewacht.heat_load`.
+
+Diagramm mit der HACS-Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card); die Entity-ID hängt von deinem Namen ab:
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: AZ-Kennlinie Heizen
+chart_type: line
+graph_span: 1h  # the x axis is the outdoor temperature, not time
+apex_config:
+  xaxis:
+    type: numeric
+    title: {text: "Außentemperatur (Tagesmittel) °C"}
+  yaxis:
+    - title: {text: "Arbeitszahl"}
+  markers: {size: 5}
+series:
+  - entity: sensor.warmepumpe_az_kennlinie_heizen
+    name: Laufende Saison
+    data_generator: |
+      return entity.attributes.current
+        .filter(c => c.ratio !== null)
+        .map(c => [(c.lower + c.upper) / 2, c.ratio]);
+  - entity: sensor.warmepumpe_az_kennlinie_heizen
+    name: Vorige Saison
+    data_generator: |
+      return entity.attributes.previous
+        .filter(c => c.ratio !== null)
+        .map(c => [(c.lower + c.upper) / 2, c.ratio]);
+```
 
 ## Statistik-Karte: Wärme und Strom je Monat
 

@@ -24,7 +24,11 @@ from homeassistant.components.recorder.statistics import (
     async_import_statistics,
     statistics_during_period,
 )
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, UnitOfEnergy
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    UnitOfEnergy,
+    UnitOfTemperature,
+)
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -46,6 +50,7 @@ from .averages import Mean
 from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
     CONF_CRITICAL_RUN,
+    CONF_DESIGN_TEMP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
@@ -69,8 +74,10 @@ from .const import (
     STORAGE_VERSION,
 )
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
+from .curve import curve_as_dicts, performance_curve
 from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
 from .energy import Kind, Totals
+from .heat_load import HeatLoad, heat_load
 from .model import (
     AUX_SIGNALS,
     ELEC_SIGNALS,
@@ -110,6 +117,9 @@ EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
 RELIABLE_STEPS = 20
 # Entities may appear late after a restart; issues only after this grace time.
 ISSUE_GRACE = timedelta(minutes=10)
+# Performance curve and heat load: shortly after the start, then daily.
+ANALYSIS_DELAY = timedelta(minutes=2)
+ANALYSIS_HOUR = 3  # local time
 # Imported sums are shifted once the own sensors have short-term statistics
 # (compiled every 5 minutes), so the recorder continues from shifted sums.
 ADJUST_DELAY = timedelta(minutes=15)
@@ -166,6 +176,16 @@ class HeatPumpRuntime:
             CONF_ELECTRICITY_BASE_PRICE
         )
         self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
+        self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
+        # Performance curves (current and previous season) and heat load of
+        # the last complete season; recomputed daily, kept in memory only.
+        self.curves: dict[str, list[dict[str, Any]]] = {}
+        self.curve_starts: dict[str, datetime] = {}
+        self.heat_load: HeatLoad | None = None
+        self.heat_load_window: tuple[datetime, datetime] | None = None
+        self.analysed_at: datetime | None = None
+        self._analysis_day: date | None = None
+        self._analysing = False
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = self.tz if self.template.day_values else None
         self.counters = {
@@ -444,6 +464,104 @@ class HeatPumpRuntime:
             self.history_adjusted = True
             self._adjusting = False
             self._dirty = True
+
+    async def async_outdoor_hours(
+        self, start: datetime, end: datetime
+    ) -> dict[datetime, float]:
+        """Hourly mean outdoor temperature from the long-term statistics."""
+        entity_id = self.entities.get(Signal.OUTDOOR_TEMP)
+        if entity_id is None or start >= end:
+            return {}
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            start,
+            end,
+            {entity_id},
+            "hour",
+            {"temperature": UnitOfTemperature.CELSIUS},
+            {"mean"},
+        )
+        outdoor: dict[datetime, float] = {}
+        for row in rows.get(entity_id, []):
+            if (mean := row.get("mean")) is None:
+                continue
+            hour = row["start"]
+            if not isinstance(hour, datetime):
+                hour = dt_util.utc_from_timestamp(hour)
+            outdoor[hour] = mean
+        return outdoor
+
+    async def async_analysis_data(
+        self, start: datetime, end: datetime
+    ) -> tuple[dict[datetime, Totals], dict[datetime, float]]:
+        """Hourly energy (standby apart) and outdoor means of [start, end)."""
+        return await self._async_hours(start, end), await self.async_outdoor_hours(
+            start, end
+        )
+
+    def seasons(self, now: datetime) -> tuple[datetime, datetime]:
+        """Starts of the current and the previous heating season."""
+        current = period_start(Period.SEASON, now, self.tz, self.marks.season_month)
+        assert current is not None
+        previous = period_start(
+            Period.SEASON, current - timedelta(days=1), self.tz, self.marks.season_month
+        )
+        assert previous is not None
+        return current, previous
+
+    async def _async_refresh_analysis(self, now: datetime) -> None:
+        """Performance curve of the current and the previous season (never
+        mixed: a changed heating curve would blur both) and the heat load of
+        the last complete season."""
+        self._analysing = True
+        try:
+            current, previous = self.seasons(now)
+            hours, outdoor = await self.async_analysis_data(previous, now)
+
+            def window(start: datetime, end: datetime) -> tuple[dict, dict]:
+                return (
+                    {h: t for h, t in hours.items() if start <= h < end},
+                    {h: v for h, v in outdoor.items() if start <= h < end},
+                )
+
+            this_season, last_season = window(current, now), window(previous, current)
+            self.curves = {
+                "current": curve_as_dicts(
+                    performance_curve(
+                        *this_season, self.tz, min_electricity=self.min_electricity
+                    )
+                ),
+                "previous": curve_as_dicts(
+                    performance_curve(
+                        *last_season, self.tz, min_electricity=self.min_electricity
+                    )
+                ),
+            }
+            self.curve_starts = {"current": current, "previous": previous}
+            self.heat_load = heat_load(
+                *last_season, self.tz, design_temp=self.design_temp
+            )
+            self.heat_load_window = (previous, current)
+            self.analysed_at = now
+        except Exception:  # keep running; the sensors stay as they were
+            _LOGGER.exception("Computing performance curve and heat load failed")
+        finally:
+            self._analysis_day = now.astimezone(self.tz).date()
+            self._analysing = False
+            self._notify()
+
+    def _analysis_due(self, now: datetime) -> bool:
+        if (
+            self._analysing
+            or Signal.OUTDOOR_TEMP not in self.entities
+            or "recorder" not in self.hass.config.components
+        ):
+            return False
+        if self._analysis_day is None:
+            return now - self._started_at >= ANALYSIS_DELAY
+        local = now.astimezone(self.tz)
+        return local.date() != self._analysis_day and local.hour >= ANALYSIS_HOUR
 
     async def async_hourly(
         self, entity_ids: set[str], start: datetime, end: datetime
@@ -762,6 +880,8 @@ class HeatPumpRuntime:
         self._resolve_pending(now, final=self.marks.due(now))
         if now - self._started_at >= ISSUE_GRACE:
             self._check_issues()
+        if self._analysis_due(now):
+            self.hass.async_create_task(self._async_refresh_analysis(now))
         if (
             self.history_imported
             and not self.history_adjusted

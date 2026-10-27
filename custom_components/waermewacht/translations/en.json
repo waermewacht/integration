@@ -104,6 +104,15 @@
               "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
               "gas_base_price": "Gross per year; spread over the days of a period."
             }
+          },
+          "heat_load": {
+            "name": "Heat load (optional)",
+            "data": {
+              "design_outdoor_temp": "Design outdoor temperature"
+            },
+            "data_description": {
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only."
+            }
           }
         }
       }
@@ -113,6 +122,12 @@
     "source": {
       "options": {
         "manual": "Manual"
+      }
+    },
+    "curve_scope": {
+      "options": {
+        "heating": "Heating",
+        "heating_dhw": "Heating and hot water"
       }
     },
     "month": {
@@ -232,6 +247,15 @@
       "gas_savings_season": {
         "name": "Savings vs. gas boiler season"
       },
+      "performance_curve_heating": {
+        "name": "Performance curve heating"
+      },
+      "heat_load_per_kelvin": {
+        "name": "Heat load per kelvin"
+      },
+      "heat_load_design": {
+        "name": "Heat load at design temperature"
+      },
       "starts_today": {
         "name": "Starts today"
       },
@@ -280,6 +304,9 @@
     "start_after_end": {
       "message": "The start must be before the end."
     },
+    "no_outdoor": {
+      "message": "This needs an outdoor temperature in the entities."
+    },
     "no_recorder": {
       "message": "The report needs the recorder (long-term statistics)."
     }
@@ -310,6 +337,50 @@
         "end": {
           "name": "End",
           "description": "Without: now."
+        }
+      }
+    },
+    "performance_curve": {
+      "name": "Performance curve",
+      "description": "Ratio per 2-K class of the daily mean outdoor temperature, without standby (at least 7 days per class).",
+      "fields": {
+        "config_entry": {
+          "name": "Heat pump",
+          "description": "The Wärmewacht entry."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Without: start of the current season. Do not mix seasons with different heating curves."
+        },
+        "end": {
+          "name": "End",
+          "description": "Without: now."
+        },
+        "scope": {
+          "name": "Scope",
+          "description": "Heating, or heating and hot water."
+        }
+      }
+    },
+    "heat_load": {
+      "name": "Heat load",
+      "description": "Energy signature: weekly heating power over the weekly mean outdoor temperature (weeks below 12 °C).",
+      "fields": {
+        "config_entry": {
+          "name": "Heat pump",
+          "description": "The Wärmewacht entry."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Without: the last complete season."
+        },
+        "end": {
+          "name": "End",
+          "description": "Without: end of the last complete season, or now with a start."
+        },
+        "design_outdoor_temp": {
+          "name": "Design outdoor temperature",
+          "description": "Without: the one from the settings."
         }
       }
     }

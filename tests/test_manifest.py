@@ -76,9 +76,12 @@ def test_action_translated_and_has_an_icon() -> None:
     strings = load(INTEGRATION / "strings.json")
     icons = load(INTEGRATION / "icons.json")
     services = (INTEGRATION / "services.yaml").read_text(encoding="utf-8")
-    assert set(strings["services"]) == set(icons["services"]) == {"report"}
-    for field in strings["services"]["report"]["fields"]:
-        assert f"    {field}:" in services
+    actions = {"report", "performance_curve", "heat_load"}
+    assert set(strings["services"]) == set(icons["services"]) == actions
+    for action in actions:
+        assert f"{action}:\n" in services
+        for field in strings["services"][action]["fields"]:
+            assert f"    {field}:" in services
 
 
 def test_issues_translated() -> None:

@@ -113,6 +113,7 @@ Several heat pumps: add one entry each.
 | Electricity price | – | Optional, ct/kWh gross. Without it there are no cost sensors. |
 | Electricity base price | – | Optional, €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
 | Gas working price | – | Optional, ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
+| Design outdoor temperature | – | Optional, °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
 | Gas base price | – | Optional, €/year gross, spread per day. Without it only the working prices are compared. |
 
 Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
@@ -210,6 +211,22 @@ Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `start
 - **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency of condensing boilers measured in the field (Jagnow/Wolff, DBU 2004).
 - **No CO₂ comparison:** it would depend too much on assumptions (average or hourly mix, upstream chains, own PV use, battery, green tariffs).
 - **Prices** are fixed. Dynamic tariffs follow with the report.
+
+### Performance curve and heat load
+
+With an outdoor temperature among the entities. Wärmewacht computes them 2 minutes after the start and then daily around 3 am, from the long-term statistics.
+
+| Entity | Unit | Meaning |
+| --- | --- | --- |
+| Performance curve heating | timestamp | When it was last computed. The curve is in the attributes `current` (current season) and `previous` (previous season). |
+| Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
+| Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
+
+- **Curve:** heating performance factor per 2-K class of the daily mean outdoor temperature, without standby. A class needs at least 7 days; sparse edge classes are merged into their neighbour. The current and the previous season stay apart: a changed heating curve would blur both.
+- **Heat load (energy signature):** weekly mean heating power over the weekly mean outdoor temperature, only weeks below 12 °C. It needs at least 8 weeks, a spread of 10 K and 5 frost days; otherwise the value stays empty and the attributes give the reason (`reasons`). "Measured" (`measured_kw`, with internal and solar gains) and "standard" (`standard_kw`) are both in the attributes.
+- **Actions** for any period: `waermewacht.performance_curve` (heating, or heating and hot water) and `waermewacht.heat_load`.
+
+A chart with the HACS card [apexcharts-card](https://github.com/RomRider/apexcharts-card); the entity ID depends on your name. Use the YAML of the German README; only the titles differ.
 
 ## Statistics card: heat and electricity per month
 

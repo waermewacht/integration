@@ -20,6 +20,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -32,6 +33,7 @@ from . import WaermewachtConfigEntry
 from .costs import CostComparison, compare_with_gas
 from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
+from .heat_load import heat_load_as_dict
 from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
 from .periods import RATIO_PERIODS, Period
 from .runtime import HeatPumpRuntime
@@ -364,12 +366,81 @@ COSTS = [
     ),
 ]
 
+
+def _curve_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    starts = runtime.curve_starts
+    return {
+        "current_start": starts["current"].isoformat() if "current" in starts else None,
+        "previous_start": (
+            starts["previous"].isoformat() if "previous" in starts else None
+        ),
+        "current": runtime.curves.get("current", []),
+        "previous": runtime.curves.get("previous", []),
+    }
+
+
+def _heat_load_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    result = runtime.heat_load
+    if result is None or runtime.heat_load_window is None:
+        return {}
+    start, end = runtime.heat_load_window
+    return {
+        "start": dt_util.as_local(start).isoformat(),
+        "end": dt_util.as_local(end).isoformat(),
+        **heat_load_as_dict(result),
+    }
+
+
+def _watts_per_kelvin(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.heat_load
+    if result is None or not result.sufficient or result.slope_kw_per_k is None:
+        return None
+    return round(-result.slope_kw_per_k * 1000)
+
+
+def _design_load(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.heat_load
+    if result is None or not result.sufficient or result.standard_kw is None:
+        return None
+    return round(result.standard_kw, 2)
+
+
+HAS_OUTDOOR: Needs = lambda r: (  # noqa: E731
+    Signal.OUTDOOR_TEMP in r.entities and _mode_complete(r, Mode.HEATING)
+)
+ANALYSIS = [
+    HeatPumpSensorDescription(
+        key="performance_curve_heating",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value=lambda r: r.analysed_at,
+        needs=HAS_OUTDOOR,
+        attributes=_curve_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="heat_load_per_kelvin",
+        native_unit_of_measurement="W/K",
+        suggested_display_precision=0,
+        value=_watts_per_kelvin,
+        needs=HAS_OUTDOOR,
+        attributes=_heat_load_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="heat_load_design",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        suggested_display_precision=1,
+        value=_design_load,
+        needs=lambda r: HAS_OUTDOOR(r) and r.design_temp is not None,
+    ),
+]
+
 DESCRIPTIONS: list[HeatPumpSensorDescription] = [
     *RATIOS,
     *ENERGY,
     *CYCLING,
     *DIAGNOSIS,
     *COSTS,
+    *ANALYSIS,
 ]
 
 
@@ -388,7 +459,18 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
     """A figure of the heat pump."""
 
     # Change with every counter reading while running; shown, not recorded.
-    _unrecorded_attributes = frozenset({"heat_kwh", "electricity_kwh", "standby_kwh"})
+    # Change with every counter reading, or large (curves, weeks): shown, not
+    # recorded.
+    _unrecorded_attributes = frozenset(
+        {
+            "heat_kwh",
+            "electricity_kwh",
+            "standby_kwh",
+            "current",
+            "previous",
+            "weeks",
+        }
+    )
 
     entity_description: HeatPumpSensorDescription
 
