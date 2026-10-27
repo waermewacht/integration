@@ -1,6 +1,6 @@
-# Wärmewacht – Gesundheits-Check (Entwurf)
+# Wärmewacht – Gesundheits-Check
 
-Stand: 2026-10-27. Nur Entwurf, noch nichts umgesetzt. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
+Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
 
 Jede Schwelle hat eine Quelle oder ist als **eigene Annahme** markiert. Eigene Annahmen werden nach dem ersten Winter an echten Daten überprüft (Anlage des Inhabers, `CLAUDE.local.md`) und hier nachgetragen.
 

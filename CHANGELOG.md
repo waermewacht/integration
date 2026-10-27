@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b7 – 2026-10-27
 
 - **Weitere Hersteller (beta):**
   - Vorlagen für Luxtronik (alpha innotec, Novelan; Strom je Betriebsart erst ab neuerer Firmware), Stiebel Eltron/Tecalor über die ISG, Panasonic Aquarea über HeishaMon (Integration `aquarea`), Lambda und iDM (Navigator 2.0 mit Weboberfläche).
