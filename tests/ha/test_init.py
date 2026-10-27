@@ -116,6 +116,12 @@ async def test_ratio_standby_and_cycling(
     assert value(hass, entry, "spread_today") == pytest.approx(4.0)
     assert value(hass, entry, "flow_temp_today") == pytest.approx(28.0)
 
+    # A reading after the run ended (same value): from here on the compressor
+    # stands still. Readings in the same instant as the stop would still
+    # belong to the run (HA 2026.4 gives them microseconds apart).
+    hass.states.async_set(ELEC_HEATING, "301.00", ENERGY)
+    await hass.async_block_till_done()
+
     # Standing still: the heating counter grows, the heat does not.
     await tick(hass, freezer, 120)
     set_counters(hass, 1003.0, 301.05)
