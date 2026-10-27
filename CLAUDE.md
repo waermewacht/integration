@@ -9,7 +9,8 @@ Stand: Projektstart 2026-10-27, erster Stand auf `dev`, noch kein Release. Arbei
 - **`docs/ENTWICKLUNG.md`** – Umfang, Abgrenzung, Fachregeln mit Quellen, verifizierte Eigenheiten der Datenquellen (EMS-ESP, Bosch HomeCom), Entscheidungen, offene Fragen. Vor größeren Arbeiten lesen.
 - **`NOTES.md`** (lokal, nicht im Repo) – Arbeitsstand, offene Punkte, Beobachtungen. Nach jeder Sitzung fortschreiben.
 - **`CLAUDE.local.md`** (lokal, nicht im Repo) – Rechner und Testanlage des Inhabers (echte Entitäten, Werte, Eigenbau zum Vergleich).
-- `CHANGELOG.md` und `docs/BRAND.md` entstehen mit dem ersten Code bzw. den Bildern.
+- **`CHANGELOG.md`** – Versionsgeschichte und „Unveröffentlicht“.
+- **`docs/BRAND.md`** – Farben, Schrift, Bilddateien, Regenerierung. Brand-Bilder nicht verändern oder neu erzeugen, außer auf ausdrücklichen Wunsch.
 
 ## Verbindliche Entscheidungen (2026-10-27)
 

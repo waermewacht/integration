@@ -1,8 +1,11 @@
-# Wärmewacht
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/waermewacht/integration/main/assets/github/readme-header-dark@2x.png">
+  <img alt="Wärmewacht – Jede Kilowattstunde. Jeder Takt." src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/github/readme-header-light@2x.png" width="640">
+</picture>
 
-[![Release](https://img.shields.io/github/v/release/waermewacht/integration)](https://github.com/waermewacht/integration/releases)
+[![Release](https://img.shields.io/github/v/release/waermewacht/integration?color=DE5E32)](https://github.com/waermewacht/integration/releases)
 [![CI](https://github.com/waermewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/waermewacht/integration/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
 
 **Deutsch** · [English](https://github.com/waermewacht/integration/blob/main/README.en.md)
 
