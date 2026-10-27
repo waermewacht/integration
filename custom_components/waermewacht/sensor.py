@@ -76,7 +76,9 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
         totals = runtime.energy(period)
         if totals is None:
             return None
-        return compute(totals, runtime.min_electricity)
+        # Rounded to what is shown: the recorder writes a row on every change.
+        ratio = compute(totals, runtime.min_electricity)
+        return None if ratio is None else round(ratio, 2)
 
     def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         totals = runtime.energy(period)
@@ -97,6 +99,10 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
 
     return HeatPumpSensorDescription(
         key=f"ratio_{scope}_{period}",
+        # The frontend formats a value as a number (locale, precision) only
+        # with a unit or a state class. Its statistics are time means of the
+        # sensor, not a balance: the balance is in the energy sensors.
+        state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         entity_registry_enabled_default=period not in QUIET_PERIODS,
         value=value,
@@ -115,14 +121,14 @@ def _energy_description(
         total = runtime.totals.get(kind, mode)
         if kind is Kind.ELEC:
             total += runtime.totals.get(Kind.AUX, mode)
-        return round(total, 3)
+        return round(total, 1)  # 0.1 kWh: fewer recorder rows, enough for statistics
 
     return HeatPumpSensorDescription(
         key=key,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
         value=value,
         needs=needs,
     )
@@ -142,8 +148,8 @@ ENERGY = [
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        suggested_display_precision=2,
-        value=lambda r: round(r.totals.standby(), 3),
+        suggested_display_precision=1,
+        value=lambda r: round(r.totals.standby(), 1),
         needs=lambda r: any(s in r.entities for s in ELEC_SIGNALS.values()),
     ),
 ]
@@ -183,7 +189,7 @@ CYCLING = [
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.HOURS,
         suggested_display_precision=1,
-        value=lambda r: round(r.cycles("today").runtime_seconds / 3600, 2),
+        value=lambda r: round(r.cycles("today").runtime_seconds / 3600, 1),
         needs=HAS_COMPRESSOR,
     ),
     *(
@@ -255,7 +261,7 @@ DIAGNOSIS = [
         key="spread_today",
         native_unit_of_measurement=UnitOfTemperature.KELVIN,
         suggested_display_precision=1,
-        value=lambda r: None if r.spread.value is None else round(r.spread.value, 2),
+        value=lambda r: None if r.spread.value is None else round(r.spread.value, 1),
         needs=_has(Signal.FLOW_TEMP, Signal.RETURN_TEMP),
     ),
     HeatPumpSensorDescription(
@@ -263,7 +269,7 @@ DIAGNOSIS = [
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
-        value=lambda r: None if r.flow.value is None else round(r.flow.value, 2),
+        value=lambda r: None if r.flow.value is None else round(r.flow.value, 1),
         needs=_has(Signal.FLOW_TEMP),
     ),
 ]
@@ -284,6 +290,9 @@ async def async_setup_entry(
 
 class HeatPumpSensor(HeatPumpEntity, SensorEntity):
     """A figure of the heat pump."""
+
+    # Change with every counter reading while running; shown, not recorded.
+    _unrecorded_attributes = frozenset({"heat_kwh", "electricity_kwh", "standby_kwh"})
 
     entity_description: HeatPumpSensorDescription
 

@@ -152,19 +152,19 @@
         "name": "COP hot water total"
       },
       "ratio_combined_today": {
-        "name": "COP heating + hot water today"
+        "name": "COP heating+DHW today"
       },
       "ratio_combined_yesterday": {
-        "name": "COP heating + hot water yesterday"
+        "name": "COP heating+DHW yesterday"
       },
       "ratio_combined_month": {
-        "name": "COP heating + hot water month"
+        "name": "COP heating+DHW month"
       },
       "ratio_combined_season": {
-        "name": "COP heating + hot water season"
+        "name": "COP heating+DHW season"
       },
       "ratio_combined_total": {
-        "name": "COP heating + hot water total"
+        "name": "COP heating+DHW total"
       },
       "ratio_cooling_today": {
         "name": "EER cooling today"

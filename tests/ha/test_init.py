@@ -126,11 +126,11 @@ async def test_ratio_standby_and_cycling(
 
     # Standing still: the heating counter grows, the heat does not.
     await tick(hass, freezer, 120)
-    set_counters(hass, 1003.0, 301.05)
+    set_counters(hass, 1003.0, 301.5)
     await tick(hass, freezer, 1)
-    assert value(hass, entry, "standby") == pytest.approx(0.05)
+    assert value(hass, entry, "standby") == pytest.approx(0.5)
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(3.0)
-    assert value(hass, entry, "ratio_combined_month") == pytest.approx(3 / 1.05)
+    assert value(hass, entry, "ratio_combined_month") == pytest.approx(2.0)
     assert state(hass, entry, "cycling_problem") == "off"
 
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
@@ -219,3 +219,24 @@ async def test_repair_issue_for_missing_entity(
     hass.states.async_set(FLOW, "28.0", TEMPERATURE)
     await tick(hass, freezer, 1)
     assert issues.async_get_issue(DOMAIN, issue_id) is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_runs_are_kept_in_their_own_file(
+    hass: HomeAssistant, hass_storage: dict, freezer: FrozenDateTimeFactory
+) -> None:
+    """SD cards: the live file stays small; the run history is written when
+    a run ends, not with every save."""
+    entry = await setup(hass)
+    await heating_run(hass, freezer, 30)
+    await tick(hass, freezer, 1)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    live = hass_storage[f"{DOMAIN}.{entry.entry_id}"]["data"]
+    history = hass_storage[f"{DOMAIN}.{entry.entry_id}.history"]["data"]
+    assert "runs" not in live
+    assert len(history["runs"]) == 1
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "starts_today") == 1

@@ -118,10 +118,10 @@ All entities belong to a separate device per heat pump. Which ones are created d
 | --- | --- |
 | COP heating *period* | heat and electricity heating |
 | COP hot water *period* | heat and electricity hot water |
-| COP heating + hot water *period* | heating or hot water complete |
+| COP heating+DHW *period* | heating or hot water complete |
 | EER cooling *period* | heat and electricity cooling |
 
-*Period* is **today**, **yesterday**, **month**, **season** or **total** – up to 20 sensors without a unit. Today and yesterday swing a lot and are therefore disabled by default. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
+*Period* is **today**, **yesterday**, **month**, **season** or **total** – up to 20 sensors without a unit. Their history also appears in the statistics – there as a time mean of the sensor, not a balance; the balance comes from the energy sensors and the report. Today and yesterday swing a lot and are therefore disabled by default. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
 
 - Factor per mode = heat / electricity (compressor plus backup heater), **without** standby.
 - Heating + hot water = heat of both / (electricity of both + standby). This corresponds to a seasonal performance factor.

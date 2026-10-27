@@ -14,14 +14,11 @@ PERIODS = {
     "total": ("total", "gesamt"),
 }
 SCOPES = {
-    "heating": ("COP heating", "Arbeitszahl Heizen", "mdi:heat-pump-outline"),
-    "dhw": ("COP hot water", "Arbeitszahl Warmwasser", "mdi:water-boiler"),
-    "combined": (
-        "COP heating + hot water",
-        "Arbeitszahl Heizen + Warmwasser",
-        "mdi:heat-pump",
-    ),
-    "cooling": ("EER cooling", "Leistungszahl Kühlen", "mdi:snowflake"),
+    # Short names: lists cut longer ones before the period.
+    "heating": ("COP heating", "AZ Heizen", "mdi:heat-pump-outline"),
+    "dhw": ("COP hot water", "AZ Warmwasser", "mdi:water-boiler"),
+    "combined": ("COP heating+DHW", "AZ Heizen+WW", "mdi:heat-pump"),
+    "cooling": ("EER cooling", "EER Kühlen", "mdi:snowflake"),
 }
 SENSORS = {
     "heat_heating": ("Heat heating", "Wärme Heizen", "mdi:fire"),

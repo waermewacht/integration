@@ -122,64 +122,64 @@
     },
     "sensor": {
       "ratio_heating_today": {
-        "name": "Arbeitszahl Heizen heute"
+        "name": "AZ Heizen heute"
       },
       "ratio_heating_yesterday": {
-        "name": "Arbeitszahl Heizen gestern"
+        "name": "AZ Heizen gestern"
       },
       "ratio_heating_month": {
-        "name": "Arbeitszahl Heizen Monat"
+        "name": "AZ Heizen Monat"
       },
       "ratio_heating_season": {
-        "name": "Arbeitszahl Heizen Saison"
+        "name": "AZ Heizen Saison"
       },
       "ratio_heating_total": {
-        "name": "Arbeitszahl Heizen gesamt"
+        "name": "AZ Heizen gesamt"
       },
       "ratio_dhw_today": {
-        "name": "Arbeitszahl Warmwasser heute"
+        "name": "AZ Warmwasser heute"
       },
       "ratio_dhw_yesterday": {
-        "name": "Arbeitszahl Warmwasser gestern"
+        "name": "AZ Warmwasser gestern"
       },
       "ratio_dhw_month": {
-        "name": "Arbeitszahl Warmwasser Monat"
+        "name": "AZ Warmwasser Monat"
       },
       "ratio_dhw_season": {
-        "name": "Arbeitszahl Warmwasser Saison"
+        "name": "AZ Warmwasser Saison"
       },
       "ratio_dhw_total": {
-        "name": "Arbeitszahl Warmwasser gesamt"
+        "name": "AZ Warmwasser gesamt"
       },
       "ratio_combined_today": {
-        "name": "Arbeitszahl Heizen + Warmwasser heute"
+        "name": "AZ Heizen+WW heute"
       },
       "ratio_combined_yesterday": {
-        "name": "Arbeitszahl Heizen + Warmwasser gestern"
+        "name": "AZ Heizen+WW gestern"
       },
       "ratio_combined_month": {
-        "name": "Arbeitszahl Heizen + Warmwasser Monat"
+        "name": "AZ Heizen+WW Monat"
       },
       "ratio_combined_season": {
-        "name": "Arbeitszahl Heizen + Warmwasser Saison"
+        "name": "AZ Heizen+WW Saison"
       },
       "ratio_combined_total": {
-        "name": "Arbeitszahl Heizen + Warmwasser gesamt"
+        "name": "AZ Heizen+WW gesamt"
       },
       "ratio_cooling_today": {
-        "name": "Leistungszahl Kühlen heute"
+        "name": "EER Kühlen heute"
       },
       "ratio_cooling_yesterday": {
-        "name": "Leistungszahl Kühlen gestern"
+        "name": "EER Kühlen gestern"
       },
       "ratio_cooling_month": {
-        "name": "Leistungszahl Kühlen Monat"
+        "name": "EER Kühlen Monat"
       },
       "ratio_cooling_season": {
-        "name": "Leistungszahl Kühlen Saison"
+        "name": "EER Kühlen Saison"
       },
       "ratio_cooling_total": {
-        "name": "Leistungszahl Kühlen gesamt"
+        "name": "EER Kühlen gesamt"
       },
       "heat_heating": {
         "name": "Wärme Heizen"

@@ -116,12 +116,12 @@ Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen
 
 | Entität | Braucht |
 | --- | --- |
-| Arbeitszahl Heizen *Zeitraum* | Wärme und Strom Heizen |
-| Arbeitszahl Warmwasser *Zeitraum* | Wärme und Strom Warmwasser |
-| Arbeitszahl Heizen + Warmwasser *Zeitraum* | Heizen oder Warmwasser vollständig |
-| Leistungszahl Kühlen *Zeitraum* | Wärme und Strom Kühlen |
+| AZ Heizen *Zeitraum* | Wärme und Strom Heizen |
+| AZ Warmwasser *Zeitraum* | Wärme und Strom Warmwasser |
+| AZ Heizen+WW *Zeitraum* | Heizen oder Warmwasser vollständig |
+| EER Kühlen *Zeitraum* (Leistungszahl) | Wärme und Strom Kühlen |
 
-*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt** – zusammen bis zu 20 Sensoren ohne Einheit. Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
+*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt** – zusammen bis zu 20 Sensoren ohne Einheit („AZ“ = Arbeitszahl). Ihr Verlauf erscheint auch in der Statistik – dort als Zeitmittel des Sensors, nicht als Bilanz; die Bilanz liefern die Energie-Sensoren und der Bericht. Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
 
 - Arbeitszahl je Betriebsart = Wärme / Strom (Kompressor plus Heizstab), **ohne** Stillstand.
 - Heizen + Warmwasser = Wärme beider / (Strom beider + Stillstand). Das entspricht einer Jahresarbeitszahl.

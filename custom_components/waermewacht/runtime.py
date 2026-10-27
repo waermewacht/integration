@@ -153,10 +153,17 @@ class HeatPumpRuntime:
         self._sampling = False
         self._mode_seen: dict[Mode, datetime] = {}
         self._heat_at: dict[Mode, datetime] = {}
+        # Two files (SD cards): a small live file (counters, totals, marks)
+        # every few minutes when changed, and the run history (up to 40 days
+        # of runs and defrosts) only when a run ends and at midnight.
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
+        self._history_store: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.history"
+        )
         self._dirty = False
+        self._history_dirty = False
         self._saved_at: datetime | None = None
         self._listeners: list[CALLBACK_TYPE] = []
         self._unsubscribe: list[CALLBACK_TYPE] = []
@@ -168,6 +175,11 @@ class HeatPumpRuntime:
         now = dt_util.utcnow()
         if data := await self._store.async_load():
             self._restore(data)
+            if history := await self._history_store.async_load():
+                self._restore_history(history)
+            elif "runs" in data:  # 0.1.0b1 kept the runs in the live file
+                self._restore_history(data)
+                self._history_dirty = True
             if self.marks.stored_season_month not in (None, self.marks.season_month):
                 await self._async_rebase_season(now)
         else:
@@ -194,6 +206,7 @@ class HeatPumpRuntime:
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
+        await self._history_store.async_remove()
 
     @callback
     def add_listener(self, listener: CALLBACK_TYPE) -> Callable[[], None]:
@@ -389,6 +402,7 @@ class HeatPumpRuntime:
                 self.own_starts += 1
             if run is not None:
                 self.runs.append(run)
+                self._history_dirty = True
                 self.hass.async_create_task(self.async_save())
                 self._notify()
         elif signal is Signal.ACTIVITY:
@@ -397,7 +411,7 @@ class HeatPumpRuntime:
                 self._count(f"activity:{state.state}")
             if (defrost := self.tracker.set_activity(activity, at)) is not None:
                 self.defrosts.append(defrost)
-                self._dirty = True
+                self._dirty = self._history_dirty = True
                 self._notify()
         elif signal is Signal.FLOW_TEMP:
             self._flow_temp = _float(state)
@@ -512,7 +526,7 @@ class HeatPumpRuntime:
         if self.marks.rollover(now, self.totals):
             self.spread, self.flow = Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
-            self._dirty = True
+            self._dirty = self._history_dirty = True
             self.hass.async_create_task(self.async_save())
         elif self._dirty and (
             self._saved_at is None
@@ -644,8 +658,6 @@ class HeatPumpRuntime:
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
             "marks": self.marks.as_dict(),
-            "runs": [r.as_dict() for r in self.runs],
-            "defrosts": [d.as_dict() for d in self.defrosts],
             "own_starts": self.own_starts,
             "spread": self.spread.as_dict(),
             "flow": self.flow.as_dict(),
@@ -665,15 +677,26 @@ class HeatPumpRuntime:
         self.tracker.restore(data.get("tracker", {}), saved_at)
         self.totals = Totals.from_dict(data.get("totals"))
         self.marks.restore(data.get("marks", {}))
-        self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
-        self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
         self.own_starts = data.get("own_starts", 0)
         self.spread = Mean.from_dict(data.get("spread"))
         self.flow = Mean.from_dict(data.get("flow"))
         self.events = dict(data.get("events", {}))
         self.decimal = {Signal(s) for s in data.get("decimal", [])}
 
+    def history_dict(self) -> dict[str, Any]:
+        return {
+            "runs": [r.as_dict() for r in self.runs],
+            "defrosts": [d.as_dict() for d in self.defrosts],
+        }
+
+    def _restore_history(self, data: dict[str, Any]) -> None:
+        self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
+        self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
+
     async def async_save(self) -> None:
         self._saved_at = dt_util.utcnow()
         self._dirty = False
         await self._store.async_save(self.as_dict())
+        if self._history_dirty:
+            self._history_dirty = False
+            await self._history_store.async_save(self.history_dict())
