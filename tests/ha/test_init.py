@@ -136,6 +136,8 @@ async def test_ratio_standby_and_cycling(
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["runs_kept"] == 1
     assert "WP" not in str(diagnostics["config"])
+    # The test states have no registry entries: nothing to list.
+    assert diagnostics["source"] == {"devices": [], "entities": []}
 
 
 @pytest.mark.freeze_time(START)

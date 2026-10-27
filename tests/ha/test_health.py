@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -182,3 +183,47 @@ async def test_diary_entry_at_midnight(
     assert diary[0]["energy"]["heat_heating"] == pytest.approx(3.0)
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["diary_days"] == 1
+
+
+@pytest.mark.freeze_time(START)
+async def test_diagnostics_list_the_source_device_masked(hass: HomeAssistant) -> None:
+    """What a new template needs, without serial numbers."""
+    source = MockConfigEntry(domain="mqtt")
+    source.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=source.entry_id,
+        identifiers={("mqtt", "boiler")},
+        manufacturer="Bosch",
+        model="CS6800i",
+        serial_number="7736901234567",
+    )
+    registry = er.async_get(hass)
+    for key in ("nrgheat", "meterheat", "gateway_102011489"):
+        registry.async_get_or_create(
+            "sensor",
+            "mqtt",
+            f"boiler_{key}",
+            suggested_object_id=f"boiler_{key}",
+            device_id=device.id,
+            config_entry=source,
+        )
+    hass.states.async_set("sensor.boiler_gateway_102011489", "102011489")
+    entry = await setup(hass)
+    found = (await async_get_config_entry_diagnostics(hass, entry))["source"]
+    assert found["devices"] == [
+        {
+            "manufacturer": "Bosch",
+            "model": "CS6800i",
+            "model_id": None,
+            "sw_version": None,
+            "hw_version": None,
+        }
+    ]
+    ids = {e["unique_id"]: e for e in found["entities"]}
+    assert "boiler_nrgheat" in ids and "boiler_meterheat" in ids
+    assert "102011489" not in str(found)
+    assert "7736901234567" not in str(found)
+    masked = next(
+        e for e in found["entities"] if e["unique_id"].startswith("boiler_gateway_")
+    )
+    assert masked["state"] == masked["unique_id"].removeprefix("boiler_gateway_")

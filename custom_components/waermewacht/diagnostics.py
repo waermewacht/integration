@@ -2,6 +2,11 @@
 
 No personal data: the entry name is left out; entity ids, energy totals and
 run counts describe the installation, not the household.
+
+`source_entities` lists every entity of the devices behind the mapping
+(platform, unique id, unit, state), so a user of another maker can send what
+a new template needs. Serial numbers and entry ids are masked (anonymize.py);
+device names and areas are left out.
 """
 
 from __future__ import annotations
@@ -9,11 +14,62 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry
+from .anonymize import Masker
 from .const import CONF_ENTITIES, CONF_TEMPLATE
 from .periods import Period
+
+
+def _source_entities(hass: HomeAssistant, entity_ids: set[str]) -> dict[str, Any]:
+    """Devices behind the mapped entities and all their entities, masked."""
+    entities = er.async_get(hass)
+    devices = dr.async_get(hass)
+    mask = Masker()
+    entries = [e for i in sorted(entity_ids) if (e := entities.async_get(i))]
+    device_ids = {e.device_id for e in entries if e.device_id}
+    chosen = {e.entity_id: e for e in entries}
+    for device_id in sorted(device_ids):
+        for entry in er.async_entries_for_device(
+            entities, device_id, include_disabled_entities=True
+        ):
+            chosen[entry.entity_id] = entry
+    result = []
+    for entity_id in sorted(chosen):
+        entry = chosen[entity_id]
+        state = hass.states.get(entity_id)
+        attributes = state.attributes if state else {}
+        result.append(
+            {
+                "entity_id": mask(entity_id),
+                "unique_id": mask(entry.unique_id),
+                "platform": entry.platform,
+                "disabled_by": entry.disabled_by,
+                "device_class": entry.original_device_class
+                or attributes.get("device_class"),
+                "unit": attributes.get("unit_of_measurement"),
+                "state_class": attributes.get("state_class"),
+                # Masked like ids (a number may be a serial); the fake keeps
+                # the length, so the magnitude of a counter stays visible.
+                "state": mask(state.state) if state else None,
+            }
+        )
+    models = []
+    for device_id in sorted(device_ids):
+        if device := devices.async_get(device_id):
+            models.append(
+                {
+                    "manufacturer": device.manufacturer,
+                    "model": device.model,
+                    "model_id": mask(device.model_id),
+                    "sw_version": device.sw_version,
+                    "hw_version": device.hw_version,
+                }
+            )
+    return {"devices": models, "entities": result}
 
 
 async def async_get_config_entry_diagnostics(
@@ -54,6 +110,7 @@ async def async_get_config_entry_diagnostics(
         "today": runtime.cycles("today", now).__dict__,
         "totals": runtime.totals.as_dict(),
         "month": month.as_dict() if month else None,
+        "source": _source_entities(hass, set(runtime.entities.values())),
         "period_starts": {
             p.value: s.isoformat() if s else None
             for p, s in runtime.marks.starts.items()
