@@ -130,5 +130,10 @@
         "default": "mdi:thermometer-water"
       }
     }
+  },
+  "services": {
+    "report": {
+      "service": "mdi:file-chart-outline"
+    }
   }
 }

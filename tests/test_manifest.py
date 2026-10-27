@@ -72,6 +72,21 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
     )
 
 
+def test_action_translated_and_has_an_icon() -> None:
+    strings = load(INTEGRATION / "strings.json")
+    icons = load(INTEGRATION / "icons.json")
+    services = (INTEGRATION / "services.yaml").read_text(encoding="utf-8")
+    assert set(strings["services"]) == set(icons["services"]) == {"report"}
+    for field in strings["services"]["report"]["fields"]:
+        assert f"    {field}:" in services
+
+
+def test_issues_translated() -> None:
+    from custom_components.waermewacht import ISSUES
+
+    assert set(load(INTEGRATION / "strings.json")["issues"]) == set(ISSUES)
+
+
 def test_entity_form_translated() -> None:
     sections = load(INTEGRATION / "strings.json")["config"]["step"]["entities"][
         "sections"

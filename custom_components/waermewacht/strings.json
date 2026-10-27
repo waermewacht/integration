@@ -245,5 +245,43 @@
         "name": "Flow temperature today"
       }
     }
+  },
+  "exceptions": {
+    "start_after_end": {
+      "message": "The start must be before the end."
+    },
+    "no_recorder": {
+      "message": "The report needs the recorder (long-term statistics)."
+    }
+  },
+  "issues": {
+    "missing_entity": {
+      "title": "Wärmewacht: entity missing",
+      "description": "The heat pump {name} uses entities that no longer exist: {entities}. Renamed or removed? Choose them again under Devices & services → Wärmewacht → Reconfigure."
+    },
+    "energy_unit": {
+      "title": "Wärmewacht: unusable unit",
+      "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."
+    }
+  },
+  "services": {
+    "report": {
+      "name": "Report",
+      "description": "Heat, electricity and ratios of a period, also before the setup (from the long-term statistics), with months.",
+      "fields": {
+        "config_entry": {
+          "name": "Heat pump",
+          "description": "The Wärmewacht entry."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Without: start of the current season. Times without zone are local time."
+        },
+        "end": {
+          "name": "End",
+          "description": "Without: now."
+        }
+      }
+    }
   }
 }

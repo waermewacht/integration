@@ -40,16 +40,23 @@ def hour_totals(changes: Mapping[Signal, float]) -> Totals:
     return totals
 
 
+def by_hour(hourly: HourlyChanges) -> dict[datetime, Totals]:
+    """Booked energy of every hour."""
+    hours = sorted({h for values in hourly.values() for h in values})
+    return {
+        hour: hour_totals(
+            {signal: values.get(hour, 0.0) for signal, values in hourly.items()}
+        )
+        for hour in hours
+    }
+
+
 def energy_between(
     hourly: HourlyChanges, start: datetime | None, end: datetime
 ) -> Totals:
     """Energy of the hours in [start, end) (start None: from the first hour)."""
-    hours = sorted({h for values in hourly.values() for h in values})
     total = Totals()
-    for hour in hours:
-        if (start is not None and hour < start) or hour >= end:
-            continue
-        total = total + hour_totals(
-            {signal: values.get(hour, 0.0) for signal, values in hourly.items()}
-        )
+    for hour, totals in by_hour(hourly).items():
+        if (start is None or hour >= start) and hour < end:
+            total = total + totals
     return total

@@ -90,6 +90,9 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
             result["standby_kwh"] = round(totals.standby(), 3)
         start = runtime.marks.starts.get(period)
         result["period_start"] = start.isoformat() if start else None
+        # Counters in whole kWh make short periods uncertain (1 kWh of 5 = 20 %).
+        result["counter_step_kwh"] = runtime.resolution(*modes)
+        result["reliable"] = runtime.reliable(totals, *modes)
         return result
 
     return HeatPumpSensorDescription(

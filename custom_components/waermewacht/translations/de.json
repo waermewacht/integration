@@ -245,5 +245,43 @@
         "name": "Vorlauftemperatur heute"
       }
     }
+  },
+  "exceptions": {
+    "start_after_end": {
+      "message": "Der Beginn muss vor dem Ende liegen."
+    },
+    "no_recorder": {
+      "message": "Der Bericht braucht den Recorder (Langzeitstatistik)."
+    }
+  },
+  "issues": {
+    "missing_entity": {
+      "title": "Wärmewacht: Entität fehlt",
+      "description": "Die Wärmepumpe {name} nutzt Entitäten, die es nicht mehr gibt: {entities}. Umbenannt oder entfernt? Unter Geräte & Dienste → Wärmewacht → Neu konfigurieren wieder auswählen."
+    },
+    "energy_unit": {
+      "title": "Wärmewacht: unbrauchbare Einheit",
+      "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
+    }
+  },
+  "services": {
+    "report": {
+      "name": "Bericht",
+      "description": "Wärme, Strom und Arbeitszahlen eines Zeitraums, auch vor der Einrichtung (aus der Langzeitstatistik), mit Monaten.",
+      "fields": {
+        "config_entry": {
+          "name": "Wärmepumpe",
+          "description": "Der Wärmewacht-Eintrag."
+        },
+        "start": {
+          "name": "Beginn",
+          "description": "Ohne: Beginn der laufenden Saison. Zeiten ohne Zone sind Ortszeit."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Ohne: jetzt."
+        }
+      }
+    }
   }
 }

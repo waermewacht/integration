@@ -23,6 +23,8 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_utc_time_change,
@@ -31,7 +33,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .averages import Mean
-from .backfill import HourlyChanges, energy_between
+from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
     CONF_CRITICAL_RUN,
     CONF_ENTITIES,
@@ -51,7 +53,7 @@ from .const import (
     SAVE_INTERVAL_SECONDS,
     STORAGE_VERSION,
 )
-from .counter import Counter, CounterEvent, to_kwh
+from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
 from .energy import Kind, Totals
 from .model import (
@@ -65,6 +67,7 @@ from .model import (
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .profiles import EMS_ESP, TEMPLATES, Template
+from .report import by_month, figures, own_hour
 from .runs import Defrost, Run, RunTracker
 
 if TYPE_CHECKING:
@@ -79,6 +82,12 @@ MODE_OF: dict[Signal, Mode] = {
 }
 # Critical runs within 24 hours from which cycling counts as conspicuous.
 CRITICAL_RUNS_PER_DAY = 3
+# Start of the statistics query for "everything".
+EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
+# A ratio is reliable when one counter step is at most 5 % of the electricity.
+RELIABLE_STEPS = 20
+# Entities may appear late after a restart; issues only after this grace time.
+ISSUE_GRACE = timedelta(minutes=10)
 
 
 def _float(state: State | None) -> float | None:
@@ -133,6 +142,10 @@ class HeatPumpRuntime:
         self.flow = Mean()  # flow temperature, compressor heating, today
         self.since: datetime | None = None  # first setup
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
+        # Counters seen with decimals; the others count in whole kWh.
+        self.decimal: set[Signal] = set()
+        self._started_at = dt_util.utcnow()
+        self._issues: dict[str, str] = {}  # issue id -> placeholder text
         self._flow_temp: float | None = None
         self._return_temp: float | None = None
         self._sample_at: datetime | None = None
@@ -194,34 +207,113 @@ class HeatPumpRuntime:
         hourly: HourlyChanges = {}
         if "recorder" in self.hass.config.components:
             try:
-                hourly = await self._async_hourly(now)
+                hourly = await self._async_source_hours(EARLIEST, now)
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics for the backfill failed")
         self.marks.initialize(now, lambda start: energy_between(hourly, start, now))
 
-    async def _async_hourly(self, now: datetime) -> HourlyChanges:
-        ids = {self.entities[s] for s in self.counters}
+    async def async_hourly(
+        self, entity_ids: set[str], start: datetime, end: datetime
+    ) -> dict[str, dict[datetime, float]]:
+        """Hourly change (kWh) of energy entities from the long-term statistics."""
+        if not entity_ids or start >= end:
+            return {}
         rows = await get_instance(self.hass).async_add_executor_job(
             statistics_during_period,
             self.hass,
-            datetime(2000, 1, 1, tzinfo=dt_util.UTC),
-            now,
-            ids,
+            start,
+            end,
+            entity_ids,
             "hour",
             {"energy": "kWh"},
             {"change"},
         )
-        hourly: dict[Signal, dict[datetime, float]] = {}
-        for signal in self.counters:
-            for row in rows.get(self.entities[signal], []):
-                change = row.get("change")
-                if change is None:
+        hourly: dict[str, dict[datetime, float]] = {}
+        for entity_id, entity_rows in rows.items():
+            for row in entity_rows:
+                if (change := row.get("change")) is None:
                     continue
-                start = row["start"]
-                if not isinstance(start, datetime):
-                    start = dt_util.utc_from_timestamp(start)
-                hourly.setdefault(signal, {})[start] = change
+                hour = row["start"]
+                if not isinstance(hour, datetime):
+                    hour = dt_util.utc_from_timestamp(hour)
+                hourly.setdefault(entity_id, {})[hour] = change
         return hourly
+
+    async def _async_source_hours(
+        self, start: datetime, end: datetime
+    ) -> HourlyChanges:
+        """Hourly changes of the source counters, by signal."""
+        ids = {self.entities[s]: s for s in self.counters}
+        rows = await self.async_hourly(set(ids), start, end)
+        return {ids[entity_id]: values for entity_id, values in rows.items()}
+
+    # Report for any period.
+
+    @property
+    def modes(self) -> list[Mode]:
+        """Modes with a heat and an electricity counter."""
+        return [
+            m
+            for m in Mode
+            if HEAT_SIGNALS[m] in self.entities and ELEC_SIGNALS[m] in self.entities
+        ]
+
+    async def async_report(self, start: datetime, end: datetime) -> dict[str, Any]:
+        """Figures for [start, end) from the long-term statistics.
+
+        Before the first full hour after setup: source counters (standby
+        estimated per hour); from then on: Wärmewacht's own energy sensors.
+        """
+        since = self.since or EARLIEST
+        switch = since.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        hours: dict[datetime, Totals] = {}
+        if start < switch:
+            source = await self._async_source_hours(start, min(end, switch))
+            hours.update(by_hour(source))
+        if end > switch:
+            own = await self._async_own_hours(max(start, switch), end)
+            for hour, totals in own.items():
+                hours[hour] = hours.get(hour, Totals()) + totals
+        total = Totals()
+        for totals in hours.values():
+            total = total + totals
+        return {
+            "data_until": dt_util.as_local(max(hours) + timedelta(hours=1)).isoformat()
+            if hours
+            else None,
+            "estimated_until": dt_util.as_local(min(switch, end)).isoformat()
+            if start < switch
+            else None,
+            **figures(total, self.min_electricity, self.modes),
+            "months": [
+                {"month": month, **figures(totals, self.min_electricity, self.modes)}
+                for month, totals in by_month(hours, self.tz).items()
+            ],
+        }
+
+    async def _async_own_hours(
+        self, start: datetime, end: datetime
+    ) -> dict[datetime, Totals]:
+        registry = er.async_get(self.hass)
+        keys = {
+            entity_id: key
+            for key in (
+                *(f"heat_{m}" for m in Mode),
+                *(f"electricity_{m}" for m in Mode),
+                "standby",
+            )
+            if (
+                entity_id := registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"{self.entry.entry_id}_{key}"
+                )
+            )
+        }
+        rows = await self.async_hourly(set(keys), start, end)
+        changes: dict[datetime, dict[str, float]] = {}
+        for entity_id, values in rows.items():
+            for hour, change in values.items():
+                changes.setdefault(hour, {})[keys[entity_id]] = change
+        return {hour: own_hour(values) for hour, values in changes.items()}
 
     # State changes.
 
@@ -271,6 +363,8 @@ class HeatPumpRuntime:
         except KeyError:
             self._count(f"unit:{signal}")
             return
+        if kwh != round(kwh):
+            self.decimal.add(signal)
         counter = self.counters[signal]
         previous = counter.last_time
         update = counter.update(kwh, at)
@@ -363,6 +457,8 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
+        if now - self._started_at >= ISSUE_GRACE:
+            self._check_issues()
         if self.marks.rollover(now, self.totals):
             self.spread, self.flow = Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
@@ -375,10 +471,56 @@ class HeatPumpRuntime:
             self.hass.async_create_task(self.async_save())
         self._notify()
 
+    # Repair issues: a source entity is gone or reports an unusable unit.
+
+    def _check_issues(self) -> None:
+        missing, wrong_unit = [], []
+        for signal, entity_id in sorted(self.entities.items()):
+            state = self.hass.states.get(entity_id)
+            if state is None:
+                missing.append(entity_id)
+            elif (
+                signal in self.counters
+                and state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) not in UNIT_FACTORS
+            ):
+                wrong_unit.append(entity_id)
+        self._set_issue("missing_entity", missing)
+        self._set_issue("energy_unit", wrong_unit)
+
+    def _set_issue(self, key: str, entity_ids: list[str]) -> None:
+        issue_id = f"{self.entry.entry_id}_{key}"
+        text = ", ".join(entity_ids)
+        if self._issues.get(issue_id, "") == text:
+            return
+        if entity_ids:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=key,
+                translation_placeholders={"name": self.entry.title, "entities": text},
+            )
+            self._issues[issue_id] = text
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            self._issues.pop(issue_id, None)
+
     # Figures for the entities.
 
     def energy(self, period: Period) -> Totals | None:
         return self.marks.energy(period, self.totals)
+
+    def resolution(self, *modes: Mode) -> float:
+        """Step of the coarsest counter of the modes, in kWh."""
+        signals = [s for m in modes for s in (HEAT_SIGNALS[m], ELEC_SIGNALS[m])]
+        coarse = any(s in self.entities and s not in self.decimal for s in signals)
+        return 1.0 if coarse else 0.01
+
+    def reliable(self, totals: Totals, *modes: Mode) -> bool:
+        """Whether rounding of the counters stays within 5 % of the electricity."""
+        return totals.electricity(*modes) >= RELIABLE_STEPS * self.resolution(*modes)
 
     def _local_day(self, now: datetime, offset: int = 0) -> datetime:
         today = now.astimezone(self.tz).date()
@@ -458,6 +600,7 @@ class HeatPumpRuntime:
             "spread": self.spread.as_dict(),
             "flow": self.flow.as_dict(),
             "events": dict(self.events),
+            "decimal": sorted(s.value for s in self.decimal),
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -478,6 +621,7 @@ class HeatPumpRuntime:
         self.spread = Mean.from_dict(data.get("spread"))
         self.flow = Mean.from_dict(data.get("flow"))
         self.events = dict(data.get("events", {}))
+        self.decimal = {Signal(s) for s in data.get("decimal", [])}
 
     async def async_save(self) -> None:
         self._saved_at = dt_util.utcnow()

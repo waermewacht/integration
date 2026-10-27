@@ -5,12 +5,26 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.typing import ConfigType
 
+from .const import DOMAIN
 from .runtime import HeatPumpRuntime
+from .services import async_setup_services
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
+ISSUES = ("missing_entity", "energy_unit")
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the actions (once, for all entries)."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> bool:
@@ -52,5 +66,7 @@ async def async_unload_entry(
 async def async_remove_entry(
     hass: HomeAssistant, entry: WaermewachtConfigEntry
 ) -> None:
-    """Delete the stored books."""
+    """Delete the stored books and the repair issues of the entry."""
     await HeatPumpRuntime(hass, entry).async_remove()
+    for key in ISSUES:
+        ir.async_delete_issue(hass, DOMAIN, f"{entry.entry_id}_{key}")

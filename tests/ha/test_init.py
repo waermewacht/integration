@@ -8,7 +8,9 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -178,3 +180,42 @@ async def test_remove_entry(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert hass.config_entries.async_entries(DOMAIN) == []
+
+
+@pytest.mark.freeze_time(START)
+async def test_report_checks_its_input(hass: HomeAssistant) -> None:
+    entry = await setup(hass)
+
+    async def report(**data: str) -> None:
+        await hass.services.async_call(
+            DOMAIN,
+            "report",
+            {"config_entry": entry.entry_id, **data},
+            blocking=True,
+            return_response=True,
+        )
+
+    with pytest.raises(ServiceValidationError):
+        await report(start="2026-01-15 08:00:00", end="2026-01-15 07:00:00")
+    # The test instance has no recorder: the report says so instead of 0.
+    with pytest.raises(HomeAssistantError):
+        await report(start="2026-01-01 00:00:00")
+
+
+@pytest.mark.freeze_time(START)
+async def test_repair_issue_for_missing_entity(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    issues = ir.async_get(hass)
+    issue_id = f"{entry.entry_id}_missing_entity"
+    hass.states.async_remove(FLOW)
+    await tick(hass, freezer, 5)
+    assert issues.async_get_issue(DOMAIN, issue_id) is None  # grace time
+    await tick(hass, freezer, 6)
+    issue = issues.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None
+    assert issue.translation_placeholders["entities"] == FLOW
+    hass.states.async_set(FLOW, "28.0", TEMPERATURE)
+    await tick(hass, freezer, 1)
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
