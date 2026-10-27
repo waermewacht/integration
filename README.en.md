@@ -22,9 +22,9 @@ The user interface is available in German and English and follows the language o
 - **Performance factors** for heating, hot water and heating + hot water, plus the **energy efficiency ratio for cooling (EER)** – each for today, yesterday, month, season and total.
 - **Heat and electricity sensors per mode** and a sensor for **standby**, with long-term statistics for statistics cards.
 - **Cycling:** starts, run time, run time per start, short runs, shortest pause, defrosts and a binary sensor **Conspicuous cycling**.
-- **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating.
+- **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating (with an activity).
 - **Report for any period** via an action, broken down by month – also **before the setup**, as far back as the long-term statistics of your meters go.
-- **Template for EMS-ESP:** finds Bosch/Buderus heat pumps on its own and fills in the entities. Other heat pumps are mapped by hand.
+- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes at most every 10 minutes, at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
 
 ## What Wärmewacht does differently from template sensors
@@ -46,10 +46,19 @@ The user interface is available in German and English and follows the language o
 | Source | Status |
 | --- | --- |
 | [EMS-ESP](https://github.com/emsesp/EMS-ESP32) (MQTT) with Bosch/Buderus heat pumps, e.g. CS5800i/CS6800i, WLW176i/WLW186i | template, tested on a CS5800i/CS6800i |
-| Bosch HomeCom (`bosch_homecom`) | template to follow |
+| [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, local and cloud) | template, new, compared with EMS-ESP on the same CS5800i/CS6800i |
 | any heat and electricity meters | manual mapping |
 
 The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID – renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
+
+The HomeCom template needs the energy per mode ("Wärme erzeugt Heizung", "Strom Kompressor Heizung" etc.; English: heat produced and compressor energy per heating, hot water and cooling). `bosch_homecom` creates these entities disabled: enable them first. The setup shows which ones are still disabled. "Compressor running" is the compressor speed above 0. Compared with EMS-ESP, HomeCom has limits:
+
+- **Day values from the cloud:** the energy arrives as the day's sum, up to two hours late. Wärmewacht books it when it arrives, so "today" lags behind. The cloud never delivers the last one or two hours of a day (observed up to 0.5 kWh per day).
+- **Standby:** electricity of a fetch that brought no heat of the same mode.
+- **No activity:** no defrosts, no flow-return spread and no mean flow temperature.
+- **No flow rate:** `bosch_homecom` reports "L/min" but delivers l/h.
+
+If you run EMS-ESP, use EMS-ESP: meters in 0.01 kWh every minute, and the activity.
 
 ## Installation
 
@@ -61,7 +70,7 @@ Installable from the first release on.
 
 ## Setup
 
-1. **Name and source:** The name (default "Wärmepumpe") becomes the device name and the prefix of the entity IDs. As source you choose one of the EMS-ESP heat pumps found, with their MQTT prefix if there are several EMS-ESP, or *Manual*.
+1. **Name and source:** The name (default "Wärmepumpe") becomes the device name and the prefix of the entity IDs. As source you choose one of the heat pumps found (EMS-ESP, with the MQTT prefix if there are several; Bosch HomeCom with the gateway number) or *Manual*.
 2. **Entities:** With a template the form is filled in; every field can be changed. With *Manual* you pick them yourself.
 
 | Section | Field | EMS-ESP (standard format) |
@@ -85,7 +94,7 @@ Installable from the first release on.
 
 - The electricity meters per mode are those of the **compressor without backup heater**. Enter the backup heater separately: either per mode or as "Backup heater total", not both. The total is assigned to the mode that is currently running.
 - The template takes meters in 0.01 kWh where available, otherwise the whole-kWh ones (e.g. `sensor.boiler_nrgsuppheating`). EMS-ESP provides the backup heater per mode in whole kWh only.
-- Without "Compressor running" there is no cycling. Without "Activity" no defrosts. With a manual mapping, Wärmewacht understands the values of EMS-ESP: `0`–`7` or texts such as `heating`, `hot water`, `defrost` (or the German "Heizen", "Warmwasser", "Abtauen").
+- Without "Compressor running" there is no cycling. Without "Activity" no defrosts, no flow-return spread and no mean flow temperature. "Compressor running" may be a binary sensor or a speed or modulation (running above 0). With a manual mapping, Wärmewacht understands the values of EMS-ESP: `0`–`7` or texts such as `heating`, `hot water`, `defrost` (or the German "Heizen", "Warmwasser", "Abtauen").
 - Outdoor temperature and flow rate can already be mapped, but are only evaluated in a later version.
 
 Several heat pumps: add one entry each.

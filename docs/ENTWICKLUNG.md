@@ -125,7 +125,13 @@ Repo [serbanb11/bosch-homecom-hass](https://github.com/serbanb11/bosch-homecom-h
 - „Kompressorleistung“ (`local_compressor_power`, lokal) = EMS-ESP `hpcurrpower` (Stillstand 25 W). Kompressor an: `local_compressor_speed` oder `compressor_modulation` (Cloud) > 0, ~1 min Verzug. Starts gesamt mit Attributen `ch`/`dhw`/`cooling` (Summe = gesamt → `heatingstarts` zählt Kompressorstarts). Laufzeit je Modus lokal (s), steigt im aktiven Modus. Vorlauf = EMS-ESP `curflowtemp` (Systemvorlauf, nicht `hptc1`), Rücklauf = `hptc0`.
 - **Keine Betriebsart:** „Wärmebedarf“ zeigt `frost` während Heiz- und Warmwasserläufen und `ch` bei stehendem Kompressor. Abtauen nur heuristisch: „Wärmebedarf = idle bei laufendem Kompressor“ (4 von 4 in 10 Tagen, kleine Stichprobe). `homecom_alt` fragt lokal `refrigerant/status` (laut Spezifikation u. a. `defrost`) und lokale emon-Zähler ab, legt dafür aber keine Entitäten an.
 - **Fehler upstream:** `local_pump_volume_flow` meldet „L/min“, liefert l/h (= `pc0flow`; Spezifikation l/h).
-- Für eine Vorlage nötig: Erkennung `<id>-<schlüssel>`, Hinweis auf deaktivierte Entitäten, Tageszähler mit Reset nur bei Datumswechsel (auch bei steigendem Wert nach langer Pause) und ohne Reset-Doppelzählung bei Rücksprung am selben Tag, Kompressor aus Zahlwert > 0, Stillstand nur aus der Wärme im selben Abruf, ggf. Tagesrest nachholen.
+- **Vorlage gebaut (2026-10-27, `profiles.BOSCH_HOMECOM`):**
+  - Erkennung über `<id>-<schlüssel>`. Die Einrichtung nennt deaktivierte Entitäten, die eine Vorlage bräuchte.
+  - Tageszähler (`Counter.day_tz`): Ein neuer Tag beginnt nur beim Datumswechsel in der HA-Zeitzone. Dann zählt der erste Wert des Tages ganz, auch wenn er über dem letzten des Vortags liegt. Ein Rücksprung am selben Tag ist ein Dip. Ein unveränderter Wert, etwa bei einem Attribut-Update nach Mitternacht, lässt den Tag stehen.
+  - Kompressor aus Drehzahl > 0 (`parse_compressor`), Verzug gegenüber EMS-ESP 20–60 s.
+  - Stillstand je Abruf (`Template.day_values`): Strom wartet bis zum nächsten Minutentakt, mindestens 10 s, auf die Wärme desselben Abrufs (bis 30 s davor). Am 27.10. kamen Strom und Wärme in derselben Sekunde.
+  - Spreizung und Vorlauf brauchen die Betriebsart.
+  - Noch nicht: den Tagesrest aus den Lebenszeit-Summen am Sensor „Wärmequelle“ nachholen und die Abtau-Heuristik.
 - Daneben gibt es die Community-Integration „Bosch/Buderus Heating (PointT)“ ([Forum](https://community.home-assistant.io/t/custom-integration-bosch-buderus-heating-pointt-cloud-integration-for-mybuderus-and-homecom-easy-systems/1022332)) – noch nicht betrachtet.
 
 ### Andere Hersteller (Quellcode-Recherche 2026-10-27 an festen Commits, nicht an echten Anlagen – erst mit Fixture)

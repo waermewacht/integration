@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -59,14 +60,59 @@ def test_reset_to_zero_books_nothing() -> None:
     assert counter.update(0.4, at(10)).delta == pytest.approx(0.4)
 
 
-def test_daily_counter_books_the_new_day_value() -> None:
-    """Day values reset at midnight; the first value of the new day is energy."""
-    counter = Counter(daily_reset=True)
-    counter.update(6.69, at(0))
-    assert counter.update(6.74, at(60)).delta == pytest.approx(0.05)
-    update = counter.update(0.29, at(120))
+BERLIN = ZoneInfo("Europe/Berlin")
+
+
+def local(day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, 10, day, hour, minute, tzinfo=BERLIN)
+
+
+def test_day_counter_books_the_new_day_value() -> None:
+    """Bosch HomeCom: back to the hours of the new day at the first fetch."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(6.69, local(26, 22, 30))
+    assert counter.update(6.74, local(26, 23, 30)).delta == pytest.approx(0.05)
+    update = counter.update(0.29, local(27, 0, 30))
     assert update.event is CounterEvent.RESET
     assert update.delta == pytest.approx(0.29)
+    assert counter.update(1.29, local(27, 1, 30)).delta == pytest.approx(1.0)
+
+
+def test_day_counter_new_day_above_the_last_value() -> None:
+    """A pause over midnight: the new day's value exceeds yesterday's last
+    one, yet all of it belongs to the new day."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(0.4, local(26, 18))
+    update = counter.update(2.1, local(27, 9))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(2.1)
+
+
+def test_day_counter_step_back_within_the_day_is_a_dip() -> None:
+    """Observed at the change from summer time: the doubled hour is
+    overwritten and the day value drops mid-day, here by more than 1 kWh."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(8.0, local(25, 3, 30))
+    assert counter.update(6.5, local(25, 4, 30)).event is CounterEvent.DIP
+    assert counter.update(7.9, local(25, 5, 30)).delta == 0
+    assert counter.update(8.3, local(25, 6, 30)).delta == pytest.approx(0.3)
+
+
+def test_day_counter_unchanged_value_keeps_its_day() -> None:
+    """An attribute update after midnight repeats yesterday's value: no new day."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(5.0, local(26, 23, 10))
+    assert counter.update(5.0, local(27, 0, 5)).delta == 0
+    update = counter.update(0.2, local(27, 0, 40))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(0.2)
+
+
+def test_day_counter_implausible_first_value() -> None:
+    counter = Counter(max_kw=20.0, day_tz=BERLIN)
+    counter.update(5.0, local(26, 23))
+    # 10 minutes after midnight at most 20 kW x 1.5 x 1/6 h + 1 kWh = 6 kWh.
+    assert counter.update(90.0, local(27, 0, 10)).event is CounterEvent.JUMP
 
 
 def test_implausible_jump_is_not_booked() -> None:

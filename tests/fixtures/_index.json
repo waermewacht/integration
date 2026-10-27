@@ -3,5 +3,10 @@
     "source": "Entity registry and states of a Bosch Compress CS5800i/CS6800i (EMS-ESP product 8) with K40RF via EMS-ESP MQTT discovery, Home Assistant 2026.10.4, read on 2026-10-27.",
     "real": "entity ids, unique ids (platform mqtt), units, device and state classes, activity values seen ('aus', 'Heizen', 'Warmwasser', 'Abtauen'; EMS-ESP language German). Old (3.6) and current (dhw_) names exist side by side with identical values.",
     "made_up": "every state value (meter readings, starts, temperatures, powers)."
+  },
+  "bosch_homecom_k40.json": {
+    "source": "Entity registry and states of a Bosch Compress CS5800i/CS6800i with K40RF via bosch_homecom 1.6.0 (data source local and cloud), Home Assistant 2026.10.4, read on 2026-10-27.",
+    "real": "entity id pattern (without the area prefix the owner's installation has), unique id keys (platform bosch_homecom), units incl. the wrong 'L/min' of the volume flow, device and state classes, which entities bosch_homecom disables by default.",
+    "made_up": "the gateway id and every state value."
   }
 }

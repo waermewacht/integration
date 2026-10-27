@@ -1,10 +1,15 @@
-"""The EMS-ESP template against the recorded registry of a real installation."""
+"""Templates against the recorded registry of real installations."""
 
 from __future__ import annotations
 
 from custom_components.waermewacht.counter import UNIT_FACTORS
 from custom_components.waermewacht.model import ENERGY_SIGNALS, Activity, Signal
-from custom_components.waermewacht.profiles import EMS_ESP, RegistryEntry, find
+from custom_components.waermewacht.profiles import (
+    BOSCH_HOMECOM,
+    EMS_ESP,
+    RegistryEntry,
+    find,
+)
 
 from .conftest import FIXTURES, load_fixture
 
@@ -73,3 +78,61 @@ def test_older_names_kept_for_the_backfill() -> None:
     assert match.history[Signal.ELEC_DHW] == ["sensor.boiler_wwmeter"]
     assert match.history[Signal.AUX_DHW] == ["sensor.boiler_auxelecheatnrgconsww"]
     assert Signal.HEAT_HEATING not in match.history
+
+
+HOMECOM = "bosch_homecom_k40.json"
+
+
+def homecom_entries(*, with_disabled: bool = True) -> list[RegistryEntry]:
+    return [
+        RegistryEntry(e["entity_id"], "bosch_homecom", e["unique_id"])
+        for e in load_fixture(HOMECOM)["entities"]
+        if with_disabled or not e["disabled_by_default"]
+    ]
+
+
+def test_homecom_template_finds_every_signal() -> None:
+    (match,) = find(BOSCH_HOMECOM, homecom_entries())
+    gateway = load_fixture(HOMECOM)["gateway"]
+    base = f"sensor.boschcom_k40_{gateway}_"
+    assert match.prefix == gateway
+    assert match.entities == {
+        Signal.HEAT_HEATING: base + "warme_erzeugt_heizung",
+        Signal.HEAT_DHW: base + "warme_erzeugt_warmwasser",
+        Signal.HEAT_COOLING: base + "warme_erzeugt_kuhlung",
+        Signal.ELEC_HEATING: base + "strom_kompressor_heizung",
+        Signal.ELEC_DHW: base + "strom_kompressor_warmwasser",
+        Signal.ELEC_COOLING: base + "strom_kompressor_kuhlung",
+        Signal.AUX_HEATING: base + "strom_heizstab_heizung",
+        Signal.AUX_DHW: base + "strom_heizstab_warmwasser",
+        Signal.COMPRESSOR: base + "kompressordrehzahl",
+        Signal.STARTS_TOTAL: base + "kompressor_starts",
+        Signal.OUTDOOR_TEMP: base + "outdoor_temp_sensor",
+        Signal.FLOW_TEMP: base + "vorlauftemperatur",
+        Signal.RETURN_TEMP: base + "rucklauftemperatur",
+        Signal.ELEC_POWER: base + "kompressorleistung",
+    }
+    # No activity: no defrosts, no mode of a run. Volume flow left out (unit).
+    assert match.missing == []
+    assert Signal.FLOW_RATE not in match.entities
+
+
+def test_homecom_energy_units_are_usable() -> None:
+    units = {
+        e["entity_id"]: e["attributes"].get("unit_of_measurement")
+        for e in load_fixture(HOMECOM)["entities"]
+    }
+    (match,) = find(BOSCH_HOMECOM, homecom_entries())
+    for signal, entity_id in match.entities.items():
+        if signal in ENERGY_SIGNALS:
+            assert units[entity_id] in UNIT_FACTORS, entity_id
+
+
+def test_homecom_needs_the_disabled_energy_per_mode() -> None:
+    """bosch_homecom disables the energy per mode by default: no match."""
+    assert find(BOSCH_HOMECOM, homecom_entries(with_disabled=False)) == []
+
+
+def test_templates_do_not_claim_each_other() -> None:
+    assert find(EMS_ESP, homecom_entries()) == []
+    assert find(BOSCH_HOMECOM, entries()) == []

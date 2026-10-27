@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.statistics import statistics_during_period
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -69,7 +69,7 @@ from .model import (
     Signal,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
-from .profiles import EMS_ESP, TEMPLATES, Template
+from .profiles import EMS_ESP, TEMPLATES, Template, parse_compressor
 from .report import by_month, figures, own_hour
 from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
 
@@ -91,6 +91,11 @@ EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
 RELIABLE_STEPS = 20
 # Entities may appear late after a restart; issues only after this grace time.
 ISSUE_GRACE = timedelta(minutes=10)
+# Day values of a cloud: the electricity of a fetch waits this long for the
+# heat of the same fetch (the entities update one after another), and heat
+# up to SAME_FETCH before the electricity belongs to the same fetch.
+PENDING_DELAY = timedelta(seconds=10)
+SAME_FETCH = timedelta(seconds=30)
 
 
 def _float(state: State | None) -> float | None:
@@ -127,8 +132,9 @@ class HeatPumpRuntime:
             CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR
         )
         self.tz = dt_util.get_default_time_zone()
+        day_tz = self.tz if self.template.day_values else None
         self.counters = {
-            s: Counter(max_kw=MAX_POWER_KW)
+            s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz)
             for s in ENERGY_SIGNALS
             if s in self.entities
         }
@@ -155,6 +161,8 @@ class HeatPumpRuntime:
         self._sampling = False
         self._mode_seen: dict[Mode, datetime] = {}
         self._heat_at: dict[Mode, datetime] = {}
+        # Electricity of day values waiting for the heat of its fetch.
+        self._pending: list[tuple[Mode, float, datetime]] = []
         # Two files (SD cards): a small live file (counters, totals, marks)
         # every few minutes when changed, and the run history (up to 40 days
         # of runs and defrosts) only when a run ends and at midnight.
@@ -209,6 +217,7 @@ class HeatPumpRuntime:
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
+        self._resolve_pending(dt_util.utcnow(), final=True)
         await self.async_save()
 
     async def async_remove(self) -> None:
@@ -257,11 +266,12 @@ class HeatPumpRuntime:
         except Exception:  # never block the setup
             _LOGGER.exception("Reading the state history for the runs failed")
             return False
-        on_off = {STATE_ON: True, STATE_OFF: False}
         events: list[tuple[datetime, str, bool | Activity | None]] = []
         for state in states.get(compressor, []):
             if isinstance(state, State):
-                events.append((state.last_updated, COMPRESSOR, on_off.get(state.state)))
+                events.append(
+                    (state.last_updated, COMPRESSOR, parse_compressor(state.state))
+                )
         for state in states.get(activity or "", []):
             if isinstance(state, State):
                 events.append(
@@ -443,7 +453,7 @@ class HeatPumpRuntime:
         if signal in self.counters:
             self._handle_counter(signal, state, at)
         elif signal is Signal.COMPRESSOR:
-            on = {STATE_ON: True, STATE_OFF: False}.get(state.state)
+            on = parse_compressor(state.state)
             had_open = self.tracker.open_run is not None
             run = self.tracker.set_compressor(on, at)
             if not had_open and self.tracker.open_run and self.tracker.open_run.counted:
@@ -498,10 +508,28 @@ class HeatPumpRuntime:
             self.totals.add(Kind.HEAT, mode, kwh)
             self._heat_at[mode] = at
         elif signal in ELEC_SIGNALS.values():
+            if self.template.day_values:
+                self._pending.append((mode, kwh, at))
+                return
             running = self._running(mode, previous)
             self.totals.add(Kind.ELEC if running else Kind.STANDBY, mode, kwh)
         else:
             self.totals.add(Kind.AUX, mode, kwh)
+
+    def _resolve_pending(self, now: datetime, final: bool = False) -> None:
+        """Book waiting electricity of day values: standby when the same
+        fetch brought no heat of its mode (the compressor state cannot tell,
+        the values are up to two hours late)."""
+        waiting = []
+        for mode, kwh, at in self._pending:
+            if not final and now - at < PENDING_DELAY:
+                waiting.append((mode, kwh, at))
+                continue
+            heat_at = self._heat_at.get(mode)
+            running = heat_at is not None and heat_at >= at - SAME_FETCH
+            self.totals.add(Kind.ELEC if running else Kind.STANDBY, mode, kwh)
+            self._dirty = True
+        self._pending = waiting
 
     def _running(self, mode: Mode, previous: datetime | None) -> bool:
         """Whether electricity of `mode` since `previous` came from a run.
@@ -543,11 +571,10 @@ class HeatPumpRuntime:
             self._mode_seen[mode] = at
 
     def _sample_condition(self) -> bool:
+        """Compressor heating; without an activity hot water runs would mix in."""
         if Signal.COMPRESSOR in self.entities and not self.tracker.compressor:
             return False
-        if Signal.ACTIVITY in self.entities:
-            return self.tracker.activity is Activity.HEATING
-        return True
+        return self.tracker.activity is Activity.HEATING
 
     def _sample(self, at: datetime) -> None:
         """Add the time since the last sample to today's means."""
@@ -569,6 +596,7 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
+        self._resolve_pending(now)
         if now - self._started_at >= ISSUE_GRACE:
             self._check_issues()
         if self.marks.rollover(now, self.totals):

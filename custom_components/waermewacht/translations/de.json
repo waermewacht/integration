@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Wärmepumpe einrichten",
-        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
+        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen (EMS-ESP, Bosch HomeCom) haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
         "data": {
           "name": "Name",
           "source": "Quelle"
@@ -44,7 +44,7 @@
           "operation": {
             "name": "Betrieb",
             "data": {
-              "compressor": "Kompressor läuft",
+              "compressor": "Kompressor läuft (an/aus oder Drehzahl)",
               "activity": "Betriebsart (Aktivität)",
               "starts_total": "Kompressorstarts gesamt",
               "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)"

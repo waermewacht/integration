@@ -108,7 +108,10 @@ FIELDS = {
     "aux_dhw": ("Backup heater hot water", "Strom Heizstab Warmwasser"),
     "heat_cooling": ("Heat removed cooling (meter)", "Wärme Kühlen (entzogen, Zähler)"),
     "elec_cooling": ("Compressor electricity cooling", "Strom Kompressor Kühlen"),
-    "compressor": ("Compressor running", "Kompressor läuft"),
+    "compressor": (
+        "Compressor running (on/off or speed)",
+        "Kompressor läuft (an/aus oder Drehzahl)",
+    ),
     "activity": ("Activity", "Betriebsart (Aktivität)"),
     "starts_total": ("Compressor starts total", "Kompressorstarts gesamt"),
     "aux_total": (
@@ -194,8 +197,8 @@ def build(lang: int) -> dict:
                     "title": t(("Set up a heat pump", "Wärmepumpe einrichten")),
                     "description": t(
                         (
-                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
-                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
+                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates (EMS-ESP, Bosch HomeCom) found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen (EMS-ESP, Bosch HomeCom) haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
                         )
                     ),
                     "data": {

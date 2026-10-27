@@ -1,6 +1,6 @@
 """Config flow: name and source, then the entities per mode (prefilled).
 
-A template (EMS-ESP) finds the heat pump in the entity registry by platform
+A template (EMS-ESP, Bosch HomeCom) finds the heat pump in the entity registry by platform
 and unique id and fills in the entities; everything stays editable. Without
 a template, the user picks the entities. Reconfiguring shows the entity step
 again; the options hold the thresholds. Every change reloads the entry.
@@ -76,7 +76,10 @@ def _selector(signal: Signal) -> selector.EntitySelector:
             unit_of_measurement=list(UNIT_FACTORS),
         )
     elif signal is Signal.COMPRESSOR:
-        filters = selector.EntityFilterSelectorConfig(domain="binary_sensor")
+        # On/off, or a speed or modulation in % (Bosch HomeCom).
+        filters = selector.EntityFilterSelectorConfig(
+            domain=["binary_sensor", "sensor"]
+        )
     elif signal in (Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP, Signal.RETURN_TEMP):
         filters = selector.EntityFilterSelectorConfig(
             domain="sensor", device_class="temperature"
@@ -161,6 +164,26 @@ def detect(hass: HomeAssistant) -> list[Match]:
     return [m for template in TEMPLATES.values() for m in find(template, entries)]
 
 
+def disabled_entities(hass: HomeAssistant) -> list[str]:
+    """Disabled entities a template would use (bosch_homecom disables the
+    energy per mode by default)."""
+    registry = er.async_get(hass)
+    entries = [
+        RegistryEntry(e.entity_id, e.platform, e.unique_id)
+        for e in registry.entities.values()
+    ]
+    disabled = {
+        e.entity_id for e in registry.entities.values() if e.disabled_by is not None
+    }
+    return sorted(
+        entity_id
+        for template in TEMPLATES.values()
+        for match in find(template, entries)
+        for signal, entity_id in match.entities.items()
+        if entity_id in disabled and signal in FORM_SIGNALS
+    )
+
+
 def _source_key(match: Match) -> str:
     return f"{match.template.key}:{match.prefix}"
 
@@ -204,7 +227,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         options: list[selector.SelectOptionDict] = [
             selector.SelectOptionDict(
                 value=key,
-                label=f"EMS-ESP ({m.prefix})" if m.prefix else "EMS-ESP",
+                label=f"{m.template.label} ({m.prefix})"
+                if m.prefix
+                else m.template.label,
             )
             for key, m in matches.items()
         ]
@@ -228,7 +253,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
-            description_placeholders={"found": str(len(matches))},
+            description_placeholders={
+                "found": str(len(matches)),
+                "disabled": ", ".join(disabled_entities(self.hass)) or "–",
+            },
         )
 
     async def async_step_entities(

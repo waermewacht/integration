@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up a heat pump",
-        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
+        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates (EMS-ESP, Bosch HomeCom) found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
         "data": {
           "name": "Name",
           "source": "Source"
@@ -44,7 +44,7 @@
           "operation": {
             "name": "Operation",
             "data": {
-              "compressor": "Compressor running",
+              "compressor": "Compressor running (on/off or speed)",
               "activity": "Activity",
               "starts_total": "Compressor starts total",
               "aux_total": "Backup heater total (only without per mode)"

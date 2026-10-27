@@ -27,8 +27,11 @@ class Template:
     """How to find the signals of one heat pump in one integration."""
 
     key: str
+    label: str  # shown in the setup
     platform: str
-    device: str  # device part of the unique id, e.g. "boiler"
+    # Device part of "[<prefix>_]<device>_<key>" unique ids (EMS-ESP:
+    # "boiler"); None for "<gateway>-<key>" (Bosch HomeCom).
+    device: str | None
     # Candidate keys per signal, preferred first: (entity domain, key).
     signals: dict[Signal, tuple[tuple[str, str], ...]]
     # Keys that must be present to call a device a heat pump of this template.
@@ -37,12 +40,43 @@ class Template:
     # Keys naming the same counter in another id format (both may exist; the
     # older one often has the longer statistics, used for the backfill).
     aliases: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # Energy entities hold today's sum of a cloud's hourly values, delivered
+    # up to two hours late: they start anew at midnight, and standby is told
+    # from the heat of the same fetch instead of the compressor state.
+    day_values: bool = False
+
+    def split(self, unique_id: str) -> tuple[str, str] | None:
+        """(prefix, key) of a unique id, None if it is not of this format."""
+        if self.device is None:
+            # Split at the first "-": keys may contain one ("dhw1-delta_t").
+            prefix, separator, key = unique_id.partition("-")
+            return (prefix, key) if separator and prefix and key else None
+        marker = f"{self.device}_"
+        if unique_id.startswith(marker):
+            return "", unique_id[len(marker) :]
+        position = unique_id.find(f"_{marker}")
+        if position <= 0:
+            return None
+        return unique_id[:position], unique_id[position + len(marker) + 1 :]
 
     def parse_activity(self, state: str | None) -> Activity | None:
         """Map an activity state; None while unknown, OTHER if not recognized."""
         if state is None or state in ("unknown", "unavailable", ""):
             return None
         return self.activity_values.get(state.strip().casefold(), Activity.OTHER)
+
+
+def parse_compressor(state: str | None) -> bool | None:
+    """Compressor running: on/off, or a speed or modulation above 0."""
+    match state:
+        case "on":
+            return True
+        case "off":
+            return False
+    try:
+        return float(state or "") > 0
+    except ValueError:
+        return None  # unknown, unavailable
 
 
 @dataclass(frozen=True)
@@ -140,6 +174,7 @@ EMS_ESP_ACTIVITY = _words(
 _S, _B = "sensor", "binary_sensor"
 EMS_ESP = Template(
     key="ems_esp",
+    label="EMS-ESP",
     platform="mqtt",
     device="boiler",
     signals={
@@ -192,18 +227,41 @@ EMS_ESP = Template(
     },
 )
 
-TEMPLATES: dict[str, Template] = {EMS_ESP.key: EMS_ESP}
+# Bosch HomeCom (bosch_homecom, checked v1.5.2 and v1.6.0): unique ids
+# "<gateway id>-<key>". The energy per mode is today's sum of the cloud's
+# hourly values (disabled by default in bosch_homecom); there is no activity,
+# so no defrosts and no mode of a run. The pump volume flow is left out: it
+# reports "L/min" but delivers l/h. Sources: docs/ENTWICKLUNG.md, section 4.
+BOSCH_HOMECOM = Template(
+    key="bosch_homecom",
+    label="Bosch HomeCom",
+    platform="bosch_homecom",
+    device=None,
+    signals={
+        Signal.HEAT_HEATING: ((_S, "heat_produced_ch"),),
+        Signal.HEAT_DHW: ((_S, "heat_produced_dhw"),),
+        Signal.HEAT_COOLING: ((_S, "heat_produced_cooling"),),
+        Signal.ELEC_HEATING: ((_S, "energy_compressor_ch"),),
+        Signal.ELEC_DHW: ((_S, "energy_compressor_dhw"),),
+        Signal.ELEC_COOLING: ((_S, "energy_compressor_cooling"),),
+        Signal.AUX_HEATING: ((_S, "energy_eheater_ch"),),
+        Signal.AUX_DHW: ((_S, "energy_eheater_dhw"),),
+        # Local speed first (about a minute late), the cloud modulation else.
+        Signal.COMPRESSOR: (
+            (_S, "local_compressor_speed"),
+            (_S, "compressor_modulation"),
+        ),
+        Signal.STARTS_TOTAL: ((_S, "compressor_starts"),),
+        Signal.OUTDOOR_TEMP: ((_S, "outdoor_temp"),),
+        Signal.FLOW_TEMP: ((_S, "supply_temperature"),),
+        Signal.RETURN_TEMP: ((_S, "return_temperature"),),
+        Signal.ELEC_POWER: ((_S, "local_compressor_power"),),
+    },
+    required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
+    day_values=True,
+)
 
-
-def _split(unique_id: str, device: str) -> tuple[str, str] | None:
-    """Split "<prefix>_<device>_<key>" or "<device>_<key>" into (prefix, key)."""
-    marker = f"{device}_"
-    if unique_id.startswith(marker):
-        return "", unique_id[len(marker) :]
-    position = unique_id.find(f"_{marker}")
-    if position <= 0:
-        return None
-    return unique_id[:position], unique_id[position + len(marker) + 1 :]
+TEMPLATES: dict[str, Template] = {t.key: t for t in (EMS_ESP, BOSCH_HOMECOM)}
 
 
 def find(template: Template, entries: Iterable[RegistryEntry]) -> list[Match]:
@@ -212,7 +270,7 @@ def find(template: Template, entries: Iterable[RegistryEntry]) -> list[Match]:
     for entry in entries:
         if entry.platform != template.platform:
             continue
-        parts = _split(entry.unique_id, template.device)
+        parts = template.split(entry.unique_id)
         if parts is None:
             continue
         prefix, key = parts

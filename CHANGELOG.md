@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Vorlage Bosch HomeCom** (`bosch_homecom`): findet die Wärmepumpe am Gateway und füllt die Entitäten aus. Die Einrichtung nennt Entitäten, die eine Vorlage bräuchte, die aber deaktiviert sind (bei `bosch_homecom` die Energie je Betriebsart). Tageswerte der Cloud beginnen um Mitternacht neu; ein Rücksprung am selben Tag (Zeitumstellung) wird nicht doppelt gebucht. Stillstand ist hier Strom eines Abrufs ohne Wärme.
+- **„Kompressor läuft“** darf auch eine Drehzahl oder Modulation sein (läuft bei über 0).
+- **Spreizung und Vorlauftemperatur heute** gibt es nur noch mit Betriebsart. Ohne sie mischten sich Warmwasserläufe in den Heizbetrieb.
+
 ## 0.1.0b2 – 2026-10-27
 
 - **Anzeige:** Arbeitszahlen erscheinen jetzt als Zahl mit 2 Nachkommastellen (bisher Rohwert mit vielen Stellen) und mit kurzen Namen, die in Listen nicht mehr abgeschnitten werden: „AZ Heizen Monat“, „AZ Warmwasser Saison“, „AZ Heizen+WW gesamt“, „EER Kühlen …“. Bestehende Entity-IDs bleiben. Ihr Verlauf erscheint jetzt auch in der Statistik (als Zeitmittel; die Bilanz liefern die Energie-Sensoren und der Bericht).

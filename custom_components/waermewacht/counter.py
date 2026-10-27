@@ -7,7 +7,7 @@ Einspeisewacht and Tarifwacht, without splitting into quarter hours.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, tzinfo
 from enum import StrEnum
 from typing import Any
 
@@ -55,12 +55,16 @@ class CounterUpdate:
 class Counter:
     """Track the last reading of a cumulative counter.
 
-    `daily_reset` marks counters that restart at zero every day (cloud day
-    values): after a reset, the new value itself is energy of the new day.
+    `day_tz` marks a day counter (cloud day values, e.g. Bosch HomeCom): it
+    starts anew when the local date in `day_tz` changes. The first value of a
+    new day is energy of that day, even when it is higher than the last
+    value of the day before (long pause). Within a day it behaves like a
+    lifetime counter: a step back is a dip (observed at the change from
+    summer time, when the doubled hour is overwritten), never a new day.
     """
 
     max_kw: float | None = None
-    daily_reset: bool = False
+    day_tz: tzinfo | None = None
     last_value: float | None = None
     last_time: datetime | None = None
 
@@ -72,12 +76,17 @@ class Counter:
         if previous_value is None or previous_time is None:
             self.last_value, self.last_time = value, at
             return CounterUpdate(event=CounterEvent.FIRST)
+        if self.day_tz is not None:
+            if value == previous_value:
+                # Attribute updates: the time of the last change dates the value.
+                return CounterUpdate()
+            if self._new_day(previous_time, at):
+                return self._start_day(value, at)
         delta = value - previous_value
         if delta < 0:
-            if self.daily_reset:
-                self.last_value, self.last_time = value, at
-                return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
-            if -delta <= max(RESET_MIN_KWH, RESET_FRACTION * previous_value):
+            if self.day_tz is not None or -delta <= max(
+                RESET_MIN_KWH, RESET_FRACTION * previous_value
+            ):
                 self.last_time = at
                 return CounterUpdate(event=CounterEvent.DIP)
             self.last_value, self.last_time = value, at
@@ -88,6 +97,21 @@ class Counter:
             if delta > self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH:
                 return CounterUpdate(event=CounterEvent.JUMP)
         return CounterUpdate(delta=delta)
+
+    def _new_day(self, previous: datetime, at: datetime) -> bool:
+        return (
+            previous.astimezone(self.day_tz).date() != at.astimezone(self.day_tz).date()
+        )
+
+    def _start_day(self, value: float, at: datetime) -> CounterUpdate:
+        self.last_value, self.last_time = value, at
+        if self.max_kw is not None:
+            local = at.astimezone(self.day_tz)
+            midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
+            hours = (local - midnight).total_seconds() / 3600
+            if value > self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH:
+                return CounterUpdate(event=CounterEvent.JUMP)
+        return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
 
     def as_dict(self) -> dict[str, Any]:
         return {

@@ -1,11 +1,17 @@
-"""EMS-ESP template: unique id formats and activity values."""
+"""Templates: unique id formats, activity values, compressor states."""
 
 from __future__ import annotations
 
 import pytest
 
 from custom_components.waermewacht.model import Activity, Signal
-from custom_components.waermewacht.profiles import EMS_ESP, RegistryEntry, find
+from custom_components.waermewacht.profiles import (
+    BOSCH_HOMECOM,
+    EMS_ESP,
+    RegistryEntry,
+    find,
+    parse_compressor,
+)
 
 
 def entries(prefix: str, names: dict[str, str]) -> list[RegistryEntry]:
@@ -111,3 +117,35 @@ def test_activity_values(state: str, activity: Activity) -> None:
 @pytest.mark.parametrize("state", [None, "unknown", "unavailable"])
 def test_unknown_activity(state: str | None) -> None:
     assert EMS_ESP.parse_activity(state) is None
+
+
+@pytest.mark.parametrize(
+    ("unique_id", "expected"),
+    [
+        ("101234567-heat_produced_ch", ("101234567", "heat_produced_ch")),
+        ("101234567-dhw1-delta_t", ("101234567", "dhw1-delta_t")),  # first "-"
+        ("101234567", None),
+        ("-heat_produced_ch", None),
+    ],
+)
+def test_homecom_unique_ids(unique_id: str, expected: tuple[str, str] | None) -> None:
+    assert BOSCH_HOMECOM.split(unique_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("state", "running"),
+    [
+        ("on", True),
+        ("off", False),
+        ("42", True),
+        ("0", False),
+        ("0.0", False),
+        ("unavailable", None),
+        ("unknown", None),
+        (None, None),
+    ],
+)
+def test_compressor_from_on_off_or_speed(
+    state: str | None, running: bool | None
+) -> None:
+    assert parse_compressor(state) is running
