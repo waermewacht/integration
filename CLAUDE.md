@@ -60,5 +60,7 @@ Gleicher Ablauf in allen Schwesterprojekten (Eilwacht, Einspeisewacht, Streckenw
 - **Neustarts:** Quellen gehen `unavailable` → `unknown` → Wert. Das ist weder ein Start noch eine Abtauung noch ein Verbrauch.
 - **EMS-ESP-Aktivitäten sind übersetzt** („Heizen“, „aus“, „Abtauen“ – Sprache in EMS-ESP eingestellt). Vorlagen kennen alle Sprachen bzw. das Index-Format.
 - HA-Tests: Zeitzone ist US/Pacific → `hass.config.async_set_time_zone("Europe/Berlin")`. Recorder-Tests: `recorder_mock` vor `hass`/`enable_custom_integrations` anfordern (siehe Tarifwacht/Einspeisewacht).
+- HA-Tests unter 2026.4 (`compat`): Die Testbibliothek feuert Zeit-Listener **vor** anstehenden Zustandsereignissen. Vor `async_fire_time_changed` immer `await hass.async_block_till_done()` (Helfer `tick` in `tests/ha/test_init.py`), sonst kommt der Minuten-Takt vor der Buchung.
+- Git: Gearbeitet wird auf dem ausgecheckten Branch `dev`. Am 2026-10-27 landete ein Commit versehentlich auf `main`, weil nach `git branch dev` nicht gewechselt wurde – vor jedem Commit `git status -sb` prüfen.
 - Home Assistant läuft auf diesem Windows-Rechner nicht (`fcntl`). HA-MCP ist nur lesend; der gesteuerte Browser braucht die Anmeldung des Inhabers.
 - Shell-Heredocs mit Anführungszeichen scheitern: Bearbeitungsskripte als Datei in den Scratchpad schreiben. Python-Dateien mit `newline="\n"` schreiben.
