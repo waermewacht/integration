@@ -94,11 +94,13 @@
             "description": "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
             "data": {
               "electricity_price": "Strompreis",
+              "electricity_base_price": "Strom-Grundpreis",
               "gas_price": "Gas-Arbeitspreis",
               "gas_base_price": "Gas-Grundpreis"
             },
             "data_description": {
               "electricity_price": "Bruttopreis je kWh für den Strom der Wärmepumpe.",
+              "electricity_base_price": "Nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif), brutto je Jahr. Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an.",
               "gas_price": "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
               "gas_base_price": "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt."
             }

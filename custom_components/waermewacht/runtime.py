@@ -46,6 +46,7 @@ from .averages import Mean
 from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
     CONF_CRITICAL_RUN,
+    CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
     CONF_GAS_BASE_PRICE,
@@ -160,6 +161,9 @@ class HeatPumpRuntime:
         # Prices are entered in ct/kWh; the cost module works in €/kWh.
         self.electricity_price: float | None = _per_kwh(
             options.get(CONF_ELECTRICITY_PRICE)
+        )
+        self.electricity_base_price: float | None = options.get(
+            CONF_ELECTRICITY_BASE_PRICE
         )
         self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)

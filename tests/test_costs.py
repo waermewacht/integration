@@ -190,6 +190,23 @@ def test_compare_with_gas() -> None:
     assert result.savings_co2_kg == pytest.approx(21.744 - 10.15)
 
 
+def test_electricity_base_price_of_a_heat_pump_meter() -> None:
+    """A separate heat pump meter: its base price is part of the heating cost."""
+    hours, start, end = two_days()
+    result = compare_with_gas(
+        hours,
+        start,
+        end,
+        BERLIN,
+        electricity_price=0.30,
+        gas_price=0.10,
+        electricity_base_price_per_year=182.5,
+    )
+    assert result.electricity_base_cost_eur == pytest.approx(1.0)  # 2 days
+    assert result.heat_pump_cost_eur == pytest.approx(8.5)
+    assert result.savings_eur == pytest.approx(10.0 - 8.5)
+
+
 def test_compare_with_gas_direct_factors_and_efficiency() -> None:
     hours, start, end = two_days()
     result = compare_with_gas(

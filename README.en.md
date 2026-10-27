@@ -111,6 +111,7 @@ Several heat pumps: add one entry each.
 | Conspicuous above starts per hour | 3 | More starts within one hour count as conspicuous. Compressor manufacturers give 6 to 12 starts per hour as the upper limit. |
 | Season starts in | July | Start of the season (heating period July to June). |
 | Electricity price | – | Optional, ct/kWh gross. Without it there are no cost sensors. |
+| Electricity base price | – | Optional, €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
 | Gas working price | – | Optional, ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
 | Gas base price | – | Optional, €/year gross, spread per day. Without it only the working prices are compared. |
 

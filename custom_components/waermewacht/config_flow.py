@@ -26,6 +26,7 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_CRITICAL_RUN,
+    CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
     CONF_GAS_BASE_PRICE,
@@ -314,6 +315,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
     "costs": (
         CONF_ELECTRICITY_PRICE,
+        CONF_ELECTRICITY_BASE_PRICE,
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
     ),
@@ -386,6 +388,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
         )
         optional: dict[str, selector.Selector] = {
             CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
+            CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
             CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
             CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
         }

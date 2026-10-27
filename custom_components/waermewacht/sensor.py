@@ -293,6 +293,7 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
         electricity_price=runtime.electricity_price,
         gas_price=runtime.gas_price,
         gas_base_price_per_year=runtime.gas_base_price,
+        electricity_base_price_per_year=runtime.electricity_base_price,
     )
 
 
@@ -303,7 +304,9 @@ def _money(value: float | None, digits: int = 2) -> float | None:
 def _cost(period: Period) -> Value:
     def value(runtime: HeatPumpRuntime) -> float | None:
         result = _comparison(runtime, period)
-        return None if result is None else _money(result.electricity.cost_eur)
+        if result is None or result.electricity.cost_eur is None:
+            return None
+        return _money(result.electricity.cost_eur + result.electricity_base_cost_eur)
 
     return value
 
@@ -315,6 +318,7 @@ def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     return {
         "heat_kwh": round(result.heat_kwh, 1),
         "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),
+        "electricity_base_cost_eur": _money(result.electricity_base_cost_eur),
         "gas_kwh": round(result.gas_kwh, 1),
         "gas_cost_eur": _money(result.gas_cost_eur),
         "gas_base_cost_eur": _money(result.gas_base_cost_eur),

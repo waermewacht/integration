@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Strom-Grundpreis** als optionale Einstellung für einen eigenen Wärmepumpenzähler: anteilig in Stromkosten, Wärmekosten und Gasvergleich.
+
 ## 0.1.0b5 – 2026-10-27
 
 - **Kosten und Gasvergleich:**

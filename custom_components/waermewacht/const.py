@@ -23,6 +23,8 @@ CONF_STARTS_PER_HOUR: Final = "starts_per_hour"
 CONF_SEASON_START: Final = "season_start_month"
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
+# EUR per year, only for a separate heat pump meter (heat pump tariff).
+CONF_ELECTRICITY_BASE_PRICE: Final = "electricity_base_price"
 CONF_GAS_PRICE: Final = "gas_price"  # ct/kWh on the gross calorific value (Hs)
 CONF_GAS_BASE_PRICE: Final = "gas_base_price"  # EUR per year
 

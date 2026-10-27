@@ -20,6 +20,9 @@ Rules (docs/ENTWICKLUNG.md, "Emissionsfaktoren (Stufe 2)"):
   with upstream chains 406 / 240 (default), direct 344 / 201.
 - An annual base price of gas is prorated per local day as the annual price
   ÷ 365 or 366 (as in Tarifwacht), partial days by their share of real hours.
+- An annual base price of electricity counts only for a meter of the heat pump
+  alone (heat pump tariff); it is prorated the same way and belongs to heating
+  and hot water. On the household meter it is paid anyway and left out.
 """
 
 from __future__ import annotations
@@ -102,6 +105,7 @@ class CostComparison:
     heat_kwh: float  # heating + hot water
     electricity: ElectricityCost
     heat_pump_cost_eur: float | None  # electricity for heating + hot water
+    electricity_base_cost_eur: float  # prorated base price of a heat pump meter
     heat_cost_per_kwh: float | None  # €/kWh heat
     boiler_efficiency: float  # η on Hs
     gas_kwh: float  # Hs
@@ -219,6 +223,7 @@ def compare_with_gas(
     gas_price: float | None,
     hourly_prices: Mapping[datetime, float] | None = None,
     gas_base_price_per_year: float | None = None,
+    electricity_base_price_per_year: float | None = None,
     boiler_efficiency: float = BOILER_EFFICIENCY_HS,
     factors: EmissionFactors = WITH_UPSTREAM,
 ) -> CostComparison:
@@ -226,7 +231,8 @@ def compare_with_gas(
 
     Only hours of `hours` starting in [start, end) count. `electricity_price`
     and `gas_price` are €/kWh (gas on Hs); `gas_base_price_per_year` is € per
-    year and is prorated to the period.
+    year and is prorated to the period, as is `electricity_base_price_per_year`
+    (only for a separate heat pump meter).
     """
     period = {h: t for h, t in hours.items() if start <= h < end}
     electricity = electricity_cost(
@@ -240,7 +246,17 @@ def compare_with_gas(
     base = _price(gas_base_price_per_year)
     gas_base_cost = 0.0 if base is None else base_price_share(base, start, end, tz)
     gas_cost = None if gas_energy_cost is None else gas_energy_cost + gas_base_cost
-    heat_pump_cost = electricity.heat_cost_eur
+    electricity_base = _price(electricity_base_price_per_year)
+    electricity_base_cost = (
+        0.0
+        if electricity_base is None
+        else base_price_share(electricity_base, start, end, tz)
+    )
+    heat_pump_cost = (
+        None
+        if electricity.heat_cost_eur is None
+        else electricity.heat_cost_eur + electricity_base_cost
+    )
 
     heat_pump_co2 = electricity.heat_electricity_kwh * factors.electricity / 1000
     gas_co2 = gas * factors.gas_hs / 1000
@@ -248,6 +264,7 @@ def compare_with_gas(
         heat_kwh=heat,
         electricity=electricity,
         heat_pump_cost_eur=heat_pump_cost,
+        electricity_base_cost_eur=electricity_base_cost,
         heat_cost_per_kwh=heat_cost_per_kwh(heat_pump_cost, heat),
         boiler_efficiency=boiler_efficiency,
         gas_kwh=gas,

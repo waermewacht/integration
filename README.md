@@ -111,6 +111,7 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Auffällig ab Starts pro Stunde über | 3 | Mehr Starts innerhalb einer Stunde gelten als auffällig. Verdichterhersteller nennen 6 bis 12 Starts pro Stunde als Obergrenze. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
 | Strompreis | – | Optional, ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
+| Strom-Grundpreis | – | Optional, €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
 | Gas-Arbeitspreis | – | Optional, ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
 | Gas-Grundpreis | – | Optional, €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
 

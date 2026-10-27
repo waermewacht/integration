@@ -94,11 +94,13 @@
             "description": "Every field may stay empty. Without an electricity price there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
             "data": {
               "electricity_price": "Electricity price",
+              "electricity_base_price": "Electricity base price",
               "gas_price": "Gas working price",
               "gas_base_price": "Gas base price"
             },
             "data_description": {
               "electricity_price": "Gross price per kWh of the heat pump's electricity.",
+              "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
               "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
               "gas_base_price": "Gross per year; spread over the days of a period."
             }

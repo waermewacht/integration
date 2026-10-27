@@ -336,6 +336,9 @@ def build(lang: int) -> dict:
                                 "electricity_price": t(
                                     ("Electricity price", "Strompreis")
                                 ),
+                                "electricity_base_price": t(
+                                    ("Electricity base price", "Strom-Grundpreis")
+                                ),
                                 "gas_price": t(
                                     ("Gas working price", "Gas-Arbeitspreis")
                                 ),
@@ -348,6 +351,12 @@ def build(lang: int) -> dict:
                                     (
                                         "Gross price per kWh of the heat pump's electricity.",
                                         "Bruttopreis je kWh für den Strom der Wärmepumpe.",
+                                    )
+                                ),
+                                "electricity_base_price": t(
+                                    (
+                                        "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
+                                        "Nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif), brutto je Jahr. Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an.",
                                     )
                                 ),
                                 "gas_price": t(
