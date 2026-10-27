@@ -205,13 +205,9 @@ Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `start
 | Electricity cost month, season | € | all electricity of the heat pump (all modes, standby, backup heater) × electricity price | electricity price |
 | Heat cost per kWh season | €/kWh | electricity cost of heating and hot water (with standby) per kWh of heat | electricity price |
 | Savings vs. gas boiler season | € | gas cost for the same heat minus electricity cost | electricity and gas price |
-| CO₂ savings vs. gas boiler season | kg | CO₂ of the gas boiler minus CO₂ of the electricity | – |
 
 - **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency of condensing boilers measured in the field (Jagnow/Wolff, DBU 2004).
-- **CO₂ factors**, with upstream chains:
-  - Electricity: 406 g/kWh, German electricity mix 2025 (UBA *Climate Change* 16/2026).
-  - Gas: 240 g/kWh on the net calorific value (GEG Anlage 9), × 0.906 to convert to the gross value.
-- **Your own PV electricity** is not deducted: with PV the real CO₂ saving is higher.
+- **No CO₂ comparison:** it would depend too much on assumptions (average or hourly mix, upstream chains, own PV use, battery, green tariffs).
 - **Prices** are fixed. Dynamic tariffs follow with the report.
 
 ## Statistics card: heat and electricity per month

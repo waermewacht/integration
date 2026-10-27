@@ -91,7 +91,7 @@
         "sections": {
           "costs": {
             "name": "Kosten und Gasvergleich (optional)",
-            "description": "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis vergleicht Wärmewacht nur das CO₂, ohne Grundpreis nur die Arbeitspreise.",
+            "description": "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
             "data": {
               "electricity_price": "Strompreis",
               "gas_price": "Gas-Arbeitspreis",
@@ -229,51 +229,6 @@
       },
       "gas_savings_season": {
         "name": "Ersparnis ggü. Gaskessel Saison"
-      },
-      "co2_savings_season": {
-        "name": "CO₂-Ersparnis ggü. Gaskessel Saison"
-      },
-      "starts_today": {
-        "name": "Starts heute"
-      },
-      "starts_yesterday": {
-        "name": "Starts gestern"
-      },
-      "starts_total": {
-        "name": "Starts gesamt"
-      },
-      "runtime_today": {
-        "name": "Laufzeit heute"
-      },
-      "run_minutes_today": {
-        "name": "Laufzeit pro Start heute"
-      },
-      "run_minutes_week": {
-        "name": "Laufzeit pro Start 7 Tage"
-      },
-      "run_minutes_month": {
-        "name": "Laufzeit pro Start Monat"
-      },
-      "short_runs_today": {
-        "name": "Kurzläufe heute"
-      },
-      "shortest_pause_today": {
-        "name": "Kürzeste Pause heute"
-      },
-      "defrosts_today": {
-        "name": "Abtauungen heute"
-      },
-      "aux_share_month": {
-        "name": "Heizstab-Anteil Monat"
-      },
-      "aux_share_season": {
-        "name": "Heizstab-Anteil Saison"
-      },
-      "spread_today": {
-        "name": "Spreizung heute"
-      },
-      "flow_temp_today": {
-        "name": "Vorlauftemperatur heute"
       }
     }
   },

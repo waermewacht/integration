@@ -205,13 +205,9 @@ Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts
 | Stromkosten Monat, Saison | € | aller Strom der Wärmepumpe (alle Betriebsarten, Stillstand, Heizstab) × Strompreis | Strompreis |
 | Wärmekosten je kWh Saison | €/kWh | Stromkosten für Heizen und Warmwasser (mit Stillstand) je kWh Wärme | Strompreis |
 | Ersparnis ggü. Gaskessel Saison | € | Gaskosten für dieselbe Wärme minus Stromkosten | Strom- und Gaspreis |
-| CO₂-Ersparnis ggü. Gaskessel Saison | kg | CO₂ des Gaskessels minus CO₂ des Stroms | – |
 
 - **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der im Feld gemessene Wirkungsgrad von Brennwertkesseln (Jagnow/Wolff, DBU 2004).
-- **CO₂-Faktoren** mit Vorketten:
-  - Strom: 406 g/kWh, deutscher Strommix 2025 (UBA *Climate Change* 16/2026).
-  - Gas: 240 g/kWh auf den Heizwert (GEG Anlage 9), auf den Brennwert umgerechnet × 0,906.
-- **Eigener PV-Strom** ist nicht abgezogen: Mit PV ist die tatsächliche CO₂-Ersparnis höher.
+- **Kein CO₂-Vergleich:** Er hinge zu stark an Annahmen (Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom).
 - **Preise** gelten fest. Dynamische Tarife folgen mit dem Bericht.
 
 ## Statistik-Karte: Wärme und Strom je Monat

@@ -55,12 +55,10 @@ async def test_costs_and_gas_comparison(
     assert value(hass, entry, "heat_cost_season") == pytest.approx(0.075)
     # Gas: 10 kWh / 0.87 = 11.49 kWh x 0.10 € = 1.15 €; saving 0.40 €.
     assert value(hass, entry, "gas_savings_season") == pytest.approx(0.40)
-    # CO₂: 2.5 x 406 g = 1.0 kg against 11.49 x 240 x 0.906 g = 2.5 kg.
-    assert value(hass, entry, "co2_savings_season") == pytest.approx(1.0)
 
 
 @pytest.mark.freeze_time(START)
-async def test_without_prices_only_co2(hass: HomeAssistant) -> None:
+async def test_without_prices_no_cost_sensors(hass: HomeAssistant) -> None:
     entry = await setup(hass, {})
     registry = er.async_get(hass)
 
@@ -70,6 +68,5 @@ async def test_without_prices_only_co2(hass: HomeAssistant) -> None:
             is not None
         )
 
-    assert exists("co2_savings_season")
     for key in ("cost_month", "cost_season", "heat_cost_season", "gas_savings_season"):
         assert not exists(key), key

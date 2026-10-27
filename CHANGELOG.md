@@ -5,7 +5,6 @@
 - **Kosten und Gasvergleich:**
   - Neue Einstellungen Strompreis, Gas-Arbeitspreis und Gas-Grundpreis, alle optional.
   - Damit gibt es die Sensoren Stromkosten Monat und Saison, Wärmekosten je kWh Saison und Ersparnis gegenüber einem Gaskessel (Wirkungsgrad 0,87 auf den Brennwert).
-  - CO₂-Ersparnis gegenüber einem Gaskessel gibt es immer.
 - **Statistik vor der Einrichtung:** Der erste importierte Monat zeigte die ganze Vergangenheit als einen negativen Balken, weil Home Assistant die erste Zeile gegen 0 rechnet. Die Summen werden jetzt einmal angehoben und beginnen bei 0. Ein Import aus 0.1.0b4 wird beim Update repariert.
 
 ## 0.1.0b4 – 2026-10-27

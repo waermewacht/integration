@@ -322,18 +322,6 @@ def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     }
 
 
-def _co2_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
-    result = _comparison(runtime, Period.SEASON)
-    if result is None:
-        return {}
-    return {
-        "heat_pump_co2_kg": round(result.heat_pump_co2_kg),
-        "gas_co2_kg": round(result.gas_co2_kg),
-        "electricity_g_per_kwh": result.factors.electricity,
-        "gas_g_per_kwh_hs": round(result.factors.gas_hs, 1),
-    }
-
-
 def _heating_or_dhw(runtime: HeatPumpRuntime) -> bool:
     return any(_mode_complete(runtime, m) for m in SEASONAL_MODES)
 
@@ -369,16 +357,6 @@ COSTS = [
         value=lambda r: _money((c := _comparison(r, Period.SEASON)) and c.savings_eur),
         needs=lambda r: HAS_PRICE(r) and r.gas_price is not None,
         attributes=_savings_attributes,
-    ),
-    HeatPumpSensorDescription(
-        key="co2_savings_season",
-        native_unit_of_measurement="kg",
-        suggested_display_precision=0,
-        value=lambda r: _money(
-            (c := _comparison(r, Period.SEASON)) and c.savings_co2_kg, 0
-        ),
-        needs=_heating_or_dhw,
-        attributes=_co2_attributes,
     ),
 ]
 

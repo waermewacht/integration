@@ -137,6 +137,7 @@ Repo [serbanb11/bosch-homecom-hass](https://github.com/serbanb11/bosch-homecom-h
     - Die Plausibilitätsprüfung für Tageswerte misst gegen die Zeit seit Mitternacht statt gegen den Abstand zweier Abrufe, denn ein Abruf kann nach einem Neustart mehrere Stunden auf einmal bringen.
     - Ein verworfener Wert lässt die Basis stehen.
     - Wartender Strom wird vor einem Periodenwechsel gebucht (`PeriodMarks.due`) und mit `_heat_at` gespeichert.
+- **Kein CO₂-Vergleich in der Oberfläche** (Wunsch des Inhabers 2026-10-27). Er hinge zu stark an Annahmen: Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom. `costs.py` rechnet CO₂ weiter mit (Faktoren mit Quellen), es wird aber nicht angezeigt.
 - **Kühlsaison = Kalenderjahr** (`Period.YEAR`, Wunsch des Inhabers 2026-10-27). Bei einer Heizsaison ab Juli fiele das Kühlen von März bis Juni in die Vorsaison. Beim Update aus dem Bestand: `_async_rebase(Period.YEAR)`.
 - **Statistik vor der Einrichtung** (`async_import_history`, einmal je Eintrag):
   - Schreibt Stunden vor der ersten eigenen Statistikzeile mit `async_import_statistics` (Quelle `recorder`).

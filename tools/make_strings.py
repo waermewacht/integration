@@ -60,61 +60,6 @@ SENSORS = {
         "Ersparnis ggü. Gaskessel Saison",
         "mdi:piggy-bank-outline",
     ),
-    "co2_savings_season": (
-        "CO₂ savings vs. gas boiler season",
-        "CO₂-Ersparnis ggü. Gaskessel Saison",
-        "mdi:molecule-co2",
-    ),
-    "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
-    "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
-    "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
-    "runtime_today": ("Run time today", "Laufzeit heute", "mdi:timer-outline"),
-    "run_minutes_today": (
-        "Run time per start today",
-        "Laufzeit pro Start heute",
-        "mdi:timer-sand",
-    ),
-    "run_minutes_week": (
-        "Run time per start 7 days",
-        "Laufzeit pro Start 7 Tage",
-        "mdi:timer-sand",
-    ),
-    "run_minutes_month": (
-        "Run time per start month",
-        "Laufzeit pro Start Monat",
-        "mdi:timer-sand",
-    ),
-    "short_runs_today": (
-        "Short runs today",
-        "Kurzläufe heute",
-        "mdi:timer-alert-outline",
-    ),
-    "shortest_pause_today": (
-        "Shortest pause today",
-        "Kürzeste Pause heute",
-        "mdi:pause-circle-outline",
-    ),
-    "defrosts_today": ("Defrosts today", "Abtauungen heute", "mdi:snowflake-melt"),
-    "aux_share_month": (
-        "Backup heater share month",
-        "Heizstab-Anteil Monat",
-        "mdi:heating-coil",
-    ),
-    "aux_share_season": (
-        "Backup heater share season",
-        "Heizstab-Anteil Saison",
-        "mdi:heating-coil",
-    ),
-    "spread_today": (
-        "Flow-return spread today",
-        "Spreizung heute",
-        "mdi:thermometer-lines",
-    ),
-    "flow_temp_today": (
-        "Flow temperature today",
-        "Vorlauftemperatur heute",
-        "mdi:thermometer-water",
-    ),
 }
 BINARY = {
     "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave")
@@ -333,8 +278,8 @@ def build(lang: int) -> dict:
                             ),
                             "description": t(
                                 (
-                                    "Every field may stay empty. Without an electricity price there are no costs; without a gas price the comparison shows CO₂ only; without a base price only the working prices are compared.",
-                                    "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis vergleicht Wärmewacht nur das CO₂, ohne Grundpreis nur die Arbeitspreise.",
+                                    "Every field may stay empty. Without an electricity price there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
+                                    "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
                                 )
                             ),
                             "data": {
