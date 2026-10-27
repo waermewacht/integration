@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b3 – 2026-10-27
+
 - **Vorlage Bosch HomeCom** (`bosch_homecom`): findet die Wärmepumpe am Gateway und füllt die Entitäten aus. Die Einrichtung nennt Entitäten, die eine Vorlage bräuchte, die aber deaktiviert sind (bei `bosch_homecom` die Energie je Betriebsart). Tageswerte der Cloud beginnen um Mitternacht neu; ein Rücksprung am selben Tag (Zeitumstellung) wird nicht doppelt gebucht. Stillstand ist hier Strom eines Abrufs ohne Wärme.
 - **„Kompressor läuft“** darf auch eine Drehzahl oder Modulation sein (läuft bei über 0).
 - **Spreizung und Vorlauftemperatur heute** gibt es nur noch mit Betriebsart. Ohne sie mischten sich Warmwasserläufe in den Heizbetrieb.
