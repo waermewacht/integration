@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b6 – 2026-10-27
+
 - **AZ-Kennlinie Heizen:** Arbeitszahl je 2-K-Klasse der Tagesmitteltemperatur, laufende und vorige Saison getrennt, als Attribute für ein Diagramm (Beispiel mit apexcharts-card im README). Aktion `performance_curve` für beliebige Zeiträume.
 - **Heizlast aus der Energiesignatur:** Heizlast je Kelvin und, mit der neuen Einstellung Normaußentemperatur, die Heizlast bei Normaußentemperatur. Aktion `heat_load`.
 
