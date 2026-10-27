@@ -278,6 +278,8 @@ Both need the outdoor temperature plus heat and electricity heating, and the rec
 | Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
 | Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
+| Degree days season | K·d | Degree days G20/15 after VDI 3807 from the start of the season to yesterday: per day 20 °C minus the daily mean, only on days below 15 °C. As a meter: a statistics card shows the degree days per month. Attributes `days_counted`, `days_missing` (fewer than 20 hourly values), `days_without_heating`. |
+| Heat per degree day season | kWh/K·d | Heating heat divided by the degree days, from 10 K·d. Attribute `previous_season`: the same value of the whole previous season. A measure of the heat demand of the house, corrected for the weather. It scatters by about 18 % from month to month, so it is a season value only. |
 
 **Performance curve:** heating performance factor per 2-K class of the daily mean outdoor temperature, without standby. The current and the previous season stay apart: a changed heating curve would blur both.
 
@@ -399,6 +401,7 @@ months:
 
 - `heating`, `dhw`, `heating_dhw` and `cooling` only appear for modes that are set up. For `cooling`, `ratio` is the EER; `null` means unknown (no heat or below the minimum electricity).
 - `electricity_kwh` is without standby; for `heating_dhw`, `standby_kwh` enters the factor.
+- `degree_days` (total and per month, only with an outdoor temperature): degree days G20/15, heating heat per degree day (`kwh_per_degree_day`, from 10 K·d) and the days counted. Only whole days with at least 20 hourly values count.
 - `data_until`: until when hourly values were available. `estimated_until`: until when the figures come from the heat pump's own meters (see below); `null` if the period starts after the setup.
 - **Before the setup**, Wärmewacht calculates from the long-term statistics of your meters. They hold no compressor state. So the electricity of a mode in an hour without heat of that mode counts as standby. Hours with a run keep their minutes of standby as running; the factor per mode comes out slightly lower there.
 - **From the first full hour after the setup** the report uses the statistics of Wärmewacht's own [energy sensors](#energy).
@@ -639,7 +642,7 @@ More:
 
 ## Privacy
 
-Wärmewacht calculates locally, reads only the entities you map and makes no network requests. Per entry it stores the booked energy and the runs of the last 40 days. The diagnostics file contains the mapping, the settings, the current states of the source entities (that is, meter readings) and energy totals, but not the name of the entry. Check it before sharing it publicly.
+Wärmewacht calculates locally, reads only the entities you map and makes no network requests. Per entry it stores the booked energy and the runs of the last 40 days. The diagnostics file contains the mapping, the settings, the current states of the source entities (that is, meter readings) and energy totals, but not the name of the entry. Under `source` it lists every entity of the source devices with manufacturer, model and firmware; serial numbers and entry ids in it are replaced by made-up values of the same length, device names and areas are left out. Check it before sharing it publicly.
 
 ## Removal
 
@@ -651,6 +654,8 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 ## Reporting issues
 
 Please open an [issue](https://github.com/waermewacht/integration/issues), ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+
+**Heat pump without a template?** Set up Wärmewacht manually (at least heat and electricity for heating and "Compressor running") and attach the diagnostics file to an issue. Under `source` it lists every entity of the devices behind it, with platform, unique_id, unit and state. That is enough to build a template.
 
 ## Related projects
 

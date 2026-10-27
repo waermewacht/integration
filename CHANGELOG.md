@@ -2,6 +2,8 @@
 
 ## 0.1.0b8 – 2026-10-27
 
+- **Diagnose-Datei für neue Hersteller:** listet unter `source` alle Entitäten der Quellgeräte (Plattform, unique_id, Einheit, Zustand) sowie Hersteller, Modell und Firmware. Seriennummern und Eintrags-IDs sind maskiert. Damit lässt sich aus einer manuellen Einrichtung eine Vorlage bauen.
+- **Gradtage:** Sensoren „Gradtage Saison“ (G20/15 nach VDI 3807, als Zähler für Statistik-Karten) und „Wärme je Gradtag Saison“ mit dem Wert der Vorsaison. Der Bericht nennt Gradtage und Wärme je Gradtag gesamt und je Monat.
 - **Warmwasser je Ladung:** Sensoren „AZ Warmwasser letzte Ladung“ und „AZ Warmwasser-Ladungen 30 Tage“ (normale Ladungen ohne Desinfektion), mit Dauer, Wärme, Temperaturhub und Heizstab-Anteil als Attribute. Nicht für Bosch HomeCom (Tageswerte).
 - **Neues Feld Warmwasser-Temperatur** (Vorlagen EMS-ESP, Bosch HomeCom, Stiebel, Luxtronik) und Sensor „Letzte thermische Desinfektion“. Die Schwelle (Vorgabe 60 °C) steht in den Einstellungen. Bestehende Einträge: die Warmwasser-Temperatur einmal unter *Neu konfigurieren* auswählen.
 - **Gesundheits-Check:** Problem-Sensor „Heizstab bei Warmwasserladungen“: mehr als 10 % Heizstab-Strom in normalen Ladungen der letzten 30 Tage.

@@ -278,6 +278,8 @@ Beide brauchen die Außentemperatur sowie Wärme und Strom Heizen, dazu den Reco
 | AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen. |
 | Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
 | Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
+| Gradtage Saison | K·d | Gradtagzahl G20/15 nach VDI 3807 seit Saisonbeginn bis gestern: je Tag 20 °C minus Tagesmittel, nur an Tagen unter 15 °C. Als Zähler: Eine Statistik-Karte zeigt damit die Gradtage je Monat. Attribute `days_counted`, `days_missing` (unter 20 Stundenwerten), `days_without_heating`. |
+| Wärme je Gradtag Saison | kWh/K·d | Wärme fürs Heizen geteilt durch die Gradtage, erst ab 10 K·d. Attribut `previous_season`: derselbe Wert der ganzen Vorsaison. Ein Maß für den Wärmebedarf des Hauses, bereinigt ums Wetter. Er schwankt von Monat zu Monat um etwa 18 %, deshalb nur als Saisonwert. |
 
 **AZ-Kennlinie:** Arbeitszahl Heizen je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand. Laufende und vorige Saison bleiben getrennt: Eine geänderte Heizkurve würde sonst beide verwischen.
 
@@ -399,6 +401,7 @@ months:
 
 - `heating`, `dhw`, `heating_dhw` und `cooling` erscheinen nur für eingerichtete Betriebsarten. `ratio` ist bei `cooling` die Leistungszahl (EER); `null` heißt unbekannt (keine Wärme oder unter dem Mindeststrom).
 - `electricity_kwh` ist ohne Stillstand; bei `heating_dhw` geht `standby_kwh` in die Arbeitszahl ein.
+- `degree_days` (gesamt und je Monat, nur mit Außentemperatur): Gradtage G20/15, Wärme fürs Heizen je Gradtag (`kwh_per_degree_day`, ab 10 K·d) und die gezählten Tage. Nur ganze Tage mit mindestens 20 Stundenwerten zählen.
 - `data_until`: bis wann Stundenwerte vorlagen. `estimated_until`: bis wann aus den Zählern der Wärmepumpe gerechnet wurde (siehe unten); `null`, wenn der Zeitraum erst nach der Einrichtung beginnt.
 - **Vor der Einrichtung** rechnet Wärmewacht aus der Langzeitstatistik deiner Zähler. Dort gibt es keinen Kompressorstatus. Deshalb gilt der Strom einer Betriebsart in einer Stunde ohne Wärme dieser Betriebsart als Stillstand. Stunden mit Lauf behalten ihre Minuten Stillstand als Lauf; die Arbeitszahl je Betriebsart fällt dort etwas niedriger aus.
 - **Ab der ersten vollen Stunde nach der Einrichtung** nutzt der Bericht die Statistik der eigenen [Energie-Sensoren](#energie).
@@ -639,7 +642,7 @@ Weiteres:
 
 ## Datenschutz
 
-Wärmewacht rechnet lokal, liest nur die Entitäten, die du zuordnest, und fragt nichts im Netz ab. Gespeichert werden je Eintrag die gebuchte Energie und die Läufe der letzten 40 Tage. Die Diagnose-Datei enthält Zuordnung, Einstellungen, die aktuellen Zustände der Quell-Entitäten (also Zählerstände) und Energiesummen, aber nicht den Namen des Eintrags. Prüfe sie, bevor du sie öffentlich teilst.
+Wärmewacht rechnet lokal, liest nur die Entitäten, die du zuordnest, und fragt nichts im Netz ab. Gespeichert werden je Eintrag die gebuchte Energie und die Läufe der letzten 40 Tage. Die Diagnose-Datei enthält Zuordnung, Einstellungen, die aktuellen Zustände der Quell-Entitäten (also Zählerstände) und Energiesummen, aber nicht den Namen des Eintrags. Unter `source` listet sie alle Entitäten der Quellgeräte mit Hersteller, Modell und Firmware; Seriennummern und Eintrags-IDs darin sind durch erfundene Werte gleicher Länge ersetzt, Gerätenamen und Bereiche fehlen. Prüfe sie, bevor du sie öffentlich teilst.
 
 ## Entfernen
 
@@ -651,6 +654,8 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 ## Fehler melden
 
 Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten mit Diagnose-Datei, dem Modell der Wärmepumpe und den Versionen von Home Assistant, Wärmewacht und gegebenenfalls EMS-ESP. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
+
+**Wärmepumpe ohne Vorlage?** Richte Wärmewacht manuell ein (mindestens Wärme und Strom Heizen und „Kompressor läuft“) und hänge die Diagnose-Datei an ein Issue. Unter `source` stehen dann alle Entitäten der Geräte dahinter, mit Plattform, unique_id, Einheit und Zustand. Daraus lässt sich eine Vorlage bauen.
 
 ## Verwandte Projekte
 
