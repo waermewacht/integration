@@ -302,6 +302,81 @@ def build(lang: int) -> dict:
                             )
                         ),
                     },
+                    "sections": {
+                        "costs": {
+                            "name": t(
+                                (
+                                    "Costs and gas comparison (optional)",
+                                    "Kosten und Gasvergleich (optional)",
+                                )
+                            ),
+                            "description": t(
+                                (
+                                    "Every field may stay empty. Without an electricity price there are no costs; without a gas price the comparison shows CO₂ only; without a base price only the working prices are compared.",
+                                    "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis vergleicht Wärmewacht nur das CO₂, ohne Grundpreis nur die Arbeitspreise.",
+                                )
+                            ),
+                            "data": {
+                                "electricity_price": t(
+                                    ("Electricity price", "Strompreis")
+                                ),
+                                "price_entity": t(
+                                    ("Electricity price sensor", "Strompreis-Sensor")
+                                ),
+                                "gas_price": t(
+                                    ("Gas working price", "Gas-Arbeitspreis")
+                                ),
+                                "gas_base_price": t(
+                                    ("Gas base price", "Gas-Grundpreis")
+                                ),
+                            },
+                            "data_description": {
+                                "electricity_price": t(
+                                    (
+                                        "Gross price per kWh of the heat pump's electricity.",
+                                        "Bruttopreis je kWh für den Strom der Wärmepumpe.",
+                                    )
+                                ),
+                                "price_entity": t(
+                                    (
+                                        "A dynamic tariff: its hourly mean is used, the fixed price fills gaps.",
+                                        "Für dynamische Tarife: gilt stundenweise, der feste Preis füllt Lücken.",
+                                    )
+                                ),
+                                "gas_price": t(
+                                    (
+                                        "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+                                        "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
+                                    )
+                                ),
+                                "gas_base_price": t(
+                                    (
+                                        "Gross per year; spread over the days of a period.",
+                                        "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt.",
+                                    )
+                                ),
+                            },
+                        },
+                        "heat_load": {
+                            "name": t(("Heat load (optional)", "Heizlast (optional)")),
+                            "data": {
+                                "design_outdoor_temp": t(
+                                    (
+                                        "Design outdoor temperature",
+                                        "Normaußentemperatur",
+                                    )
+                                ),
+                            },
+                            "data_description": {
+                                "design_outdoor_temp": t(
+                                    (
+                                        "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+                                        "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+                                    )
+                                ),
+                            },
+                        },
+                    },
                 }
             }
         },

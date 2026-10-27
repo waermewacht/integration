@@ -165,7 +165,16 @@ async def test_options(hass: HomeAssistant) -> None:
             "critical_run_minutes": 5,
             "starts_per_hour": 4,
             "season_start_month": "9",
+            # Optional: a gas price without base price, no design temperature.
+            "costs": {"electricity_price": 27.75, "gas_price": 11.5},
+            "heat_load": {},
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["season_start_month"] == "9"
+    # Section values are stored flat; empty fields stay unset.
+    assert entry.options["electricity_price"] == 27.75
+    assert entry.options["gas_price"] == 11.5
+    assert "gas_base_price" not in entry.options
+    assert "design_outdoor_temp" not in entry.options
+    assert "costs" not in entry.options

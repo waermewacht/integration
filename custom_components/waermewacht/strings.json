@@ -87,6 +87,33 @@
         "data_description": {
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
           "season_start_month": "The current season is recomputed from the statistics."
+        },
+        "sections": {
+          "costs": {
+            "name": "Costs and gas comparison (optional)",
+            "description": "Every field may stay empty. Without an electricity price there are no costs; without a gas price the comparison shows CO₂ only; without a base price only the working prices are compared.",
+            "data": {
+              "electricity_price": "Electricity price",
+              "price_entity": "Electricity price sensor",
+              "gas_price": "Gas working price",
+              "gas_base_price": "Gas base price"
+            },
+            "data_description": {
+              "electricity_price": "Gross price per kWh of the heat pump's electricity.",
+              "price_entity": "A dynamic tariff: its hourly mean is used, the fixed price fills gaps.",
+              "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+              "gas_base_price": "Gross per year; spread over the days of a period."
+            }
+          },
+          "heat_load": {
+            "name": "Heat load (optional)",
+            "data": {
+              "design_outdoor_temp": "Design outdoor temperature"
+            },
+            "data_description": {
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only."
+            }
+          }
         }
       }
     }

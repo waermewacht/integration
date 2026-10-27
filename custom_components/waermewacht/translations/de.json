@@ -87,6 +87,33 @@
         "data_description": {
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
           "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+        },
+        "sections": {
+          "costs": {
+            "name": "Kosten und Gasvergleich (optional)",
+            "description": "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis vergleicht Wärmewacht nur das CO₂, ohne Grundpreis nur die Arbeitspreise.",
+            "data": {
+              "electricity_price": "Strompreis",
+              "price_entity": "Strompreis-Sensor",
+              "gas_price": "Gas-Arbeitspreis",
+              "gas_base_price": "Gas-Grundpreis"
+            },
+            "data_description": {
+              "electricity_price": "Bruttopreis je kWh für den Strom der Wärmepumpe.",
+              "price_entity": "Für dynamische Tarife: gilt stundenweise, der feste Preis füllt Lücken.",
+              "gas_price": "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
+              "gas_base_price": "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt."
+            }
+          },
+          "heat_load": {
+            "name": "Heizlast (optional)",
+            "data": {
+              "design_outdoor_temp": "Normaußentemperatur"
+            },
+            "data_description": {
+              "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin."
+            }
+          }
         }
       }
     }
