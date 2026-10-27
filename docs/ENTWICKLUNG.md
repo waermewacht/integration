@@ -179,15 +179,46 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 | `periods.py` | Stände zu Periodenbeginn (Grenzen lokal, gespeichert in UTC), Rückblick als negativer Stand |
 | `backfill.py` | Stunden der Langzeitstatistik → Energie, Stillstand = Strom ohne Wärme in derselben Stunde |
 | `averages.py` | zeitgewichtete Mittel (Spreizung, Vorlauf) |
+| `report.py` | Kennzahlen der Aktion „Bericht“ je Bereich und Monat |
 
-HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speichern), `config_flow.py`, `sensor.py`, `binary_sensor.py`, `diagnostics.py`.
+HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speichern, Reparaturhinweise), `config_flow.py`, `sensor.py`, `binary_sensor.py`, `services.py` (Aktion `report`), `diagnostics.py`. Texte und Icons erzeugt `tools/make_strings.py` (DE/EN aus einer Tabelle; danach `ruff format`).
+
+- **Aktion „Bericht“** (`waermewacht.report`): beliebiger Zeitraum (Vorgabe: laufende Saison bis jetzt), Antwort mit Bereichen `heating`, `dhw`, `heating_dhw` (mit Stillstand), `cooling` und `months`. Stunden vor der ersten vollen Stunde nach der Einrichtung aus den Quell-Zählern (Stillstand stundenweise geschätzt, `estimated_until`), danach aus den eigenen Energie-Sensoren. Nur volle Stunden der Statistik (`data_until`). Ohne Recorder: Fehlermeldung statt 0.
+- **Reparaturhinweise** nach 10 Minuten Laufzeit: `missing_entity` (Quell-Entität fehlt), `energy_unit` (keine Wh/kWh/MWh). Verschwinden, sobald behoben; beim Löschen des Eintrags entfernt.
+- **Zählerschritt:** Ein Zähler, der nie Nachkommastellen zeigte, gilt als ganzzahlig. Arbeitszahlen tragen `counter_step_kwh` und `reliable` (Strom ≥ 20 Schritte, also Rundung ≤ 5 %).
 
 - **Stillstand live:** Strom eines Modus ist Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieses Modus kam noch der Kompressor in diesem Modus lief (`runtime._running`). Ohne Kompressorsignal entscheidet nur die Wärme.
 - **Speichern:** ein `Store` je Eintrag; geschrieben alle 10 Minuten, wenn sich etwas geändert hat, am Ende eines Laufs, um Mitternacht und beim Beenden. Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 - **Rückblick:** nur bei der ersten Einrichtung, aus den Stundenwerten (`change`) der Energie-Entitäten. Die angebrochene Stunde vor der Einrichtung fehlt (bekannte kleine Lücke).
 - **Lücken (HA aus):** Der erste Zählerwert danach bucht den ganzen Zuwachs; ob er Lauf oder Stillstand war, entscheidet die Wärme im selben Zeitraum.
 
-## 8. Offene Fragen
+## 8. Integration Quality Scale (Selbstprüfung, Stand 2026-10-27)
+
+Ziel Bronze. Für Custom-Integrationen vergibt Home Assistant keine Stufe.
+
+| Bronze-Regel | Stand |
+|---|---|
+| action-setup | ✅ Aktion `report` in `async_setup` (`services.py`) |
+| appropriate-polling | ➖ kein Polling – Zustandsänderungen und Minuten-Takt |
+| brands | ⏳ Branding folgt (`brand/`) |
+| common-modules | ✅ `entity.py`, `runtime.py` |
+| config-flow-test-coverage | 🟡 Erkennung, manuell, Fehler, Optionen; Neu konfigurieren fehlt |
+| config-flow | ✅ Abschnitte, `data_description` |
+| dependency-transparency | ✅ keine `requirements` |
+| docs-actions | ✅ README |
+| docs-conditions / docs-triggers | ➖ keine eigenen |
+| docs-high-level-description, -installation-instructions, -removal-instructions | ✅ README |
+| entity-event-setup | ✅ Abo in `async_added_to_hass`, Abmeldung über `async_on_remove` |
+| entity-unique-id | ✅ `<entry_id>_<key>` |
+| has-entity-name | ✅ |
+| runtime-data | ✅ `entry.runtime_data` |
+| test-before-configure | ✅ Einrichtung prüft Modi und Einheiten |
+| test-before-setup | ➖ bewusst nicht: Quell-Entitäten sind beim Start oft noch nicht da; Wärmewacht wartet, Reparaturhinweis nach 10 min |
+| unique-config-entry | ✅ `<vorlage>:<präfix>` bzw. Wärmezähler |
+
+Darüber hinaus: `config-entry-unloading`, `diagnostics`, `entity-translations`, `exception-translations`, `icon-translations`, `reconfiguration-flow`, `repair-issues`, `entity-device-class`.
+
+## 9. Offene Fragen
 
 - **Stillstand:** physikalisch korrekt oder Modellwert? Nur mit externem Zähler am WP-Anschluss klärbar (beim Inhaber keiner vorhanden). Für die Berechnung durch die Abtrennung unkritisch.
 - **HomeCom-Tageswechsel:** Geht die letzte Stunde des Tages verloren, und wann genau springt der Wert? Nach einigen Tagen Verlauf der Modus-Entitäten prüfen (beim Inhaber seit 2026-10-27 aktiviert), dann Fixture.
