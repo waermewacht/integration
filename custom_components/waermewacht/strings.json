@@ -1,0 +1,249 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up a heat pump",
+        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
+        "data": {
+          "name": "Name",
+          "source": "Source"
+        },
+        "data_description": {
+          "name": "Prefix of the entity ids.",
+          "source": "A found heat pump fills in the entities; manual: pick them yourself."
+        }
+      },
+      "entities": {
+        "title": "Entities",
+        "description": "At least one mode needs a heat and an electricity meter. Electricity meters of the compressor without backup heater; the backup heater separately.",
+        "sections": {
+          "heating": {
+            "name": "Heating",
+            "data": {
+              "heat_heating": "Heat heating (meter)",
+              "elec_heating": "Compressor electricity heating",
+              "aux_heating": "Backup heater heating"
+            },
+            "description": "Cumulative meters in Wh/kWh/MWh."
+          },
+          "dhw": {
+            "name": "Hot water",
+            "data": {
+              "heat_dhw": "Heat hot water (meter)",
+              "elec_dhw": "Compressor electricity hot water",
+              "aux_dhw": "Backup heater hot water"
+            }
+          },
+          "cooling": {
+            "name": "Cooling",
+            "data": {
+              "heat_cooling": "Heat removed cooling (meter)",
+              "elec_cooling": "Compressor electricity cooling"
+            }
+          },
+          "operation": {
+            "name": "Operation",
+            "data": {
+              "compressor": "Compressor running",
+              "activity": "Activity",
+              "starts_total": "Compressor starts total",
+              "aux_total": "Backup heater total (only without per mode)"
+            },
+            "description": "For starts, short runs, defrosts and standby."
+          },
+          "measurements": {
+            "name": "Measurements",
+            "data": {
+              "outdoor_temp": "Outdoor temperature",
+              "flow_temp": "Flow temperature",
+              "return_temp": "Return temperature",
+              "flow_rate": "Flow rate"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_mode": "Choose a heat and an electricity meter for at least one mode.",
+      "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
+      "aux_twice": "Backup heater either per mode or as total, not both."
+    },
+    "abort": {
+      "already_configured": "This heat pump is already set up.",
+      "reconfigure_successful": "Entities saved."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Settings",
+        "data": {
+          "min_electricity": "Minimum electricity for a ratio",
+          "short_run_minutes": "Short run below",
+          "critical_run_minutes": "Critical run below",
+          "starts_per_hour": "Conspicuous above starts per hour",
+          "season_start_month": "Season starts in"
+        },
+        "data_description": {
+          "min_electricity": "Below it the ratio is unknown instead of a random value.",
+          "season_start_month": "Applies to new seasons."
+        }
+      }
+    }
+  },
+  "selector": {
+    "source": {
+      "options": {
+        "manual": "Manual"
+      }
+    },
+    "month": {
+      "options": {
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cycling_problem": {
+        "name": "Conspicuous cycling"
+      }
+    },
+    "sensor": {
+      "ratio_heating_today": {
+        "name": "COP heating today"
+      },
+      "ratio_heating_yesterday": {
+        "name": "COP heating yesterday"
+      },
+      "ratio_heating_month": {
+        "name": "COP heating month"
+      },
+      "ratio_heating_season": {
+        "name": "COP heating season"
+      },
+      "ratio_heating_total": {
+        "name": "COP heating total"
+      },
+      "ratio_dhw_today": {
+        "name": "COP hot water today"
+      },
+      "ratio_dhw_yesterday": {
+        "name": "COP hot water yesterday"
+      },
+      "ratio_dhw_month": {
+        "name": "COP hot water month"
+      },
+      "ratio_dhw_season": {
+        "name": "COP hot water season"
+      },
+      "ratio_dhw_total": {
+        "name": "COP hot water total"
+      },
+      "ratio_combined_today": {
+        "name": "COP heating + hot water today"
+      },
+      "ratio_combined_yesterday": {
+        "name": "COP heating + hot water yesterday"
+      },
+      "ratio_combined_month": {
+        "name": "COP heating + hot water month"
+      },
+      "ratio_combined_season": {
+        "name": "COP heating + hot water season"
+      },
+      "ratio_combined_total": {
+        "name": "COP heating + hot water total"
+      },
+      "ratio_cooling_today": {
+        "name": "EER cooling today"
+      },
+      "ratio_cooling_yesterday": {
+        "name": "EER cooling yesterday"
+      },
+      "ratio_cooling_month": {
+        "name": "EER cooling month"
+      },
+      "ratio_cooling_season": {
+        "name": "EER cooling season"
+      },
+      "ratio_cooling_total": {
+        "name": "EER cooling total"
+      },
+      "heat_heating": {
+        "name": "Heat heating"
+      },
+      "heat_dhw": {
+        "name": "Heat hot water"
+      },
+      "heat_cooling": {
+        "name": "Heat removed cooling"
+      },
+      "electricity_heating": {
+        "name": "Electricity heating"
+      },
+      "electricity_dhw": {
+        "name": "Electricity hot water"
+      },
+      "electricity_cooling": {
+        "name": "Electricity cooling"
+      },
+      "standby": {
+        "name": "Standby electricity"
+      },
+      "starts_today": {
+        "name": "Starts today"
+      },
+      "starts_yesterday": {
+        "name": "Starts yesterday"
+      },
+      "starts_total": {
+        "name": "Starts total"
+      },
+      "runtime_today": {
+        "name": "Run time today"
+      },
+      "run_minutes_today": {
+        "name": "Run time per start today"
+      },
+      "run_minutes_week": {
+        "name": "Run time per start 7 days"
+      },
+      "run_minutes_month": {
+        "name": "Run time per start month"
+      },
+      "short_runs_today": {
+        "name": "Short runs today"
+      },
+      "shortest_pause_today": {
+        "name": "Shortest pause today"
+      },
+      "defrosts_today": {
+        "name": "Defrosts today"
+      },
+      "aux_share_month": {
+        "name": "Backup heater share month"
+      },
+      "aux_share_season": {
+        "name": "Backup heater share season"
+      },
+      "spread_today": {
+        "name": "Flow-return spread today"
+      },
+      "flow_temp_today": {
+        "name": "Flow temperature today"
+      }
+    }
+  }
+}

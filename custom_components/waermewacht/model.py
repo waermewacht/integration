@@ -1,0 +1,78 @@
+"""Vendor-neutral signals of a heat pump. Pure Python, no Home Assistant imports."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class Mode(StrEnum):
+    """Operating mode an amount of energy belongs to."""
+
+    HEATING = "heating"
+    DHW = "dhw"
+    COOLING = "cooling"
+
+
+class Activity(StrEnum):
+    """What the heat pump is doing right now."""
+
+    OFF = "off"
+    HEATING = "heating"
+    DHW = "dhw"
+    COOLING = "cooling"
+    DEFROST = "defrost"
+    OTHER = "other"  # pool, alarm, unknown values
+
+    @property
+    def mode(self) -> Mode | None:
+        """The operating mode of this activity, if it is one."""
+        try:
+            return Mode(self.value)
+        except ValueError:
+            return None
+
+
+class Signal(StrEnum):
+    """An input Wärmewacht can read from an entity."""
+
+    # Cumulative energy (kWh after unit conversion).
+    HEAT_HEATING = "heat_heating"
+    HEAT_DHW = "heat_dhw"
+    HEAT_COOLING = "heat_cooling"
+    ELEC_HEATING = "elec_heating"
+    ELEC_DHW = "elec_dhw"
+    ELEC_COOLING = "elec_cooling"
+    AUX_HEATING = "aux_heating"
+    AUX_DHW = "aux_dhw"
+    AUX_TOTAL = "aux_total"
+    # Operation.
+    COMPRESSOR = "compressor"
+    ACTIVITY = "activity"
+    STARTS_TOTAL = "starts_total"
+    # Measurements.
+    OUTDOOR_TEMP = "outdoor_temp"
+    FLOW_TEMP = "flow_temp"
+    RETURN_TEMP = "return_temp"
+    FLOW_RATE = "flow_rate"
+    HEAT_POWER = "heat_power"
+    ELEC_POWER = "elec_power"
+
+
+HEAT_SIGNALS: dict[Mode, Signal] = {
+    Mode.HEATING: Signal.HEAT_HEATING,
+    Mode.DHW: Signal.HEAT_DHW,
+    Mode.COOLING: Signal.HEAT_COOLING,
+}
+ELEC_SIGNALS: dict[Mode, Signal] = {
+    Mode.HEATING: Signal.ELEC_HEATING,
+    Mode.DHW: Signal.ELEC_DHW,
+    Mode.COOLING: Signal.ELEC_COOLING,
+}
+AUX_SIGNALS: dict[Mode, Signal] = {
+    Mode.HEATING: Signal.AUX_HEATING,
+    Mode.DHW: Signal.AUX_DHW,
+}
+ENERGY_SIGNALS: frozenset[Signal] = frozenset(
+    {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
+    | {Signal.AUX_TOTAL}
+)

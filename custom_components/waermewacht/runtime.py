@@ -1,0 +1,485 @@
+"""Runtime of one heat pump: follows the source entities and keeps the books.
+
+All logic lives in the pure modules (counter, runs, cycling, energy, periods,
+backfill); this class feeds them with state changes, a minute tick and the
+recorder statistics, stores their state and notifies the entities.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable
+from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING, Any
+
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.statistics import statistics_during_period
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON
+from homeassistant.core import (
+    CALLBACK_TYPE,
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    State,
+    callback,
+)
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_utc_time_change,
+)
+from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
+
+from .averages import Mean
+from .backfill import HourlyChanges, energy_between
+from .const import (
+    CONF_CRITICAL_RUN,
+    CONF_ENTITIES,
+    CONF_MIN_ELECTRICITY,
+    CONF_SEASON_START,
+    CONF_SHORT_RUN,
+    CONF_STARTS_PER_HOUR,
+    CONF_TEMPLATE,
+    DEFAULT_CRITICAL_RUN_MINUTES,
+    DEFAULT_MIN_ELECTRICITY_KWH,
+    DEFAULT_SEASON_START_MONTH,
+    DEFAULT_SHORT_RUN_MINUTES,
+    DEFAULT_STARTS_PER_HOUR,
+    DOMAIN,
+    HISTORY_DAYS,
+    MAX_POWER_KW,
+    SAVE_INTERVAL_SECONDS,
+    STORAGE_VERSION,
+)
+from .counter import Counter, CounterEvent, to_kwh
+from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
+from .energy import Kind, Totals
+from .model import (
+    AUX_SIGNALS,
+    ELEC_SIGNALS,
+    ENERGY_SIGNALS,
+    HEAT_SIGNALS,
+    Activity,
+    Mode,
+    Signal,
+)
+from .periods import Period, PeriodMarks, local_midnight, period_start
+from .profiles import EMS_ESP, TEMPLATES, Template
+from .runs import Defrost, Run, RunTracker
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
+
+MODE_OF: dict[Signal, Mode] = {
+    **{s: m for m, s in HEAT_SIGNALS.items()},
+    **{s: m for m, s in ELEC_SIGNALS.items()},
+    **{s: m for m, s in AUX_SIGNALS.items()},
+}
+# Critical runs within 24 hours from which cycling counts as conspicuous.
+CRITICAL_RUNS_PER_DAY = 3
+
+
+def _float(state: State | None) -> float | None:
+    if state is None:
+        return None
+    try:
+        return float(state.state)
+    except ValueError:
+        return None
+
+
+class HeatPumpRuntime:
+    """Books energy and runs of one heat pump."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self.hass = hass
+        self.entry = entry
+        self.entities: dict[Signal, str] = {
+            Signal(k): v for k, v in entry.data[CONF_ENTITIES].items() if v
+        }
+        self._signal_of = {v: k for k, v in self.entities.items()}
+        self.template: Template = TEMPLATES.get(
+            entry.data.get(CONF_TEMPLATE) or "", EMS_ESP
+        )
+        options = entry.options
+        self.min_electricity: float = options.get(
+            CONF_MIN_ELECTRICITY, DEFAULT_MIN_ELECTRICITY_KWH
+        )
+        self.short_seconds = 60 * options.get(CONF_SHORT_RUN, DEFAULT_SHORT_RUN_MINUTES)
+        self.critical_seconds = 60 * options.get(
+            CONF_CRITICAL_RUN, DEFAULT_CRITICAL_RUN_MINUTES
+        )
+        self.starts_per_hour: int = options.get(
+            CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR
+        )
+        self.tz = dt_util.get_default_time_zone()
+        self.counters = {
+            s: Counter(max_kw=MAX_POWER_KW)
+            for s in ENERGY_SIGNALS
+            if s in self.entities
+        }
+        self.tracker = RunTracker()
+        self.totals = Totals()
+        # The options form stores the month as text ("7").
+        self.marks = PeriodMarks(
+            self.tz, int(options.get(CONF_SEASON_START, DEFAULT_SEASON_START_MONTH))
+        )
+        self.runs: list[Run] = []
+        self.defrosts: list[Defrost] = []
+        self.own_starts = 0  # observed starts since setup
+        self.spread = Mean()  # flow minus return, compressor heating, today
+        self.flow = Mean()  # flow temperature, compressor heating, today
+        self.since: datetime | None = None  # first setup
+        self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
+        self._flow_temp: float | None = None
+        self._return_temp: float | None = None
+        self._sample_at: datetime | None = None
+        self._sampling = False
+        self._mode_seen: dict[Mode, datetime] = {}
+        self._heat_at: dict[Mode, datetime] = {}
+        self._store: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
+        )
+        self._dirty = False
+        self._saved_at: datetime | None = None
+        self._listeners: list[CALLBACK_TYPE] = []
+        self._unsubscribe: list[CALLBACK_TYPE] = []
+
+    # Lifecycle.
+
+    async def async_start(self) -> None:
+        """Restore or backfill, read current states, start listening."""
+        now = dt_util.utcnow()
+        if data := await self._store.async_load():
+            self._restore(data)
+        else:
+            self.since = now
+            await self._async_backfill(now)
+            self._dirty = True
+        self.marks.rollover(now, self.totals)
+        for entity_id in sorted(self._signal_of):
+            if state := self.hass.states.get(entity_id):
+                self._handle(entity_id, state, now)
+        self._unsubscribe = [
+            async_track_state_change_event(
+                self.hass, sorted(self._signal_of), self._on_state_change
+            ),
+            async_track_utc_time_change(self.hass, self._on_tick, second=0),
+        ]
+        await self.async_save()
+
+    async def async_stop(self) -> None:
+        for unsubscribe in self._unsubscribe:
+            unsubscribe()
+        self._unsubscribe = []
+        await self.async_save()
+
+    async def async_remove(self) -> None:
+        await self._store.async_remove()
+
+    @callback
+    def add_listener(self, listener: CALLBACK_TYPE) -> Callable[[], None]:
+        self._listeners.append(listener)
+        return lambda: self._listeners.remove(listener)
+
+    def _notify(self) -> None:
+        for listener in list(self._listeners):
+            listener()
+
+    # Backfill from the long-term statistics (first setup only).
+
+    async def _async_backfill(self, now: datetime) -> None:
+        hourly: HourlyChanges = {}
+        if "recorder" in self.hass.config.components:
+            try:
+                hourly = await self._async_hourly(now)
+            except Exception:  # never block the setup
+                _LOGGER.exception("Reading the statistics for the backfill failed")
+        self.marks.initialize(now, lambda start: energy_between(hourly, start, now))
+
+    async def _async_hourly(self, now: datetime) -> HourlyChanges:
+        ids = {self.entities[s] for s in self.counters}
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            datetime(2000, 1, 1, tzinfo=dt_util.UTC),
+            now,
+            ids,
+            "hour",
+            {"energy": "kWh"},
+            {"change"},
+        )
+        hourly: dict[Signal, dict[datetime, float]] = {}
+        for signal in self.counters:
+            for row in rows.get(self.entities[signal], []):
+                change = row.get("change")
+                if change is None:
+                    continue
+                start = row["start"]
+                if not isinstance(start, datetime):
+                    start = dt_util.utc_from_timestamp(start)
+                hourly.setdefault(signal, {})[start] = change
+        return hourly
+
+    # State changes.
+
+    @callback
+    def _on_state_change(self, event: Event[EventStateChangedData]) -> None:
+        if (state := event.data["new_state"]) is None:
+            return
+        self._handle(state.entity_id, state, state.last_updated)
+
+    def _handle(self, entity_id: str, state: State, at: datetime) -> None:
+        signal = self._signal_of.get(entity_id)
+        if signal is None:
+            return
+        self._note_mode(at)
+        self._sample(at)
+        if signal in self.counters:
+            self._handle_counter(signal, state, at)
+        elif signal is Signal.COMPRESSOR:
+            on = {STATE_ON: True, STATE_OFF: False}.get(state.state)
+            had_open = self.tracker.open_run is not None
+            run = self.tracker.set_compressor(on, at)
+            if not had_open and self.tracker.open_run and self.tracker.open_run.counted:
+                self.own_starts += 1
+            if run is not None:
+                self.runs.append(run)
+                self.hass.async_create_task(self.async_save())
+                self._notify()
+        elif signal is Signal.ACTIVITY:
+            activity = self.template.parse_activity(state.state)
+            if activity is Activity.OTHER:
+                self._count(f"activity:{state.state}")
+            if (defrost := self.tracker.set_activity(activity, at)) is not None:
+                self.defrosts.append(defrost)
+                self._dirty = True
+                self._notify()
+        elif signal is Signal.FLOW_TEMP:
+            self._flow_temp = _float(state)
+        elif signal is Signal.RETURN_TEMP:
+            self._return_temp = _float(state)
+        self._sampling = self._sample_condition()
+
+    def _handle_counter(self, signal: Signal, state: State, at: datetime) -> None:
+        if (value := _float(state)) is None:
+            return
+        try:
+            kwh = to_kwh(value, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+        except KeyError:
+            self._count(f"unit:{signal}")
+            return
+        counter = self.counters[signal]
+        previous = counter.last_time
+        update = counter.update(kwh, at)
+        if update.event not in (None, CounterEvent.FIRST):
+            self._count(f"{update.event}:{signal}")
+        if update.delta <= 0:
+            return
+        self._book(signal, update.delta, previous, at)
+        self._dirty = True
+
+    def _book(
+        self, signal: Signal, kwh: float, previous: datetime | None, at: datetime
+    ) -> None:
+        if signal is Signal.AUX_TOTAL:
+            self.totals.add(Kind.AUX, self.tracker.mode or Mode.HEATING, kwh)
+            return
+        mode = MODE_OF[signal]
+        if signal in HEAT_SIGNALS.values():
+            self.totals.add(Kind.HEAT, mode, kwh)
+            self._heat_at[mode] = at
+        elif signal in ELEC_SIGNALS.values():
+            running = self._running(mode, previous)
+            self.totals.add(Kind.ELEC if running else Kind.STANDBY, mode, kwh)
+        else:
+            self.totals.add(Kind.AUX, mode, kwh)
+
+    def _running(self, mode: Mode, previous: datetime | None) -> bool:
+        """Whether electricity of `mode` since `previous` came from a run.
+
+        Standby: the mode delivered no heat and (with a compressor state) the
+        compressor did not run in that mode.
+        """
+        if self._heat_moved(mode, previous):
+            return True
+        if Signal.COMPRESSOR not in self.entities:
+            return HEAT_SIGNALS[mode] not in self.entities
+        if not self.tracker.was_running_since(previous):
+            return False
+        if Signal.ACTIVITY not in self.entities:
+            return True
+        seen = self._mode_seen.get(mode)
+        return seen is not None and (previous is None or seen > previous)
+
+    def _heat_moved(self, mode: Mode, previous: datetime | None) -> bool:
+        if (at := self._heat_at.get(mode)) and previous and at > previous:
+            return True
+        # The heat counter may report its increase a moment later.
+        heat_signal = HEAT_SIGNALS[mode]
+        counter = self.counters.get(heat_signal)
+        state = self.hass.states.get(self.entities.get(heat_signal, ""))
+        if counter is None or counter.last_value is None or state is None:
+            return False
+        if (value := _float(state)) is None:
+            return False
+        try:
+            kwh = to_kwh(value, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+        except KeyError:
+            return False
+        return kwh > counter.last_value + 1e-6
+
+    def _note_mode(self, at: datetime) -> None:
+        """Remember until when each mode was active with the compressor on."""
+        if self.tracker.compressor and (mode := self.tracker.mode) is not None:
+            self._mode_seen[mode] = at
+
+    def _sample_condition(self) -> bool:
+        if Signal.COMPRESSOR in self.entities and not self.tracker.compressor:
+            return False
+        if Signal.ACTIVITY in self.entities:
+            return self.tracker.activity is Activity.HEATING
+        return True
+
+    def _sample(self, at: datetime) -> None:
+        """Add the time since the last sample to today's means."""
+        if self._sample_at is not None and self._sampling and at > self._sample_at:
+            seconds = (at - self._sample_at).total_seconds()
+            if self._flow_temp is not None:
+                self.flow.add(self._flow_temp, seconds)
+                if self._return_temp is not None:
+                    self.spread.add(self._flow_temp - self._return_temp, seconds)
+        self._sample_at = at
+
+    def _count(self, key: str) -> None:
+        self.events[key] = self.events.get(key, 0) + 1
+
+    # Minute tick: period boundaries, sensor updates, throttled saving.
+
+    @callback
+    def _on_tick(self, now: datetime) -> None:
+        self._note_mode(now)
+        self._sample(now)
+        self.tracker.tick(now)
+        if self.marks.rollover(now, self.totals):
+            self.spread, self.flow = Mean(), Mean()
+            prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
+            self._dirty = True
+            self.hass.async_create_task(self.async_save())
+        elif self._dirty and (
+            self._saved_at is None
+            or (now - self._saved_at).total_seconds() >= SAVE_INTERVAL_SECONDS
+        ):
+            self.hass.async_create_task(self.async_save())
+        self._notify()
+
+    # Figures for the entities.
+
+    def energy(self, period: Period) -> Totals | None:
+        return self.marks.energy(period, self.totals)
+
+    def _local_day(self, now: datetime, offset: int = 0) -> datetime:
+        today = now.astimezone(self.tz).date()
+        return local_midnight(date.fromordinal(today.toordinal() + offset), self.tz)
+
+    def window(self, name: str, now: datetime) -> tuple[datetime, datetime]:
+        """[start, end) in UTC of today, yesterday, week (7 days) or month."""
+        tomorrow = self._local_day(now, 1)
+        if name == "yesterday":
+            return self._local_day(now, -1), self._local_day(now)
+        if name == "week":
+            return self._local_day(now, -6), tomorrow
+        if name == "month":
+            start = period_start(Period.MONTH, now, self.tz, self.marks.season_month)
+            return start or tomorrow, tomorrow
+        return self._local_day(now), tomorrow
+
+    def cycles(self, name: str, now: datetime | None = None) -> CycleStats:
+        now = now or dt_util.utcnow()
+        start, end = self.window(name, now)
+        return cycle_stats(
+            self.runs,
+            self.tracker.open_run,
+            self.defrosts,
+            self.tracker.open_defrost,
+            start,
+            end,
+            now,
+            short_seconds=self.short_seconds,
+            critical_seconds=self.critical_seconds,
+        )
+
+    def starts_total(self) -> tuple[int | None, str]:
+        """Starts since commissioning (counter of the heat pump) or since setup."""
+        if entity_id := self.entities.get(Signal.STARTS_TOTAL):
+            value = _float(self.hass.states.get(entity_id))
+            return (int(value) if value is not None else None), "heat_pump"
+        return self.own_starts, "since_setup"
+
+    def cycling_problem(self, now: datetime | None = None) -> dict[str, Any]:
+        """Conspicuous cycling within the last 24 hours."""
+        now = now or dt_util.utcnow()
+        start = now - timedelta(days=1)
+        stats = cycle_stats(
+            self.runs,
+            self.tracker.open_run,
+            [],
+            None,
+            start,
+            now + timedelta(seconds=1),
+            now,
+            short_seconds=self.short_seconds,
+            critical_seconds=self.critical_seconds,
+        )
+        per_hour = max_starts_per_hour(self.runs, self.tracker.open_run, start, now)
+        return {
+            "problem": per_hour > self.starts_per_hour
+            or stats.critical_runs >= CRITICAL_RUNS_PER_DAY,
+            "max_starts_per_hour": per_hour,
+            "critical_runs_24h": stats.critical_runs,
+            "short_runs_24h": stats.short_runs,
+        }
+
+    # Storage.
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "saved_at": dt_util.utcnow().isoformat(),
+            "since": self.since.isoformat() if self.since else None,
+            "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
+            "tracker": self.tracker.as_dict(),
+            "totals": self.totals.as_dict(),
+            "marks": self.marks.as_dict(),
+            "runs": [r.as_dict() for r in self.runs],
+            "defrosts": [d.as_dict() for d in self.defrosts],
+            "own_starts": self.own_starts,
+            "spread": self.spread.as_dict(),
+            "flow": self.flow.as_dict(),
+            "events": dict(self.events),
+        }
+
+    def _restore(self, data: dict[str, Any]) -> None:
+        saved_at = (
+            dt_util.parse_datetime(data.get("saved_at") or "") or dt_util.utcnow()
+        )
+        since = data.get("since")
+        self.since = dt_util.parse_datetime(since) if since else None
+        for key, counter in data.get("counters", {}).items():
+            if (signal := Signal(key)) in self.counters:
+                self.counters[signal].restore(counter)
+        self.tracker.restore(data.get("tracker", {}), saved_at)
+        self.totals = Totals.from_dict(data.get("totals"))
+        self.marks.restore(data.get("marks", {}))
+        self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
+        self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
+        self.own_starts = data.get("own_starts", 0)
+        self.spread = Mean.from_dict(data.get("spread"))
+        self.flow = Mean.from_dict(data.get("flow"))
+        self.events = dict(data.get("events", {}))
+
+    async def async_save(self) -> None:
+        self._saved_at = dt_util.utcnow()
+        self._dirty = False
+        await self._store.async_save(self.as_dict())

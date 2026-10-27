@@ -1,0 +1,249 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wärmepumpe einrichten",
+        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
+        "data": {
+          "name": "Name",
+          "source": "Quelle"
+        },
+        "data_description": {
+          "name": "Präfix der Entity-IDs.",
+          "source": "Eine gefundene Wärmepumpe füllt die Entitäten aus; manuell: selbst auswählen."
+        }
+      },
+      "entities": {
+        "title": "Entitäten",
+        "description": "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler. Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.",
+        "sections": {
+          "heating": {
+            "name": "Heizen",
+            "data": {
+              "heat_heating": "Wärme Heizen (Zähler)",
+              "elec_heating": "Strom Kompressor Heizen",
+              "aux_heating": "Strom Heizstab Heizen"
+            },
+            "description": "Fortlaufende Zähler in Wh/kWh/MWh."
+          },
+          "dhw": {
+            "name": "Warmwasser",
+            "data": {
+              "heat_dhw": "Wärme Warmwasser (Zähler)",
+              "elec_dhw": "Strom Kompressor Warmwasser",
+              "aux_dhw": "Strom Heizstab Warmwasser"
+            }
+          },
+          "cooling": {
+            "name": "Kühlen",
+            "data": {
+              "heat_cooling": "Wärme Kühlen (entzogen, Zähler)",
+              "elec_cooling": "Strom Kompressor Kühlen"
+            }
+          },
+          "operation": {
+            "name": "Betrieb",
+            "data": {
+              "compressor": "Kompressor läuft",
+              "activity": "Betriebsart (Aktivität)",
+              "starts_total": "Kompressorstarts gesamt",
+              "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)"
+            },
+            "description": "Für Starts, Kurzläufe, Abtauungen und Stillstand."
+          },
+          "measurements": {
+            "name": "Messwerte",
+            "data": {
+              "outdoor_temp": "Außentemperatur",
+              "flow_temp": "Vorlauftemperatur",
+              "return_temp": "Rücklauftemperatur",
+              "flow_rate": "Durchfluss"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen.",
+      "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
+      "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides."
+    },
+    "abort": {
+      "already_configured": "Diese Wärmepumpe ist bereits eingerichtet.",
+      "reconfigure_successful": "Entitäten gespeichert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Einstellungen",
+        "data": {
+          "min_electricity": "Mindeststrom für eine Arbeitszahl",
+          "short_run_minutes": "Kurzlauf unter",
+          "critical_run_minutes": "Kritischer Lauf unter",
+          "starts_per_hour": "Auffällig ab Starts pro Stunde über",
+          "season_start_month": "Saison beginnt im"
+        },
+        "data_description": {
+          "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
+          "season_start_month": "Gilt für neue Saisons."
+        }
+      }
+    }
+  },
+  "selector": {
+    "source": {
+      "options": {
+        "manual": "Manuell"
+      }
+    },
+    "month": {
+      "options": {
+        "1": "Januar",
+        "2": "Februar",
+        "3": "März",
+        "4": "April",
+        "5": "Mai",
+        "6": "Juni",
+        "7": "Juli",
+        "8": "August",
+        "9": "September",
+        "10": "Oktober",
+        "11": "November",
+        "12": "Dezember"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cycling_problem": {
+        "name": "Auffälliges Takten"
+      }
+    },
+    "sensor": {
+      "ratio_heating_today": {
+        "name": "Arbeitszahl Heizen heute"
+      },
+      "ratio_heating_yesterday": {
+        "name": "Arbeitszahl Heizen gestern"
+      },
+      "ratio_heating_month": {
+        "name": "Arbeitszahl Heizen Monat"
+      },
+      "ratio_heating_season": {
+        "name": "Arbeitszahl Heizen Saison"
+      },
+      "ratio_heating_total": {
+        "name": "Arbeitszahl Heizen gesamt"
+      },
+      "ratio_dhw_today": {
+        "name": "Arbeitszahl Warmwasser heute"
+      },
+      "ratio_dhw_yesterday": {
+        "name": "Arbeitszahl Warmwasser gestern"
+      },
+      "ratio_dhw_month": {
+        "name": "Arbeitszahl Warmwasser Monat"
+      },
+      "ratio_dhw_season": {
+        "name": "Arbeitszahl Warmwasser Saison"
+      },
+      "ratio_dhw_total": {
+        "name": "Arbeitszahl Warmwasser gesamt"
+      },
+      "ratio_combined_today": {
+        "name": "Arbeitszahl Heizen + Warmwasser heute"
+      },
+      "ratio_combined_yesterday": {
+        "name": "Arbeitszahl Heizen + Warmwasser gestern"
+      },
+      "ratio_combined_month": {
+        "name": "Arbeitszahl Heizen + Warmwasser Monat"
+      },
+      "ratio_combined_season": {
+        "name": "Arbeitszahl Heizen + Warmwasser Saison"
+      },
+      "ratio_combined_total": {
+        "name": "Arbeitszahl Heizen + Warmwasser gesamt"
+      },
+      "ratio_cooling_today": {
+        "name": "Leistungszahl Kühlen heute"
+      },
+      "ratio_cooling_yesterday": {
+        "name": "Leistungszahl Kühlen gestern"
+      },
+      "ratio_cooling_month": {
+        "name": "Leistungszahl Kühlen Monat"
+      },
+      "ratio_cooling_season": {
+        "name": "Leistungszahl Kühlen Saison"
+      },
+      "ratio_cooling_total": {
+        "name": "Leistungszahl Kühlen gesamt"
+      },
+      "heat_heating": {
+        "name": "Wärme Heizen"
+      },
+      "heat_dhw": {
+        "name": "Wärme Warmwasser"
+      },
+      "heat_cooling": {
+        "name": "Wärme Kühlen"
+      },
+      "electricity_heating": {
+        "name": "Strom Heizen"
+      },
+      "electricity_dhw": {
+        "name": "Strom Warmwasser"
+      },
+      "electricity_cooling": {
+        "name": "Strom Kühlen"
+      },
+      "standby": {
+        "name": "Strom Stillstand"
+      },
+      "starts_today": {
+        "name": "Starts heute"
+      },
+      "starts_yesterday": {
+        "name": "Starts gestern"
+      },
+      "starts_total": {
+        "name": "Starts gesamt"
+      },
+      "runtime_today": {
+        "name": "Laufzeit heute"
+      },
+      "run_minutes_today": {
+        "name": "Laufzeit pro Start heute"
+      },
+      "run_minutes_week": {
+        "name": "Laufzeit pro Start 7 Tage"
+      },
+      "run_minutes_month": {
+        "name": "Laufzeit pro Start Monat"
+      },
+      "short_runs_today": {
+        "name": "Kurzläufe heute"
+      },
+      "shortest_pause_today": {
+        "name": "Kürzeste Pause heute"
+      },
+      "defrosts_today": {
+        "name": "Abtauungen heute"
+      },
+      "aux_share_month": {
+        "name": "Heizstab-Anteil Monat"
+      },
+      "aux_share_season": {
+        "name": "Heizstab-Anteil Saison"
+      },
+      "spread_today": {
+        "name": "Spreizung heute"
+      },
+      "flow_temp_today": {
+        "name": "Vorlauftemperatur heute"
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "cycling_problem": {
+        "default": "mdi:sine-wave"
+      }
+    },
+    "sensor": {
+      "ratio_heating_today": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ratio_heating_yesterday": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ratio_heating_month": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ratio_heating_season": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ratio_heating_total": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "ratio_dhw_today": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_dhw_yesterday": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_dhw_month": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_dhw_season": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_dhw_total": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_combined_today": {
+        "default": "mdi:heat-pump"
+      },
+      "ratio_combined_yesterday": {
+        "default": "mdi:heat-pump"
+      },
+      "ratio_combined_month": {
+        "default": "mdi:heat-pump"
+      },
+      "ratio_combined_season": {
+        "default": "mdi:heat-pump"
+      },
+      "ratio_combined_total": {
+        "default": "mdi:heat-pump"
+      },
+      "ratio_cooling_today": {
+        "default": "mdi:snowflake"
+      },
+      "ratio_cooling_yesterday": {
+        "default": "mdi:snowflake"
+      },
+      "ratio_cooling_month": {
+        "default": "mdi:snowflake"
+      },
+      "ratio_cooling_season": {
+        "default": "mdi:snowflake"
+      },
+      "ratio_cooling_total": {
+        "default": "mdi:snowflake"
+      },
+      "heat_heating": {
+        "default": "mdi:fire"
+      },
+      "heat_dhw": {
+        "default": "mdi:water-boiler"
+      },
+      "heat_cooling": {
+        "default": "mdi:snowflake-thermometer"
+      },
+      "electricity_heating": {
+        "default": "mdi:lightning-bolt"
+      },
+      "electricity_dhw": {
+        "default": "mdi:lightning-bolt"
+      },
+      "electricity_cooling": {
+        "default": "mdi:lightning-bolt"
+      },
+      "standby": {
+        "default": "mdi:power-sleep"
+      },
+      "starts_today": {
+        "default": "mdi:counter"
+      },
+      "starts_yesterday": {
+        "default": "mdi:counter"
+      },
+      "starts_total": {
+        "default": "mdi:counter"
+      },
+      "runtime_today": {
+        "default": "mdi:timer-outline"
+      },
+      "run_minutes_today": {
+        "default": "mdi:timer-sand"
+      },
+      "run_minutes_week": {
+        "default": "mdi:timer-sand"
+      },
+      "run_minutes_month": {
+        "default": "mdi:timer-sand"
+      },
+      "short_runs_today": {
+        "default": "mdi:timer-alert-outline"
+      },
+      "shortest_pause_today": {
+        "default": "mdi:pause-circle-outline"
+      },
+      "defrosts_today": {
+        "default": "mdi:snowflake-melt"
+      },
+      "aux_share_month": {
+        "default": "mdi:heating-coil"
+      },
+      "aux_share_season": {
+        "default": "mdi:heating-coil"
+      },
+      "spread_today": {
+        "default": "mdi:thermometer-lines"
+      },
+      "flow_temp_today": {
+        "default": "mdi:thermometer-water"
+      }
+    }
+  }
+}

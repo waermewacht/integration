@@ -1,0 +1,72 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke fürs Melden! Mit Diagnose-Datei und Versionen lässt sich das meist schnell eingrenzen.
+        Hinweis: Wärmewacht ist eine Orientierung, keine Fachdiagnose – die Werte stammen aus den Zählern deiner Wärmepumpe.
+  - type: textarea
+    id: description
+    attributes:
+      label: Was ist passiert?
+      description: Was hast du erwartet, was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Wie lässt es sich nachvollziehen?
+      placeholder: |
+        1. Bosch Compress mit EMS-ESP, Vorlage „EMS-ESP“ eingerichtet
+        2. …
+  - type: input
+    id: heat_pump
+    attributes:
+      label: Wärmepumpe und Anbindung
+      placeholder: "Bosch CS6800i, EMS-ESP 3.8.6"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home-Assistant-Version
+      description: Einstellungen → Info
+      placeholder: "2026.10.4"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Wärmewacht-Version
+      description: HACS → Wärmewacht, oder Geräte & Dienste → Wärmewacht
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Betroffen
+      multiple: true
+      options:
+        - Arbeitszahl
+        - Takte / Laufzeiten
+        - Abtauungen
+        - Temperaturen
+        - Einrichtung
+        - weiß nicht
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnose-Datei
+      description: >-
+        Geräte & Dienste → Wärmewacht → ⋮ → „Diagnose herunterladen“ und die Datei
+        hier hineinziehen.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Protokoll
+      description: >-
+        Einstellungen → System → Protokolle, nach „waermewacht“ filtern.
+      render: text
