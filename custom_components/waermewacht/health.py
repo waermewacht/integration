@@ -15,6 +15,10 @@ here, never hidden.
   mean of at least 5 °C in the last 7 full days; on from 2 kWh. The rolling
   window is the hysteresis. Hot water does not count (disinfection may use
   the heater).
+- Backup heater in hot water charges (4.9): share of the backup heater in
+  the electricity of normal charges (without thermal disinfection) in the
+  last 30 days; on above 10 % with at least 10 charges. Disinfection may use
+  the heater, normal charges should not.
 - Outdoor temperature unusable (4.10 c): an hourly minimum equal to the
   maximum for 48 hours in a row (the sensor stands still), or hourly means
   outside -35 … 45 °C in more than 3 hours of the previous day.
@@ -27,6 +31,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from .charges import DisinfectionSplit
 from .curve import OUTDOOR_MAX, OUTDOOR_MIN, DaySample
 from .energy import Kind
 from .model import Mode
@@ -43,6 +48,10 @@ MILD_FROM = 5.0  # °C day mean
 AUX_KWH = 2.0  # in the window
 WINDOW_DAYS = 7
 MIN_MILD_DAYS = 3
+# 4.9, own assumptions.
+AUX_DHW_PERCENT = 10.0
+MIN_CHARGES = 10
+CHARGE_DAYS = 30
 # 4.10 c.
 STUCK_HOURS = 48
 MAX_IMPLAUSIBLE_HOURS = 3
@@ -53,6 +62,7 @@ NO_PREVIOUS = "no_previous_season"
 TOO_FEW_CLASSES = "too_few_classes"
 TOO_FEW_DAYS = "too_few_days"
 TOO_LITTLE_ELECTRICITY = "too_little_electricity"
+TOO_FEW_CHARGES = "too_few_charges"
 NOT_ANALYSED = "not_analysed_yet"
 RESTARTED = "comparison_restarted"
 
@@ -211,6 +221,25 @@ def aux_mild_weather(
     if len(heating_days) < MIN_MILD_DAYS:
         return Finding(None, TOO_FEW_DAYS, evidence)
     return Finding(False, None, evidence)
+
+
+def aux_dhw_charges(
+    split: DisinfectionSplit, *, threshold: float = AUX_DHW_PERCENT
+) -> Finding:
+    """Backup heater share of normal hot water charges (`split` = the window)."""
+    normal = split.normal
+    share = normal.aux_share
+    evidence: dict[str, Any] = {
+        "charges": normal.count,
+        "aux_share": None if share is None else round(share, 1),
+        "aux_kwh": round(normal.aux_kwh, 2),
+        "disinfections": split.disinfection.count,
+        "aux_kwh_disinfections": round(split.disinfection.aux_kwh, 2),
+        "threshold_percent": threshold,
+    }
+    if normal.count < MIN_CHARGES or share is None:
+        return Finding(None, TOO_FEW_CHARGES, evidence)
+    return Finding(share > threshold, None, evidence)
 
 
 def window_days(today: date, length: int = WINDOW_DAYS) -> tuple[date, date]:

@@ -66,6 +66,7 @@ def test_template_finds_every_signal() -> None:
         Signal.FLOW_TEMP: s + "flow_in_temperature",
         Signal.RETURN_TEMP: s + "flow_out_temperature",  # not _target
         Signal.FLOW_RATE: s + "heat_amount_flow_rate",  # not heat_source_
+        Signal.DHW_TEMP: s + "dhw_temperature",
         Signal.HEAT_POWER: s + "current_heat_output",
         Signal.ELEC_POWER: s + "current_power_consumption",
     }

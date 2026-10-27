@@ -40,6 +40,7 @@
     {"entity_id": "sensor.boiler_outdoortemp", "unique_id": "boiler_outdoortemp", "state": "5.5", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
     {"entity_id": "sensor.boiler_hptc0", "unique_id": "boiler_hptc0", "state": "24.0", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
     {"entity_id": "sensor.boiler_hptc1", "unique_id": "boiler_hptc1", "state": "28.5", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
+    {"entity_id": "sensor.boiler_dhw_curtemp", "unique_id": "boiler_dhw_curtemp", "state": "47.5", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
     {"entity_id": "sensor.boiler_hptc3", "unique_id": "boiler_hptc3", "state": "28.0", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
     {"entity_id": "sensor.boiler_curflowtemp", "unique_id": "boiler_curflowtemp", "state": "27.0", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}},
     {"entity_id": "sensor.boiler_pc0flow", "unique_id": "boiler_pc0flow", "state": "900", "attributes": {"unit_of_measurement": "L/h", "device_class": "volume_flow_rate", "state_class": "measurement"}},

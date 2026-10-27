@@ -91,6 +91,7 @@ STIEBEL_ISG = EntryIdTemplate(
         Signal.FLOW_TEMP: ((_S, "flow_temperature_wp"), (_S, "flow_temperature")),
         Signal.RETURN_TEMP: ((_S, "return_temperature"),),
         Signal.FLOW_RATE: ((_S, "volume_stream"),),
+        Signal.DHW_TEMP: ((_S, "actual_temperature_water"),),
         # WPMsystem only: inverter input power of compressor 1 (kW).
         Signal.ELEC_POWER: ((_S, "current_power_consumption"),),
         # Operating status bits (see ACTIVITY_FLAGS below).

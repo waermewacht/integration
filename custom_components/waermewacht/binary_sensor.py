@@ -47,6 +47,13 @@ async def async_setup_entry(
         entities.append(HealthProblem(entry, "efficiency_drop"))
         if _aux(runtime):
             entities.append(HealthProblem(entry, "aux_mild_weather"))
+    # Normal and disinfection charges need the storage temperature.
+    if (
+        runtime.has_charges
+        and Signal.DHW_TEMP in runtime.entities
+        and any(s in runtime.entities for s in (Signal.AUX_DHW, Signal.AUX_TOTAL))
+    ):
+        entities.append(HealthProblem(entry, "aux_dhw_charges"))
     async_add_entities(entities)
 
 

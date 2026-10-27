@@ -31,6 +31,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry
+from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_with_gas
 from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
@@ -437,11 +438,77 @@ ANALYSIS = [
     ),
 ]
 
+
+def _last_charge(runtime: HeatPumpRuntime) -> Charge | None:
+    return runtime.charges[-1] if runtime.charges else None
+
+
+def _round(value: float | None, digits: int = 2) -> float | None:
+    return None if value is None else round(value, digits)
+
+
+def _last_charge_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    if (charge := _last_charge(runtime)) is None:
+        return {}
+    return {
+        "start": charge.start.isoformat(),
+        "minutes": round(charge.seconds(charge.end or charge.start) / 60),
+        "heat_kwh": round(charge.heat_kwh, 2),
+        "electricity_kwh": round(charge.electricity_kwh, 2),
+        "aux_kwh": round(charge.aux_kwh, 2),
+        "start_temp": charge.start_dhw_temp,
+        "max_temp": charge.max_dhw_temp,
+        "disinfection": is_disinfection(charge, runtime.disinfection_temp),
+        "uncertain": charge.uncertain,
+    }
+
+
+def _charges_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    split = runtime.charge_split(dt_util.utcnow())
+    normal = split.normal
+    return {
+        "charges": normal.count,
+        "uncertain": normal.uncertain,
+        "mean_minutes": _round(normal.mean_minutes, 0),
+        "mean_heat_kwh": _round(normal.mean_heat_kwh),
+        "mean_lift": _round(normal.mean_lift, 1),
+        "aux_share": _round(normal.aux_share, 1),
+        "disinfections": split.disinfection.count,
+    }
+
+
+HAS_CHARGES: Needs = lambda r: r.has_charges  # noqa: E731
+DHW = [
+    HeatPumpSensorDescription(
+        key="ratio_dhw_last_charge",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value=lambda r: _round(charge_ratio(c) if (c := _last_charge(r)) else None),
+        needs=HAS_CHARGES,
+        attributes=_last_charge_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="ratio_dhw_charges_30d",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value=lambda r: _round(r.charge_split(dt_util.utcnow()).normal.ratio),
+        needs=HAS_CHARGES,
+        attributes=_charges_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="last_disinfection",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value=lambda r: r.last_disinfection,
+        needs=_has(Signal.DHW_TEMP),
+    ),
+]
+
 DESCRIPTIONS: list[HeatPumpSensorDescription] = [
     *RATIOS,
     *ENERGY,
     *CYCLING,
     *DIAGNOSIS,
+    *DHW,
     *COSTS,
     *ANALYSIS,
 ]

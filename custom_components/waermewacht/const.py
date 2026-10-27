@@ -24,6 +24,7 @@ CONF_SEASON_START: Final = "season_start_month"
 # Health check (docs/GESUNDHEITSCHECK.md), own assumptions.
 CONF_AUX_MILD_FROM: Final = "aux_mild_from"  # °C day mean
 CONF_EFFICIENCY_DROP: Final = "efficiency_drop_percent"
+CONF_DISINFECTION_TEMP: Final = "disinfection_temp"  # °C storage, DVGW W 551
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
 # EUR per year, only for a separate heat pump meter (heat pump tariff).

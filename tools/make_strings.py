@@ -125,6 +125,21 @@ SENSORS = {
         "Vorlauftemperatur heute",
         "mdi:thermometer-water",
     ),
+    "ratio_dhw_last_charge": (
+        "COP hot water last charge",
+        "AZ Warmwasser letzte Ladung",
+        "mdi:water-boiler",
+    ),
+    "ratio_dhw_charges_30d": (
+        "COP hot water charges 30 days",
+        "AZ Warmwasser-Ladungen 30 Tage",
+        "mdi:water-boiler",
+    ),
+    "last_disinfection": (
+        "Last thermal disinfection",
+        "Letzte thermische Desinfektion",
+        "mdi:bacteria-outline",
+    ),
 }
 BINARY = {
     "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave"),
@@ -137,6 +152,11 @@ BINARY = {
         "Backup heater on mild days",
         "Heizstab bei milder Witterung",
         "mdi:heating-coil",
+    ),
+    "aux_dhw_charges": (
+        "Backup heater in hot water charges",
+        "Heizstab bei Warmwasserladungen",
+        "mdi:water-boiler-alert",
     ),
 }
 BUTTONS = {
@@ -170,6 +190,7 @@ FIELDS = {
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
+    "dhw_temp": ("Hot water temperature", "Warmwasser-Temperatur"),
     "defrost_flag": ("Defrost running (on/off)", "Abtauen läuft (an/aus)"),
     "dhw_flag": ("Hot water running (on/off)", "Warmwasser läuft (an/aus)"),
     "cooling_flag": ("Cooling running (on/off)", "Kühlen läuft (an/aus)"),
@@ -185,7 +206,11 @@ SECTIONS = {
         ("heat_heating", "elec_heating", "aux_heating"),
         ("Cumulative meters in Wh/kWh/MWh.", "Fortlaufende Zähler in Wh/kWh/MWh."),
     ),
-    "dhw": (("Hot water", "Warmwasser"), ("heat_dhw", "elec_dhw", "aux_dhw"), None),
+    "dhw": (
+        ("Hot water", "Warmwasser"),
+        ("heat_dhw", "elec_dhw", "aux_dhw", "dhw_temp"),
+        None,
+    ),
     "cooling": (("Cooling", "Kühlen"), ("heat_cooling", "elec_cooling"), None),
     "operation": (
         ("Operation", "Betrieb"),
@@ -360,6 +385,9 @@ def build(lang: int) -> dict:
                         "efficiency_drop_percent": t(
                             ("Efficiency dropped from", "Effizienz gesunken ab")
                         ),
+                        "disinfection_temp": t(
+                            ("Thermal disinfection from", "Thermische Desinfektion ab")
+                        ),
                     },
                     "data_description": {
                         "min_electricity": t(
@@ -384,6 +412,12 @@ def build(lang: int) -> dict:
                             (
                                 "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
                                 "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
+                            )
+                        ),
+                        "disinfection_temp": t(
+                            (
+                                "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+                                "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
                             )
                         ),
                     },

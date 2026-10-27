@@ -31,7 +31,8 @@
             "data": {
               "heat_dhw": "Heat hot water (meter)",
               "elec_dhw": "Compressor electricity hot water",
-              "aux_dhw": "Backup heater hot water"
+              "aux_dhw": "Backup heater hot water",
+              "dhw_temp": "Hot water temperature"
             }
           },
           "cooling": {
@@ -95,13 +96,15 @@
           "starts_per_hour": "Conspicuous above starts per hour",
           "season_start_month": "Season starts in",
           "aux_mild_from": "Backup heater: mild weather from",
-          "efficiency_drop_percent": "Efficiency dropped from"
+          "efficiency_drop_percent": "Efficiency dropped from",
+          "disinfection_temp": "Thermal disinfection from"
         },
         "data_description": {
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
           "season_start_month": "The current season is recomputed from the statistics.",
           "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
-          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower."
+          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower)."
         },
         "sections": {
           "costs": {
@@ -172,6 +175,9 @@
       },
       "aux_mild_weather": {
         "name": "Backup heater on mild days"
+      },
+      "aux_dhw_charges": {
+        "name": "Backup heater in hot water charges"
       }
     },
     "button": {
@@ -323,6 +329,15 @@
       },
       "flow_temp_today": {
         "name": "Flow temperature today"
+      },
+      "ratio_dhw_last_charge": {
+        "name": "COP hot water last charge"
+      },
+      "ratio_dhw_charges_30d": {
+        "name": "COP hot water charges 30 days"
+      },
+      "last_disinfection": {
+        "name": "Last thermal disinfection"
       }
     }
   },

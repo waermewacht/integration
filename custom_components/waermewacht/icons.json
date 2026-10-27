@@ -9,6 +9,9 @@
       },
       "aux_mild_weather": {
         "default": "mdi:heating-coil"
+      },
+      "aux_dhw_charges": {
+        "default": "mdi:water-boiler-alert"
       }
     },
     "button": {
@@ -160,6 +163,15 @@
       },
       "flow_temp_today": {
         "default": "mdi:thermometer-water"
+      },
+      "ratio_dhw_last_charge": {
+        "default": "mdi:water-boiler"
+      },
+      "ratio_dhw_charges_30d": {
+        "default": "mdi:water-boiler"
+      },
+      "last_disinfection": {
+        "default": "mdi:bacteria-outline"
       }
     }
   },

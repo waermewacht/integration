@@ -24,10 +24,12 @@ from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
+from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_AUX_MILD_FROM,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
+    CONF_DISINFECTION_TEMP,
     CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
@@ -59,7 +61,7 @@ from .templates import TEMPLATES
 # Form sections and the signals in them.
 SECTIONS: dict[str, tuple[Signal, ...]] = {
     "heating": (Signal.HEAT_HEATING, Signal.ELEC_HEATING, Signal.AUX_HEATING),
-    "dhw": (Signal.HEAT_DHW, Signal.ELEC_DHW, Signal.AUX_DHW),
+    "dhw": (Signal.HEAT_DHW, Signal.ELEC_DHW, Signal.AUX_DHW, Signal.DHW_TEMP),
     "cooling": (Signal.HEAT_COOLING, Signal.ELEC_COOLING),
     "operation": (
         Signal.COMPRESSOR,
@@ -108,7 +110,12 @@ def _selector(signal: Signal) -> selector.EntitySelector:
         filters = selector.EntityFilterSelectorConfig(
             domain=["binary_sensor", "sensor"]
         )
-    elif signal in (Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP, Signal.RETURN_TEMP):
+    elif signal in (
+        Signal.OUTDOOR_TEMP,
+        Signal.FLOW_TEMP,
+        Signal.RETURN_TEMP,
+        Signal.DHW_TEMP,
+    ):
         filters = selector.EntityFilterSelectorConfig(
             domain="sensor", device_class="temperature"
         )
@@ -409,6 +416,10 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     CONF_EFFICIENCY_DROP,
                     default=options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT),
                 ): number(5, 50, 1, "%"),
+                vol.Required(
+                    CONF_DISINFECTION_TEMP,
+                    default=options.get(CONF_DISINFECTION_TEMP, DISINFECTION_TEMP_C),
+                ): number(45, 80, 1, "°C"),
                 vol.Required(
                     CONF_SEASON_START,
                     default=str(

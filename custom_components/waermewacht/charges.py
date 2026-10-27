@@ -23,22 +23,30 @@ Rules:
   The storage sensor of a heat pump is not the outlet, so the threshold is a
   parameter. Disinfection charges are where backup heater energy for hot water
   usually goes, so its share is split between them and normal charges.
+- ChargeTracker forms charges from the activity: a charge starts with hot
+  water and ends with any other known activity; a defrost does not end it.
+  Counters report a moment late, so energy of hot water within LATE after
+  the end still belongs to the charge, which is handed out only then.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
-from .energy import ratio
+from .energy import Kind, ratio
+from .model import Activity
 
 # Smallest electricity of a single charge (or window) with a ratio (kWh).
 MIN_CHARGE_ELECTRICITY_KWH = 0.2
 # DVGW W 551 (2004): >= 60 degC at the water heater outlet against legionella.
 DISINFECTION_TEMP_C = 60.0
 SECONDS_PER_DAY = 86400.0
+# Energy of hot water up to this long after the end still belongs to the
+# charge (counters report late); a restart longer than this leaves a gap.
+LATE = timedelta(minutes=5)
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -280,3 +288,74 @@ def disinfection_split(
 def prune(charges: list[Charge], keep_from: datetime) -> None:
     """Drop charges that ended before `keep_from` (in place)."""
     charges[:] = [c for c in charges if c.end is None or c.end >= keep_from]
+
+
+class ChargeTracker:
+    """Charges from the activity, the hot water energy and temperature."""
+
+    def __init__(self) -> None:
+        self.open: Charge | None = None  # running
+        self.closing: Charge | None = None  # ended, still taking late energy
+
+    def set_activity(
+        self, activity: Activity | None, at: datetime, temp: float | None
+    ) -> Charge | None:
+        """Note the activity; returns a charge that is finished now."""
+        if activity is Activity.DHW:
+            if self.open is not None:
+                return None
+            finished, self.closing = self.closing, None
+            self.open = Charge(start=at, start_dhw_temp=temp, max_dhw_temp=temp)
+            return finished
+        if self.open is None or activity is Activity.DEFROST:
+            return None
+        if activity is None:  # unknown: the charge may have ended unseen
+            self.open.uncertain = True
+            return None
+        self.open.end = at
+        self.closing, self.open = self.open, None
+        return None
+
+    def add(self, kind: Kind, kwh: float, at: datetime) -> None:
+        """Hot water energy (heat, compressor or backup heater electricity)."""
+        charge = self.open
+        closing = self.closing
+        if charge is None and closing and closing.end and at <= closing.end + LATE:
+            charge = closing
+        if charge is None:
+            return
+        if kind is Kind.HEAT:
+            charge.heat_kwh += kwh
+        elif kind is Kind.ELEC:
+            charge.electricity_kwh += kwh
+        elif kind is Kind.AUX:
+            charge.aux_kwh += kwh
+
+    def temperature(self, value: float | None) -> None:
+        if (charge := self.open) is None or value is None:
+            return
+        if charge.start_dhw_temp is None:
+            charge.start_dhw_temp = value
+        if charge.max_dhw_temp is None or value > charge.max_dhw_temp:
+            charge.max_dhw_temp = value
+
+    def tick(self, now: datetime) -> Charge | None:
+        """The ended charge once its late energy is in."""
+        if self.closing and self.closing.end and now >= self.closing.end + LATE:
+            finished, self.closing = self.closing, None
+            return finished
+        return None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "open": self.open.as_dict() if self.open else None,
+            "closing": self.closing.as_dict() if self.closing else None,
+        }
+
+    def restore(self, data: dict[str, Any], saved_at: datetime, now: datetime) -> None:
+        if data.get("open"):
+            self.open = Charge.from_dict(data["open"])
+            if now - saved_at > LATE:
+                self.open.uncertain = True
+        if data.get("closing"):
+            self.closing = Charge.from_dict(data["closing"])

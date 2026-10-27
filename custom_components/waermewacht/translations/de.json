@@ -31,7 +31,8 @@
             "data": {
               "heat_dhw": "Wärme Warmwasser (Zähler)",
               "elec_dhw": "Strom Kompressor Warmwasser",
-              "aux_dhw": "Strom Heizstab Warmwasser"
+              "aux_dhw": "Strom Heizstab Warmwasser",
+              "dhw_temp": "Warmwasser-Temperatur"
             }
           },
           "cooling": {
@@ -95,13 +96,15 @@
           "starts_per_hour": "Auffällig ab Starts pro Stunde über",
           "season_start_month": "Saison beginnt im",
           "aux_mild_from": "Heizstab: milde Witterung ab",
-          "efficiency_drop_percent": "Effizienz gesunken ab"
+          "efficiency_drop_percent": "Effizienz gesunken ab",
+          "disinfection_temp": "Thermische Desinfektion ab"
         },
         "data_description": {
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
           "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
           "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
-          "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter."
+          "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
+          "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger)."
         },
         "sections": {
           "costs": {
@@ -172,6 +175,9 @@
       },
       "aux_mild_weather": {
         "name": "Heizstab bei milder Witterung"
+      },
+      "aux_dhw_charges": {
+        "name": "Heizstab bei Warmwasserladungen"
       }
     },
     "button": {
@@ -323,6 +329,15 @@
       },
       "flow_temp_today": {
         "name": "Vorlauftemperatur heute"
+      },
+      "ratio_dhw_last_charge": {
+        "name": "AZ Warmwasser letzte Ladung"
+      },
+      "ratio_dhw_charges_30d": {
+        "name": "AZ Warmwasser-Ladungen 30 Tage"
+      },
+      "last_disinfection": {
+        "name": "Letzte thermische Desinfektion"
       }
     }
   },

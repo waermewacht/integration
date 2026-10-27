@@ -98,6 +98,7 @@ LUXTRONIK = SuffixTemplate(
         Signal.ACTIVITY: ((_S, "status"),),
         Signal.STARTS_TOTAL: ((_S, "compressor1_impulses"),),
         Signal.OUTDOOR_TEMP: ((_S, "outdoor_temperature"),),
+        Signal.DHW_TEMP: ((_S, "dhw_temperature"),),
         # Luxtronik calls the return "flow out" (TRL), the flow "flow in" (TVL).
         Signal.FLOW_TEMP: ((_S, "flow_in_temperature"),),
         Signal.RETURN_TEMP: ((_S, "flow_out_temperature"),),

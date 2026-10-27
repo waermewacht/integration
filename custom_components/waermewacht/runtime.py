@@ -49,10 +49,19 @@ from homeassistant.util import dt as dt_util
 from .activity import combine
 from .averages import Mean
 from .backfill import HourlyChanges, by_hour, energy_between
+from .charges import (
+    DISINFECTION_TEMP_C,
+    Charge,
+    ChargeTracker,
+    DisinfectionSplit,
+    disinfection_split,
+)
+from .charges import prune as prune_charges
 from .const import (
     CONF_AUX_MILD_FROM,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
+    CONF_DISINFECTION_TEMP,
     CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
@@ -82,12 +91,14 @@ from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
 from .energy import Kind, Totals
 from .health import (
     AUX_KWH,
+    CHARGE_DAYS,
     DROP_PERCENT,
     MILD_FROM,
     NO_AUX,
     NOT_ANALYSED,
     RESTARTED,
     Finding,
+    aux_dhw_charges,
     aux_mild_weather,
     efficiency_drop,
     outdoor_problem,
@@ -131,6 +142,9 @@ MODE_OF: dict[Signal, Mode] = {
 CRITICAL_RUNS_PER_DAY = 3
 # Start of the statistics query for "everything".
 EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
+# Below the disinfection temperature by this much, the next rise counts
+# as a new disinfection.
+DISINFECTION_RELEASE_K = 5.0
 # A ratio is reliable when one counter step is at most 5 % of the electricity.
 RELIABLE_STEPS = 20
 # Entities may appear late after a restart; issues only after this grace time.
@@ -220,6 +234,7 @@ class HeatPumpRuntime:
         self.findings: dict[str, Finding] = {
             "efficiency_drop": Finding(None, NOT_ANALYSED),
             "aux_mild_weather": Finding(None, NOT_ANALYSED),
+            "aux_dhw_charges": Finding(None, NOT_ANALYSED),
         }
         self._efficiency_on = False
         self.comparison_reset_at: datetime | None = None
@@ -228,6 +243,17 @@ class HeatPumpRuntime:
         self._last_tick: datetime | None = None
         self.outdoor = Mean()  # outdoor temperature today, for the diary
         self.diary: list[dict[str, Any]] = []
+        # Hot water charges (charges.py): finished ones in the history file,
+        # the running one in the live file; disinfection from the storage
+        # temperature alone.
+        self.disinfection_temp: float = options.get(
+            CONF_DISINFECTION_TEMP, DISINFECTION_TEMP_C
+        )
+        self.charges: list[Charge] = []
+        self.charge_tracker = ChargeTracker()
+        self.last_disinfection: datetime | None = None
+        self._hot = False
+        self._dhw_temp: float | None = None
         # Performance curves (current and previous season) and heat load of
         # the last complete season; recomputed daily, kept in memory only.
         self.curves: dict[str, list[dict[str, Any]]] = {}
@@ -316,6 +342,8 @@ class HeatPumpRuntime:
                 self._restore_history(data)
             self._history_dirty = True
         self.marks.rollover(now, self.totals)
+        if self.has_charges:
+            self._update_charge_finding(now)
         for entity_id in sorted(self._signal_of):
             if state := self.hass.states.get(entity_id):
                 # A counter value is dated by its own change: a cloud day value
@@ -969,6 +997,51 @@ class HeatPumpRuntime:
         """Whether an activity is known (entity or flags)."""
         return bool(self._activity_configured)
 
+    @property
+    def has_charges(self) -> bool:
+        """Hot water charges need the activity and live hot water counters
+        (day values arrive too late to belong to a charge)."""
+        return (
+            self.has_activity
+            and not self.template.day_values
+            and HEAT_SIGNALS[Mode.DHW] in self.entities
+            and ELEC_SIGNALS[Mode.DHW] in self.entities
+        )
+
+    def charge_split(self, now: datetime) -> DisinfectionSplit:
+        """Normal and disinfection charges of the last CHARGE_DAYS days."""
+        return disinfection_split(
+            self.charges,
+            now - timedelta(days=CHARGE_DAYS),
+            now + timedelta(seconds=1),
+            threshold=self.disinfection_temp,
+            min_electricity=self.min_electricity,
+        )
+
+    def _finish_charge(self, charge: Charge | None) -> None:
+        if charge is None:
+            return
+        self.charges.append(charge)
+        self._update_charge_finding(charge.end or dt_util.utcnow())
+        self._dirty = self._history_dirty = True
+        self._notify()
+
+    def _update_charge_finding(self, now: datetime) -> None:
+        self.findings["aux_dhw_charges"] = aux_dhw_charges(self.charge_split(now))
+
+    def _note_hot(self, at: datetime) -> None:
+        """A thermal disinfection starts when the storage reaches the
+        threshold; it may start again after cooling down by the release."""
+        if (value := self._dhw_temp) is None:
+            return
+        if value >= self.disinfection_temp and not self._hot:
+            self._hot = True
+            self.last_disinfection = at
+            self._dirty = True
+        elif value < self.disinfection_temp - DISINFECTION_RELEASE_K and self._hot:
+            self._hot = False
+            self._dirty = True
+
     def _activity_of(self, states: dict[Signal, str | None]) -> Activity | None:
         """Activity from raw states of the activity entity and its parts."""
         base = (
@@ -1018,10 +1091,19 @@ class HeatPumpRuntime:
                 self.defrosts.append(defrost)
                 self._dirty = self._history_dirty = True
                 self._notify()
+            if self.has_charges:
+                self._finish_charge(
+                    self.charge_tracker.set_activity(activity, at, self._dhw_temp)
+                )
+                self._dirty = True
         elif signal is Signal.FLOW_TEMP:
             self._flow_temp = _float(state)
         elif signal is Signal.RETURN_TEMP:
             self._return_temp = _float(state)
+        elif signal is Signal.DHW_TEMP:
+            self._dhw_temp = _float(state)
+            self.charge_tracker.temperature(self._dhw_temp)
+            self._note_hot(at)
         self._sampling = self._sample_condition()
 
     def _handle_counter(self, signal: Signal, state: State, at: datetime) -> None:
@@ -1053,20 +1135,23 @@ class HeatPumpRuntime:
         self, signal: Signal, kwh: float, previous: datetime | None, at: datetime
     ) -> None:
         if signal is Signal.AUX_TOTAL:
-            self.totals.add(Kind.AUX, self.tracker.mode or Mode.HEATING, kwh)
-            return
-        mode = MODE_OF[signal]
-        if signal in HEAT_SIGNALS.values():
-            self.totals.add(Kind.HEAT, mode, kwh)
-            self._heat_at[mode] = at
-        elif signal in ELEC_SIGNALS.values():
-            if self.template.day_values:
-                self._pending.append((mode, kwh, at))
-                return
-            running = self._running(mode, previous)
-            self.totals.add(Kind.ELEC if running else Kind.STANDBY, mode, kwh)
+            mode = self.tracker.mode or Mode.HEATING
+            kind = Kind.AUX
         else:
-            self.totals.add(Kind.AUX, mode, kwh)
+            mode = MODE_OF[signal]
+            if signal in HEAT_SIGNALS.values():
+                kind = Kind.HEAT
+                self._heat_at[mode] = at
+            elif signal in ELEC_SIGNALS.values():
+                if self.template.day_values:
+                    self._pending.append((mode, kwh, at))
+                    return
+                kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
+            else:
+                kind = Kind.AUX
+        self.totals.add(kind, mode, kwh)
+        if mode is Mode.DHW:
+            self.charge_tracker.add(kind, kwh, at)
 
     def _resolve_pending(self, now: datetime, final: bool = False) -> None:
         """Book waiting electricity of day values: standby when the same
@@ -1148,6 +1233,7 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
+        self._finish_charge(self.charge_tracker.tick(now))
         # Before a period boundary, book all waiting electricity in the period
         # its heat went to.
         self._resolve_pending(now, final=self.marks.due(now))
@@ -1178,6 +1264,9 @@ class HeatPumpRuntime:
                 self._write_diary(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
+            prune_charges(self.charges, now - timedelta(days=HISTORY_DAYS))
+            if self.has_charges:
+                self._update_charge_finding(now)
             self._dirty = self._history_dirty = True
             self.hass.async_create_task(self.async_save())
         elif self._dirty and (
@@ -1328,6 +1417,9 @@ class HeatPumpRuntime:
             "comparison_reset_at": _iso(self.comparison_reset_at),
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
             "outdoor": self.outdoor.as_dict(),
+            "charge": self.charge_tracker.as_dict(),
+            "last_disinfection": _iso(self.last_disinfection),
+            "hot": self._hot,
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1364,18 +1456,24 @@ class HeatPumpRuntime:
             k: float(v) for k, v in data.get("stuck_seconds", {}).items()
         }
         self.outdoor = Mean.from_dict(data.get("outdoor"))
+        self.charge_tracker.restore(data.get("charge", {}), saved_at, dt_util.utcnow())
+        last = data.get("last_disinfection")
+        self.last_disinfection = datetime.fromisoformat(last) if last else None
+        self._hot = data.get("hot", False)
 
     def history_dict(self) -> dict[str, Any]:
         return {
             "runs": [r.as_dict() for r in self.runs],
             "defrosts": [d.as_dict() for d in self.defrosts],
             "diary": self.diary,
+            "charges": [c.as_dict() for c in self.charges],
         }
 
     def _restore_history(self, data: dict[str, Any]) -> None:
         self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
         self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
         self.diary = list(data.get("diary", []))
+        self.charges = [Charge.from_dict(c) for c in data.get("charges", [])]
 
     async def async_save(self) -> None:
         self._saved_at = dt_util.utcnow()

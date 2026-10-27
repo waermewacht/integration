@@ -208,6 +208,8 @@ EMS_ESP = Template(
         Signal.FLOW_TEMP: ((_S, "hptc1"),),
         Signal.RETURN_TEMP: ((_S, "hptc0"),),
         Signal.FLOW_RATE: ((_S, "pc0flow"),),
+        # Storage temperature, 3.7+ name first.
+        Signal.DHW_TEMP: ((_S, "dhw_curtemp"), (_S, "wwcurtemp")),
         Signal.HEAT_POWER: ((_S, "hppower"),),
         Signal.ELEC_POWER: ((_S, "hpcurrpower"),),
     },
@@ -258,6 +260,7 @@ BOSCH_HOMECOM = Template(
         Signal.OUTDOOR_TEMP: ((_S, "outdoor_temp"),),
         Signal.FLOW_TEMP: ((_S, "supply_temperature"),),
         Signal.RETURN_TEMP: ((_S, "return_temperature"),),
+        Signal.DHW_TEMP: ((_S, "dhw1"),),
         Signal.ELEC_POWER: ((_S, "local_compressor_power"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),

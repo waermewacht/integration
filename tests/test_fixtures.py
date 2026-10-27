@@ -48,6 +48,7 @@ def test_template_finds_every_signal() -> None:
         Signal.FLOW_TEMP: "sensor.boiler_hptc1",
         Signal.RETURN_TEMP: "sensor.boiler_hptc0",
         Signal.FLOW_RATE: "sensor.boiler_pc0flow",
+        Signal.DHW_TEMP: "sensor.boiler_dhw_curtemp",
         Signal.HEAT_POWER: "sensor.boiler_hppower",
         Signal.ELEC_POWER: "sensor.boiler_hpcurrpower",
     }
@@ -110,6 +111,7 @@ def test_homecom_template_finds_every_signal() -> None:
         Signal.OUTDOOR_TEMP: base + "outdoor_temp_sensor",
         Signal.FLOW_TEMP: base + "vorlauftemperatur",
         Signal.RETURN_TEMP: base + "rucklauftemperatur",
+        Signal.DHW_TEMP: base + "dhw1_temperatur",
         Signal.ELEC_POWER: base + "kompressorleistung",
     }
     # No activity: no defrosts, no mode of a run. Volume flow left out (unit).

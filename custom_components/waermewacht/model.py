@@ -61,6 +61,7 @@ class Signal(StrEnum):
     FLOW_TEMP = "flow_temp"
     RETURN_TEMP = "return_temp"
     FLOW_RATE = "flow_rate"
+    DHW_TEMP = "dhw_temp"  # hot water storage, for charges and disinfection
     HEAT_POWER = "heat_power"
     ELEC_POWER = "elec_power"
 
