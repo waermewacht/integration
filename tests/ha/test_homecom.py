@@ -63,6 +63,8 @@ async def test_standby_per_fetch_and_new_day(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
     entry = await setup(hass)
+    # The next fetch an hour later (at once, 2 kWh would be an implausible jump).
+    await tick(hass, freezer, 60)
 
     # A fetch with heat: the electricity came from a run, although the
     # compressor is off by now (the values are up to two hours late).
