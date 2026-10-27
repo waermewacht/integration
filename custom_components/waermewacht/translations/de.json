@@ -330,6 +330,12 @@
       "flow_temp_today": {
         "name": "Vorlauftemperatur heute"
       },
+      "degree_days_season": {
+        "name": "Gradtage Saison"
+      },
+      "heat_per_degree_day_season": {
+        "name": "Wärme je Gradtag Saison"
+      },
       "ratio_dhw_last_charge": {
         "name": "AZ Warmwasser letzte Ladung"
       },

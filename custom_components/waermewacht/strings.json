@@ -330,6 +330,12 @@
       "flow_temp_today": {
         "name": "Flow temperature today"
       },
+      "degree_days_season": {
+        "name": "Degree days season"
+      },
+      "heat_per_degree_day_season": {
+        "name": "Heat per degree day season"
+      },
       "ratio_dhw_last_charge": {
         "name": "COP hot water last charge"
       },

@@ -105,6 +105,14 @@ async def test_curve_and_heat_load(hass: HomeAssistant) -> None:
     assert load["sufficient"] is False
     assert "too_few_weeks" in load["reasons"]
 
+    # Three days at 1 °C: 19 K·d each (G20/15), 24 kWh of heating heat each.
+    report = await hass.services.async_call(
+        DOMAIN, "report", window, blocking=True, return_response=True
+    )
+    assert report["degree_days"]["degree_days"] == pytest.approx(57.0)
+    assert report["degree_days"]["kwh_per_degree_day"] == pytest.approx(1.26)
+    assert [m["degree_days"]["days_counted"] for m in report["months"]] == [3]
+
 
 @pytest.mark.freeze_time(NOW)
 async def test_needs_an_outdoor_temperature(hass: HomeAssistant) -> None:

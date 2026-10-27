@@ -11,6 +11,7 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime, tzinfo
 from typing import Any
 
+from .degree_days import MIN_DEGREE_DAYS, DayDegrees
 from .energy import SEASONAL_MODES, Kind, Totals, combined_ratio, mode_ratio
 from .model import Mode
 
@@ -58,6 +59,29 @@ def by_month(hours: Mapping[datetime, Totals], tz: tzinfo) -> dict[str, Totals]:
         key = hour.astimezone(tz).strftime("%Y-%m")
         months[key] = months.get(key, Totals()) + totals
     return months
+
+
+def degree_day_figures(days: Iterable[DayDegrees]) -> dict[str, Any]:
+    """Degree days (G20/15) of the valid days and the heating heat per
+    degree day, which is None below MIN_DEGREE_DAYS."""
+    chosen = list(days)
+    total = sum(d.degree_days for d in chosen)
+    heat = sum(d.heating_kwh for d in chosen)
+    return {
+        "degree_days": round(total, 1),
+        "kwh_per_degree_day": round(heat / total, 2)
+        if total >= MIN_DEGREE_DAYS
+        else None,
+        "days_counted": len(chosen),
+    }
+
+
+def degree_days_by_month(days: Iterable[DayDegrees]) -> dict[str, dict[str, Any]]:
+    """degree_day_figures per local month ("YYYY-MM")."""
+    months: dict[str, list[DayDegrees]] = {}
+    for day in days:
+        months.setdefault(day.day.strftime("%Y-%m"), []).append(day)
+    return {month: degree_day_figures(chosen) for month, chosen in months.items()}
 
 
 # Keys of Wärmewacht's own energy sensors.

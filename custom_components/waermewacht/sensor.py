@@ -409,6 +409,37 @@ def _design_load(runtime: HeatPumpRuntime) -> float | None:
     return round(result.standard_kw, 2)
 
 
+def _degree_days(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.degree_days
+    return None if result is None else round(result.degree_days, 1)
+
+
+def _degree_days_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    result = runtime.degree_days
+    if result is None:
+        return {}
+    return {
+        "base": "G20/15",
+        "days_counted": result.days_counted,
+        "days_missing": result.days_missing,
+        "days_without_heating": len(result.days_without_heating),
+    }
+
+
+def _per_degree_day(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.degree_days
+    return None if result is None else _round(result.kwh_per_degree_day)
+
+
+def _per_degree_day_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    previous = runtime.degree_days_previous
+    return {
+        "previous_season": None
+        if previous is None
+        else _round(previous.kwh_per_degree_day)
+    }
+
+
 HAS_OUTDOOR: Needs = lambda r: (  # noqa: E731
     Signal.OUTDOOR_TEMP in r.entities and _mode_complete(r, Mode.HEATING)
 )
@@ -419,6 +450,23 @@ ANALYSIS = [
         value=lambda r: r.analysed_at,
         needs=HAS_OUTDOOR,
         attributes=_curve_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="degree_days_season",
+        native_unit_of_measurement="K·d",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=0,
+        value=_degree_days,
+        needs=HAS_OUTDOOR,
+        attributes=_degree_days_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="heat_per_degree_day_season",
+        native_unit_of_measurement="kWh/K·d",
+        suggested_display_precision=2,
+        value=_per_degree_day,
+        needs=HAS_OUTDOOR,
+        attributes=_per_degree_day_attributes,
     ),
     HeatPumpSensorDescription(
         key="heat_load_per_kelvin",

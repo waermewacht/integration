@@ -164,6 +164,12 @@
       "flow_temp_today": {
         "default": "mdi:thermometer-water"
       },
+      "degree_days_season": {
+        "default": "mdi:thermometer-minus"
+      },
+      "heat_per_degree_day_season": {
+        "default": "mdi:home-thermometer-outline"
+      },
       "ratio_dhw_last_charge": {
         "default": "mdi:water-boiler"
       },

@@ -125,6 +125,16 @@ SENSORS = {
         "Vorlauftemperatur heute",
         "mdi:thermometer-water",
     ),
+    "degree_days_season": (
+        "Degree days season",
+        "Gradtage Saison",
+        "mdi:thermometer-minus",
+    ),
+    "heat_per_degree_day_season": (
+        "Heat per degree day season",
+        "Wärme je Gradtag Saison",
+        "mdi:home-thermometer-outline",
+    ),
     "ratio_dhw_last_charge": (
         "COP hot water last charge",
         "AZ Warmwasser letzte Ladung",

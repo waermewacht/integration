@@ -7,10 +7,12 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from custom_components.waermewacht.degree_days import DayDegrees
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.model import Mode
 from custom_components.waermewacht.report import (
     by_month,
+    degree_days_by_month,
     figures,
     own_hour,
     statistics_rows,
@@ -80,3 +82,25 @@ def test_statistics_rows_end_at_zero() -> None:
     assert rows["electricity_heating"] == [(h0, -0.7), (h0 + timedelta(hours=2), 0.0)]
     assert rows["standby"] == [(h0 + timedelta(hours=1), 0.0)]
     assert "heat_dhw" not in rows  # no energy, no rows
+
+
+def test_degree_days_per_month() -> None:
+    def day(month: int, n: int, mean: float, heat: float) -> DayDegrees:
+        return DayDegrees(
+            day=datetime(2026, month, n, tzinfo=UTC).date(),
+            hours=24,
+            mean_outdoor=mean,
+            degree_days=max(0.0, 20 - mean) if mean < 15 else 0.0,
+            heating_kwh=heat,
+        )
+
+    days = [day(1, 30, 0.0, 40.0), day(1, 31, 2.0, 36.0), day(2, 1, 16.0, 2.0)]
+    months = degree_days_by_month(days)
+    assert months["2026-01"] == {
+        "degree_days": 38.0,
+        "kwh_per_degree_day": 2.0,
+        "days_counted": 2,
+    }
+    # A mild month below the minimum degree days: no heat per degree day.
+    assert months["2026-02"]["degree_days"] == 0.0
+    assert months["2026-02"]["kwh_per_degree_day"] is None

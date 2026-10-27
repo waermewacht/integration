@@ -88,6 +88,7 @@ from .const import (
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .curve import curve_as_dicts, daily_samples, performance_curve
 from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
+from .degree_days import DegreeDays, daily_degree_days, degree_days
 from .energy import Kind, Totals
 from .health import (
     AUX_KWH,
@@ -120,6 +121,8 @@ from .profiles import EMS_ESP, Template, parse_compressor
 from .report import (
     OWN_KEYS,
     by_month,
+    degree_day_figures,
+    degree_days_by_month,
     figures,
     own_hour,
     own_totals,
@@ -260,6 +263,10 @@ class HeatPumpRuntime:
         self.curve_starts: dict[str, datetime] = {}
         self.heat_load: HeatLoad | None = None
         self.heat_load_window: tuple[datetime, datetime] | None = None
+        # Degree days G20/15 of the current season up to yesterday, and the
+        # heat per degree day of the previous season for comparison.
+        self.degree_days: DegreeDays | None = None
+        self.degree_days_previous: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
         self._analysing = False
@@ -624,6 +631,12 @@ class HeatPumpRuntime:
                 *last_season, self.tz, design_temp=self.design_temp
             )
             self.heat_load_window = (previous, current)
+            today = now.astimezone(self.tz).date()
+            first = current.astimezone(self.tz).date()
+            self.degree_days = degree_days(*this_season, self.tz, first, today)
+            self.degree_days_previous = degree_days(
+                *last_season, self.tz, previous.astimezone(self.tz).date(), first
+            )
             self.analysed_at = now
             self._health_findings(now, hours, outdoor, current, previous)
             await self._async_check_outdoor(now)
@@ -926,6 +939,26 @@ class HeatPumpRuntime:
         total = Totals()
         for totals in hours.values():
             total = total + totals
+        months = [
+            {"month": month, **figures(totals, self.min_electricity, self.modes)}
+            for month, totals in by_month(hours, self.tz).items()
+        ]
+        degrees: dict[str, Any] = {}
+        if Signal.OUTDOOR_TEMP in self.entities and Mode.HEATING in self.modes:
+            # Whole local days only; a partial first or last day is missing.
+            first = start.astimezone(self.tz).date()
+            last = (end - timedelta(microseconds=1)).astimezone(self.tz).date()
+            days, _, _ = daily_degree_days(
+                hours,
+                await self.async_outdoor_hours(start, end),
+                self.tz,
+                first,
+                last + timedelta(days=1),
+            )
+            degrees = {"degree_days": degree_day_figures(days)}
+            per_month = degree_days_by_month(days)
+            for row in months:
+                row["degree_days"] = per_month.get(row["month"])
         return {
             "data_until": dt_util.as_local(max(hours) + timedelta(hours=1)).isoformat()
             if hours
@@ -934,10 +967,8 @@ class HeatPumpRuntime:
             if start < switch
             else None,
             **figures(total, self.min_electricity, self.modes),
-            "months": [
-                {"month": month, **figures(totals, self.min_electricity, self.modes)}
-                for month, totals in by_month(hours, self.tz).items()
-            ],
+            **degrees,
+            "months": months,
         }
 
     def _switch(self) -> datetime:
