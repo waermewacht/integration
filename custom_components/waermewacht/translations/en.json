@@ -86,7 +86,7 @@
         },
         "data_description": {
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
-          "season_start_month": "Applies to new seasons."
+          "season_start_month": "The current season is recomputed from the statistics."
         }
       }
     }

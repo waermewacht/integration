@@ -297,8 +297,8 @@ def build(lang: int) -> dict:
                         ),
                         "season_start_month": t(
                             (
-                                "Applies to new seasons.",
-                                "Gilt für neue Saisons.",
+                                "The current season is recomputed from the statistics.",
+                                "Die laufende Saison wird aus der Statistik neu berechnet.",
                             )
                         ),
                     },

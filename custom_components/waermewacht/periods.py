@@ -65,6 +65,8 @@ class PeriodMarks:
     season_month: int
     marks: dict[Period, Totals] = field(default_factory=dict)
     starts: dict[Period, datetime | None] = field(default_factory=dict)
+    # Season start month the stored marks were made with (None: not restored).
+    stored_season_month: int | None = None
 
     def initialize(
         self, now: datetime, energy_since: Callable[[datetime | None], Totals]
@@ -113,6 +115,7 @@ class PeriodMarks:
 
     def as_dict(self) -> dict[str, Any]:
         return {
+            "season_month": self.season_month,
             "marks": {p.value: m.as_dict() for p, m in self.marks.items()},
             "starts": {
                 p.value: s.isoformat() if s else None for p, s in self.starts.items()
@@ -120,6 +123,7 @@ class PeriodMarks:
         }
 
     def restore(self, data: dict[str, Any]) -> None:
+        self.stored_season_month = data.get("season_month")
         self.marks = {
             Period(p): Totals.from_dict(m) for p, m in data.get("marks", {}).items()
         }

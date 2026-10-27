@@ -86,7 +86,7 @@
         },
         "data_description": {
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
-          "season_start_month": "Gilt für neue Saisons."
+          "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
         }
       }
     }

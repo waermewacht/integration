@@ -167,6 +167,8 @@ class HeatPumpRuntime:
         now = dt_util.utcnow()
         if data := await self._store.async_load():
             self._restore(data)
+            if self.marks.stored_season_month not in (None, self.marks.season_month):
+                await self._async_rebase_season(now)
         else:
             self.since = now
             await self._async_backfill(now)
@@ -264,16 +266,8 @@ class HeatPumpRuntime:
         Before the first full hour after setup: source counters (standby
         estimated per hour); from then on: Wärmewacht's own energy sensors.
         """
-        since = self.since or EARLIEST
-        switch = since.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-        hours: dict[datetime, Totals] = {}
-        if start < switch:
-            source = await self._async_source_hours(start, min(end, switch))
-            hours.update(by_hour(source))
-        if end > switch:
-            own = await self._async_own_hours(max(start, switch), end)
-            for hour, totals in own.items():
-                hours[hour] = hours.get(hour, Totals()) + totals
+        hours = await self._async_hours(start, end)
+        switch = self._switch()
         total = Totals()
         for totals in hours.values():
             total = total + totals
@@ -290,6 +284,42 @@ class HeatPumpRuntime:
                 for month, totals in by_month(hours, self.tz).items()
             ],
         }
+
+    def _switch(self) -> datetime:
+        """First full hour of Wärmewacht's own energy sensors."""
+        since = self.since or EARLIEST
+        return since.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+
+    async def _async_hours(
+        self, start: datetime, end: datetime
+    ) -> dict[datetime, Totals]:
+        """Energy per hour in [start, end): source counters before the switch
+        (standby estimated per hour), own energy sensors after it."""
+        switch = self._switch()
+        hours: dict[datetime, Totals] = {}
+        if start < switch:
+            source = await self._async_source_hours(start, min(end, switch))
+            hours.update(by_hour(source))
+        if end > switch:
+            own = await self._async_own_hours(max(start, switch), end)
+            for hour, totals in own.items():
+                hours[hour] = hours.get(hour, Totals()) + totals
+        return hours
+
+    async def _async_rebase_season(self, now: datetime) -> None:
+        """The season start month changed: recompute the season from the
+        statistics instead of starting it anew at the moment of the change."""
+        start = period_start(Period.SEASON, now, self.tz, self.marks.season_month)
+        energy = Totals()
+        if start is not None and "recorder" in self.hass.config.components:
+            try:
+                for totals in (await self._async_hours(start, now)).values():
+                    energy = energy + totals
+            except Exception:  # keep running; the season then starts now
+                _LOGGER.exception("Recomputing the season from the statistics failed")
+        self.marks.marks[Period.SEASON] = self.totals - energy
+        self.marks.starts[Period.SEASON] = start
+        self._dirty = True
 
     async def _async_own_hours(
         self, start: datetime, end: datetime

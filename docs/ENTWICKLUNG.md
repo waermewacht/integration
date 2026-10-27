@@ -11,7 +11,7 @@ Wärmewacht wertet aus vorhandenen Home-Assistant-Entitäten aus, wie effizient 
 - Arbeitszahlen je Modus (Heizen, Warmwasser, Heizen + Warmwasser) und Leistungszahl Kühlen, je Zeitraum (heute, gestern, Monat, Saison, gesamt). Saisonbeginn beim Einrichten aus der Langzeitstatistik.
 - Bereinigte Wärme- und Strom-Sensoren je Modus (Langzeitstatistik), Stillstand als eigener Sensor, Aktion „Bericht“ für beliebige Zeiträume.
 - Takte: Starts (heute, gestern, gesamt), Laufzeit pro Start (heute, 7 Tage, Monat), Kurzläufe, kürzeste Pause, Kompressor-Laufzeit, Binärsensor „auffällig taktend“.
-- Diagnose: Heizstab-Anteil, Abtauungen (Anzahl, Dauer), Spreizung und mittlere Vorlauftemperatur bei laufendem Kompressor (zeitgewichtet, je Modus).
+- Diagnose: Heizstab-Anteil, Abtauungen (Anzahl, Dauer), Spreizung und mittlere Vorlauftemperatur bei laufendem Kompressor im Heizbetrieb (zeitgewichtet; Warmwasser später).
 
 **Stufe 2:** Arbeitszahl über Außentemperatur (Klassen, Aktion mit Antwortdaten für Diagramme), Gradtage und witterungsbereinigte Wärme, Wärmekosten (fester Preis oder Preissensor), Vergleich mit Gaskessel (Kosten, CO₂), PV-Anteil als Näherung.
 
@@ -62,7 +62,7 @@ Name: keine Treffer für „Wärmewacht“/`waermewacht` auf GitHub, PyPI, HACS,
 ### Takten
 
 - Verdichterhersteller: höchstens 6 Starts/h (RIES), 6–12 (BITZER), 10 (Copeland) – zitiert WP-QS S. 98. VDI 4645 ohne Vorgaben. Fraunhofer: Zyklen von 2–3 min vermeiden, unter ~10 min gesondert ausweisen (S. 204–205). Dimplex: Mindestlaufzeit ~6 min ([Projektierungshandbuch 03/2023](https://www.dimplex.co.uk/sites/g/files/emiian551/files/2024-01/20230313_Projektierungshandbuch_de.pdf), S. 317). Werte von Bosch/Buderus nicht gefunden.
-- **Vorgaben:** Lauf < 10 min = kurz, < 6 min = kritisch, > 3 Starts/h = auffällig; Hochrechnung > 5.500 Starts/Jahr = obere 10 % des Fraunhofer-Felds. Alle einstellbar.
+- **Vorgaben** (einstellbar): Lauf < 10 min = kurz, < 6 min = kritisch, > 3 Starts/h = auffällig. Fest: auffällig auch ab 3 kritischen Läufen in 24 h (`CRITICAL_RUNS_PER_DAY`). Hochrechnung > 5.500 Starts/Jahr = obere 10 % des Fraunhofer-Felds – Orientierung, noch nicht umgesetzt.
 - Ein Start = Kompressor aus → an (heatpumpmonitor: Leistung über Startschwelle). Laufzeit pro Start zählt Läufe des Kompressors, nicht Modus-Abschnitte.
 
 ### Emissionsfaktoren (Stufe 2)
@@ -187,7 +187,10 @@ HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speicher
 - **Reparaturhinweise** nach 10 Minuten Laufzeit: `missing_entity` (Quell-Entität fehlt), `energy_unit` (keine Wh/kWh/MWh). Verschwinden, sobald behoben; beim Löschen des Eintrags entfernt.
 - **Zählerschritt:** Ein Zähler, der nie Nachkommastellen zeigte, gilt als ganzzahlig. Arbeitszahlen tragen `counter_step_kwh` und `reliable` (Strom ≥ 20 Schritte, also Rundung ≤ 5 %).
 
-- **Stillstand live:** Strom eines Modus ist Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieses Modus kam noch der Kompressor in diesem Modus lief (`runtime._running`). Ohne Kompressorsignal entscheidet nur die Wärme.
+- **Stillstand live:** Strom eines Modus ist Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieses Modus kam noch der Kompressor in diesem Modus lief (`runtime._running`). Ohne Kompressorsignal entscheidet nur die Wärme. Stillstand aller Zähler (auch eines Kühlen-Zählers) geht in die Arbeitszahl Heizen + Warmwasser ein – er gehört zum Gerät, nicht zu einem Modus.
+- **Betriebsart bei eigener Zuordnung:** ohne Vorlage werden die Zustände mit den EMS-ESP-Wörtern gelesen; andere Werte gelten als „sonstiger Betrieb“ (keine Abtauungen). Eine eigene Werte-Zuordnung im Formular kommt mit weiteren Herstellern.
+- **Saisonbeginn geändert:** Beim nächsten Start (Neuladen) wird die Saison aus der Statistik neu berechnet (`runtime._async_rebase_season`), statt ab der Änderung neu zu zählen.
+- **Diagnose-Datei** enthält Zustände der Quell-Entitäten und Energiesummen (anders als bei Tarifwacht) – README rät, sie vor dem Teilen zu prüfen.
 - **Speichern:** ein `Store` je Eintrag; geschrieben alle 10 Minuten, wenn sich etwas geändert hat, am Ende eines Laufs, um Mitternacht und beim Beenden. Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 - **Rückblick:** nur bei der ersten Einrichtung, aus den Stundenwerten (`change`) der Energie-Entitäten. Die angebrochene Stunde vor der Einrichtung fehlt (bekannte kleine Lücke).
 - **Lücken (HA aus):** Der erste Zählerwert danach bucht den ganzen Zuwachs; ob er Lauf oder Stillstand war, entscheidet die Wärme im selben Zeitraum.

@@ -21,9 +21,9 @@ Stand: Projektstart 2026-10-27, erster Stand auf `dev`, noch kein Release. Arbei
 - Ein Config-Entry je Wärmepumpe; Modi (Heizen, Warmwasser, Kühlen) als optionale Abschnitte, **keine Subentries**.
 - **Arbeitszahl = Σ Wärme / Σ Strom.** Ohne Wärme oder unter dem Mindeststrom `unknown`, nie 0. Kühlen heißt „Leistungszahl Kühlen (EER)“ und zählt nie in eine JAZ.
 - **Stillstand wird abgetrennt** (Strom bei stehendem Kompressor): Arbeitszahlen je Modus ohne, Gesamt-JAZ mit Stillstand, Stillstand als eigener Sensor (Vorgehen wie Fraunhofer ISE).
-- **Bilanzgrenze nach SEPEMO (H1–H4)** steht an jedem Ergebnis. Kein eigener WP-Stromzähler beim Inhaber → „System“ (H4) erst später.
-- **Arbeitszahl-Sensoren ohne `state_class`** (HA würde Quotienten mitteln). Dazu bereinigte Wärme- und Strom-Sensoren je Modus für die Langzeitstatistik und eine Aktion „Bericht“ für beliebige Zeiträume. Standardmäßig aktiv: Monat, Saison, gesamt für Heizen, Warmwasser, Heizen + Warmwasser; heute/gestern vorhanden, aber deaktiviert.
-- **Saison ab 1. Juli**, einstellbar. Der Saisonbeginn wird beim Einrichten aus der Langzeitstatistik gelesen (Rückblick schon im MVP).
+- **Bilanzgrenze nach SEPEMO (H1–H4)** wird in README und Doku benannt; ein Attribut am Ergebnis kommt mit der zweiten Grenze „System“ (H4, externer Zähler) – beim Inhaber keiner vorhanden.
+- **Arbeitszahl-Sensoren ohne `state_class`** (HA würde Quotienten mitteln). Dazu bereinigte Wärme- und Strom-Sensoren je Modus für die Langzeitstatistik und eine Aktion „Bericht“ für beliebige Zeiträume. Standardmäßig aktiv: Monat, Saison, gesamt (auch Leistungszahl Kühlen); heute/gestern vorhanden, aber deaktiviert.
+- **Saison ab 1. Juli**, einstellbar. Der Saisonbeginn wird beim Einrichten aus der Langzeitstatistik gelesen (Rückblick schon im MVP); ändert der Nutzer den Saisonbeginn, wird die Saison aus der Statistik neu berechnet.
 - Außentemperatur: EMS-ESP-Vorlage nimmt `boiler_outdoortemp`; Plausibilitätsprüfung gegen eine zweite Quelle.
 - CO₂ (Stufe 2): Vorgabe **mit Vorketten** (Strom UBA, Gas GEG), umschaltbar auf „nur direkt“; Strom- und Gasfaktor nie gemischt. Gas in kWh nach Brennwert, Kesselnutzungsgrad Vorgabe 0,87 (Hs).
 - **Mindestversion HA 2026.4** (Entitätsauswahl mit Filter nach Einheit).

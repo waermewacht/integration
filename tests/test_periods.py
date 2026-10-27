@@ -108,3 +108,13 @@ def test_round_trip() -> None:
     restored.restore(marks.as_dict())
     assert restored.marks == marks.marks
     assert restored.starts == marks.starts
+
+
+def test_season_month_is_stored() -> None:
+    """A changed season start is recognised after a restart (and recomputed)."""
+    marks = PeriodMarks(BERLIN, 7)
+    marks.initialize(datetime(2026, 1, 15, 9, tzinfo=UTC), lambda start: Totals())
+    restored = PeriodMarks(BERLIN, 9)
+    restored.restore(marks.as_dict())
+    assert restored.stored_season_month == 7
+    assert restored.season_month == 9
