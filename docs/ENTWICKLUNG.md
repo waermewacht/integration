@@ -117,30 +117,39 @@ Quellcode gelesen (EMS-ESP32 `dev` 3.9.0-dev.20 und `main` 3.8.6, [boiler.cpp](h
 
 ### Bosch HomeCom (`bosch_homecom`, HACS, Cloud und lokal)
 
-Beobachtet an derselben Anlage (2026-10-27), Integration mit Option „Datenquelle“ (lokal und Cloud), Abruf alle 60 s.
+Repo [serbanb11/bosch-homecom-hass](https://github.com/serbanb11/bosch-homecom-hass) (geprüft v1.5.2, Commit `50d4ac8`; v1.6.0 ohne Änderung an Energie-/Lokal-Code), Bibliothek `homecom_alt` 1.9, lokale API laut [api-docs `k-40-rf.yaml`](https://github.com/bosch-home-comfort/api-docs). Beobachtet an derselben Anlage (2026-10-27), Option „Datenquelle“ (lokal und Cloud), Takt 60 s.
 
-- Gerät-Kennung `("bosch_homecom", "<Seriennummer>")`, `unique_id` `<Seriennummer>-<schlüssel>` (z. B. `-energy_compressor_ch`, `-heat_produced_cooling`, `-outdoor_temp`, `-local_pump_volume_flow`).
-- **Energie als Tageswerte**, obwohl „gesamt“ im Namen und `total_increasing`: „Strom Kompressor gesamt“, „Wärme erzeugt gesamt“, „Strom Heizstab gesamt“, dazu je Modus (Heizung, Warmwasser, Kühlung) – **die Modus-Entitäten sind standardmäßig deaktiviert**. Aktualisierung etwa stündlich mit ~1 h Verzug, Rücksprung auf 0 nach Mitternacht (beobachtet 00:44). Ob die letzte Stunde eines Tages verloren geht, ist offen (Abschnitt 8).
-- „Kompressorleistung“ (W) ist die elektrische Leistung inkl. Stillstand (~25 W), minütlich. Starts gesamt (Attribute `ch`, `dhw`, `cooling`, `total`), Starts Heizung/Warmwasser, Laufzeit Heizung/Warmwasser (s), Kompressor-Laufzeit (h), Vor-/Rücklauf, Systemdruck, „Wärmebedarf“. **Kein Abtau-Signal.**
-- Gegenprobe gegen EMS-ESP an einem Vormittag: Strom und Wärme seit Mitternacht stimmen bis auf den Verzug überein.
+- Gerät `("bosch_homecom", "<Gateway-ID>")`, `unique_id` `<Gateway-ID>-<schlüssel>` – am **ersten** „-“ trennen (Schlüssel wie `dhw1-delta_t` enthalten selbst „-“).
+- **Energie = Summe der heutigen Stunden-Buckets der Cloud** (`/recordings/heatSources/emon/{total|ch|dhw|cooling}/{compressor|eheater|outputProduced}?interval=<Datum in HA-Zeitzone>`), obwohl „gesamt“ im Namen; `energy`, kWh, `total_increasing`. Abruf höchstens stündlich, die Phase wandert und springt bei jedem Neustart; Verzug 0–2 h, angefangene Stunden teils enthalten. Rücksprung auf 0 beim ersten Abruf nach Mitternacht. **Die letzten 1–2 Stunden eines Tages gehen verloren** (beobachtet −0,04 … −0,52 kWh je Tag). Zeitumstellung 25.10.: Rücksprung mitten am Tag (doppelte Stunde überschrieben). Modus-Entitäten (Strom Kompressor/Heizstab, Wärme erzeugt je Heizung/Warmwasser/Kühlung) standardmäßig deaktiviert (Designentscheidung, Kommentar `sensor.py`); sie stimmen bis auf den Verzug genau mit EMS-ESP überein.
+- **Lebenszeit-Summen** gibt es nur als Attribute am Sensor „Wärmequelle“ (`totalConsumptionCompressor`, `…OutputProduced`, `…Eheater`, 0,01 kWh, minütlich) – gleich EMS-ESP-Summe aller Modi, nicht je Modus.
+- „Kompressorleistung“ (`local_compressor_power`, lokal) = EMS-ESP `hpcurrpower` (Stillstand 25 W). Kompressor an: `local_compressor_speed` oder `compressor_modulation` (Cloud) > 0, ~1 min Verzug. Starts gesamt mit Attributen `ch`/`dhw`/`cooling` (Summe = gesamt → `heatingstarts` zählt Kompressorstarts). Laufzeit je Modus lokal (s), steigt im aktiven Modus. Vorlauf = EMS-ESP `curflowtemp` (Systemvorlauf, nicht `hptc1`), Rücklauf = `hptc0`.
+- **Keine Betriebsart:** „Wärmebedarf“ zeigt `frost` während Heiz- und Warmwasserläufen und `ch` bei stehendem Kompressor. Abtauen nur heuristisch: „Wärmebedarf = idle bei laufendem Kompressor“ (4 von 4 in 10 Tagen, kleine Stichprobe). `homecom_alt` fragt lokal `refrigerant/status` (laut Spezifikation u. a. `defrost`) und lokale emon-Zähler ab, legt dafür aber keine Entitäten an.
+- **Fehler upstream:** `local_pump_volume_flow` meldet „L/min“, liefert l/h (= `pc0flow`; Spezifikation l/h).
+- Für eine Vorlage nötig: Erkennung `<id>-<schlüssel>`, Hinweis auf deaktivierte Entitäten, Tageszähler mit Reset nur bei Datumswechsel (auch bei steigendem Wert nach langer Pause) und ohne Reset-Doppelzählung bei Rücksprung am selben Tag, Kompressor aus Zahlwert > 0, Stillstand nur aus der Wärme im selben Abruf, ggf. Tagesrest nachholen.
 - Daneben gibt es die Community-Integration „Bosch/Buderus Heating (PointT)“ ([Forum](https://community.home-assistant.io/t/custom-integration-bosch-buderus-heating-pointt-cloud-integration-for-mybuderus-and-homecom-easy-systems/1022332)) – noch nicht betrachtet.
 
-### Andere Hersteller (Recherche, nicht geprüft – erst mit Fixture)
+### Andere Hersteller (Quellcode-Recherche 2026-10-27 an festen Commits, nicht an echten Anlagen – erst mit Fixture)
 
-| Integration | Wärme/Strom je Modus | Form |
+| Integration | Daten für Wärmewacht | Erkennung (`unique_id`) |
 |---|---|---|
-| Vaillant mypyllant (Cloud) | ja, inkl. Kühlen | Tageswerte, stündlich |
-| Daikin Onecta (Cloud) | Verbrauch, teils Abgabe | Tag/Woche/Monat/Jahr |
-| Daikin ESPAltherma (lokal) | keine Zähler | nur Momentanwerte |
-| Viessmann ViCare (Core) | nur Strom | heute/Monat/Jahr |
-| Panasonic HeishaMon (lokal) | Leistung je Modus | nur W, keine Zähler |
-| Luxtronik | Wärme je Modus, Strom (neuere Firmware) | kumuliert |
-| Stiebel ISG | erzeugt/verbraucht je Modus | heute und gesamt |
-| Nibe S-Serie (Modbus) | Wärme je Modus | kumuliert und stündlich |
-| Mitsubishi ecodan-ha-local | je Modus | vermutlich Tageswerte |
-| Samsung (ESPHome NASA) | nicht je Modus | kumuliert |
+| **Luxtronik** (HACS `luxtronik2`, lokal, 60 s) | Wärme und Strom je Modus fortlaufend (0,01–0,1 kWh), Heizstab nur gesamt, Kompressor binär, `status` mit `defrost`, Starts (standardmäßig aus), Vor-/Rücklauf, Durchfluss | ursprüngliche Entity-ID `sensor.<prefix>_<key>`, Präfix je Eintrag verschieden → Endung `_<key>` |
+| **Panasonic HeishaMon** (`aquarea`, MQTT) | legt selbst kWh-Zähler aus den Leistungen an (`TOPxx_integration`, Riemann) für Wärme/Strom je Modus; Kompressor nur über Frequenz, Abtauen nur als Switch, Heizstab ohne Energie | `<entry_id>-<TOPxx>` |
+| **Vaillant myVAILLANT** (HACS `mypyllant`, Cloud) | Wärme/Strom je Modus als Tageswert aus abgeschlossenen Stunden (0,1 kWh); Energie standardmäßig **nur einmal beim Laden** abgerufen; Stunde 23–24 Uhr nur in eigenen externen Statistiken; Energiemanager-Status ohne Abtauen; kein Kompressorsignal | Positionen in API-Listen; Wärme/Strom nur am englischen Namen erkennbar |
+| **Nibe** (Core `nibe_heatpump`, lokal) | gut, aber Register je Modell verschieden, alle Entitäten standardmäßig deaktiviert | `<entry_id>-<Register>` |
+| **Viessmann ViCare** (Core) | **keine Wärme** in HA (API hätte sie); Strom je Modus als Tageswert, Kompressor, Phase mit `defrost`, Starts | `<gateway>_<gerät>-<key>[-<komponente>]` |
+| **Daikin Onecta** (HACS, Cloud) | Altherma: nur Strom-Tageswerte in ganzen kWh, Wärme nur Monat/Jahr und nur bei SkyAir belegt; kein Kompressor/Abtauen | `<uuid>_<embedded>_…` |
 
-Folge für den Kern: Signale müssen als fortlaufende Zähler, Tageswerte (Rücksprung nachts), Leistungen (selbst integrieren) und Momentanwerte kommen dürfen.
+Rangfolge nach Bosch: **Luxtronik** (passt fast 1:1, nur Erkennung über Endung), dann HeishaMon, dann Vaillant (braucht Buchen aus Statistiken – hilft auch HomeCom). ViCare später als „Takte ohne Energie“, Daikin Onecta nicht (README: auf ESPAltherma/daikin_cycle_ml verweisen).
+
+Folge für den Kern: Erkennung als Daten verallgemeinern (Muster mit `prefix`/`key`, ggf. `original_name`); Zählerart je Signal (fortlaufend, täglich, monatlich, „aus Statistik buchen“); Kompressor aus Zahlwert > Schwelle; Aktivität aus mehreren Entitäten; Modus „Takte ohne Energie“; Heizstab gesamt → Modus.
+
+### Stufe 2/3 – Machbarkeit mit echten Daten (Auswertung 2026-10-27, eine Saison)
+
+- **Kennlinie** (Σ Wärme / Σ Strom je Außentemperatur-Klasse): 2-K-Klassen, mindestens 7 Tage je Klasse (Streuung der Klassen-AZ 0,14 bei n = 7), Randklassen zusammenfassen; **ohne Stillstand** rechnen, sonst knickt sie an milden Tagen künstlich ab. Der Zeitraum wirkt so stark wie die Temperatur (geänderte Heizkurve) → Saisons nie stillschweigend mischen, Vergleichszeitraum anbieten, Hinweis bei Bruch.
+- **Gradtage:** G20/15 schwankt je Monat um ~18 % (kWh/Kd), passt zu einer Anlage mit Heizgrenze ~15 °C schlecht; Basis einstellbar, „Wärme je Gradtag“ nur als Saisonwert; Gradtage ohne Heizbetrieb ausweisen.
+- **Heizlast (Energiesignatur):** Wochenmittel der Heizleistung (nur Heizen) über Wochenmittel der Außentemperatur, nur Wochen < 12 °C, R² ≈ 0,86; Ergebnis innerhalb ±5 % stabil gegen Grenze (10/12/15 °C) und Tag/Woche, aber abhängig vom Zeitraum (Herbst/Frühjahr). Mindestdaten: 8 gültige Wochen, Spanne ≥ 10 K, ≥ 5 Tage < 0 °C. Immer „gemessen (mit Gewinnen)“ und „normgerecht“ (auf 20 °C verschoben) ausweisen; Normaußentemperatur als Option ohne Vorgabe.
+- **Bausteine:** Eingabe sind die Stunden-`Totals` aus `runtime._async_hours` (Stillstand je Stunde getrennt) plus Stundenmittel der Außentemperatur; Tage/Wochen lokal mit echten Stunden (23/25 h). Aktionen `performance_curve` und `heat_load` mit Antwortdaten; wenige Sensoren (Gradtage, Heizlast bei Normaußentemperatur), keine Sensoren je Temperaturklasse.
+- **Daten:** `thermostat_dampedoutdoortemp` ist derselbe Fühler gefiltert – keine unabhängige zweite Quelle für die Plausibilitätsprüfung. Außentemperatur-Maxima im Sommer bis 44 °C (Sonne/Abwärme am Fühler) → Werte außerhalb −35 … +45 °C verwerfen.
 
 ## 5. Home Assistant – technischer Stand (Oktober 2026)
 
@@ -226,8 +235,8 @@ Darüber hinaus: `config-entry-unloading`, `diagnostics`, `entity-translations`,
 - **Stillstand:** physikalisch korrekt oder Modellwert? Nur mit externem Zähler am WP-Anschluss klärbar (beim Inhaber keiner vorhanden). Für die Berechnung durch die Abtrennung unkritisch.
 - **HomeCom-Tageswechsel:** Geht die letzte Stunde des Tages verloren, und wann genau springt der Wert? Nach einigen Tagen Verlauf der Modus-Entitäten prüfen (beim Inhaber seit 2026-10-27 aktiviert), dann Fixture.
 - **HomeCom lokal/Cloud:** Welche Werte kommen lokal, welche aus der Cloud? Vorlage muss beide Fälle verkraften.
-- **Abtauwärme:** Ziehen die Bosch-Wärmezähler die beim Abtauen entzogene Wärme ab? (`hppower` = 0 während des Abtauens, `nrgheat` steigt nicht – ob es sinkt, ist unbeobachtet.)
-- **`heatingstarts`:** Kompressor- oder Reglerstarts? Gegen `totalcompstarts` und `hpcompon` abgleichen.
+- ~~Abtauwärme~~ **geklärt 2026-10-27:** Die Bosch-Wärmezähler ziehen sie ab – `nrgheat` sank bei einer Abtauung um 0,31 kWh in Schritten von 0,04–0,06 kWh (ebenso `nrgtotal` und die HomeCom-Lebenszeit-Summe). `counter.py` hält deshalb den Höchststand (netto).
+- ~~`heatingstarts`~~ **geklärt:** Kompressorstarts – HomeCom-Starts `ch` + `dhw` + `cooling` = `total` = `totalcompstarts`.
 - Heizstab je Modus mit 0,01 kWh (0x4AF Offsets 28/36) – nicht in EMS-ESP ausgewertet.
 - Passende `categories` für das Manifest.
 - DPMAregister für den Namen prüfen (Inhaber).
