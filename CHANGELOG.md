@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b2 – 2026-10-27
+
 - **Anzeige:** Arbeitszahlen erscheinen jetzt als Zahl mit 2 Nachkommastellen (bisher Rohwert mit vielen Stellen) und mit kurzen Namen, die in Listen nicht mehr abgeschnitten werden: „AZ Heizen Monat“, „AZ Warmwasser Saison“, „AZ Heizen+WW gesamt“, „EER Kühlen …“. Bestehende Entity-IDs bleiben. Ihr Verlauf erscheint jetzt auch in der Statistik (als Zeitmittel; die Bilanz liefern die Energie-Sensoren und der Bericht).
 - **Takte ab dem ersten Tag:** Bei der Einrichtung – und beim Update von 0.1.0b1 – holt Wärmewacht Läufe und Abtauungen der letzten Tage aus dem Verlauf von Home Assistant nach (so weit der Recorder sie hält, meist 10 Tage). „Starts heute“, „Laufzeit pro Start 7 Tage“ usw. sind damit sofort gefüllt.
 - **Weniger Schreiblast (SD-Karten):** Werte werden auf die angezeigte Genauigkeit gerundet (Energie 0,1 kWh, Laufzeit 0,1 h, Temperaturen 0,1 °C), minütlich wandernde Attribute nicht mehr aufgezeichnet, und die Lauf-Historie liegt in einer eigenen Datei, die nur am Ende eines Laufs und um Mitternacht geschrieben wird.
