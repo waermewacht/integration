@@ -126,7 +126,16 @@ async def test_ratio_standby_and_cycling(
     await tick(hass, freezer, 120)
     set_counters(hass, 1003.0, 301.05)
     await tick(hass, freezer, 1)
-    assert value(hass, entry, "standby") == pytest.approx(0.05)
+    runtime = entry.runtime_data
+    debug = {
+        "totals": runtime.totals.as_dict(),
+        "counters": {s.value: c.as_dict() for s, c in runtime.counters.items()},
+        "tracker": runtime.tracker.as_dict(),
+        "heat_at": {m.value: t.isoformat() for m, t in runtime._heat_at.items()},
+        "mode_seen": {m.value: t.isoformat() for m, t in runtime._mode_seen.items()},
+        "events": runtime.events,
+    }
+    assert value(hass, entry, "standby") == pytest.approx(0.05), debug
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(3.0)
     assert value(hass, entry, "ratio_combined_month") == pytest.approx(3 / 1.05)
     assert state(hass, entry, "cycling_problem") == "off"
