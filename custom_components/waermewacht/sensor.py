@@ -423,6 +423,7 @@ def _degree_days_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         "days_counted": result.days_counted,
         "days_missing": result.days_missing,
         "days_without_heating": len(result.days_without_heating),
+        "degree_days_heating": round(result.degree_days_heating, 1),
     }
 
 

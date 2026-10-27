@@ -18,12 +18,16 @@ otherwise it is skipped and counted as missing. Hourly values outside
 integration shows it as a season value only; this module computes it for any
 period and leaves that choice to the caller. Days with degree days but
 without heating heat are reported (heating off, summer mode held by hand).
+The degree days themselves follow the standard, but the heat per degree day
+uses heating days only (at least MIN_HEATING_DAY_KWH): G20/15 counts every
+cool summer and autumn day, and a season that started heating in October
+would otherwise show a third of the real value.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, tzinfo
 
@@ -37,6 +41,9 @@ MIN_DAY_HOURS = 20  # valid hourly outdoor values a day needs
 # Below this sum the heat per degree day is not shown (a few mild days would
 # give a huge, meaningless value). Not from a standard: about one cold day.
 MIN_DEGREE_DAYS = 10.0  # K·d
+# A day with less heating heat is not a heating day (own assumption: pumps,
+# a short run on a cool summer morning).
+MIN_HEATING_DAY_KWH = 1.0
 
 
 @dataclass(frozen=True)
@@ -100,7 +107,8 @@ class DegreeDays:
     days_without_heating: tuple[date, ...]  # degree days > 0, no heating heat
     heating_kwh: float
     heating_kwh_missing_days: float
-    kwh_per_degree_day: float | None  # None below the minimum degree days
+    degree_days_heating: float  # K·d of the heating days only
+    kwh_per_degree_day: float | None  # heating days; None below the minimum
 
     @property
     def days_missing(self) -> int:
@@ -169,6 +177,24 @@ def daily_degree_days(
     return valid, missing, heat
 
 
+def heat_per_degree_day(
+    days: Iterable[DayDegrees],
+    *,
+    min_degree_days: float = MIN_DEGREE_DAYS,
+    min_heating_kwh: float = MIN_HEATING_DAY_KWH,
+) -> tuple[float | None, float]:
+    """Heating heat per degree day over the heating days, and their degree
+    days. None below `min_degree_days` or without heating heat."""
+    # Heat on a heating day above the limit (0 K·d) still counts, as in the
+    # period sum of VDI 3807; only days without heating drop out.
+    heating_days = [d for d in days if d.heating_kwh >= min_heating_kwh]
+    total = sum(d.degree_days for d in heating_days)
+    heat = sum(d.heating_kwh for d in heating_days)
+    if total <= 0 or total < min_degree_days or heat <= 0:
+        return None, total
+    return heat / total, total
+
+
 def degree_days(
     hours: Mapping[datetime, Totals],
     outdoor: Mapping[datetime, float],
@@ -190,7 +216,9 @@ def degree_days(
     )
     total = sum(d.degree_days for d in valid)
     heating = sum(d.heating_kwh for d in valid)
-    per_degree_day = heating / total if total > 0 and total >= min_degree_days else None
+    per_degree_day, heating_degree_days = heat_per_degree_day(
+        valid, min_degree_days=min_degree_days
+    )
     return DegreeDays(
         base=base,
         start=start,
@@ -203,5 +231,6 @@ def degree_days(
         ),
         heating_kwh=heating,
         heating_kwh_missing_days=sum(heat.get(day, 0.0) for day in missing),
+        degree_days_heating=heating_degree_days,
         kwh_per_degree_day=per_degree_day,
     )

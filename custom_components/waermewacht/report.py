@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime, tzinfo
 from typing import Any
 
-from .degree_days import MIN_DEGREE_DAYS, DayDegrees
+from .degree_days import DayDegrees, heat_per_degree_day
 from .energy import SEASONAL_MODES, Kind, Totals, combined_ratio, mode_ratio
 from .model import Mode
 
@@ -63,15 +63,14 @@ def by_month(hours: Mapping[datetime, Totals], tz: tzinfo) -> dict[str, Totals]:
 
 def degree_day_figures(days: Iterable[DayDegrees]) -> dict[str, Any]:
     """Degree days (G20/15) of the valid days and the heating heat per
-    degree day, which is None below MIN_DEGREE_DAYS."""
+    degree day over the heating days (degree_days.heat_per_degree_day)."""
     chosen = list(days)
-    total = sum(d.degree_days for d in chosen)
-    heat = sum(d.heating_kwh for d in chosen)
+    per_degree_day, _ = heat_per_degree_day(chosen)
     return {
-        "degree_days": round(total, 1),
-        "kwh_per_degree_day": round(heat / total, 2)
-        if total >= MIN_DEGREE_DAYS
-        else None,
+        "degree_days": round(sum(d.degree_days for d in chosen), 1),
+        "kwh_per_degree_day": None
+        if per_degree_day is None
+        else round(per_degree_day, 2),
         "days_counted": len(chosen),
     }
 

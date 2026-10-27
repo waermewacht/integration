@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Wärme je Gradtag** zählt nur Heiztage (ab 1 kWh Heizwärme am Tag). Kühle Tage ohne Heizbetrieb drückten den Wert bisher auf ein Drittel, wenn die Heizung erst im Oktober anlief. Ohne Heizwärme ist er unbekannt statt 0. Die Gradtage selbst bleiben nach VDI 3807.
+
 ## 0.1.0b8 – 2026-10-27
 
 - **Diagnose-Datei für neue Hersteller:** listet unter `source` alle Entitäten der Quellgeräte (Plattform, unique_id, Einheit, Zustand) sowie Hersteller, Modell und Firmware. Seriennummern und Eintrags-IDs sind maskiert. Damit lässt sich aus einer manuellen Einrichtung eine Vorlage bauen.

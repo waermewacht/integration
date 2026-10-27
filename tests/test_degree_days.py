@@ -150,8 +150,31 @@ def test_days_with_degree_days_but_no_heating() -> None:
     assert result.days_without_heating == (day1,)  # day 3 has no degree days
     assert result.degree_days == pytest.approx(16.0)
     assert result.heating_kwh == pytest.approx(12.0)
-    # 16 Kd is above the minimum.
-    assert result.kwh_per_degree_day == pytest.approx(12 / 16)
+    # Heat per degree day over the heating day only: 8 Kd, below 10.
+    assert result.degree_days_heating == pytest.approx(8.0)
+    assert result.kwh_per_degree_day is None
+    result = degree_days(
+        hours, outdoor, BERLIN, day1, date(2026, 10, 4), min_degree_days=5.0
+    )
+    assert result.kwh_per_degree_day == pytest.approx(12 / 8)
+
+
+def test_a_late_heating_start_does_not_dilute_the_heat_per_degree_day() -> None:
+    """Cool September days without heating, heating from October."""
+    days = {date(2026, 9, d): (12.0, 0.0) for d in range(1, 21)}  # 160 Kd
+    days |= {date(2026, 10, d): (5.0, 1.0) for d in range(1, 11)}  # 150 Kd
+    hours, outdoor = build(days)
+    result = degree_days(hours, outdoor, BERLIN, date(2026, 9, 1), date(2026, 10, 11))
+    assert result.degree_days == pytest.approx(310.0)
+    assert result.kwh_per_degree_day == pytest.approx(240 / 150)
+
+
+def test_no_heating_heat_is_unknown_not_zero() -> None:
+    days = {date(2026, 10, d): (5.0, 0.0) for d in range(1, 11)}
+    hours, outdoor = build(days)
+    result = degree_days(hours, outdoor, BERLIN, date(2026, 10, 1), date(2026, 10, 11))
+    assert result.degree_days == pytest.approx(150.0)
+    assert result.kwh_per_degree_day is None
 
 
 def test_heat_per_degree_day_unknown_below_minimum() -> None:
