@@ -1,6 +1,6 @@
 # Wärmewacht – Gesundheits-Check
 
-Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
+Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
 
 Jede Schwelle hat eine Quelle oder ist als **eigene Annahme** markiert. Eigene Annahmen werden nach dem ersten Winter an echten Daten überprüft (Anlage des Inhabers, `CLAUDE.local.md`) und hier nachgetragen.
 
@@ -195,7 +195,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Quelle.** Fraunhofer ISE (WP-QS): AZ Warmwasser im Feld 2,8 (n = 18) zur Einordnung. 60 °C nach DVGW W 551 (`charges.py`). 15 % und 10 % **eigene Annahme**.
 
-**Voraussetzung.** `charges.py` ist noch nicht in `runtime.py` verdrahtet, und `model.Signal` hat keine Warmwasser-Temperatur. Ladungen halten 40 Tage, ein Vorjahresvergleich braucht das Tagesbuch. **Nicht im MVP.**
+**Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Offen: der Vorjahresvergleich der AZ normaler Ladungen; er braucht ein Jahr Tagebuch (normale Ladungen je Tag stehen seit 0.1.0b8 darin).
 
 ### 4.10 Fühler- und Datenfehler
 

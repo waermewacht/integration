@@ -23,6 +23,7 @@ The user interface is available in German and English and follows the language o
 - **Heat and electricity sensors per mode** and a sensor for **standby**, with long-term statistics for statistics cards.
 - **Cycling:** starts, run time, run time per start, short runs, shortest pause, defrosts and a binary sensor **Conspicuous cycling**.
 - **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating (with an activity).
+- **Hot water per charge:** performance factor of the last charge and of the charges of the last 30 days, last thermal disinfection.
 - **Health check:** reports a dropped efficiency at the same weather and the backup heater on mild days. Repair issues when a meter stands still, a source fails or the outdoor temperature is stuck.
 - **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period.
@@ -84,6 +85,7 @@ Wärmewacht is installed through HACS as a custom repository. Every version is a
 | Hot water | Heat hot water (meter) | `sensor.boiler_dhw_nrg` |
 | | Compressor electricity hot water | `sensor.boiler_dhw_meter` |
 | | Backup heater hot water | `sensor.boiler_dhw_auxelecheatnrgcons` |
+| | Hot water temperature | `sensor.boiler_dhw_curtemp` |
 | Cooling | Heat removed cooling (meter) | `sensor.boiler_nrgcool` |
 | | Compressor electricity cooling | `sensor.boiler_metercool` |
 | Operation | Compressor running | `binary_sensor.boiler_hpcompon` |
@@ -117,6 +119,7 @@ Several heat pumps: add one entry each.
 | Season starts in | July | Start of the season (heating period July to June). |
 | ***Health check*** | | |
 | Backup heater: mild weather from | 5 °C | Daily mean outdoor temperature from which the heat pump should heat alone (own assumption). |
+| Thermal disinfection from | 60 °C | Hot water temperature from which a charge counts as thermal disinfection. DVGW W 551 requires 60 °C at the outlet; the storage sensor often reads a little lower. |
 | Efficiency dropped from | 15 % | Drop of the heating performance factor against the previous season at the same outdoor temperature; off again only 5 points lower (own assumption). |
 | ***Costs and gas comparison (optional)*** | | |
 | Electricity price | – | ct/kWh gross. Without it there are no cost sensors. |
@@ -202,6 +205,18 @@ Binary sensor (problem), only with "Compressor running". It is on if within the 
 
 Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
 
+### Hot water charges
+
+A charge is one continuous period of the activity hot water. A defrost in between does not end it. Heat and electricity of the charge come from the hot water meters, without standby. What the meters report up to 5 minutes after the end still counts. Wärmewacht keeps charges for 40 days.
+
+| Entity | Meaning | Needs |
+| --- | --- | --- |
+| COP hot water last charge | Heat over electricity (compressor and backup heater) of the last finished charge. Attributes: `start`, `minutes`, `heat_kwh`, `electricity_kwh`, `aux_kwh`, `start_temp`, `max_temp`, `disinfection`, `uncertain` | hot water complete and activity, running meters (not Bosch HomeCom: daily values arrive too late) |
+| COP hot water charges 30 days | the same over the normal charges of the last 30 days, without thermal disinfection. Attributes: `charges`, `uncertain`, `mean_minutes`, `mean_heat_kwh`, `mean_lift` (temperature lift in K), `aux_share`, `disinfections` | the same |
+| Last thermal disinfection | When the storage last reached the set temperature (default 60 °C after DVGW W 551). A new one counts only after it was 5 K below in between. | hot water temperature |
+
+`uncertain`: the activity was unknown during the charge, or Home Assistant was not running. Such charges count in the ratio, but not in duration, heat and lift per charge.
+
 ### Health check
 
 Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hint at a fault. It says **what** stands out and **how** that shows, not **why**. If the data are not enough, a sensor is *unknown* and gives the reason in the attribute `reason`, never "off" for lack of data. Derived and referenced in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md) (German).
@@ -209,11 +224,12 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 | Binary sensor (problem) | On if | Needs |
 | --- | --- | --- |
 | Efficiency dropped | The heating performance factor of the current season is at least 15 % (adjustable) below the previous season at the same outdoor temperature. Off again only 5 points lower. | heating complete and outdoor temperature |
+| Backup heater in hot water charges | In the last 30 days the backup heater used more than 10 % of the electricity of normal [hot water charges](#hot-water-charges) (without thermal disinfection, at least 10 charges). | charges, hot water temperature and a backup heater meter |
 | Backup heater on mild days | In the last 7 days, on days with a daily mean of 5 °C or more (adjustable), the backup heater used at least 2 kWh for heating in total. | in addition a backup heater meter |
 
 - **Same weather:** The comparison is per 2 K class of the [performance curve](#performance-curve-and-heat-load), weighted by the heat of the current season. If one season merged classes (common early in a season with few days), Wärmewacht sums the classes of the other over the same range. It needs a common range of at least 4 K with 14 days and 10 kWh of electricity together.
 - **Attributes:** Efficiency: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` and `classes` (days and performance factor of both seasons per class). Backup heater: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` and `days` (per mild day). The lists are not recorded.
-- **Reasons for *unknown*:** `not_analysed_yet` (after start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`.
+- **Reasons for *unknown*:** `not_analysed_yet` (after start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`.
 - **Restart efficiency comparison** (button, configuration): after a deliberate change such as a new heating curve. The next 28 days become the new reference; until then "Efficiency dropped" is unknown.
 - **Data faults** (meter stands still, source unreachable, outdoor temperature unusable) are reported as a [repair issue](#troubleshooting), not as a sensor.
 - **Diary:** At midnight Wärmewacht adds an entry for the previous day (outdoor temperature, starts, run time per mode, short runs, defrosts, spread, flow temperature, energy), for up to 3 years. It is kept in the history file and written once a day. Later checks will evaluate it.

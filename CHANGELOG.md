@@ -1,7 +1,11 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b8 – 2026-10-27
 
+- **Warmwasser je Ladung:** Sensoren „AZ Warmwasser letzte Ladung“ und „AZ Warmwasser-Ladungen 30 Tage“ (normale Ladungen ohne Desinfektion), mit Dauer, Wärme, Temperaturhub und Heizstab-Anteil als Attribute. Nicht für Bosch HomeCom (Tageswerte).
+- **Neues Feld Warmwasser-Temperatur** (Vorlagen EMS-ESP, Bosch HomeCom, Stiebel, Luxtronik) und Sensor „Letzte thermische Desinfektion“. Die Schwelle (Vorgabe 60 °C) steht in den Einstellungen. Bestehende Einträge: die Warmwasser-Temperatur einmal unter *Neu konfigurieren* auswählen.
+- **Gesundheits-Check:** Problem-Sensor „Heizstab bei Warmwasserladungen“: mehr als 10 % Heizstab-Strom in normalen Ladungen der letzten 30 Tage.
+- **Tagebuch:** enthält jetzt die normalen Warmwasser-Ladungen je Tag, als Grundlage für einen späteren Vergleich mit dem Vorjahr.
 - **Effizienz gesunken:** Hat eine Saison Außentemperatur-Klassen zusammengefasst (am Saisonanfang üblich), vergleicht Wärmewacht jetzt mit der Summe der Klassen der anderen Saison über denselben Bereich. Statt „mindestens 2 gemeinsame Klassen“ gilt „mindestens 4 K gemeinsamer Bereich“. Der Vergleich ist damit nicht mehr wochenlang unbekannt.
 
 ## 0.1.0b7 – 2026-10-27

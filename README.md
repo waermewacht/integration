@@ -23,6 +23,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Wärme- und Strom-Sensoren je Betriebsart** und ein Sensor für den **Stillstand**, mit Langzeitstatistik für Statistik-Karten.
 - **Takte:** Starts, Laufzeit, Laufzeit pro Start, Kurzläufe, kürzeste Pause, Abtauungen und ein Binärsensor **Auffälliges Takten**.
 - **Diagnose:** Heizstab-Anteil, Spreizung und mittlere Vorlauftemperatur im Heizbetrieb (mit Betriebsart).
+- **Warmwasser je Ladung:** Arbeitszahl der letzten Ladung und der Ladungen der letzten 30 Tage, letzte thermische Desinfektion.
 - **Gesundheits-Check:** meldet gesunkene Effizienz bei gleichem Wetter und den Heizstab bei milder Witterung. Reparaturhinweise, wenn ein Zähler stillsteht, eine Quelle ausfällt oder die Außentemperatur hängt.
 - **Kosten und Gasvergleich** (optional, mit festen Preisen): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume.
@@ -84,6 +85,7 @@ Wärmewacht wird über HACS als benutzerdefiniertes Repository installiert. Jede
 | Warmwasser | Wärme Warmwasser (Zähler) | `sensor.boiler_dhw_nrg` |
 | | Strom Kompressor Warmwasser | `sensor.boiler_dhw_meter` |
 | | Strom Heizstab Warmwasser | `sensor.boiler_dhw_auxelecheatnrgcons` |
+| | Warmwasser-Temperatur | `sensor.boiler_dhw_curtemp` |
 | Kühlen | Wärme Kühlen (entzogen, Zähler) | `sensor.boiler_nrgcool` |
 | | Strom Kompressor Kühlen | `sensor.boiler_metercool` |
 | Betrieb | Kompressor läuft | `binary_sensor.boiler_hpcompon` |
@@ -117,6 +119,7 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
 | ***Gesundheits-Check*** | | |
 | Heizstab: milde Witterung ab | 5 °C | Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte (eigene Annahme). |
+| Thermische Desinfektion ab | 60 °C | Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt. DVGW W 551 verlangt 60 °C am Austritt; der Speicherfühler zeigt oft etwas weniger. |
 | Effizienz gesunken ab | 15 % | Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter (eigene Annahme). |
 | ***Kosten und Gasvergleich (optional)*** | | |
 | Strompreis | – | ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
@@ -202,6 +205,18 @@ Binärsensor (Problem), nur mit „Kompressor läuft“. Er ist an, wenn in den 
 
 Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
 
+### Warmwasser-Ladungen
+
+Eine Ladung ist ein zusammenhängender Zeitraum mit der Betriebsart Warmwasser. Eine Abtauung dazwischen beendet sie nicht. Wärme und Strom der Ladung kommen aus den Warmwasser-Zählern, ohne Stillstand. Was die Zähler bis 5 Minuten nach dem Ende melden, zählt noch dazu. Wärmewacht hält die Ladungen 40 Tage.
+
+| Entität | Bedeutung | Braucht |
+| --- | --- | --- |
+| AZ Warmwasser letzte Ladung | Wärme durch Strom (Kompressor und Heizstab) der zuletzt beendeten Ladung. Attribute: `start`, `minutes`, `heat_kwh`, `electricity_kwh`, `aux_kwh`, `start_temp`, `max_temp`, `disinfection`, `uncertain` | Warmwasser vollständig und Betriebsart, Zähler laufend (nicht Bosch HomeCom: Tageswerte kommen zu spät) |
+| AZ Warmwasser-Ladungen 30 Tage | dasselbe über die normalen Ladungen der letzten 30 Tage, ohne thermische Desinfektion. Attribute: `charges`, `uncertain`, `mean_minutes`, `mean_heat_kwh`, `mean_lift` (Temperaturhub in K), `aux_share`, `disinfections` | ebenso |
+| Letzte thermische Desinfektion | Zeitpunkt, an dem der Speicher zuletzt die eingestellte Temperatur erreicht hat (Vorgabe 60 °C nach DVGW W 551). Eine neue zählt erst, wenn er dazwischen 5 K darunter war. | Warmwasser-Temperatur |
+
+`uncertain`: Die Betriebsart war während der Ladung unbekannt, oder Home Assistant lief nicht. Solche Ladungen zählen in der AZ mit, aber nicht in Dauer, Wärme und Hub je Ladung.
+
 ### Gesundheits-Check
 
 Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kosten oder auf einen Defekt hindeuten. Er sagt, **was** auffällt und **woran** das zu sehen ist, nicht **warum**. Reichen die Daten nicht, ist ein Sensor *unbekannt* und nennt im Attribut `reason` den Grund, nie „aus“ mangels Daten. Hergeleitet und belegt in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md).
@@ -209,11 +224,12 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 | Binärsensor (Problem) | An, wenn | Braucht |
 | --- | --- | --- |
 | Effizienz gesunken | Die Arbeitszahl Heizen der laufenden Saison liegt bei gleicher Außentemperatur mindestens 15 % unter der Vorsaison (einstellbar). Aus erst wieder 5 Punkte darunter. | Heizen vollständig und Außentemperatur |
+| Heizstab bei Warmwasserladungen | Der Heizstab hat in den letzten 30 Tagen mehr als 10 % des Stroms normaler [Warmwasser-Ladungen](#warmwasser-ladungen) gebraucht (ohne thermische Desinfektion, mindestens 10 Ladungen). | Ladungen, Warmwasser-Temperatur und ein Heizstab-Zähler |
 | Heizstab bei milder Witterung | Der Heizstab hat in den letzten 7 Tagen an Tagen ab 5 °C Tagesmittel (einstellbar) zusammen mindestens 2 kWh fürs Heizen gebraucht. | dazu ein Heizstab-Zähler |
 
 - **Gleiches Wetter:** Verglichen wird je 2-K-Klasse der [AZ-Kennlinie](#kennlinie-und-heizlast), gewichtet mit der Wärme der laufenden Saison. Hat eine Saison Klassen zusammengefasst (am Saisonanfang mit wenigen Tagen üblich), zählt Wärmewacht die Klassen der anderen über denselben Bereich zusammen. Nötig sind mindestens 4 K gemeinsamer Bereich mit zusammen 14 Tagen und 10 kWh Strom.
 - **Attribute:** Effizienz: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` und `classes` (je Klasse Tage und AZ beider Saisons). Heizstab: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` und `days` (je milder Tag). Die Listen werden nicht aufgezeichnet.
-- **Gründe für *unbekannt*:** `not_analysed_yet` (nach dem Start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`.
+- **Gründe für *unbekannt*:** `not_analysed_yet` (nach dem Start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`.
 - **Effizienzvergleich neu starten** (Schaltfläche, Konfiguration): nach einer gewollten Änderung, etwa einer neuen Heizkurve. Die nächsten 28 Tage werden die neue Vergleichsbasis, bis dahin ist „Effizienz gesunken“ unbekannt.
 - **Datenfehler** (Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar) meldet Wärmewacht als [Reparaturhinweis](#fehlerbehebung), nicht als Sensor.
 - **Tagebuch:** Wärmewacht legt um Mitternacht einen Eintrag für den Vortag an (Außentemperatur, Starts, Laufzeit je Betriebsart, Kurzläufe, Abtauungen, Spreizung, Vorlauf, Energie), bis zu 3 Jahre. Es steht in der Verlaufsdatei und wird nur einmal am Tag geschrieben. Spätere Prüfungen werten es aus.

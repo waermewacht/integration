@@ -799,6 +799,13 @@ class HeatPumpRuntime:
                 for activity, value in run.activity_seconds.items():
                     seconds[activity] = seconds.get(activity, 0.0) + value
         energy = self.marks.energy(Period.YESTERDAY, self.totals)
+        split = disinfection_split(
+            self.charges,
+            start,
+            end,
+            threshold=self.disinfection_temp,
+            min_electricity=self.min_electricity,
+        )
         self.diary.append(
             {
                 "day": day,
@@ -816,6 +823,17 @@ class HeatPumpRuntime:
                 "energy": None
                 if energy is None
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
+                # Normal hot water charges, for a comparison with last year.
+                "charges": {
+                    "count": split.normal.count,
+                    "heat_kwh": round(split.normal.heat_kwh, 3),
+                    "input_kwh": round(
+                        split.normal.electricity_kwh + split.normal.aux_kwh, 3
+                    ),
+                    "disinfections": split.disinfection.count,
+                }
+                if self.has_charges
+                else None,
             }
         )
         del self.diary[:-DIARY_DAYS]
