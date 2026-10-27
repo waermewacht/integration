@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -60,6 +59,12 @@ def value(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> float:
 async def tick(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory, minutes: float
 ) -> None:
+    """Let pending state changes be handled, then advance to the next minute tick.
+
+    The test harness of HA 2026.4 fires time listeners before queued state
+    events: without waiting, the tick would come before the booking.
+    """
+    await hass.async_block_till_done()
     freezer.tick(timedelta(minutes=minutes))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
@@ -117,31 +122,11 @@ async def test_ratio_standby_and_cycling(
     assert value(hass, entry, "spread_today") == pytest.approx(4.0)
     assert value(hass, entry, "flow_temp_today") == pytest.approx(28.0)
 
-    # A reading after the run ended (same value): from here on the compressor
-    # stands still. Readings in the same instant as the stop would still
-    # belong to the run (HA 2026.4 gives them microseconds apart).
-    hass.states.async_set(ELEC_HEATING, "301.00", ENERGY)
-    await hass.async_block_till_done()
-
     # Standing still: the heating counter grows, the heat does not.
     await tick(hass, freezer, 120)
     set_counters(hass, 1003.0, 301.05)
     await tick(hass, freezer, 1)
-    runtime = entry.runtime_data
-    debug = {
-        "totals": runtime.totals.as_dict(),
-        "counters": {s.value: c.as_dict() for s, c in runtime.counters.items()},
-        "tracker": runtime.tracker.as_dict(),
-        "heat_at": {m.value: t.isoformat() for m, t in runtime._heat_at.items()},
-        "mode_seen": {m.value: t.isoformat() for m, t in runtime._mode_seen.items()},
-        "events": runtime.events,
-        "listeners": len(runtime._listeners),
-        "standby_state": hass.states.get(entity_id(hass, entry, "standby")).as_dict(),
-        "now": freezer().isoformat() if callable(freezer) else None,
-    }
-    runtime._notify()
-    debug["after_notify"] = state(hass, entry, "standby")
-    assert value(hass, entry, "standby") == pytest.approx(0.05), json.dumps(debug)
+    assert value(hass, entry, "standby") == pytest.approx(0.05)
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(3.0)
     assert value(hass, entry, "ratio_combined_month") == pytest.approx(3 / 1.05)
     assert state(hass, entry, "cycling_problem") == "off"
