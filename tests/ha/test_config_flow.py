@@ -18,6 +18,7 @@ EMPTY_SECTIONS = {
     "cooling": {},
     "operation": {},
     "measurements": {},
+    "activity_parts": {},
 }
 
 

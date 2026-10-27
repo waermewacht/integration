@@ -9,23 +9,26 @@
 
 **Deutsch** · [English](https://github.com/waermewacht/integration/blob/main/README.en.md)
 
-> **Beta, im Aufbau.** Wärmewacht ist neu und noch nicht für den Alltag gedacht. Es gibt noch kein Release. Rückmeldungen sind willkommen – siehe [Fehler melden](#fehler-melden).
+> **Beta.** Wärmewacht ist neu, die aktuellen Versionen sind Betas. Rückmeldungen sind willkommen, siehe [Fehler melden](#fehler-melden).
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
 
-> **Orientierung, keine Fachdiagnose.** Die Werte hängen davon ab, was die Zähler deiner Wärmepumpe messen – siehe [Bilanzgrenze und Grenzen der Aussage](#bilanzgrenze-und-grenzen-der-aussage).
+> **Orientierung, keine Fachdiagnose.** Die Werte hängen davon ab, was die Zähler deiner Wärmepumpe messen. Siehe [Bilanzgrenze und Grenzen der Aussage](#bilanzgrenze-und-grenzen-der-aussage).
 
 Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines Home Assistant.
 
 ## Was Wärmewacht kann
 
-- **Arbeitszahlen** für Heizen, Warmwasser und Heizen + Warmwasser, dazu die **Leistungszahl Kühlen (EER)** – jeweils für heute, gestern, Monat, Saison und gesamt.
+- **Arbeitszahlen** für Heizen, Warmwasser und Heizen + Warmwasser, dazu die **Leistungszahl Kühlen (EER)**, jeweils für heute, gestern, Monat, Saison und gesamt.
 - **Wärme- und Strom-Sensoren je Betriebsart** und ein Sensor für den **Stillstand**, mit Langzeitstatistik für Statistik-Karten.
 - **Takte:** Starts, Laufzeit, Laufzeit pro Start, Kurzläufe, kürzeste Pause, Abtauungen und ein Binärsensor **Auffälliges Takten**.
 - **Diagnose:** Heizstab-Anteil, Spreizung und mittlere Vorlauftemperatur im Heizbetrieb (mit Betriebsart).
-- **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt – auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
-- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Andere Wärmepumpen ordnest du von Hand zu.
-- **Schont SD-Karten:** schreibt höchstens alle 10 Minuten, am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
+- **Gesundheits-Check:** meldet gesunkene Effizienz bei gleichem Wetter und den Heizstab bei milder Witterung. Reparaturhinweise, wenn ein Zähler stillsteht, eine Quelle ausfällt oder die Außentemperatur hängt.
+- **Kosten und Gasvergleich** (optional, mit festen Preisen): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
+- **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume.
+- **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
+- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda und iDM. Andere Wärmepumpen ordnest du von Hand zu.
+- **Schont SD-Karten:** schreibt nur, wenn sich etwas geändert hat, und dann höchstens alle 10 Minuten. Dazu am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 
 ## Was Wärmewacht anders macht als Template-Sensoren
 
@@ -34,13 +37,13 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Stillstand getrennt:** Strom bei stehendem Kompressor zählt nicht in die Arbeitszahl je Betriebsart, wohl aber in die Arbeitszahl Heizen + Warmwasser. So rechnet auch das Fraunhofer ISE in seinen Feldtests.
 - **Kühlen nie in der Jahresarbeitszahl.** Es hat eine eigene Leistungszahl (EER).
 - **Takte aus echten Läufen** des Kompressors: Ein Neustart von Home Assistant mitten im Lauf ist kein neuer Start. Wechselt die Wärmepumpe ohne Stopp von Heizen auf Warmwasser, bleibt es ein Lauf. Ein Lauf, der beim ersten Blick schon lief, zählt nicht als Start.
-- **Zähler-Resets und Rücksprünge:** Rücksprünge – Rauschen und das Abtauen, bei dem die Wärmepumpe die entzogene Wärme abzieht – halten den Höchststand, gebucht wird nur Wärme darüber (netto). Erst ein Rückgang um mehr als 10 % und mehr als 1 kWh gilt als Reset mit neuer Basis, unplausible Sprünge werden nicht gebucht. `unknown` und `unavailable` gelten nie als 0.
+- **Zähler-Resets und Rücksprünge:** Rücksprünge halten den Höchststand, gebucht wird nur Wärme darüber (netto). Das betrifft Rauschen und das Abtauen, bei dem die Wärmepumpe die entzogene Wärme abzieht. Erst ein Rückgang um mehr als 10 % und mehr als 1 kWh gilt als Reset mit neuer Basis, unplausible Sprünge werden nicht gebucht. `unknown` und `unavailable` gelten nie als 0.
 - **Rückblick aus der Langzeitstatistik:** Heute, gestern, Monat, Saison und gesamt enthalten schon bei der Einrichtung die Werte der Zeit davor.
 
 ## Voraussetzungen
 
 - Home Assistant 2026.4 oder neuer.
-- Der Recorder (in Home Assistant standardmäßig an) für Rückblick und Bericht.
+- Der Recorder (in Home Assistant standardmäßig an) für Rückblick, Bericht, AZ-Kennlinie und Heizlast.
 - Mindestens eine Betriebsart mit einem **Wärmezähler** und einem **Stromzähler des Kompressors**: fortlaufende Energiesensoren in Wh, kWh oder MWh.
 
 | Quelle | Status |
@@ -49,7 +52,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, lokal und Cloud) | Vorlage, neu, an derselben CS5800i/CS6800i mit EMS-ESP verglichen |
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
-Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID – Umbenennen und alle Namensformate von EMS-ESP sind kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
+Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
 
 Die HomeCom-Vorlage braucht die Energie je Betriebsart („Wärme erzeugt Heizung“, „Strom Kompressor Heizung“ usw.). `bosch_homecom` legt diese Entitäten deaktiviert an: Aktiviere sie zuerst. Die Einrichtung zeigt, welche noch deaktiviert sind. „Kompressor läuft“ ist die Kompressordrehzahl über 0. Gegenüber EMS-ESP hat HomeCom Grenzen:
 
@@ -62,7 +65,7 @@ Läuft bei dir EMS-ESP, nimm EMS-ESP: Zähler auf 0,01 kWh im Minutentakt und di
 
 ## Installation
 
-Installierbar ab dem ersten Release.
+Wärmewacht wird über HACS als benutzerdefiniertes Repository installiert. Jede Version ist ein reguläres GitHub-Release, auch die Betas.
 
 1. HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/waermewacht/integration`, Typ *Integration*.
 2. Wärmewacht suchen und herunterladen. Home Assistant neu starten.
@@ -92,16 +95,18 @@ Installierbar ab dem ersten Release.
 | | Rücklauftemperatur | `sensor.boiler_hptc0` |
 | | Durchfluss | `sensor.boiler_pc0flow` |
 
-- Die Stromzähler je Betriebsart sind die des **Kompressors ohne Heizstab**. Den Heizstab trägst du getrennt ein: entweder je Betriebsart oder als „Strom Heizstab gesamt“, nicht beides. Der Gesamtzähler wird der Betriebsart zugerechnet, die gerade läuft.
+- Die Stromzähler je Betriebsart sind die des **Kompressors ohne Heizstab**. Den Heizstab trägst du getrennt ein: entweder je Betriebsart oder als „Strom Heizstab gesamt“, nicht beides. Der Gesamtzähler wird der Betriebsart zugerechnet, die gerade läuft oder zuletzt lief. Ohne Betriebsart zählt er zum Heizen.
 - Die Vorlage nimmt Zähler mit 0,01 kWh, wenn es sie gibt, sonst die ganzzahligen (z. B. `sensor.boiler_nrgsuppheating`). Den Heizstab je Betriebsart liefert EMS-ESP nur in ganzen kWh.
 - Ohne „Kompressor läuft“ gibt es keine Takte. Ohne „Betriebsart“ keine Abtauungen, keine Spreizung und kein mittlerer Vorlauf. „Kompressor läuft“ darf ein Binärsensor oder eine Drehzahl bzw. Modulation sein (läuft bei über 0). Bei manueller Zuordnung versteht Wärmewacht die Werte von EMS-ESP: `0`–`7` oder Texte wie „Heizen“, „Warmwasser“, „Abtauen“ bzw. `heating`, `hot water`, `defrost`.
-- Außentemperatur und Durchfluss werden schon zugeordnet, aber erst in einer späteren Version ausgewertet.
+- Die Außentemperatur nutzen [AZ-Kennlinie und Heizlast](#kennlinie-und-heizlast). Wärmewacht liest ihre Stundenmittel aus der Langzeitstatistik; der Sensor braucht also eine Statistik (`state_class: measurement`). Den Durchfluss kannst du schon zuordnen, er wird aber noch nicht ausgewertet.
+
+- **Betriebsart aus mehreren Entitäten** (Abschnitt eingeklappt): Hat die Wärmepumpe keine einzelne Betriebsart-Entität, sondern Merker (an/aus) für Abtauen, Warmwasser, Kühlen und Heizen, trägst du diese ein. Ein Merker „an“ gewinnt in dieser Reihenfolge: Abtauen, Warmwasser, Kühlen, Heizen. Die *eingestellte Betriebsart* (z. B. „Cool“) macht aus Heizen Kühlen, wenn die Betriebsart-Entität nur zwischen Heizen und Warmwasser unterscheidet (Umschaltventil). Die Vorlagen für Stiebel und HeishaMon füllen das aus.
 
 Mehrere Wärmepumpen: je einen Eintrag anlegen.
 
 ### Einstellungen
 
-*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu.
+*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu. Die Felder in der Reihenfolge des Formulars:
 
 | Einstellung | Vorgabe | Bedeutung |
 | --- | --- | --- |
@@ -110,13 +115,18 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Kritischer Lauf unter | 6 min | Mindestlaufzeit laut Dimplex-Projektierungshandbuch etwa 6 Minuten. |
 | Auffällig ab Starts pro Stunde über | 3 | Mehr Starts innerhalb einer Stunde gelten als auffällig. Verdichterhersteller nennen 6 bis 12 Starts pro Stunde als Obergrenze. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
-| Strompreis | – | Optional, ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
-| Strom-Grundpreis | – | Optional, €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
-| Gas-Arbeitspreis | – | Optional, ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
-| Normaußentemperatur | – | Optional, °C nach DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Für die Heizlast bei Normaußentemperatur. |
-| Gas-Grundpreis | – | Optional, €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
+| ***Gesundheits-Check*** | | |
+| Heizstab: milde Witterung ab | 5 °C | Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte (eigene Annahme). |
+| Effizienz gesunken ab | 15 % | Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter (eigene Annahme). |
+| ***Kosten und Gasvergleich (optional)*** | | |
+| Strompreis | – | ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
+| Strom-Grundpreis | – | €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
+| Gas-Arbeitspreis | – | ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
+| Gas-Grundpreis | – | €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
+| ***Heizlast (optional)*** | | |
+| Normaußentemperatur | – | °C nach DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Für die Heizlast bei Normaußentemperatur. |
 
-Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
+Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
 
 ### Neu konfigurieren
 
@@ -124,7 +134,7 @@ Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Sai
 
 ## Entitäten
 
-Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen, hängt von den zugeordneten Signalen ab.
+Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen, hängt von den zugeordneten Signalen und Einstellungen ab.
 
 ### Arbeitszahlen
 
@@ -135,10 +145,12 @@ Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen
 | AZ Heizen+WW *Zeitraum* | Heizen oder Warmwasser vollständig |
 | EER Kühlen *Zeitraum* (Leistungszahl) | Wärme und Strom Kühlen |
 
-*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt** – zusammen bis zu 20 Sensoren ohne Einheit („AZ“ = Arbeitszahl). Ihr Verlauf erscheint auch in der Statistik – dort als Zeitmittel des Sensors, nicht als Bilanz; die Bilanz liefern die Energie-Sensoren und der Bericht. Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. Die Saison des Kühlens ist das Kalenderjahr: Gekühlt wird von Frühjahr bis Herbst, eine Heizsaison ab Juli würde das teilen. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
+*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt**. Das sind zusammen bis zu 20 Sensoren ohne Einheit („AZ“ = Arbeitszahl). Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. Die Saison des Kühlens ist das Kalenderjahr: Gekühlt wird von Frühjahr bis Herbst, eine Heizsaison ab Juli würde das teilen. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
 
 - Arbeitszahl je Betriebsart = Wärme / Strom (Kompressor plus Heizstab), **ohne** Stillstand.
 - Heizen + Warmwasser = Wärme beider / (Strom beider + Stillstand). Das entspricht einer Jahresarbeitszahl.
+
+Die Sensoren haben eine Langzeitstatistik (`state_class: measurement`). Sie ist ein Zeitmittel des Quotienten, keine Bilanz. Für Monats- oder Jahreswerte nimm die [Energie-Sensoren](#energie) oder den [Bericht](#bericht).
 
 Attribute:
 
@@ -151,8 +163,6 @@ Attribute:
 | `counter_step_kwh` | Auflösung des gröbsten beteiligten Zählers: 0,01 oder 1 kWh |
 | `reliable` | `true`, wenn die Rundung der Zähler höchstens 5 % des Stroms ausmacht |
 
-Die Sensoren haben bewusst keine Langzeitstatistik: Home Assistant würde Quotienten mitteln. Für Monats- oder Jahreswerte gibt es die Energie-Sensoren und den [Bericht](#bericht-für-einen-zeitraum).
-
 ### Energie
 
 | Entität | Einheit | Bedeutung |
@@ -161,15 +171,15 @@ Die Sensoren haben bewusst keine Langzeitstatistik: Home Assistant würde Quotie
 | Strom Heizen / Warmwasser / Kühlen | kWh | Strom bei laufendem Kompressor, mit Heizstab, ohne Stillstand |
 | Strom Stillstand | kWh | Strom bei stehendem Kompressor, alle Betriebsarten |
 
-Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. Bitte nicht deaktivieren: Der Bericht liest ihre Statistik für die Zeit nach der Einrichtung.
+Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. Bitte nicht deaktivieren: Bericht, AZ-Kennlinie und Heizlast lesen ihre Statistik für die Zeit nach der Einrichtung.
 
-**Statistik vor der Einrichtung:** Einmal nach der Einrichtung (und beim Update auf 0.1.0b4) schreibt Wärmewacht die Stunden davor in die Statistik dieser Sensoren, berechnet aus der Statistik deiner Zähler mit stundenweise geschätztem Stillstand. Statistik-Karten zeigen damit auch die Monate vor der Einrichtung. Wärmewacht schreibt nur Stunden vor der ersten Zeile, die Home Assistant selbst aufgezeichnet hat, und ändert keine bestehende Zeile. Die Stunde der Einrichtung fehlt bis zum Einrichtungszeitpunkt.
+**Statistik vor der Einrichtung:** Einmal nach der Einrichtung (bei älteren Einträgen beim Update) schreibt Wärmewacht die Stunden davor in die Statistik dieser Sensoren. Sie sind aus der Statistik deiner Zähler berechnet, mit stundenweise geschätztem Stillstand. Statistik-Karten zeigen damit auch die Monate vor der Einrichtung. Wärmewacht schreibt nur Stunden vor der ersten Zeile, die Home Assistant selbst aufgezeichnet hat. Etwa 15 Minuten nach dem Start hebt Wärmewacht die Summen ab der ersten importierten Stunde einmalig an. So beginnen sie bei 0, und der erste Balken einer Statistik-Karte ist nicht negativ. Die Änderung je Stunde bleibt dabei gleich. Die Stunde der Einrichtung fehlt bis zum Einrichtungszeitpunkt.
 
 **Stillstand:** Strom einer Betriebsart gilt als Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieser Betriebsart kam noch der Kompressor in ihr lief. Ohne Kompressorstatus entscheidet nur die Wärme.
 
 ### Takte
 
-Nur mit „Kompressor läuft“; Abtauungen brauchen die Betriebsart.
+Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen nur die Betriebsart. „Starts gesamt“ gibt es auch, wenn nur der Startzähler der Wärmepumpe zugeordnet ist.
 
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
@@ -192,93 +202,114 @@ Binärsensor (Problem), nur mit „Kompressor läuft“. Er ist an, wenn in den 
 
 Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
 
+### Gesundheits-Check
+
+Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kosten oder auf einen Defekt hindeuten. Er sagt, **was** auffällt und **woran** das zu sehen ist, nicht **warum**. Reichen die Daten nicht, ist ein Sensor *unbekannt* und nennt im Attribut `reason` den Grund, nie „aus“ mangels Daten. Hergeleitet und belegt in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md).
+
+| Binärsensor (Problem) | An, wenn | Braucht |
+| --- | --- | --- |
+| Effizienz gesunken | Die Arbeitszahl Heizen der laufenden Saison liegt bei gleicher Außentemperatur mindestens 15 % unter der Vorsaison (einstellbar). Aus erst wieder 5 Punkte darunter. | Heizen vollständig und Außentemperatur |
+| Heizstab bei milder Witterung | Der Heizstab hat in den letzten 7 Tagen an Tagen ab 5 °C Tagesmittel (einstellbar) zusammen mindestens 2 kWh fürs Heizen gebraucht. | dazu ein Heizstab-Zähler |
+
+- **Gleiches Wetter:** Verglichen wird je 2-K-Klasse der [AZ-Kennlinie](#kennlinie-und-heizlast), gewichtet mit der Wärme der laufenden Saison. Nötig sind mindestens 2 gemeinsame Klassen mit zusammen 14 Tagen und 10 kWh Strom.
+- **Attribute:** Effizienz: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` und `classes` (je Klasse Tage und AZ beider Saisons). Heizstab: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` und `days` (je milder Tag). Die Listen werden nicht aufgezeichnet.
+- **Gründe für *unbekannt*:** `not_analysed_yet` (nach dem Start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`.
+- **Effizienzvergleich neu starten** (Schaltfläche, Konfiguration): nach einer gewollten Änderung, etwa einer neuen Heizkurve. Die nächsten 28 Tage werden die neue Vergleichsbasis, bis dahin ist „Effizienz gesunken“ unbekannt.
+- **Datenfehler** (Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar) meldet Wärmewacht als [Reparaturhinweis](#fehlerbehebung), nicht als Sensor.
+- **Tagebuch:** Wärmewacht legt um Mitternacht einen Eintrag für den Vortag an (Außentemperatur, Starts, Laufzeit je Betriebsart, Kurzläufe, Abtauungen, Spreizung, Vorlauf, Energie), bis zu 3 Jahre. Es steht in der Verlaufsdatei und wird nur einmal am Tag geschrieben. Spätere Prüfungen werten es aus.
+
 ### Diagnose
 
 | Entität | Einheit | Bedeutung | Braucht |
 | --- | --- | --- | --- |
 | Heizstab-Anteil Monat, Saison | % | Anteil des Heizstabs am Strom für Heizen und Warmwasser (mit Stillstand) | Heizstab-Zähler |
-| Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vor- und Rücklauf |
-| Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf |
+| Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vorlauf, Rücklauf und Betriebsart |
+| Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf und Betriebsart |
 
 ### Kosten und Gasvergleich
 
+Mit einem Strompreis in den [Einstellungen](#einstellungen) und Heizen oder Warmwasser vollständig zugeordnet.
+
 | Entität | Einheit | Bedeutung | Braucht |
 | --- | --- | --- | --- |
-| Stromkosten Monat, Saison | € | aller Strom der Wärmepumpe (alle Betriebsarten, Stillstand, Heizstab) × Strompreis | Strompreis |
-| Wärmekosten je kWh Saison | €/kWh | Stromkosten für Heizen und Warmwasser (mit Stillstand) je kWh Wärme | Strompreis |
-| Ersparnis ggü. Gaskessel Saison | € | Gaskosten für dieselbe Wärme minus Stromkosten | Strom- und Gaspreis |
+| Stromkosten Monat, Saison | € | aller Strom der Wärmepumpe (alle Betriebsarten, Stillstand, Heizstab) × Strompreis, plus anteiliger Strom-Grundpreis | Strompreis |
+| Wärmekosten je kWh Saison | €/kWh | Kosten für Heizen und Warmwasser (Strom mit Stillstand, anteiliger Strom-Grundpreis) je kWh Wärme; unter 0,5 kWh Wärme unbekannt | Strompreis |
+| Ersparnis ggü. Gaskessel Saison | € | Gaskosten (Arbeitspreis plus anteiliger Gas-Grundpreis) für dieselbe Wärme minus die Kosten der Wärmepumpe für Heizen und Warmwasser (Strom mit Stillstand, anteiliger Strom-Grundpreis) | Strompreis und Gas-Arbeitspreis |
 
-- **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der im Feld gemessene Wirkungsgrad von Brennwertkesseln (Jagnow/Wolff, DBU 2004).
+- **Preise** gelten fest, so wie sie in den Einstellungen stehen. Dynamische Tarife berücksichtigt Wärmewacht nicht.
+- **Grundpreise** werden je Tag verteilt (Jahrespreis ÷ 365 bzw. 366). Der Strom-Grundpreis zählt nur bei eigenem Wärmepumpenzähler und gehört zu Heizen und Warmwasser.
+- **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der Nutzungsgrad, den Feldmessungen an Brennwertkesseln ergeben haben (Jagnow/Wolff, DBU 2004). Gas wird nach Brennwert abgerechnet, deshalb gilt der Wert auf den Brennwert.
 - **Kein CO₂-Vergleich:** Er hinge zu stark an Annahmen (Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom).
-- **Preise** gelten fest. Dynamische Tarife folgen mit dem Bericht.
+
+Attribute von „Ersparnis ggü. Gaskessel Saison“:
+
+| Attribut | Bedeutung |
+| --- | --- |
+| `heat_kwh` | Wärme Heizen und Warmwasser in der Saison |
+| `heat_pump_cost_eur` | Kosten der Wärmepumpe für diese Wärme (Strom mit Stillstand, anteiliger Strom-Grundpreis) |
+| `electricity_base_cost_eur` | darin enthaltener anteiliger Strom-Grundpreis (0 ohne Einstellung) |
+| `gas_kwh` | Gas für dieselbe Wärme, auf den Brennwert |
+| `gas_cost_eur` | Gaskosten mit anteiligem Grundpreis |
+| `gas_base_cost_eur` | darin enthaltener anteiliger Gas-Grundpreis (0 ohne Einstellung) |
+| `boiler_efficiency` | Kesselnutzungsgrad auf den Brennwert (0,87) |
 
 ### Kennlinie und Heizlast
 
-Mit einer Außentemperatur bei den Entitäten. Wärmewacht rechnet 2 Minuten nach dem Start und dann täglich gegen 3 Uhr, aus der Langzeitstatistik.
+Beide brauchen die Außentemperatur sowie Wärme und Strom Heizen, dazu den Recorder. Wärmewacht rechnet 2 Minuten nach dem Start und dann täglich ab 3 Uhr, aus der Langzeitstatistik (vor der Einrichtung aus der Statistik deiner Zähler, wie der [Bericht](#bericht)). Die Ergebnisse liegen nur im Speicher. Nach einem Neustart sind die Sensoren deshalb etwa 2 Minuten leer.
 
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
-| AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen `current` (laufende Saison) und `previous` (vorige Saison). |
+| AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen. |
 | Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
 | Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
 
-- **Kennlinie:** Arbeitszahl Heizen je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand. Eine Klasse braucht mindestens 7 Tage, dünne Randklassen werden zur Nachbarklasse gezogen. Laufende und vorige Saison bleiben getrennt: Eine geänderte Heizkurve würde sonst beide verwischen.
-- **Heizlast (Energiesignatur):** Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur, nur Wochen unter 12 °C. Sie braucht mindestens 8 Wochen, 10 K Spanne und 5 Frosttage, sonst bleibt der Wert leer und die Attribute nennen den Grund (`reasons`). „Gemessen“ (`measured_kw`, mit inneren und solaren Gewinnen) und „normgerecht“ (`standard_kw`) stehen beide in den Attributen.
-- **Aktionen** für beliebige Zeiträume: `waermewacht.performance_curve` (Heizen oder Heizen und Warmwasser) und `waermewacht.heat_load`.
+**AZ-Kennlinie:** Arbeitszahl Heizen je 2-K-Klasse der Tagesmitteltemperatur, ohne Stillstand. Laufende und vorige Saison bleiben getrennt: Eine geänderte Heizkurve würde sonst beide verwischen.
 
-Diagramm mit der HACS-Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card); die Entity-ID hängt von deinem Namen ab:
+- Ein Tag zählt mit mindestens 20 Stundenwerten der Außentemperatur und nur, wenn er Wärme fürs Heizen brachte. Stunden ohne Außentemperatur fallen mit ihrer Energie weg. Werte außerhalb von −35 bis 45 °C werden verworfen.
+- Eine Klasse braucht mindestens 7 Tage. Dünne Randklassen werden zur Nachbarklasse gezogen. Dünne Klassen dazwischen bleiben stehen, haben aber `sparse: true` und `ratio: null`.
 
-```yaml
-type: custom:apexcharts-card
-header:
-  show: true
-  title: AZ-Kennlinie Heizen
-chart_type: line
-graph_span: 1h  # the x axis is the outdoor temperature, not time
-apex_config:
-  xaxis:
-    type: numeric
-    title: {text: "Außentemperatur (Tagesmittel) °C"}
-  yaxis:
-    - title: {text: "Arbeitszahl"}
-  markers: {size: 5}
-series:
-  - entity: sensor.warmepumpe_az_kennlinie_heizen
-    name: Laufende Saison
-    data_generator: |
-      return entity.attributes.current
-        .filter(c => c.ratio !== null)
-        .map(c => [(c.lower + c.upper) / 2, c.ratio]);
-  - entity: sensor.warmepumpe_az_kennlinie_heizen
-    name: Vorige Saison
-    data_generator: |
-      return entity.attributes.previous
-        .filter(c => c.ratio !== null)
-        .map(c => [(c.lower + c.upper) / 2, c.ratio]);
-```
+Attribute von „AZ-Kennlinie Heizen“:
 
-## Statistik-Karte: Wärme und Strom je Monat
+| Attribut | Bedeutung |
+| --- | --- |
+| `current_start`, `previous_start` | Beginn der laufenden und der vorigen Saison |
+| `current`, `previous` | Klassen der laufenden und der vorigen Saison, kälteste zuerst |
 
-Eine Arbeitszahl je Monat liefert der [Bericht](#bericht-für-einen-zeitraum). Wärme und Strom je Monat zeigt eine Statistik-Karte (*Dashboard bearbeiten → Karte hinzufügen → Manuell*); die Entity-IDs hängen von deinem Namen ab:
+Jede Klasse hat `lower` und `upper` (°C, untere Grenze eingeschlossen), `days`, `mean_outdoor` (Mittel der Tagesmittel), `heat_kwh`, `electricity_kwh`, `ratio` (`null` unter dem Mindeststrom oder bei dünner Klasse) und `sparse`.
 
-```yaml
-type: statistics-graph
-title: Heizen je Monat
-chart_type: bar
-period: month
-stat_types:
-  - change
-days_to_show: 365
-entities:
-  - entity: sensor.warmepumpe_warme_heizen
-    name: Wärme
-  - entity: sensor.warmepumpe_strom_heizen
-    name: Strom
-```
+**Heizlast (Energiesignatur):** Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur. Nur die Wärme fürs Heizen zählt, Warmwasser nicht. Durch die Wochen legt Wärmewacht eine Ausgleichsgerade.
 
-## Bericht für einen Zeitraum
+- Eine Woche beginnt Montag 0 Uhr. Sie zählt mit mindestens 6 vollen Tagen und einem Mittel unter 12 °C.
+- Ein voller Tag hat mindestens 20 Stundenwerte der Außentemperatur und keine Kühlung. Werte außerhalb von −35 bis 45 °C werden verworfen. Ein Frosttag hat ein Tagesmittel unter 0 °C.
+- Ein Ergebnis gibt es erst mit mindestens 8 Wochen, 10 K Spanne zwischen kältester und wärmster Woche, 5 Frosttagen und einer fallenden Geraden. Sonst bleibt der Wert leer, und `reasons` nennt den Grund.
+- „Gemessen“ (`measured_kw`) ist die Gerade bei Normaußentemperatur, mit inneren und solaren Gewinnen. „Normgerecht“ (`standard_kw`) ist die parallel verschobene Gerade durch 0 bei 20 °C, ohne diese Gewinne. Der Sensor „Heizlast bei Normaußentemperatur“ zeigt den normgerechten Wert.
 
-*Einstellungen → Werkzeuge → Aktionen* (früher *Entwicklerwerkzeuge → Aktionen*) → **Wärmewacht: Bericht**, Wärmepumpe und Zeitraum wählen, „Antwort anzeigen“:
+Attribute von „Heizlast je Kelvin“:
+
+| Attribut | Bedeutung |
+| --- | --- |
+| `start`, `end` | ausgewerteter Zeitraum (die letzte vollständige Saison) |
+| `sufficient` | `true`, wenn die Daten für ein Ergebnis reichen |
+| `reasons` | Gründe, wenn nicht: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
+| `week_count` | gültige Wochen |
+| `spread` | Spanne der Wochenmittel in K |
+| `frost_days` | Frosttage in den gültigen Wochen |
+| `intercept_kw`, `slope_kw_per_k` | Gerade P = a + b · T (a in kW, b in kW/K, negativ) |
+| `r_squared` | Bestimmtheitsmaß der Geraden |
+| `heating_limit` | Heizgrenze in °C: Dort erreicht die Gerade 0 |
+| `design_temp` | Normaußentemperatur aus den Einstellungen |
+| `measured_kw`, `standard_kw` | Heizlast bei Normaußentemperatur, gemessen und normgerecht |
+| `weeks` | gültige Wochen mit `start`, `days`, `hours`, `mean_outdoor`, `power_kw` |
+
+Ohne ausreichende Daten sind die Werte der Geraden `null`. Für andere Zeiträume und Heizen mit Warmwasser gibt es die [Aktionen](#aktionen). Diagramme zeigen die [Dashboard-Beispiele](#dashboard-beispiele).
+
+## Aktionen
+
+*Einstellungen → Werkzeuge → Aktionen* (früher *Entwicklerwerkzeuge → Aktionen*) → Aktion wählen, Wärmepumpe und Zeitraum wählen, „Antwort anzeigen“. Die Antwort lässt sich auch in Skripten und Automationen verwenden (`response_variable`). Zeiten ohne Zeitzone gelten als Ortszeit deines Home Assistant. Alle Aktionen brauchen den Recorder.
+
+### Bericht
+
+**Wärmewacht: Bericht** liefert Wärme, Strom und Arbeitszahlen eines Zeitraums, je Monat aufgeschlüsselt.
 
 ```yaml
 action: waermewacht.report
@@ -287,7 +318,7 @@ data:
   start: "2026-09-01 00:00:00"
 ```
 
-Ohne Beginn: Beginn der laufenden Saison. Ohne Ende: jetzt. Zeiten ohne Zeitzone gelten als Ortszeit deines Home Assistant. Beispiel-Antwort (erfundene Werte):
+Ohne Beginn: Beginn der laufenden Saison. Ohne Ende: jetzt. Beispiel-Antwort (erfundene Werte):
 
 ```yaml
 start: "2026-09-01T00:00:00+02:00"
@@ -356,7 +387,211 @@ months:
 - **Vor der Einrichtung** rechnet Wärmewacht aus der Langzeitstatistik deiner Zähler. Dort gibt es keinen Kompressorstatus. Deshalb gilt der Strom einer Betriebsart in einer Stunde ohne Wärme dieser Betriebsart als Stillstand. Stunden mit Lauf behalten ihre Minuten Stillstand als Lauf; die Arbeitszahl je Betriebsart fällt dort etwas niedriger aus.
 - **Ab der ersten vollen Stunde nach der Einrichtung** nutzt der Bericht die Statistik der eigenen [Energie-Sensoren](#energie).
 
-Die Antwort lässt sich auch in Skripten und Automationen verwenden (`response_variable`).
+### AZ-Kennlinie
+
+**Wärmewacht: AZ-Kennlinie** (`waermewacht.performance_curve`) rechnet die [Kennlinie](#kennlinie-und-heizlast) für einen beliebigen Zeitraum.
+
+```yaml
+action: waermewacht.performance_curve
+data:
+  config_entry: <Eintrag auswählen>
+  start: "2025-07-01 00:00:00"
+  end: "2026-07-01 00:00:00"
+  scope: heating_dhw
+```
+
+| Feld | Vorgabe | Bedeutung |
+| --- | --- | --- |
+| `start` | Beginn der laufenden Saison | Saisons mit verschiedener Heizkurve nicht mischen. |
+| `end` | jetzt | |
+| `scope` | `heating` | `heating` (Heizen) oder `heating_dhw` (Heizen und Warmwasser, beides ohne Stillstand) |
+
+Die Antwort enthält `start`, `end`, `scope` und `classes`: die Klassen wie im Attribut `current` des Sensors.
+
+### Heizlast
+
+**Wärmewacht: Heizlast** (`waermewacht.heat_load`) rechnet die [Energiesignatur](#kennlinie-und-heizlast) für einen beliebigen Zeitraum.
+
+```yaml
+action: waermewacht.heat_load
+data:
+  config_entry: <Eintrag auswählen>
+  design_outdoor_temp: -12
+```
+
+| Feld | Vorgabe | Bedeutung |
+| --- | --- | --- |
+| `start` | Beginn der letzten vollständigen Saison | |
+| `end` | Ende der letzten vollständigen Saison; mit `start`: jetzt | |
+| `design_outdoor_temp` | Normaußentemperatur aus den Einstellungen | °C, für `measured_kw` und `standard_kw` |
+
+Die Antwort enthält dieselben Werte wie die Attribute von „Heizlast je Kelvin“.
+
+AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeordnet ist oder der Recorder fehlt.
+
+## Dashboard-Beispiele
+
+Die Entity-IDs hängen vom Namen des Eintrags ab (hier die Vorgabe „Wärmepumpe“). Eine Karte fügst du so hinzu: *Dashboard bearbeiten → Karte hinzufügen → Manuell*.
+
+### Statistik-Karte: Wärme und Strom je Monat
+
+Eine Arbeitszahl je Monat liefert der [Bericht](#bericht). Wärme und Strom je Monat zeigt eine Statistik-Karte:
+
+```yaml
+type: statistics-graph
+title: Heizen je Monat
+chart_type: bar
+period: month
+stat_types:
+  - change
+days_to_show: 365
+entities:
+  - entity: sensor.warmepumpe_warme_heizen
+    name: Wärme
+  - entity: sensor.warmepumpe_strom_heizen
+    name: Strom
+```
+
+### AZ-Kennlinie und Energiesignatur
+
+Beide Diagramme brauchen die HACS-Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die Grenzen der y-Achse (`min`, `max`) passt du an deine Anlage an.
+
+AZ-Kennlinie Heizen, vorige und laufende Saison:
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: "AZ-Kennlinie Heizen (x: Außentemperatur Tagesmittel)"
+graph_span: 40h
+span:
+  end: day
+now:
+  show: false
+apex_config:
+  chart:
+    height: 260
+  xaxis:
+    tickAmount: 8
+    labels:
+      formatter: "EVAL:(v, ts) => { const t = typeof ts === 'number' ? ts : Number(v); const e = new Date(); e.setHours(24, 0, 0, 0); return Math.round((t - e.getTime()) / 3600000 + 25) + ' °C'; }"
+    tooltip:
+      enabled: false
+  yaxis:
+    - min: 2
+      max: 6
+      tickAmount: 4
+      decimalsInFloat: 1
+      title:
+        text: Arbeitszahl
+  tooltip:
+    x:
+      formatter: "EVAL:(v) => { const e = new Date(); e.setHours(24, 0, 0, 0); return (Math.round(((v - e.getTime()) / 3600000 + 25) * 10) / 10) + ' °C'; }"
+  markers:
+    size: 5
+  legend:
+    show: true
+grid_options:
+  columns: full
+  rows: 6
+series:
+  - entity: sensor.warmepumpe_az_kennlinie_heizen
+    name: Vorige Saison
+    color: "#2F6FB0"
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.previous || []).filter(c => c.ratio !== null).map(c => [x((c.lower + c.upper) / 2), c.ratio]);
+  - entity: sensor.warmepumpe_az_kennlinie_heizen
+    name: Laufende Saison
+    color: "#DE5E32"
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.current || []).filter(c => c.ratio !== null).map(c => [x((c.lower + c.upper) / 2), c.ratio]);
+```
+
+Energiesignatur: die Wochen als Punkte und die Gerade von der Normaußentemperatur (ohne Einstellung −12 °C) bis zur Heizgrenze (sonst 15 °C):
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: "Energiesignatur (x: Außentemperatur Wochenmittel)"
+graph_span: 40h
+span:
+  end: day
+now:
+  show: false
+apex_config:
+  chart:
+    height: 260
+  xaxis:
+    tickAmount: 8
+    labels:
+      formatter: "EVAL:(v, ts) => { const t = typeof ts === 'number' ? ts : Number(v); const e = new Date(); e.setHours(24, 0, 0, 0); return Math.round((t - e.getTime()) / 3600000 + 25) + ' °C'; }"
+    tooltip:
+      enabled: false
+  yaxis:
+    - min: 0
+      max: 4
+      tickAmount: 4
+      decimalsInFloat: 1
+      title:
+        text: Heizleistung kW
+  tooltip:
+    x:
+      formatter: "EVAL:(v) => { const e = new Date(); e.setHours(24, 0, 0, 0); return (Math.round(((v - e.getTime()) / 3600000 + 25) * 10) / 10) + ' °C'; }"
+  markers:
+    size: [5, 0]
+  legend:
+    show: true
+grid_options:
+  columns: full
+  rows: 6
+series:
+  - entity: sensor.warmepumpe_heizlast_je_kelvin
+    name: Wochen
+    color: "#2F6FB0"
+    stroke_width: 0
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.weeks || []).map(w => [x(w.mean_outdoor), w.power_kw]).sort((a, b) => a[0] - b[0]);
+  - entity: sensor.warmepumpe_heizlast_je_kelvin
+    name: Gerade
+    color: "#DE5E32"
+    stroke_width: 2
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      const a = entity.attributes;
+      if (a.intercept_kw == null) return [];
+      const lo = a.design_temp ?? -12, hi = a.heating_limit ?? 15;
+      return [[x(lo), a.intercept_kw + a.slope_kw_per_k * lo], [x(hi), Math.max(0, a.intercept_kw + a.slope_kw_per_k * hi)]];
+```
+
+Im `data_generator` sind `start` und `end` schon vorbelegt. Das Tagesende heißt deshalb `e0` (im Formatter `e`).
 
 ## Bilanzgrenze und Grenzen der Aussage
 
@@ -364,16 +599,18 @@ Die Antwort lässt sich auch in Skripten und Automationen verwenden (`response_v
 - **Stillstand laut Wärmepumpe:** Bosch-Wärmepumpen buchen bei stehendem Kompressor gleichmäßig Strom in den Heizen-Zähler, beobachtet etwa 25 W, auch im Sommer. Der konstante Wert deutet auf einen Modellwert der Firmware, nicht auf eine Messung. Ob er stimmt, zeigt nur ein externer Zähler. Die Arbeitszahlen je Betriebsart hängen davon nicht ab; die Arbeitszahl Heizen + Warmwasser schon.
 - **Ganzzahlige Zähler:** Nicht jedes Modell liefert Zähler mit 0,01 kWh. Bei ganzen kWh ist eine kurze Zeitspanne ungenau (1 kWh von 5 kWh sind 20 %). Das Attribut `reliable` ist erst `true`, wenn der Strom mindestens das 20-Fache der Zählerauflösung erreicht.
 - **Abtauen:** Ob die Wärmezähler von Bosch die beim Abtauen entzogene Wärme abziehen, ist nicht geklärt.
-- **Rückblick:** Den Stillstand vor der Einrichtung schätzt Wärmewacht stundenweise (siehe [Bericht](#bericht-für-einen-zeitraum)). In den Sensoren fehlt die angebrochene Stunde der Einrichtung: Die Langzeitstatistik hat für sie noch keinen Wert.
+- **Rückblick:** Den Stillstand vor der Einrichtung schätzt Wärmewacht stundenweise (siehe [Bericht](#bericht)). In den Sensoren fehlt die angebrochene Stunde der Einrichtung: Die Langzeitstatistik hat für sie noch keinen Wert.
 - **Lücken:** Lief Home Assistant nicht, bucht der erste Zählerwert danach den ganzen Zuwachs. Ob das Lauf oder Stillstand war, entscheidet die Wärme im selben Zeitraum.
-- **Noch nicht enthalten:** Kennlinie über der Außentemperatur, Kosten und CO₂ im Vergleich zum Gaskessel, Heizlast.
 
 ## Fehlerbehebung
 
-Wärmewacht meldet Probleme unter *Einstellungen → Reparaturen* (frühestens 10 Minuten nach dem Start, damit Entitäten nach einem Neustart Zeit haben):
+Wärmewacht meldet Probleme unter *Einstellungen → Reparaturen*. Das geschieht frühestens 10 Minuten nach dem Start, damit Entitäten nach einem Neustart Zeit haben.
 
 - **Entität fehlt:** Eine zugeordnete Entität gibt es nicht mehr, z. B. nach Umbenennen. Unter *Wärmewacht → ⋮ → Neu konfigurieren* wieder auswählen.
 - **Unbrauchbare Einheit:** Ein Energiezähler meldet nicht Wh, kWh oder MWh. Seine Werte werden nicht gezählt, bis die Einheit passt.
+- **Zähler steht still:** Der Kompressor lief, aber ein Zähler der laufenden Betriebsart stieg nicht: 1 Stunde bei Zählern mit Nachkommastellen, 6 Stunden bei ganzen kWh oder Tageswerten. Meist liefert die Quelle keine Werte mehr, die Entität ist deaktiviert oder der falsche Zähler zugeordnet.
+- **Quelle nicht erreichbar:** Eine zugeordnete Entität ist seit mehr als 60 Minuten `unavailable`. Quelle prüfen (EMS-ESP, MQTT, Cloud).
+- **Außentemperatur unbrauchbar:** Sie hat sich 48 Stunden nicht verändert oder lag gestern Stunden außerhalb von −35 bis +45 °C. Davon hängen Kennlinie, Heizlast und der Gesundheits-Check ab.
 
 Die Meldungen verschwinden von selbst, wenn das Problem behoben ist.
 
@@ -381,6 +618,7 @@ Weiteres:
 
 - **Arbeitszahl bleibt unbekannt:** Im Zeitraum gab es keine Wärme oder weniger Strom als den Mindeststrom. Das ist im Sommer beim Heizen normal.
 - **Keine Takte:** „Kompressor läuft“ ist nicht zugeordnet.
+- **Kennlinie oder Heizlast leer:** Nach einem Neustart etwa 2 Minuten warten. Hat die Außentemperatur keine Langzeitstatistik, bleiben beide leer. Bei der Heizlast nennt das Attribut `reasons`, was fehlt.
 - **Diagnose:** *Wärmewacht → Eintrag → ⋮ → Diagnosedaten herunterladen*. **Debug-Protokoll:** *Wärmewacht → ⋮ → Debug-Protokoll aktivieren*.
 
 ## Datenschutz
@@ -396,13 +634,13 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 ## Fehler melden
 
-Bitte als [Issue](https://github.com/waermewacht/integration/issues) – am besten mit Diagnose-Datei, dem Modell der Wärmepumpe und den Versionen von Home Assistant, Wärmewacht und gegebenenfalls EMS-ESP. Sicherheitslücken bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
+Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten mit Diagnose-Datei, dem Modell der Wärmepumpe und den Versionen von Home Assistant, Wärmewacht und gegebenenfalls EMS-ESP. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
 
 ## Verwandte Projekte
 
-- [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance) – Arbeitszahlen aus Wärme- und Stromzähler, herstellerneutral.
-- [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml) – umfangreiche Auswertung für Daikin Altherma mit ESPAltherma. Für Daikin die passende Wahl.
-- [heatpumpmonitor.org](https://heatpumpmonitor.org/) – öffentlicher Vergleich vieler Anlagen. Wärmewacht nutzt dieselben Begriffe (SEPEMO-Bilanzgrenzen, Starts), damit sich Werte einordnen lassen.
+- [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance): Arbeitszahlen aus Wärme- und Stromzähler, herstellerneutral.
+- [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml): umfangreiche Auswertung für Daikin Altherma mit ESPAltherma. Für Daikin die passende Wahl.
+- [heatpumpmonitor.org](https://heatpumpmonitor.org/): öffentlicher Vergleich vieler Anlagen. Wärmewacht nutzt dieselben Begriffe (SEPEMO-Bilanzgrenzen, Starts), damit sich Werte einordnen lassen.
 
 ## Lizenz
 

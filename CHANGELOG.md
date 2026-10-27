@@ -6,6 +6,12 @@
   - Vorlagen für Luxtronik (alpha innotec, Novelan; Strom je Betriebsart erst ab neuerer Firmware), Stiebel Eltron/Tecalor über die ISG, Panasonic Aquarea über HeishaMon (Integration `aquarea`), Lambda und iDM (Navigator 2.0 mit Weboberfläche).
   - Abgeleitet aus dem Quellcode der jeweiligen Integration, noch nicht an einer echten Anlage bestätigt. Die Einrichtung zeigt sie deshalb mit „(beta)“.
   - Rückmeldungen mit Diagnose-Datei sind willkommen.
+- **Gesundheits-Check:**
+  - Binärsensoren „Effizienz gesunken“ (AZ Heizen bei gleicher Außentemperatur gegenüber der Vorsaison) und „Heizstab bei milder Witterung“. Reichen die Daten nicht, sind sie unbekannt und nennen den Grund. Schwellen in den Einstellungen.
+  - Schaltfläche „Effizienzvergleich neu starten“ nach einer gewollten Änderung, etwa einer neuen Heizkurve.
+  - Neue Reparaturhinweise: Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar.
+  - Tagebuch: ein Eintrag je Tag in der Verlaufsdatei, Grundlage für spätere Prüfungen.
+- **Betriebsart aus mehreren Entitäten:** Merker für Abtauen, Warmwasser, Kühlen und Heizen sowie die eingestellte Betriebsart, für Wärmepumpen ohne einzelne Betriebsart-Entität. Die Vorlagen Stiebel und HeishaMon nutzen das; damit gibt es dort Abtauungen, Spreizung und Vorlauf.
 
 ## 0.1.0b6 – 2026-10-27
 

@@ -9,23 +9,26 @@
 
 [Deutsch](https://github.com/waermewacht/integration/blob/main/README.md) · **English**
 
-> **Beta, work in progress.** Wärmewacht is new and not yet meant for everyday use. There is no release yet. Feedback is welcome – see [Reporting issues](#reporting-issues).
+> **Beta.** Wärmewacht is new; the current versions are betas. Feedback is welcome, see [Reporting issues](#reporting-issues).
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
 
-> **A guide, not an expert diagnosis.** The figures depend on what your heat pump's meters measure – see [System boundary and limits](#system-boundary-and-limits).
+> **A guide, not an expert diagnosis.** The figures depend on what your heat pump's meters measure. See [System boundary and limits](#system-boundary-and-limits).
 
 The user interface is available in German and English and follows the language of your Home Assistant.
 
 ## Features
 
-- **Performance factors** for heating, hot water and heating + hot water, plus the **energy efficiency ratio for cooling (EER)** – each for today, yesterday, month, season and total.
+- **Performance factors** for heating, hot water and heating + hot water, plus the **energy efficiency ratio for cooling (EER)**, each for today, yesterday, month, season and total.
 - **Heat and electricity sensors per mode** and a sensor for **standby**, with long-term statistics for statistics cards.
 - **Cycling:** starts, run time, run time per start, short runs, shortest pause, defrosts and a binary sensor **Conspicuous cycling**.
 - **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating (with an activity).
-- **Report for any period** via an action, broken down by month – also **before the setup**, as far back as the long-term statistics of your meters go.
-- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. Other heat pumps are mapped by hand.
-- **Easy on SD cards:** writes at most every 10 minutes, at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
+- **Health check:** reports a dropped efficiency at the same weather and the backup heater on mild days. Repair issues when a meter stands still, a source fails or the outdoor temperature is stuck.
+- **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
+- **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period.
+- **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
+- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda and iDM. Other heat pumps are mapped by hand.
+- **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
 
 ## What Wärmewacht does differently from template sensors
 
@@ -34,13 +37,13 @@ The user interface is available in German and English and follows the language o
 - **Standby kept separate:** Electricity while the compressor stands still does not count in the factor per mode, but it does in heating + hot water. Fraunhofer ISE calculates the same way in its field tests.
 - **Cooling never enters the seasonal factor.** It has its own EER.
 - **Cycling from real compressor runs:** A Home Assistant restart in the middle of a run is not a new start. If the heat pump switches from heating to hot water without stopping, it stays one run. A run that was already going when first seen does not count as a start.
-- **Meter resets and steps back:** Steps back – noise, and defrosts, during which the heat pump subtracts the heat it took – keep the highest reading; only heat above it is booked (net). Only a drop of more than 10 % and more than 1 kWh counts as a reset with a new baseline, implausible jumps are not booked. `unknown` and `unavailable` never count as 0.
+- **Meter resets and steps back:** Steps back keep the highest reading; only heat above it is booked (net). This covers noise and defrosts, during which the heat pump subtracts the heat it took. Only a drop of more than 10 % and more than 1 kWh counts as a reset with a new baseline, implausible jumps are not booked. `unknown` and `unavailable` never count as 0.
 - **Look back from the long-term statistics:** Today, yesterday, month, season and total already include the time before the setup.
 
 ## Requirements
 
 - Home Assistant 2026.4 or newer.
-- The recorder (on by default in Home Assistant) for the look back and the report.
+- The recorder (on by default in Home Assistant) for the look back, the report, the performance curve and the heat load.
 - At least one mode with a **heat meter** and a **compressor electricity meter**: cumulative energy sensors in Wh, kWh or MWh.
 
 | Source | Status |
@@ -49,7 +52,7 @@ The user interface is available in German and English and follows the language o
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, local and cloud) | template, new, compared with EMS-ESP on the same CS5800i/CS6800i |
 | any heat and electricity meters | manual mapping |
 
-The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID – renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
+The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID, so renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
 
 The HomeCom template needs the energy per mode ("Wärme erzeugt Heizung", "Strom Kompressor Heizung" etc.; English: heat produced and compressor energy per heating, hot water and cooling). `bosch_homecom` creates these entities disabled: enable them first. The setup shows which ones are still disabled. "Compressor running" is the compressor speed above 0. Compared with EMS-ESP, HomeCom has limits:
 
@@ -62,7 +65,7 @@ If you run EMS-ESP, use EMS-ESP: meters in 0.01 kWh every minute, and the activi
 
 ## Installation
 
-Installable from the first release on.
+Wärmewacht is installed through HACS as a custom repository. Every version is a regular GitHub release, betas included.
 
 1. HACS → ⋮ → *Custom repositories* → `https://github.com/waermewacht/integration`, type *Integration*.
 2. Search for Wärmewacht and download it. Restart Home Assistant.
@@ -92,16 +95,18 @@ Installable from the first release on.
 | | Return temperature | `sensor.boiler_hptc0` |
 | | Flow rate | `sensor.boiler_pc0flow` |
 
-- The electricity meters per mode are those of the **compressor without backup heater**. Enter the backup heater separately: either per mode or as "Backup heater total", not both. The total is assigned to the mode that is currently running.
+- The electricity meters per mode are those of the **compressor without backup heater**. Enter the backup heater separately: either per mode or as "Backup heater total", not both. The total is assigned to the mode that is running or ran last. Without an activity it counts as heating.
 - The template takes meters in 0.01 kWh where available, otherwise the whole-kWh ones (e.g. `sensor.boiler_nrgsuppheating`). EMS-ESP provides the backup heater per mode in whole kWh only.
 - Without "Compressor running" there is no cycling. Without "Activity" no defrosts, no flow-return spread and no mean flow temperature. "Compressor running" may be a binary sensor or a speed or modulation (running above 0). With a manual mapping, Wärmewacht understands the values of EMS-ESP: `0`–`7` or texts such as `heating`, `hot water`, `defrost` (or the German "Heizen", "Warmwasser", "Abtauen").
-- Outdoor temperature and flow rate can already be mapped, but are only evaluated in a later version.
+- The outdoor temperature is used by the [performance curve and heat load](#performance-curve-and-heat-load). Wärmewacht reads its hourly means from the long-term statistics, so the sensor needs statistics (`state_class: measurement`). The flow rate can already be mapped, but is not evaluated yet.
+
+- **Activity from several entities** (collapsed section): If the heat pump has no single activity entity but flags (on/off) for defrost, hot water, cooling and heating, enter those. An "on" flag wins in this order: defrost, hot water, cooling, heating. The *set operating mode* (e.g. "Cool") turns heating into cooling when the activity entity only tells heating from hot water (three-way valve). The templates for Stiebel and HeishaMon fill this in.
 
 Several heat pumps: add one entry each.
 
 ### Settings
 
-*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry.
+*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry. The fields in the order of the form:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
@@ -110,13 +115,18 @@ Several heat pumps: add one entry each.
 | Critical run below | 6 min | Minimum run time of about 6 minutes according to the Dimplex planning manual. |
 | Conspicuous above starts per hour | 3 | More starts within one hour count as conspicuous. Compressor manufacturers give 6 to 12 starts per hour as the upper limit. |
 | Season starts in | July | Start of the season (heating period July to June). |
-| Electricity price | – | Optional, ct/kWh gross. Without it there are no cost sensors. |
-| Electricity base price | – | Optional, €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
-| Gas working price | – | Optional, ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
-| Design outdoor temperature | – | Optional, °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
-| Gas base price | – | Optional, €/year gross, spread per day. Without it only the working prices are compared. |
+| ***Health check*** | | |
+| Backup heater: mild weather from | 5 °C | Daily mean outdoor temperature from which the heat pump should heat alone (own assumption). |
+| Efficiency dropped from | 15 % | Drop of the heating performance factor against the previous season at the same outdoor temperature; off again only 5 points lower (own assumption). |
+| ***Costs and gas comparison (optional)*** | | |
+| Electricity price | – | ct/kWh gross. Without it there are no cost sensors. |
+| Electricity base price | – | €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
+| Gas working price | – | ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
+| Gas base price | – | €/year gross, spread per day. Without it only the working prices are compared. |
+| ***Heat load (optional)*** | | |
+| Design outdoor temperature | – | °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
 
-Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
+Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
 
 ### Reconfigure
 
@@ -124,7 +134,7 @@ Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). 
 
 ## Entities
 
-All entities belong to a separate device per heat pump. Which ones are created depends on the mapped signals.
+All entities belong to a separate device per heat pump. Which ones are created depends on the mapped signals and the settings.
 
 ### Performance factors
 
@@ -135,10 +145,12 @@ All entities belong to a separate device per heat pump. Which ones are created d
 | COP heating+DHW *period* | heating or hot water complete |
 | EER cooling *period* | heat and electricity cooling |
 
-*Period* is **today**, **yesterday**, **month**, **season** or **total** – up to 20 sensors without a unit. Their history also appears in the statistics – there as a time mean of the sensor, not a balance; the balance comes from the energy sensors and the report. Today and yesterday swing a lot and are therefore disabled by default. The season of cooling is the calendar year: cooling runs from spring to autumn, and a heating season starting in July would split it. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
+*Period* is **today**, **yesterday**, **month**, **season** or **total**: up to 20 sensors without a unit. Today and yesterday swing a lot and are therefore disabled by default. The season of cooling is the calendar year: cooling runs from spring to autumn, and a heating season starting in July would split it. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
 
 - Factor per mode = heat / electricity (compressor plus backup heater), **without** standby.
 - Heating + hot water = heat of both / (electricity of both + standby). This corresponds to a seasonal performance factor.
+
+The sensors have long-term statistics (`state_class: measurement`). They are a time mean of the quotient, not a balance. For monthly or yearly values use the [energy sensors](#energy) or the [report](#report).
 
 Attributes:
 
@@ -151,8 +163,6 @@ Attributes:
 | `counter_step_kwh` | resolution of the coarsest meter involved: 0.01 or 1 kWh |
 | `reliable` | `true` if meter rounding accounts for at most 5 % of the electricity |
 
-These sensors deliberately have no long-term statistics: Home Assistant would average quotients. For monthly or yearly values use the energy sensors and the [report](#report-for-a-period).
-
 ### Energy
 
 | Entity | Unit | Meaning |
@@ -161,15 +171,15 @@ These sensors deliberately have no long-term statistics: Home Assistant would av
 | Electricity heating / hot water / cooling | kWh | electricity while the compressor runs, with backup heater, without standby |
 | Standby electricity | kWh | electricity while the compressor stands still, all modes |
 
-All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. Please do not disable them: the report reads their statistics for the time after the setup.
+All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. Please do not disable them: the report, the performance curve and the heat load read their statistics for the time after the setup.
 
-**Statistics before the setup:** Once after the setup (and on the update to 0.1.0b4), Wärmewacht writes the hours before it into the statistics of these sensors, computed from the statistics of your meters with standby estimated per hour. Statistics cards then show the months before the setup as well. Wärmewacht only writes hours before the first row Home Assistant recorded itself and changes no existing row. The hour of the setup is missing up to the moment of the setup.
+**Statistics before the setup:** Once after the setup (for older entries on the update), Wärmewacht writes the hours before it into the statistics of these sensors. They are computed from the statistics of your meters, with standby estimated per hour. Statistics cards then show the months before the setup as well. Wärmewacht only writes hours before the first row Home Assistant recorded itself. About 15 minutes after the start, Wärmewacht shifts the sums once, from the first imported hour on. So they start at 0, and the first bar of a statistics card is not negative. The change per hour stays the same. The hour of the setup is missing up to the moment of the setup.
 
 **Standby:** Electricity of a mode counts as standby if, since the previous meter reading, that mode delivered no heat and the compressor did not run in it. Without a compressor state, only the heat decides.
 
 ### Cycling
 
-Only with "Compressor running"; defrosts need the activity.
+Most cycling sensors need "Compressor running". Defrosts only need the activity. "Starts total" also exists when only the heat pump's starts counter is mapped.
 
 | Entity | Unit | Meaning |
 | --- | --- | --- |
@@ -192,64 +202,114 @@ Binary sensor (problem), only with "Compressor running". It is on if within the 
 
 Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
 
+### Health check
+
+Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hint at a fault. It says **what** stands out and **how** that shows, not **why**. If the data are not enough, a sensor is *unknown* and gives the reason in the attribute `reason`, never "off" for lack of data. Derived and referenced in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md) (German).
+
+| Binary sensor (problem) | On if | Needs |
+| --- | --- | --- |
+| Efficiency dropped | The heating performance factor of the current season is at least 15 % (adjustable) below the previous season at the same outdoor temperature. Off again only 5 points lower. | heating complete and outdoor temperature |
+| Backup heater on mild days | In the last 7 days, on days with a daily mean of 5 °C or more (adjustable), the backup heater used at least 2 kWh for heating in total. | in addition a backup heater meter |
+
+- **Same weather:** The comparison is per 2 K class of the [performance curve](#performance-curve-and-heat-load), weighted by the heat of the current season. It needs at least 2 common classes with 14 days and 10 kWh of electricity together.
+- **Attributes:** Efficiency: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` and `classes` (days and performance factor of both seasons per class). Backup heater: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` and `days` (per mild day). The lists are not recorded.
+- **Reasons for *unknown*:** `not_analysed_yet` (after start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`.
+- **Restart efficiency comparison** (button, configuration): after a deliberate change such as a new heating curve. The next 28 days become the new reference; until then "Efficiency dropped" is unknown.
+- **Data faults** (meter stands still, source unreachable, outdoor temperature unusable) are reported as a [repair issue](#troubleshooting), not as a sensor.
+- **Diary:** At midnight Wärmewacht adds an entry for the previous day (outdoor temperature, starts, run time per mode, short runs, defrosts, spread, flow temperature, energy), for up to 3 years. It is kept in the history file and written once a day. Later checks will evaluate it.
+
 ### Diagnostics
 
 | Entity | Unit | Meaning | Needs |
 | --- | --- | --- | --- |
 | Backup heater share month, season | % | backup heater share of the electricity for heating and hot water (with standby) | backup heater meter |
-| Flow-return spread today | K | flow minus return, time-weighted over the time the compressor was heating | flow and return |
-| Flow temperature today | °C | mean flow temperature, weighted the same way | flow |
+| Flow-return spread today | K | flow minus return, time-weighted over the time the compressor was heating | flow, return and activity |
+| Flow temperature today | °C | mean flow temperature, weighted the same way | flow and activity |
 
 ### Costs and gas comparison
 
+With an electricity price in the [settings](#settings) and heating or hot water mapped completely.
+
 | Entity | Unit | Meaning | Needs |
 | --- | --- | --- | --- |
-| Electricity cost month, season | € | all electricity of the heat pump (all modes, standby, backup heater) × electricity price | electricity price |
-| Heat cost per kWh season | €/kWh | electricity cost of heating and hot water (with standby) per kWh of heat | electricity price |
-| Savings vs. gas boiler season | € | gas cost for the same heat minus electricity cost | electricity and gas price |
+| Electricity cost month, season | € | all electricity of the heat pump (all modes, standby, backup heater) × electricity price, plus the prorated electricity base price | electricity price |
+| Heat cost per kWh season | €/kWh | cost of heating and hot water (electricity with standby, prorated electricity base price) per kWh of heat; unknown below 0.5 kWh of heat | electricity price |
+| Savings vs. gas boiler season | € | gas cost (working price plus prorated gas base price) for the same heat minus the heat pump's cost of heating and hot water (electricity with standby, prorated electricity base price) | electricity price and gas working price |
 
-- **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency of condensing boilers measured in the field (Jagnow/Wolff, DBU 2004).
+- **Prices** are fixed, as entered in the settings. Wärmewacht does not support dynamic tariffs.
+- **Base prices** are spread per day (annual price ÷ 365 or 366). The electricity base price only counts for a separate heat pump meter and belongs to heating and hot water.
+- **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency that field measurements of condensing boilers found (Jagnow/Wolff, DBU 2004). Gas is billed on the gross calorific value, so the figure refers to it.
 - **No CO₂ comparison:** it would depend too much on assumptions (average or hourly mix, upstream chains, own PV use, battery, green tariffs).
-- **Prices** are fixed. Dynamic tariffs follow with the report.
+
+Attributes of "Savings vs. gas boiler season":
+
+| Attribute | Meaning |
+| --- | --- |
+| `heat_kwh` | heat of heating and hot water in the season |
+| `heat_pump_cost_eur` | the heat pump's cost of this heat (electricity with standby, prorated electricity base price) |
+| `electricity_base_cost_eur` | prorated electricity base price included in it (0 without the setting) |
+| `gas_kwh` | gas for the same heat, on the gross calorific value |
+| `gas_cost_eur` | gas cost with the prorated base price |
+| `gas_base_cost_eur` | prorated gas base price included in it (0 without the setting) |
+| `boiler_efficiency` | boiler efficiency on the gross calorific value (0.87) |
 
 ### Performance curve and heat load
 
-With an outdoor temperature among the entities. Wärmewacht computes them 2 minutes after the start and then daily around 3 am, from the long-term statistics.
+Both need the outdoor temperature plus heat and electricity heating, and the recorder. Wärmewacht computes them 2 minutes after the start and then daily from 3 am, from the long-term statistics (before the setup from the statistics of your meters, like the [report](#report)). The results are kept in memory only. After a restart the sensors are therefore empty for about 2 minutes.
 
 | Entity | Unit | Meaning |
 | --- | --- | --- |
-| Performance curve heating | timestamp | When it was last computed. The curve is in the attributes `current` (current season) and `previous` (previous season). |
+| Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
 | Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
 
-- **Curve:** heating performance factor per 2-K class of the daily mean outdoor temperature, without standby. A class needs at least 7 days; sparse edge classes are merged into their neighbour. The current and the previous season stay apart: a changed heating curve would blur both.
-- **Heat load (energy signature):** weekly mean heating power over the weekly mean outdoor temperature, only weeks below 12 °C. It needs at least 8 weeks, a spread of 10 K and 5 frost days; otherwise the value stays empty and the attributes give the reason (`reasons`). "Measured" (`measured_kw`, with internal and solar gains) and "standard" (`standard_kw`) are both in the attributes.
-- **Actions** for any period: `waermewacht.performance_curve` (heating, or heating and hot water) and `waermewacht.heat_load`.
+**Performance curve:** heating performance factor per 2-K class of the daily mean outdoor temperature, without standby. The current and the previous season stay apart: a changed heating curve would blur both.
 
-A chart with the HACS card [apexcharts-card](https://github.com/RomRider/apexcharts-card); the entity ID depends on your name. Use the YAML of the German README; only the titles differ.
+- A day counts with at least 20 hourly outdoor values and only if it delivered heat for heating. Hours without an outdoor value are dropped together with their energy. Values outside −35 to 45 °C are discarded.
+- A class needs at least 7 days. Sparse edge classes are merged into their neighbour. Sparse classes in between stay, but have `sparse: true` and `ratio: null`.
 
-## Statistics card: heat and electricity per month
+Attributes of "Performance curve heating":
 
-The [report](#report-for-a-period) gives a performance factor per month. A statistics card shows heat and electricity per month (*Edit dashboard → Add card → Manual*); the entity IDs depend on your name and language:
+| Attribute | Meaning |
+| --- | --- |
+| `current_start`, `previous_start` | start of the current and the previous season |
+| `current`, `previous` | classes of the current and the previous season, coldest first |
 
-```yaml
-type: statistics-graph
-title: Heating per month
-chart_type: bar
-period: month
-stat_types:
-  - change
-days_to_show: 365
-entities:
-  - entity: sensor.warmepumpe_heat_heating
-    name: Heat
-  - entity: sensor.warmepumpe_electricity_heating
-    name: Electricity
-```
+Each class has `lower` and `upper` (°C, lower bound included), `days`, `mean_outdoor` (mean of the daily means), `heat_kwh`, `electricity_kwh`, `ratio` (`null` below the minimum electricity or for a sparse class) and `sparse`.
 
-## Report for a period
+**Heat load (energy signature):** weekly mean heating power over the weekly mean outdoor temperature. Only heat for heating counts, not hot water. Wärmewacht fits a straight line through the weeks.
 
-*Settings → Tools → Actions* (formerly *Developer tools → Actions*) → **Wärmewacht: Report**, choose the heat pump and the period, "Show response":
+- A week starts on Monday 00:00. It counts with at least 6 full days and a mean below 12 °C.
+- A full day has at least 20 hourly outdoor values and no cooling. Values outside −35 to 45 °C are discarded. A frost day has a daily mean below 0 °C.
+- There is a result only with at least 8 weeks, a spread of 10 K between the coldest and the warmest week, 5 frost days and a falling line. Otherwise the value stays empty and `reasons` gives the reason.
+- "Measured" (`measured_kw`) is the line at the design outdoor temperature, with internal and solar gains. "Standard" (`standard_kw`) is the line moved in parallel through 0 at 20 °C, without these gains. The sensor "Heat load at design temperature" shows the standard value.
+
+Attributes of "Heat load per kelvin":
+
+| Attribute | Meaning |
+| --- | --- |
+| `start`, `end` | period evaluated (the last complete season) |
+| `sufficient` | `true` if the data suffice for a result |
+| `reasons` | reasons if not: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
+| `week_count` | valid weeks |
+| `spread` | spread of the weekly means in K |
+| `frost_days` | frost days in the valid weeks |
+| `intercept_kw`, `slope_kw_per_k` | line P = a + b · T (a in kW, b in kW/K, negative) |
+| `r_squared` | coefficient of determination of the line |
+| `heating_limit` | heating limit in °C, where the line reaches 0 |
+| `design_temp` | design outdoor temperature from the settings |
+| `measured_kw`, `standard_kw` | heat load at the design outdoor temperature, measured and standard |
+| `weeks` | valid weeks with `start`, `days`, `hours`, `mean_outdoor`, `power_kw` |
+
+Without sufficient data the values of the line are `null`. For other periods and for heating with hot water, use the [actions](#actions). Charts are in the [dashboard examples](#dashboard-examples).
+
+## Actions
+
+*Settings → Tools → Actions* (formerly *Developer tools → Actions*) → choose the action, the heat pump and the period, "Show response". The response can also be used in scripts and automations (`response_variable`). Times without a time zone are local time of your Home Assistant. All actions need the recorder.
+
+### Report
+
+**Wärmewacht: Report** returns heat, electricity and performance factors of a period, broken down by month.
 
 ```yaml
 action: waermewacht.report
@@ -258,7 +318,7 @@ data:
   start: "2026-09-01 00:00:00"
 ```
 
-Without start: start of the current season. Without end: now. Times without a time zone are local time of your Home Assistant. Example response (made-up values):
+Without start: start of the current season. Without end: now. Example response (made-up values):
 
 ```yaml
 start: "2026-09-01T00:00:00+02:00"
@@ -327,7 +387,211 @@ months:
 - **Before the setup**, Wärmewacht calculates from the long-term statistics of your meters. They hold no compressor state. So the electricity of a mode in an hour without heat of that mode counts as standby. Hours with a run keep their minutes of standby as running; the factor per mode comes out slightly lower there.
 - **From the first full hour after the setup** the report uses the statistics of Wärmewacht's own [energy sensors](#energy).
 
-The response can also be used in scripts and automations (`response_variable`).
+### Performance curve
+
+**Wärmewacht: Performance curve** (`waermewacht.performance_curve`) computes the [curve](#performance-curve-and-heat-load) for any period.
+
+```yaml
+action: waermewacht.performance_curve
+data:
+  config_entry: <choose entry>
+  start: "2025-07-01 00:00:00"
+  end: "2026-07-01 00:00:00"
+  scope: heating_dhw
+```
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `start` | start of the current season | Do not mix seasons with different heating curves. |
+| `end` | now | |
+| `scope` | `heating` | `heating`, or `heating_dhw` (heating and hot water; both without standby) |
+
+The response contains `start`, `end`, `scope` and `classes`: the classes as in the sensor's attribute `current`.
+
+### Heat load
+
+**Wärmewacht: Heat load** (`waermewacht.heat_load`) computes the [energy signature](#performance-curve-and-heat-load) for any period.
+
+```yaml
+action: waermewacht.heat_load
+data:
+  config_entry: <choose entry>
+  design_outdoor_temp: -12
+```
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `start` | start of the last complete season | |
+| `end` | end of the last complete season; with `start`: now | |
+| `design_outdoor_temp` | design outdoor temperature from the settings | °C, for `measured_kw` and `standard_kw` |
+
+The response contains the same values as the attributes of "Heat load per kelvin".
+
+Performance curve and heat load report an error when no outdoor temperature is mapped or the recorder is missing.
+
+## Dashboard examples
+
+The entity IDs depend on the name of the entry (here the default "Wärmepumpe") and on the language of Home Assistant at setup; the examples use the IDs of an English setup. Add a card with *Edit dashboard → Add card → Manual*.
+
+### Statistics card: heat and electricity per month
+
+The [report](#report) gives a performance factor per month. A statistics card shows heat and electricity per month:
+
+```yaml
+type: statistics-graph
+title: Heating per month
+chart_type: bar
+period: month
+stat_types:
+  - change
+days_to_show: 365
+entities:
+  - entity: sensor.warmepumpe_heat_heating
+    name: Heat
+  - entity: sensor.warmepumpe_electricity_heating
+    name: Electricity
+```
+
+### Performance curve and energy signature
+
+Both charts need the HACS card [apexcharts-card](https://github.com/RomRider/apexcharts-card). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. Adjust the limits of the y axis (`min`, `max`) to your installation.
+
+Performance curve heating, previous and current season:
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: "Performance curve heating (x: daily mean outdoor temperature)"
+graph_span: 40h
+span:
+  end: day
+now:
+  show: false
+apex_config:
+  chart:
+    height: 260
+  xaxis:
+    tickAmount: 8
+    labels:
+      formatter: "EVAL:(v, ts) => { const t = typeof ts === 'number' ? ts : Number(v); const e = new Date(); e.setHours(24, 0, 0, 0); return Math.round((t - e.getTime()) / 3600000 + 25) + ' °C'; }"
+    tooltip:
+      enabled: false
+  yaxis:
+    - min: 2
+      max: 6
+      tickAmount: 4
+      decimalsInFloat: 1
+      title:
+        text: Performance factor
+  tooltip:
+    x:
+      formatter: "EVAL:(v) => { const e = new Date(); e.setHours(24, 0, 0, 0); return (Math.round(((v - e.getTime()) / 3600000 + 25) * 10) / 10) + ' °C'; }"
+  markers:
+    size: 5
+  legend:
+    show: true
+grid_options:
+  columns: full
+  rows: 6
+series:
+  - entity: sensor.warmepumpe_performance_curve_heating
+    name: Previous season
+    color: "#2F6FB0"
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.previous || []).filter(c => c.ratio !== null).map(c => [x((c.lower + c.upper) / 2), c.ratio]);
+  - entity: sensor.warmepumpe_performance_curve_heating
+    name: Current season
+    color: "#DE5E32"
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.current || []).filter(c => c.ratio !== null).map(c => [x((c.lower + c.upper) / 2), c.ratio]);
+```
+
+Energy signature: the weeks as points and the line from the design outdoor temperature (−12 °C without the setting) to the heating limit (otherwise 15 °C):
+
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: "Energy signature (x: weekly mean outdoor temperature)"
+graph_span: 40h
+span:
+  end: day
+now:
+  show: false
+apex_config:
+  chart:
+    height: 260
+  xaxis:
+    tickAmount: 8
+    labels:
+      formatter: "EVAL:(v, ts) => { const t = typeof ts === 'number' ? ts : Number(v); const e = new Date(); e.setHours(24, 0, 0, 0); return Math.round((t - e.getTime()) / 3600000 + 25) + ' °C'; }"
+    tooltip:
+      enabled: false
+  yaxis:
+    - min: 0
+      max: 4
+      tickAmount: 4
+      decimalsInFloat: 1
+      title:
+        text: Heating power kW
+  tooltip:
+    x:
+      formatter: "EVAL:(v) => { const e = new Date(); e.setHours(24, 0, 0, 0); return (Math.round(((v - e.getTime()) / 3600000 + 25) * 10) / 10) + ' °C'; }"
+  markers:
+    size: [5, 0]
+  legend:
+    show: true
+grid_options:
+  columns: full
+  rows: 6
+series:
+  - entity: sensor.warmepumpe_heat_load_per_kelvin
+    name: Weeks
+    color: "#2F6FB0"
+    stroke_width: 0
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      return (entity.attributes.weeks || []).map(w => [x(w.mean_outdoor), w.power_kw]).sort((a, b) => a[0] - b[0]);
+  - entity: sensor.warmepumpe_heat_load_per_kelvin
+    name: Line
+    color: "#DE5E32"
+    stroke_width: 2
+    extend_to: false
+    curve: straight
+    show:
+      legend_value: false
+      in_header: false
+    data_generator: |
+      const e0 = new Date(); e0.setHours(24, 0, 0, 0);
+      const x = (t) => e0.getTime() + (t - 25) * 3600000;
+      const a = entity.attributes;
+      if (a.intercept_kw == null) return [];
+      const lo = a.design_temp ?? -12, hi = a.heating_limit ?? 15;
+      return [[x(lo), a.intercept_kw + a.slope_kw_per_k * lo], [x(hi), Math.max(0, a.intercept_kw + a.slope_kw_per_k * hi)]];
+```
+
+`start` and `end` are predefined in a `data_generator`, so the end of today is called `e0` (`e` in the formatters).
 
 ## System boundary and limits
 
@@ -335,16 +599,18 @@ The response can also be used in scripts and automations (`response_variable`).
 - **Standby as reported by the heat pump:** While the compressor stands still, Bosch heat pumps book electricity steadily into the heating meter, observed at about 25 W, also in summer. The constant value suggests a model value of the firmware rather than a measurement. Only an external meter can tell whether it is right. The factors per mode do not depend on it; heating + hot water does.
 - **Whole-kWh meters:** Not every model provides meters in 0.01 kWh. With whole kWh a short period is inaccurate (1 kWh of 5 kWh is 20 %). The attribute `reliable` only becomes `true` once the electricity reaches 20 times the meter resolution.
 - **Defrosting:** Whether Bosch heat meters subtract the heat removed during defrosting is not settled.
-- **Look back:** Wärmewacht estimates the standby before the setup hour by hour (see [report](#report-for-a-period)). The sensors miss the partial hour of the setup: the long-term statistics have no value for it yet.
+- **Look back:** Wärmewacht estimates the standby before the setup hour by hour (see [report](#report)). The sensors miss the partial hour of the setup: the long-term statistics have no value for it yet.
 - **Gaps:** If Home Assistant was not running, the first meter reading afterwards books the whole increase. Whether that was running or standby is decided by the heat in the same span.
-- **Not yet included:** performance curve over outdoor temperature, cost and CO₂ compared with a gas boiler, heat load.
 
 ## Troubleshooting
 
-Wärmewacht reports problems under *Settings → Repairs* (at the earliest 10 minutes after start, so entities have time after a restart):
+Wärmewacht reports problems under *Settings → Repairs*. This happens at the earliest 10 minutes after start, so entities have time after a restart.
 
 - **Entity missing:** A mapped entity no longer exists, e.g. after renaming. Choose it again under *Wärmewacht → ⋮ → Reconfigure*.
 - **Unusable unit:** An energy meter does not report Wh, kWh or MWh. Its values are not counted until the unit fits.
+- **Meter stands still:** The compressor ran, but a meter of the current mode did not rise: 1 hour for meters with decimals, 6 hours for whole kWh or daily values. Usually the source no longer sends values, the entity is disabled or the wrong meter is mapped.
+- **Source unreachable:** A mapped entity has been `unavailable` for more than 60 minutes. Check the source (EMS-ESP, MQTT, cloud).
+- **Outdoor temperature unusable:** It has not changed for 48 hours or was outside −35 to +45 °C for hours yesterday. The performance curve, heat load and health check depend on it.
 
 The issues disappear on their own once the problem is solved.
 
@@ -352,6 +618,7 @@ More:
 
 - **Factor stays unknown:** There was no heat in the period or less electricity than the minimum. That is normal for heating in summer.
 - **No cycling:** "Compressor running" is not mapped.
+- **Performance curve or heat load empty:** After a restart wait about 2 minutes. If the outdoor temperature has no long-term statistics, both stay empty. For the heat load, the attribute `reasons` tells what is missing.
 - **Diagnostics:** *Wärmewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Wärmewacht → ⋮ → Enable debug logging*.
 
 ## Privacy
@@ -367,13 +634,13 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 
 ## Reporting issues
 
-Please open an [issue](https://github.com/waermewacht/integration/issues) – ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+Please open an [issue](https://github.com/waermewacht/integration/issues), ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
 
 ## Related projects
 
-- [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance) – performance factors from heat and electricity meters, vendor-neutral.
-- [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml) – extensive analysis for Daikin Altherma with ESPAltherma. The right choice for Daikin.
-- [heatpumpmonitor.org](https://heatpumpmonitor.org/) – public comparison of many installations. Wärmewacht uses the same terms (SEPEMO boundaries, starts) so that figures can be put in context.
+- [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance): performance factors from heat and electricity meters, vendor-neutral.
+- [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml): extensive analysis for Daikin Altherma with ESPAltherma. The right choice for Daikin.
+- [heatpumpmonitor.org](https://heatpumpmonitor.org/): public comparison of many installations. Wärmewacht uses the same terms (SEPEMO boundaries, starts) so that figures can be put in context.
 
 ## License
 
