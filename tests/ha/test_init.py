@@ -135,7 +135,12 @@ async def test_ratio_standby_and_cycling(
         "heat_at": {m.value: t.isoformat() for m, t in runtime._heat_at.items()},
         "mode_seen": {m.value: t.isoformat() for m, t in runtime._mode_seen.items()},
         "events": runtime.events,
+        "listeners": len(runtime._listeners),
+        "standby_state": hass.states.get(entity_id(hass, entry, "standby")).as_dict(),
+        "now": freezer().isoformat() if callable(freezer) else None,
     }
+    runtime._notify()
+    debug["after_notify"] = state(hass, entry, "standby")
     assert value(hass, entry, "standby") == pytest.approx(0.05), json.dumps(debug)
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(3.0)
     assert value(hass, entry, "ratio_combined_month") == pytest.approx(3 / 1.05)
