@@ -38,7 +38,8 @@ Stand: Projektstart 2026-10-27, erster Stand auf `dev`, noch kein Release. Arbei
 5. Code, Kommentare, Entity-IDs auf Englisch; UI-Texte über `strings.json` + `translations/de.json` und `en.json`. Doku auf Deutsch.
 6. Tests gegen Fixtures. HA-Tests (`tests/ha/`, `pytest-homeassistant-custom-component`) nur in GitHub Actions.
 7. **Branches:** Entwickelt wird auf `dev`; `main` erhält nur freigegebene Stände (Ablauf unter „Release“), weil die HACS-Installationen daran hängen. Ein Ruleset erzwingt grüne CI (`test`, `hassfest`, `compat`) für `main`. Kein Force-Push, Tags `v*` sind unveränderlich.
-8. **Werkzeuge:** `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`. `homeassistant` (dev) und `pytest-homeassistant-custom-component` (ha-tests) immer gemeinsam anheben. Rechnerspezifisches und die Testanlage stehen in `CLAUDE.local.md`.
+8. **Fehler in Quell-Integrationen** (EMS-ESP, `bosch_homecom`, später weitere) dort melden oder beheben, nicht in Wärmewacht wegtricksen (Wunsch des Inhabers 2026-10-27). Erst mit Beleg (Quellcode-Stelle, Verlauf, Fixture), dann Entwurf in `raw/upstream/<projekt>-<thema>.md` (Englisch, sachlich, ohne Anlagendaten des Inhabers außer bewusst freigegebenen); veröffentlicht wird nur nach Freigabe des Inhabers. Bis zur Behebung bleibt in Wärmewacht ein dokumentierter Umweg mit Verweis auf das Issue.
+9. **Werkzeuge:** `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`. `homeassistant` (dev) und `pytest-homeassistant-custom-component` (ha-tests) immer gemeinsam anheben. Rechnerspezifisches und die Testanlage stehen in `CLAUDE.local.md`.
 
 ## Release
 
