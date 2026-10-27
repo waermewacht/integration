@@ -130,7 +130,7 @@ Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen
 | AZ Heizen+WW *Zeitraum* | Heizen oder Warmwasser vollständig |
 | EER Kühlen *Zeitraum* (Leistungszahl) | Wärme und Strom Kühlen |
 
-*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt** – zusammen bis zu 20 Sensoren ohne Einheit („AZ“ = Arbeitszahl). Ihr Verlauf erscheint auch in der Statistik – dort als Zeitmittel des Sensors, nicht als Bilanz; die Bilanz liefern die Energie-Sensoren und der Bericht. Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
+*Zeitraum* ist **heute**, **gestern**, **Monat**, **Saison** oder **gesamt** – zusammen bis zu 20 Sensoren ohne Einheit („AZ“ = Arbeitszahl). Ihr Verlauf erscheint auch in der Statistik – dort als Zeitmittel des Sensors, nicht als Bilanz; die Bilanz liefern die Energie-Sensoren und der Bericht. Heute und gestern schwanken stark und sind deshalb standardmäßig deaktiviert. Die Saison des Kühlens ist das Kalenderjahr: Gekühlt wird von Frühjahr bis Herbst, eine Heizsaison ab Juli würde das teilen. „Gesamt“ reicht so weit zurück wie die Langzeitstatistik deiner Zähler bei der Einrichtung.
 
 - Arbeitszahl je Betriebsart = Wärme / Strom (Kompressor plus Heizstab), **ohne** Stillstand.
 - Heizen + Warmwasser = Wärme beider / (Strom beider + Stillstand). Das entspricht einer Jahresarbeitszahl.
@@ -157,6 +157,8 @@ Die Sensoren haben bewusst keine Langzeitstatistik: Home Assistant würde Quotie
 | Strom Stillstand | kWh | Strom bei stehendem Kompressor, alle Betriebsarten |
 
 Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. Bitte nicht deaktivieren: Der Bericht liest ihre Statistik für die Zeit nach der Einrichtung.
+
+**Statistik vor der Einrichtung:** Einmal nach der Einrichtung (und beim Update auf 0.1.0b4) schreibt Wärmewacht die Stunden davor in die Statistik dieser Sensoren, berechnet aus der Statistik deiner Zähler mit stundenweise geschätztem Stillstand. Statistik-Karten zeigen damit auch die Monate vor der Einrichtung. Wärmewacht schreibt nur Stunden vor der ersten Zeile, die Home Assistant selbst aufgezeichnet hat, und ändert keine bestehende Zeile. Die Stunde der Einrichtung fehlt bis zum Einrichtungszeitpunkt.
 
 **Stillstand:** Strom einer Betriebsart gilt als Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieser Betriebsart kam noch der Kompressor in ihr lief. Ohne Kompressorstatus entscheidet nur die Wärme.
 

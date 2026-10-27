@@ -132,6 +132,16 @@ Repo [serbanb11/bosch-homecom-hass](https://github.com/serbanb11/bosch-homecom-h
   - Stillstand je Abruf (`Template.day_values`): Strom wartet bis zum nächsten Minutentakt, mindestens 10 s, auf die Wärme desselben Abrufs (bis 30 s davor). Am 27.10. kamen Strom und Wärme in derselben Sekunde.
   - Spreizung und Vorlauf brauchen die Betriebsart.
   - Noch nicht: den Tagesrest aus den Lebenszeit-Summen am Sensor „Wärmequelle“ nachholen und die Abtau-Heuristik.
+  - **Korrekturen nach unabhängiger Durchsicht (0.1.0b4):**
+    - Beim Start werden Zählerwerte mit `state.last_updated` datiert statt mit „jetzt“. Ein Abruf von gestern zählt nach einem Neustart über Mitternacht nicht als heutiger Wert.
+    - Die Plausibilitätsprüfung für Tageswerte misst gegen die Zeit seit Mitternacht statt gegen den Abstand zweier Abrufe, denn ein Abruf kann nach einem Neustart mehrere Stunden auf einmal bringen.
+    - Ein verworfener Wert lässt die Basis stehen.
+    - Wartender Strom wird vor einem Periodenwechsel gebucht (`PeriodMarks.due`) und mit `_heat_at` gespeichert.
+- **Kühlsaison = Kalenderjahr** (`Period.YEAR`, Wunsch des Inhabers 2026-10-27). Bei einer Heizsaison ab Juli fiele das Kühlen von März bis Juni in die Vorsaison. Beim Update aus dem Bestand: `_async_rebase(Period.YEAR)`.
+- **Statistik vor der Einrichtung** (`async_import_history`, einmal je Eintrag):
+  - Schreibt Stunden vor der ersten eigenen Statistikzeile mit `async_import_statistics` (Quelle `recorder`).
+  - Die Summen enden bei 0, wo HA die Summe eines neuen Sensors beginnt. Keine aufgezeichnete Zeile ändert sich, und es braucht keine Summenkorrektur.
+  - Ein Sensor mit Zeilen vor der Einrichtung bleibt unberührt.
 - Daneben gibt es die Community-Integration „Bosch/Buderus Heating (PointT)“ ([Forum](https://community.home-assistant.io/t/custom-integration-bosch-buderus-heating-pointt-cloud-integration-for-mybuderus-and-homecom-easy-systems/1022332)) – noch nicht betrachtet.
 
 ### Andere Hersteller (Quellcode-Recherche 2026-10-27 an festen Commits, nicht an echten Anlagen – erst mit Fixture)

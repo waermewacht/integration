@@ -3,6 +3,8 @@
 A period's energy is `totals now - mark`. Marks are taken at local period
 boundaries (day, month, season); energy from before the setup is brought in
 by a negative mark (the backfilled energy between period start and setup).
+The cooling season is the calendar year (YEAR): cooling runs from spring to
+autumn and would be cut in two by a heating season starting in July.
 Boundaries are local midnights, so days have 23 or 25 hours at DST changes.
 They are returned in UTC: Python subtracts and compares two datetimes of the
 same zone by wall clock, which loses or doubles the hour of a time change.
@@ -27,6 +29,17 @@ class Period(StrEnum):
     MONTH = "month"
     SEASON = "season"
     TOTAL = "total"
+    YEAR = "year"  # calendar year: the season of cooling
+
+
+# Windows with a ratio sensor each (YEAR stands in for SEASON when cooling).
+RATIO_PERIODS = (
+    Period.TODAY,
+    Period.YESTERDAY,
+    Period.MONTH,
+    Period.SEASON,
+    Period.TOTAL,
+)
 
 
 def local_midnight(day: date, tz: tzinfo) -> datetime:
@@ -50,11 +63,13 @@ def period_start(
         case Period.SEASON:
             year = today.year if today.month >= season_month else today.year - 1
             return local_midnight(date(year, season_month, 1), tz)
+        case Period.YEAR:
+            return local_midnight(date(today.year, 1, 1), tz)
         case Period.TOTAL:
             return None
 
 
-ROLLING = (Period.TODAY, Period.MONTH, Period.SEASON)
+ROLLING = (Period.TODAY, Period.MONTH, Period.SEASON, Period.YEAR)
 
 
 @dataclass
@@ -77,6 +92,13 @@ class PeriodMarks:
             start = period_start(period, now, self.tz, self.season_month)
             self.starts[period] = start
             self.marks[period] = -energy_since(start)
+
+    def due(self, now: datetime) -> bool:
+        """Whether a period boundary has passed since the last rollover."""
+        return any(
+            self.starts.get(p) != period_start(p, now, self.tz, self.season_month)
+            for p in ROLLING
+        )
 
     def rollover(self, now: datetime, totals: Totals) -> bool:
         """Start new periods whose boundary has passed; True if anything changed."""

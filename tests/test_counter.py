@@ -108,11 +108,34 @@ def test_day_counter_unchanged_value_keeps_its_day() -> None:
     assert update.delta == pytest.approx(0.2)
 
 
-def test_day_counter_implausible_first_value() -> None:
+def test_day_counter_implausible_value_keeps_the_baseline() -> None:
     counter = Counter(max_kw=20.0, day_tz=BERLIN)
     counter.update(5.0, local(26, 23))
     # 10 minutes after midnight at most 20 kW x 1.5 x 1/6 h + 1 kWh = 6 kWh.
     assert counter.update(90.0, local(27, 0, 10)).event is CounterEvent.JUMP
+    update = counter.update(0.3, local(27, 0, 40))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(0.3)
+
+
+def test_day_counter_catch_up_after_a_restart_is_no_jump() -> None:
+    """After a restart two fetches come minutes apart, the second with
+    two hours of heat: plausible for a day value at 10:02."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(20.0, local(27, 9, 58))
+    assert counter.update(28.0, local(27, 10, 2)).delta == pytest.approx(8.0)
+
+
+def test_day_counter_stale_value_dated_by_its_change() -> None:
+    """Restart after midnight: yesterday's last fetch (23:59:50) is read at
+    00:01 with its own time, so it is yesterday's and not today's baseline."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(7.5, local(26, 23, 10))
+    assert counter.update(8.0, local(26, 23, 59)).delta == pytest.approx(0.5)
+    update = counter.update(0.1, local(27, 0, 40))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(0.1)
+    assert counter.update(5.0, local(27, 12)).delta == pytest.approx(4.9)
 
 
 def test_implausible_jump_is_not_booked() -> None:

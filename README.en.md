@@ -130,7 +130,7 @@ All entities belong to a separate device per heat pump. Which ones are created d
 | COP heating+DHW *period* | heating or hot water complete |
 | EER cooling *period* | heat and electricity cooling |
 
-*Period* is **today**, **yesterday**, **month**, **season** or **total** – up to 20 sensors without a unit. Their history also appears in the statistics – there as a time mean of the sensor, not a balance; the balance comes from the energy sensors and the report. Today and yesterday swing a lot and are therefore disabled by default. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
+*Period* is **today**, **yesterday**, **month**, **season** or **total** – up to 20 sensors without a unit. Their history also appears in the statistics – there as a time mean of the sensor, not a balance; the balance comes from the energy sensors and the report. Today and yesterday swing a lot and are therefore disabled by default. The season of cooling is the calendar year: cooling runs from spring to autumn, and a heating season starting in July would split it. "Total" goes as far back as the long-term statistics of your meters at the time of setup.
 
 - Factor per mode = heat / electricity (compressor plus backup heater), **without** standby.
 - Heating + hot water = heat of both / (electricity of both + standby). This corresponds to a seasonal performance factor.
@@ -157,6 +157,8 @@ These sensors deliberately have no long-term statistics: Home Assistant would av
 | Standby electricity | kWh | electricity while the compressor stands still, all modes |
 
 All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. Please do not disable them: the report reads their statistics for the time after the setup.
+
+**Statistics before the setup:** Once after the setup (and on the update to 0.1.0b4), Wärmewacht writes the hours before it into the statistics of these sensors, computed from the statistics of your meters with standby estimated per hour. Statistics cards then show the months before the setup as well. Wärmewacht only writes hours before the first row Home Assistant recorded itself and changes no existing row. The hour of the setup is missing up to the moment of the setup.
 
 **Standby:** Electricity of a mode counts as standby if, since the previous meter reading, that mode delivered no heat and the compressor did not run in it. Without a compressor state, only the heat decides.
 

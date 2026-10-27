@@ -5,7 +5,11 @@ from __future__ import annotations
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.waermewacht.const import (
     CONF_ENTITIES,
@@ -109,3 +113,30 @@ async def test_compressor_speed_counts_runs(
     for key in ("defrosts_today", "flow_temp_today", "spread_today"):
         with pytest.raises(AssertionError):
             state(hass, entry, key)
+
+
+@pytest.mark.freeze_time(START)
+async def test_fetch_just_before_midnight_stays_in_its_month(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Heat is booked at once, electricity waits for the next tick: at a
+    period boundary it must still land in the period of its heat."""
+    entry = await setup(hass)
+    # 31 Jan 23:59:55 in Berlin (a new day for the day values: all of it is
+    # booked); the tick 5 s later is already in February.
+    freezer.move_to(START.replace(day=31, hour=22, minute=59, second=55))
+    fetch(hass, 2.5, 10.0)
+    await hass.async_block_till_done()
+    freezer.move_to(START.replace(day=31, hour=23, minute=0, second=0))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await tick(hass, freezer, 1)
+    month = hass.states.get(
+        er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_ratio_heating_month"
+        )
+    )
+    assert month is not None
+    assert month.attributes["electricity_kwh"] == 0
+    assert month.attributes["heat_kwh"] == 0
+    assert value(hass, entry, "electricity_heating") == pytest.approx(2.5)

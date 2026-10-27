@@ -2,6 +2,14 @@
 
 ## Unveröffentlicht
 
+- **Statistik vor der Einrichtung:** Die Energie-Sensoren bekommen einmalig die Stunden vor der Einrichtung in ihre Statistik (aus der Statistik der Zähler, Stillstand stundenweise geschätzt). Statistik-Karten zeigen damit auch die Monate davor. Bestehende Einträge holen das beim Update einmal nach. Aufgezeichnete Zeilen bleiben unverändert.
+- **Kühlsaison = Kalenderjahr:** „EER Kühlen Saison“ zählt jetzt von Januar bis Dezember, nicht mehr ab Juli. Damit bleibt die Kühlperiode von Frühjahr bis Herbst in einer Saison. Beim Update rechnet Wärmewacht das laufende Jahr aus der Statistik nach.
+- **HomeCom-Tageswerte robuster:**
+  - Ein Wert wird nach einem Neustart mit seinem eigenen Zeitstempel gebucht. Ein Abruf von gestern zählt nicht mehr als heutiger.
+  - Die Plausibilitätsprüfung misst einen Tageswert an der Zeit seit Mitternacht. Ein Abruf, der nach einem Neustart zwei Stunden auf einmal bringt, wird nicht mehr verworfen.
+  - Ein verworfener Wert verschiebt die Basis nicht.
+- **Periodenwechsel:** Strom eines Abrufs kurz vor Mitternacht landet im selben Tag oder Monat wie seine Wärme. Wartender Strom übersteht einen Stromausfall.
+
 ## 0.1.0b3 – 2026-10-27
 
 - **Vorlage Bosch HomeCom** (`bosch_homecom`): findet die Wärmepumpe am Gateway und füllt die Entitäten aus. Die Einrichtung nennt Entitäten, die eine Vorlage bräuchte, die aber deaktiviert sind (bei `bosch_homecom` die Energie je Betriebsart). Tageswerte der Cloud beginnen um Mitternacht neu; ein Rücksprung am selben Tag (Zeitumstellung) wird nicht doppelt gebucht. Stillstand ist hier Strom eines Abrufs ohne Wärme.

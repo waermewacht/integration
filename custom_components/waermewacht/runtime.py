@@ -15,8 +15,16 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
-from homeassistant.components.recorder.statistics import statistics_during_period
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
+from homeassistant.components.recorder.statistics import (
+    async_import_statistics,
+    statistics_during_period,
+)
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, UnitOfEnergy
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -70,7 +78,7 @@ from .model import (
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .profiles import EMS_ESP, TEMPLATES, Template, parse_compressor
-from .report import by_month, figures, own_hour
+from .report import OWN_KEYS, by_month, figures, own_hour, statistics_rows
 from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
 
 if TYPE_CHECKING:
@@ -150,6 +158,8 @@ class HeatPumpRuntime:
         self.spread = Mean()  # flow minus return, compressor heating, today
         self.flow = Mean()  # flow temperature, compressor heating, today
         self.since: datetime | None = None  # first setup
+        # The hours before the setup are in the own sensors' statistics.
+        self.history_imported = False
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
         # Counters seen with decimals; the others count in whole kWh.
         self.decimal: set[Signal] = set()
@@ -188,7 +198,10 @@ class HeatPumpRuntime:
             self._restore(data)
             history = await self._history_store.async_load()
             if self.marks.stored_season_month not in (None, self.marks.season_month):
-                await self._async_rebase_season(now)
+                await self._async_rebase(Period.SEASON, now)
+            if Period.YEAR not in self.marks.marks:
+                # Update from 0.1.0b3: the calendar year (season of cooling).
+                await self._async_rebase(Period.YEAR, now)
         else:
             self.since = now
             await self._async_backfill(now)
@@ -204,7 +217,10 @@ class HeatPumpRuntime:
         self.marks.rollover(now, self.totals)
         for entity_id in sorted(self._signal_of):
             if state := self.hass.states.get(entity_id):
-                self._handle(entity_id, state, now)
+                # A counter value is dated by its own change: a cloud day value
+                # of yesterday must not count as today's after a restart.
+                counter = self._signal_of[entity_id] in self.counters
+                self._handle(entity_id, state, state.last_updated if counter else now)
         self._unsubscribe = [
             async_track_state_change_event(
                 self.hass, sorted(self._signal_of), self._on_state_change
@@ -285,6 +301,61 @@ class HeatPumpRuntime:
             return False
         self.tracker, self.runs, self.defrosts = replay(events)
         return True
+
+    async def async_import_history(self) -> None:
+        """Once per entry: write the hours before the setup into the
+        statistics of the own energy sensors, so statistics cards show the
+        months before the setup as well.
+
+        Only hours before the first row Home Assistant recorded itself are
+        written, with sums ending at 0 where its own sum starts (see
+        report.statistics_rows): no recorded row changes. A sensor that
+        already has rows from before the setup is left alone.
+        """
+        if self.history_imported or self.since is None:
+            return
+        if "recorder" not in self.hass.config.components:
+            return
+        # One attempt, also on failure: never run twice into the same rows.
+        self.history_imported = True
+        self._dirty = True
+        before = self.since.replace(minute=0, second=0, microsecond=0)
+        registry = er.async_get(self.hass)
+        ids = {
+            key: entity_id
+            for key in OWN_KEYS
+            if (
+                entity_id := registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"{self.entry.entry_id}_{key}"
+                )
+            )
+        }
+        try:
+            recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
+            rows = statistics_rows(
+                by_hour(await self._async_source_hours(EARLIEST, before))
+            )
+        except Exception:  # never block the setup
+            _LOGGER.exception("Reading the statistics for the history import failed")
+            return
+        for key, entity_id in ids.items():
+            if recorded.get(entity_id) or not rows.get(key):
+                continue
+            metadata = StatisticMetaData(
+                mean_type=StatisticMeanType.NONE,
+                has_sum=True,
+                name=None,
+                source="recorder",
+                statistic_id=entity_id,
+                unit_class="energy",
+                unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+            )
+            async_import_statistics(
+                self.hass,
+                metadata,
+                [StatisticData(start=hour, sum=kwh) for hour, kwh in rows[key]],
+            )
+        _LOGGER.debug("Imported the statistics before %s for %s", before, ids)
 
     async def async_hourly(
         self, entity_ids: set[str], start: datetime, end: datetime
@@ -397,19 +468,21 @@ class HeatPumpRuntime:
                 hours[hour] = hours.get(hour, Totals()) + totals
         return hours
 
-    async def _async_rebase_season(self, now: datetime) -> None:
-        """The season start month changed: recompute the season from the
-        statistics instead of starting it anew at the moment of the change."""
-        start = period_start(Period.SEASON, now, self.tz, self.marks.season_month)
+    async def _async_rebase(self, period: Period, now: datetime) -> None:
+        """Recompute a period from the statistics instead of starting it anew
+        now (season start month changed, or a period new in this version)."""
+        start = period_start(period, now, self.tz, self.marks.season_month)
         energy = Totals()
         if start is not None and "recorder" in self.hass.config.components:
             try:
                 for totals in (await self._async_hours(start, now)).values():
                     energy = energy + totals
-            except Exception:  # keep running; the season then starts now
-                _LOGGER.exception("Recomputing the season from the statistics failed")
-        self.marks.marks[Period.SEASON] = self.totals - energy
-        self.marks.starts[Period.SEASON] = start
+            except Exception:  # keep running; the period then starts now
+                _LOGGER.exception(
+                    "Recomputing the %s from the statistics failed", period
+                )
+        self.marks.marks[period] = self.totals - energy
+        self.marks.starts[period] = start
         self._dirty = True
 
     async def _async_own_hours(
@@ -596,7 +669,9 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
-        self._resolve_pending(now)
+        # Before a period boundary, book all waiting electricity in the period
+        # its heat went to.
+        self._resolve_pending(now, final=self.marks.due(now))
         if now - self._started_at >= ISSUE_GRACE:
             self._check_issues()
         if self.marks.rollover(now, self.totals):
@@ -730,6 +805,7 @@ class HeatPumpRuntime:
         return {
             "saved_at": dt_util.utcnow().isoformat(),
             "since": self.since.isoformat() if self.since else None,
+            "history_imported": self.history_imported,
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
@@ -739,6 +815,9 @@ class HeatPumpRuntime:
             "flow": self.flow.as_dict(),
             "events": dict(self.events),
             "decimal": sorted(s.value for s in self.decimal),
+            # Electricity of a fetch still waiting for its heat (day values).
+            "pending": [[m.value, kwh, at.isoformat()] for m, kwh, at in self._pending],
+            "heat_at": {m.value: at.isoformat() for m, at in self._heat_at.items()},
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -747,6 +826,7 @@ class HeatPumpRuntime:
         )
         since = data.get("since")
         self.since = dt_util.parse_datetime(since) if since else None
+        self.history_imported = data.get("history_imported", False)
         for key, counter in data.get("counters", {}).items():
             if (signal := Signal(key)) in self.counters:
                 self.counters[signal].restore(counter)
@@ -758,6 +838,14 @@ class HeatPumpRuntime:
         self.flow = Mean.from_dict(data.get("flow"))
         self.events = dict(data.get("events", {}))
         self.decimal = {Signal(s) for s in data.get("decimal", [])}
+        self._pending = [
+            (Mode(m), kwh, datetime.fromisoformat(at))
+            for m, kwh, at in data.get("pending", [])
+        ]
+        self._heat_at = {
+            Mode(m): datetime.fromisoformat(at)
+            for m, at in data.get("heat_at", {}).items()
+        }
 
     def history_dict(self) -> dict[str, Any]:
         return {

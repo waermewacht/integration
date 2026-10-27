@@ -31,7 +31,7 @@ from . import WaermewachtConfigEntry
 from .energy import Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
 from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
-from .periods import Period
+from .periods import RATIO_PERIODS, Period
 from .runtime import HeatPumpRuntime
 
 type Value = Callable[[HeatPumpRuntime], StateType]
@@ -71,9 +71,11 @@ QUIET_PERIODS = (Period.TODAY, Period.YESTERDAY)
 
 def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
     modes, compute = SCOPES[scope]
+    # Cooling runs from spring to autumn: its season is the calendar year.
+    window = Period.YEAR if scope == "cooling" and period is Period.SEASON else period
 
     def value(runtime: HeatPumpRuntime) -> float | None:
-        totals = runtime.energy(period)
+        totals = runtime.energy(window)
         if totals is None:
             return None
         # Rounded to what is shown: the recorder writes a row on every change.
@@ -81,7 +83,7 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
         return None if ratio is None else round(ratio, 2)
 
     def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
-        totals = runtime.energy(period)
+        totals = runtime.energy(window)
         if totals is None:
             return {}
         result = {
@@ -90,7 +92,7 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
         }
         if scope == "combined":
             result["standby_kwh"] = round(totals.standby(), 3)
-        start = runtime.marks.starts.get(period)
+        start = runtime.marks.starts.get(window)
         result["period_start"] = start.isoformat() if start else None
         # Counters in whole kWh make short periods uncertain (1 kWh of 5 = 20 %).
         result["counter_step_kwh"] = runtime.resolution(*modes)
@@ -111,7 +113,7 @@ def _ratio_description(scope: str, period: Period) -> HeatPumpSensorDescription:
     )
 
 
-RATIOS = [_ratio_description(s, p) for s in SCOPES for p in Period]
+RATIOS = [_ratio_description(s, p) for s in SCOPES for p in RATIO_PERIODS]
 
 
 def _energy_description(

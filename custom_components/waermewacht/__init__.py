@@ -44,6 +44,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     # Options or entities changed: reload.
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Once: the past into the statistics of the energy sensors (now registered).
+    entry.async_create_background_task(
+        hass, runtime.async_import_history(), "waermewacht_import_history"
+    )
     return True
 
 

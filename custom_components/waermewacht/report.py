@@ -60,6 +60,50 @@ def by_month(hours: Mapping[datetime, Totals], tz: tzinfo) -> dict[str, Totals]:
     return months
 
 
+# Keys of Wärmewacht's own energy sensors.
+OWN_KEYS = (
+    *(f"heat_{m}" for m in Mode),
+    *(f"electricity_{m}" for m in Mode),
+    "standby",
+)
+
+
+def own_changes(totals: Totals) -> dict[str, float]:
+    """Energy of the own sensors in `totals` (the inverse of own_hour)."""
+    changes = {f"heat_{m}": totals.get(Kind.HEAT, m) for m in Mode}
+    for mode in Mode:
+        changes[f"electricity_{mode}"] = totals.get(Kind.ELEC, mode) + totals.get(
+            Kind.AUX, mode
+        )
+    changes["standby"] = totals.standby()
+    return changes
+
+
+def statistics_rows(
+    hours: Mapping[datetime, Totals],
+) -> dict[str, list[tuple[datetime, float]]]:
+    """Hourly sums of the own sensors for the hours before the setup.
+
+    The sums end at 0 with the last hour: Home Assistant starts the sum of a
+    new sensor at 0, so the imported past joins it without a step and no
+    recorded row has to change. Hours without energy get no row.
+    """
+    changes: dict[str, list[tuple[datetime, float]]] = {}
+    for hour in sorted(hours):
+        for key, kwh in own_changes(hours[hour]).items():
+            if kwh:
+                changes.setdefault(key, []).append((hour, kwh))
+    rows: dict[str, list[tuple[datetime, float]]] = {}
+    for key, values in changes.items():
+        remaining = sum(kwh for _, kwh in values)
+        rows[key] = []
+        for hour, kwh in values:
+            remaining -= kwh
+            rows[key].append((hour, round(-remaining, 3) + 0.0))
+        rows[key][-1] = (rows[key][-1][0], 0.0)
+    return rows
+
+
 def own_hour(changes: Mapping[str, float]) -> Totals:
     """One hour of Wärmewacht's own sensors: heat_<mode>, electricity_<mode>
     (running incl. backup heater) and standby (all modes)."""

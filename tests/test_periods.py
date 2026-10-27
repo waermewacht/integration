@@ -118,3 +118,26 @@ def test_season_month_is_stored() -> None:
     restored.restore(marks.as_dict())
     assert restored.stored_season_month == 7
     assert restored.season_month == 9
+
+
+def test_cooling_season_is_the_calendar_year() -> None:
+    """Cooling from March to October stays in one season, whatever the
+    heating season start (July)."""
+    for month in (3, 6, 7, 10):
+        now = datetime(2026, month, 15, 12, tzinfo=UTC)
+        assert period_start(Period.YEAR, now, BERLIN, 7) == datetime(
+            2026, 1, 1, tzinfo=BERLIN
+        )
+
+
+def test_year_rolls_over_at_new_year() -> None:
+    marks = PeriodMarks(BERLIN, 7)
+    marks.initialize(datetime(2026, 10, 27, 12, tzinfo=UTC), lambda start: Totals())
+    marks.rollover(datetime(2026, 12, 31, 12, tzinfo=UTC), heat(30))
+    assert not marks.due(datetime(2026, 12, 31, 22, 59, tzinfo=UTC))
+    # 23:00 UTC on 31 Dec = midnight in Berlin.
+    new_year = datetime(2026, 12, 31, 23, 0, 5, tzinfo=UTC)
+    assert marks.due(new_year)
+    assert marks.rollover(new_year, heat(40))
+    assert not marks.due(new_year)
+    assert value(marks, Period.YEAR, heat(43)) == 3

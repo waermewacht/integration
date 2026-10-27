@@ -7,7 +7,7 @@ Einspeisewacht and Tarifwacht, without splitting into quarter hours.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, tzinfo
+from datetime import datetime, time, tzinfo
 from enum import StrEnum
 from typing import Any
 
@@ -61,6 +61,9 @@ class Counter:
     value of the day before (long pause). Within a day it behaves like a
     lifetime counter: a step back is a dip (observed at the change from
     summer time, when the doubled hour is overwritten), never a new day.
+    A day value is plausible up to `max_kw` since local midnight; the gap
+    between two values says nothing, as a fetch may bring several hours at
+    once. An implausible value is not booked and leaves the baseline alone.
     """
 
     max_kw: float | None = None
@@ -77,16 +80,10 @@ class Counter:
             self.last_value, self.last_time = value, at
             return CounterUpdate(event=CounterEvent.FIRST)
         if self.day_tz is not None:
-            if value == previous_value:
-                # Attribute updates: the time of the last change dates the value.
-                return CounterUpdate()
-            if self._new_day(previous_time, at):
-                return self._start_day(value, at)
+            return self._update_day(value, at, previous_value, previous_time)
         delta = value - previous_value
         if delta < 0:
-            if self.day_tz is not None or -delta <= max(
-                RESET_MIN_KWH, RESET_FRACTION * previous_value
-            ):
+            if -delta <= max(RESET_MIN_KWH, RESET_FRACTION * previous_value):
                 self.last_time = at
                 return CounterUpdate(event=CounterEvent.DIP)
             self.last_value, self.last_time = value, at
@@ -98,20 +95,37 @@ class Counter:
                 return CounterUpdate(event=CounterEvent.JUMP)
         return CounterUpdate(delta=delta)
 
+    def _update_day(
+        self, value: float, at: datetime, previous_value: float, previous: datetime
+    ) -> CounterUpdate:
+        if value == previous_value:
+            # Attribute updates: the time of the last change dates the value.
+            return CounterUpdate()
+        if not self._plausible_day_value(value, at):
+            return CounterUpdate(event=CounterEvent.JUMP)
+        if self._new_day(previous, at):
+            self.last_value, self.last_time = value, at
+            return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
+        delta = value - previous_value
+        self.last_time = at
+        if delta < 0:
+            return CounterUpdate(event=CounterEvent.DIP)
+        self.last_value = value
+        return CounterUpdate(delta=delta)
+
     def _new_day(self, previous: datetime, at: datetime) -> bool:
         return (
             previous.astimezone(self.day_tz).date() != at.astimezone(self.day_tz).date()
         )
 
-    def _start_day(self, value: float, at: datetime) -> CounterUpdate:
-        self.last_value, self.last_time = value, at
-        if self.max_kw is not None:
-            local = at.astimezone(self.day_tz)
-            midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
-            hours = (local - midnight).total_seconds() / 3600
-            if value > self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH:
-                return CounterUpdate(event=CounterEvent.JUMP)
-        return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
+    def _plausible_day_value(self, value: float, at: datetime) -> bool:
+        if self.max_kw is None:
+            return True
+        day = at.astimezone(self.day_tz).date()
+        # Aware datetimes of different zones subtract in real time (23/25 h days).
+        midnight = datetime.combine(day, time(0), tzinfo=self.day_tz)
+        hours = (at - midnight).total_seconds() / 3600
+        return value <= self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH
 
     def as_dict(self) -> dict[str, Any]:
         return {
