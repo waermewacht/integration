@@ -136,3 +136,33 @@ def test_mode_survives_unknown_activity() -> None:
     assert tracker.mode is Mode.DHW
     tracker.set_activity(Activity.OFF, at(3))
     assert tracker.mode is Mode.DHW
+
+
+def test_replay_of_recorded_history() -> None:
+    """Backfill: recorded states give the same runs as live tracking:
+    including a restart mid-run and a defrost that spans a restart."""
+    from custom_components.waermewacht.runs import ACTIVITY, COMPRESSOR, replay
+
+    events = [
+        (at(0), COMPRESSOR, True),  # already running at the start: no start
+        (at(0), ACTIVITY, Activity.HEATING),
+        (at(20), COMPRESSOR, False),
+        (at(20), ACTIVITY, Activity.OFF),
+        (at(60), COMPRESSOR, True),
+        (at(60), ACTIVITY, Activity.HEATING),
+        (at(80), ACTIVITY, Activity.DEFROST),
+        (at(81), ACTIVITY, None),  # Home Assistant restarts
+        (at(81), COMPRESSOR, None),
+        (at(81.1), ACTIVITY, Activity.DEFROST),
+        (at(81.1), COMPRESSOR, True),
+        (at(84), ACTIVITY, Activity.HEATING),
+        (at(120), COMPRESSOR, False),
+        (at(200), COMPRESSOR, True),  # still running now
+    ]
+    tracker, runs, defrosts = replay(reversed(events))
+    assert [(r.counted, r.seconds(at(0))) for r in runs] == [
+        (False, 20 * 60),
+        (True, 60 * 60),
+    ]
+    assert len(defrosts) == 1 and defrosts[0].start == at(80)
+    assert tracker.open_run is not None and tracker.open_run.counted

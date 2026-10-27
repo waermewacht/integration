@@ -8,6 +8,7 @@ uncertain. A run that was already going when first seen is not a start.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -195,3 +196,32 @@ class RunTracker:
         self.open_run = Run.from_dict(run) if run else None
         defrost = data.get("open_defrost")
         self.open_defrost = Defrost.from_dict(defrost) if defrost else None
+
+
+COMPRESSOR = "compressor"
+ACTIVITY = "activity"
+
+
+def replay(
+    events: Iterable[tuple[datetime, str, bool | Activity | None]],
+) -> tuple[RunTracker, list[Run], list[Defrost]]:
+    """Run recorded states through a fresh tracker (backfill after setup).
+
+    `events` are (time, COMPRESSOR | ACTIVITY, value), value None while
+    unknown; they are applied sorted by time. A compressor already on at the
+    first state is a run going when first seen, so it is no start - as at a
+    live setup.
+    """
+    tracker = RunTracker()
+    runs: list[Run] = []
+    defrosts: list[Defrost] = []
+    for at, kind, value in sorted(events, key=lambda e: e[0]):
+        if kind == ACTIVITY:
+            activity = value if isinstance(value, Activity) else None
+            if (defrost := tracker.set_activity(activity, at)) is not None:
+                defrosts.append(defrost)
+        else:
+            on = value if isinstance(value, bool) else None
+            if (run := tracker.set_compressor(on, at)) is not None:
+                runs.append(run)
+    return tracker, runs, defrosts

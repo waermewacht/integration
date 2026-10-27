@@ -10,9 +10,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_OFF, STATE_ON
 from homeassistant.core import (
@@ -69,7 +71,7 @@ from .model import (
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .profiles import EMS_ESP, TEMPLATES, Template
 from .report import by_month, figures, own_hour
-from .runs import Defrost, Run, RunTracker
+from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -173,19 +175,24 @@ class HeatPumpRuntime:
     async def async_start(self) -> None:
         """Restore or backfill, read current states, start listening."""
         now = dt_util.utcnow()
+        history = None
         if data := await self._store.async_load():
             self._restore(data)
-            if history := await self._history_store.async_load():
-                self._restore_history(history)
-            elif "runs" in data:  # 0.1.0b1 kept the runs in the live file
-                self._restore_history(data)
-                self._history_dirty = True
+            history = await self._history_store.async_load()
             if self.marks.stored_season_month not in (None, self.marks.season_month):
                 await self._async_rebase_season(now)
         else:
             self.since = now
             await self._async_backfill(now)
             self._dirty = True
+        if history is not None:
+            self._restore_history(history)
+        else:
+            # First setup, or an update from 0.1.0b1 (runs in the live file):
+            # rebuild runs and defrosts from the recorded states.
+            if not await self._async_backfill_runs(now) and data and "runs" in data:
+                self._restore_history(data)
+            self._history_dirty = True
         self.marks.rollover(now, self.totals)
         for entity_id in sorted(self._signal_of):
             if state := self.hass.states.get(entity_id):
@@ -227,6 +234,47 @@ class HeatPumpRuntime:
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics for the backfill failed")
         self.marks.initialize(now, lambda start: energy_between(hourly, start, now))
+
+    async def _async_backfill_runs(self, now: datetime) -> bool:
+        """Runs and defrosts of the recorded history (about 10 days)."""
+        compressor = self.entities.get(Signal.COMPRESSOR)
+        activity = self.entities.get(Signal.ACTIVITY)
+        if compressor is None or "recorder" not in self.hass.config.components:
+            return False
+        ids = [compressor, *([activity] if activity else [])]
+        try:
+            states = await get_instance(self.hass).async_add_executor_job(
+                partial(
+                    get_significant_states,
+                    self.hass,
+                    now - timedelta(days=HISTORY_DAYS),
+                    now,
+                    ids,
+                    significant_changes_only=False,
+                    no_attributes=True,
+                )
+            )
+        except Exception:  # never block the setup
+            _LOGGER.exception("Reading the state history for the runs failed")
+            return False
+        on_off = {STATE_ON: True, STATE_OFF: False}
+        events: list[tuple[datetime, str, bool | Activity | None]] = []
+        for state in states.get(compressor, []):
+            if isinstance(state, State):
+                events.append((state.last_updated, COMPRESSOR, on_off.get(state.state)))
+        for state in states.get(activity or "", []):
+            if isinstance(state, State):
+                events.append(
+                    (
+                        state.last_updated,
+                        ACTIVITY,
+                        self.template.parse_activity(state.state),
+                    )
+                )
+        if not events:
+            return False
+        self.tracker, self.runs, self.defrosts = replay(events)
+        return True
 
     async def async_hourly(
         self, entity_ids: set[str], start: datetime, end: datetime
