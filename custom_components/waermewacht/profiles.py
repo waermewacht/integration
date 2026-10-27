@@ -44,6 +44,9 @@ class Template:
     # up to two hours late: they start anew at midnight, and standby is told
     # from the heat of the same fetch instead of the compressor state.
     day_values: bool = False
+    # Built from the integration's source code, not yet confirmed on a real
+    # installation: shown as "(beta)" in the setup.
+    experimental: bool = False
 
     def split(self, unique_id: str) -> tuple[str, str] | None:
         """(prefix, key) of a unique id, None if it is not of this format."""
@@ -260,8 +263,6 @@ BOSCH_HOMECOM = Template(
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     day_values=True,
 )
-
-TEMPLATES: dict[str, Template] = {t.key: t for t in (EMS_ESP, BOSCH_HOMECOM)}
 
 
 def find(template: Template, entries: Iterable[RegistryEntry]) -> list[Match]:

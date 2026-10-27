@@ -8,5 +8,35 @@
     "source": "Entity registry and states of a Bosch Compress CS5800i/CS6800i with K40RF via bosch_homecom 1.6.0 (data source local and cloud), Home Assistant 2026.10.4, read on 2026-10-27.",
     "real": "entity id pattern (without the area prefix the owner's installation has), unique id keys (platform bosch_homecom), units incl. the wrong 'L/min' of the volume flow, device and state classes, which entities bosch_homecom disables by default.",
     "made_up": "the gateway id and every state value."
+  },
+  "luxtronik_lwd70a.json": {
+    "source": "Derived from the source code of luxtronik2 (BenPru/luxtronik) 2026.10.18 on 2026-10-27 (sensor.py, binary_sensor.py, sensor_entities_predefined.py, binary_sensor_entities_predefined.py, const.py, config_flow.py); not read from a real installation.",
+    "real": "unique id format '<domain>.<prefix>_<key>' (unique id = original entity id, platform luxtronik2), prefix pattern 'luxtronik_<serial>', keys, entity domains, units incl. 'L/h' and '∑', device and state classes, entities disabled by default, the options of the status enum.",
+    "made_up": "the serial in the prefix, the model and every state value."
+  },
+  "stiebel_isg_wpmsystem.json": {
+    "source": "Derived from the source of stiebel_eltron_isg 2026.10-beta4 (15b8b30) and pystiebeleltron 0.8.0, WPMsystem (WPM family), no real installation; read on 2026-10-27.",
+    "real": "unique id format and keys (platform stiebel_eltron_isg), units, device and state classes, entities disabled by default; entity ids follow the German names via has_entity_name.",
+    "made_up": "config entry id, every state value; subset of the entities."
+  },
+  "stiebel_isg_lwz.json": {
+    "source": "As stiebel_isg_wpmsystem.json, controller LWZ (LWZ family).",
+    "real": "as stiebel_isg_wpmsystem.json.",
+    "made_up": "config entry id, every state value; subset of the entities."
+  },
+  "heishamon_wh_mdc07j3e5.json": {
+    "source": "Derived from the source code of kamaradclimber/heishamon-homeassistant 2.12.1 (domain aquarea, commit 086c1a9) and the HeishaMon MQTT topic list, read on 2026-10-27; not from a real installation (experimental).",
+    "real": "unique id format and keys (platform aquarea), entity ids for the default MQTT prefix panasonic_heat_pump/, integration-sensor names, units, device and state classes, enum options, which entities aquarea disables by default.",
+    "made_up": "the config entry id, the heat pump model and every state value."
+  },
+  "lambda_eu08l.json": {
+    "source": "Derived from the source code of lambda_heat_pumps 2.8.6 (GuidoJeuken-6512/lambda_heat_pumps, commit 5ad6cd0) on 2026-10-27; no real installation.",
+    "real": "unique id and entity id format (legacy names, entry name 'EU08L'), keys, units, device and state classes, register attributes and option lists as the code builds them; all entities enabled by default.",
+    "made_up": "every state value; the selection of entities (a subset of one heat pump, plus hc1/boil1 decoys)."
+  },
+  "idm_navigator20.json": {
+    "source": "Derived from the source code of Xerolux/idm-heatpump-hass 0.23.2-b4 (commit 385f8cc, 2026-10-26) and idm-heatpump-api 2.14.5b2: iDM Navigator 2.0 with Modbus TCP and web interface (PIN). Not read from a real installation.",
+    "real": "unique id format '<entry_id>_<key>' and keys, platform idm_heatpump, units and state classes as the integration sets them, enum labels of hp_operating_mode.",
+    "made_up": "entry id, entity ids (slugified German names, device 'IDM'), every state value; the field 'source' (modbus/web/web statistics) is a test aid."
   }
 }

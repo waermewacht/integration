@@ -59,6 +59,19 @@ Name: keine Treffer für „Wärmewacht“/`waermewacht` auf GitHub, PyPI, HACS,
 - Heizstab-Anteil im Mittel ~1,3 %; Ausreißer 17 %/21 % waren Defekte.
 - Verdichterstarts (51 Luft/Wasser): 540–15.820 pro Jahr; 90 % unter 5.500 (~15/Tag), ein Drittel ≤ 2.000. Stopps unter 30 s nicht sicher erkennbar. Leistung bei A-7/W35 im Mittel ~50 % über der Heizlast.
 
+### Weitere Feldwerte (Recherche 2026-10-27)
+
+- **Fraunhofer ISE, „WPsmart im Bestand“, Abschlussbericht 2020** (primär gelesen): 29 Luft/Wasser für Heizen und Warmwasser, Juli 2018 bis Juni 2019, JAZ im Mittel 3,1 (2,5–3,8 ohne zwei Ausreißer); mittlere Heizkreistemperatur 36,9 °C, mittlere Spreizung 6,8 K (3,2–9,8 K, Gruppe nur Heizen); Wärme zu 85 % Heizen, 15 % Warmwasser. Bilanzgrenze 2/3 (ohne Umwälzpumpen, Abtauwärme als Aufwand). [Bericht](https://wp-monitoring.ise.fraunhofer.de/wpqs-im-bestand/download/Berichte/BMWi-03ET1272A-WPsmart_im_Bestand-Schlussbericht.pdf)
+- **Fraunhofer ISE, Pressemitteilung 2025** zu WP-QS (primär gelesen): 77 Anlagen, Messjahr 2024, Luft/Wasser 3,4 (2,6–4,9), Heizstab 1,3 % (milder Zeitraum), keine Abhängigkeit vom Baujahr, viele Anlagen überdimensioniert, teils sehr häufiges Takten. [PDF](https://www.ise.fraunhofer.de/content/dam/ise/de/documents/presseinformationen/2025/3025_ISE_PI_Waermepumpen-heizen-auch-im-Altbau-klimafreundlich.pdf)
+- **heatpumpmonitor.org:** 3,86 für 170 Luft-Anlagen, Bilanzgrenze H4 (mit Umwälzpumpen), MID-Zähler, 1.11.2024–1.11.2025; ob Mittel oder Median, sagt die Seite nicht. Wegen H4 nicht direkt vergleichbar. [Doku](https://docs.openenergymonitor.org/heatpumpmonitor/introduction.html)
+- **UK Electrification of Heat:** Luft-WP H4 Mittel 2,81 (n = 428), Median 2,80 (n = 291, Zwischenbericht) – nur sekundär gelesen.
+- **Bosch-Datenblatt:** SCOP AW 5 OR-S laut Sekundärquelle 4,57 (35 °C) bzw. 3,50 (55 °C), mittleres Klima – an EPREL prüfen, bevor es irgendwo steht.
+- **Takt-Grenzwerte** aus Blogs und Foren (3–8 Starts/h, Mindestlaufzeit 5–20 min) sind nicht primär belegt; es gelten die Herstellerwerte im Abschnitt „Takten“.
+
+### Warmwasser und Legionellen
+
+- DVGW W 551 (2004): mindestens 60 °C am Austritt des Trinkwassererwärmers, Pflicht bei Großanlagen, empfohlen bei Kleinanlagen. `charges.py` erkennt eine thermische Desinfektion an ≥ 60 °C (einstellbar, weil der Speicherfühler nicht der Austritt ist). Dass Desinfektionen oft mit Heizstab laufen, ist eine Beobachtung ohne Quelle.
+
 ### Takten
 
 - Verdichterhersteller: höchstens 6 Starts/h (RIES), 6–12 (BITZER), 10 (Copeland) – zitiert WP-QS S. 98. VDI 4645 ohne Vorgaben. Fraunhofer: Zyklen von 2–3 min vermeiden, unter ~10 min gesondert ausweisen (S. 204–205). Dimplex: Mindestlaufzeit ~6 min ([Projektierungshandbuch 03/2023](https://www.dimplex.co.uk/sites/g/files/emiian551/files/2024-01/20230313_Projektierungshandbuch_de.pdf), S. 317). Werte von Bosch/Buderus nicht gefunden.
@@ -158,6 +171,13 @@ Repo [serbanb11/bosch-homecom-hass](https://github.com/serbanb11/bosch-homecom-h
 
 Rangfolge nach Bosch: **Luxtronik** (passt fast 1:1, nur Erkennung über Endung), dann HeishaMon, dann Vaillant (braucht Buchen aus Statistiken – hilft auch HomeCom). ViCare später als „Takte ohne Energie“, Daikin Onecta nicht (README: auf ESPAltherma/daikin_cycle_ml verweisen).
 
+**Nachtrag 2026-10-27 (Subagenten, Quellcode an festen Commits):**
+
+- **Vorlagen gebaut** (noch nicht eingebunden, „experimentell“): Luxtronik (`profiles_luxtronik.py`; Strom je Modus erst ab neuerer Firmware), Stiebel Eltron ISG (`profiles_stiebel.py`; `compressor_on`, `evaporator_defrost`, Energie als `day_and_total` in ganzen kWh, kein Kühlstrom), HeishaMon/`aquarea` (`profiles_heishamon.py`; Aktivität aus Ventil, Abtau-Schalter und Modus), Lambda (`profiles_lambda.py`; eigene Lebenszeit-Zähler je Modus inkl. Abtauen und Standby), iDM Navigator 2.0 mit Weboberfläche (`profiles_idm.py`; Strom je Modus nur aus der Web-Statistik).
+- **Nicht ohne Kernarbeit:** Ecodan (`ecodan-ha-local`; Energie sind Vortageswerte), Waterkotte (nur Jahressumme Kompressorstrom), Vaillant und ViCare (siehe Tabelle).
+- **Nicht sinnvoll:** Remeha (keine Energie), Wolf (`wolflink` ohne nutzbare Daten), Kermi, Dimplex, Ochsner (nur Bastelprojekte), LG Therma V (Strom nur bei neueren Geräten), Samsung EHS, NIBE über myUplink, Daikin über ESPAltherma (ohne externen Zähler).
+- Entwürfe: `raw/vorlagen/lambda-ecodan-2026-10-27.md`, `raw/entwurf-idm-waterkotte.md`.
+
 Folge für den Kern: Erkennung als Daten verallgemeinern (Muster mit `prefix`/`key`, ggf. `original_name`); Zählerart je Signal (fortlaufend, täglich, monatlich, „aus Statistik buchen“); Kompressor aus Zahlwert > Schwelle; Aktivität aus mehreren Entitäten; Modus „Takte ohne Energie“; Heizstab gesamt → Modus.
 
 ### Stufe 2/3 – Machbarkeit mit echten Daten (Auswertung 2026-10-27, eine Saison)
@@ -191,6 +211,13 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 - **EMS-ESP vor HomeCom:** EMS-ESP liefert fortlaufende Zähler auf 0,01 kWh, Kompressorstatus und Abtauen im Minutentakt; HomeCom nur Tageswerte mit Verzug und kein Abtauen. HomeCom ist für Bosch-Besitzer ohne Bastelaufwand trotzdem wichtig.
 - **Stillstand abtrennen:** Ob die ~25 W physikalisch stimmen, kann nur ein externer Zähler zeigen (konstanter Wert deutet auf einen Modellwert der Firmware). Die Abtrennung macht die Arbeitszahlen je Modus davon unabhängig; der Stillstand bleibt als eigener Wert sichtbar („laut Wärmepumpe“).
 - **Perioden-Sensoren trotz Langzeitstatistik** (Abweichung von den Schwestern): Eine Arbeitszahl ist ein Quotient, die Statistik kann sie nicht aus Zählern bilden. Deshalb Perioden-Sensoren (mit `state_class: measurement` nur für die Anzeige; ihre Statistik ist ein Zeitmittel, keine Bilanz) plus Energie-Sensoren für die Statistik plus Aktion „Bericht“.
+
+- **Kühlsaison = Kalenderjahr** (2026-10-27): Gekühlt wird von Frühjahr bis Herbst; eine Heizsaison ab Juli würde das teilen.
+- **Kein CO₂-Vergleich in der Oberfläche** (Wunsch des Inhabers 2026-10-27): hinge zu stark an Annahmen (Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom). `costs.py` rechnet CO₂ mit belegten Faktoren mit, angezeigt wird es nicht.
+- **Kein PV-Anteil** (Wunsch des Inhabers 2026-10-27): dieselbe Unschärfe (Batterie, Gleichzeitigkeit).
+- **Preise nur als Einstellung**, nie als Vorgabe im Code; der Strom-Grundpreis nur für einen eigenen Wärmepumpenzähler.
+- **Kennlinie und Heizlast:** laufende und vorige Saison nie gemischt (geänderte Heizkurve); täglich gegen 3 Uhr berechnet, nur im Speicher, große Attribute nicht aufgezeichnet.
+- **Gesundheits-Check:** Entwurf in `docs/GESUNDHEITSCHECK.md`. Entscheidungen des Inhabers 2026-10-27: Problem-Sensoren ohne Diagnose-Kategorie, „Effizienz gesunken“ nur Heizen, Knopf „Vergleich neu starten“, Tagesbuch erlaubt.
 
 ## 7. Architektur
 

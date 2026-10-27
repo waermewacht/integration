@@ -1,7 +1,8 @@
 """Sensors: ratios per mode and period, energy, cycling, diagnosis.
 
-Ratio sensors have no state class: the long-term statistics would average
-quotients. Energy sensors (total_increasing) feed the statistics instead.
+Ratio sensors have the state class measurement only so the frontend formats
+them as numbers; their statistics are time means of a quotient, not a
+balance. Energy sensors (total_increasing) feed the statistics instead.
 Sensors are updated by the runtime at most once a minute and at events.
 """
 

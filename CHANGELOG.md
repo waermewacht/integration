@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Weitere Hersteller (beta):**
+  - Vorlagen für Luxtronik (alpha innotec, Novelan; Strom je Betriebsart erst ab neuerer Firmware), Stiebel Eltron/Tecalor über die ISG, Panasonic Aquarea über HeishaMon (Integration `aquarea`), Lambda und iDM (Navigator 2.0 mit Weboberfläche).
+  - Abgeleitet aus dem Quellcode der jeweiligen Integration, noch nicht an einer echten Anlage bestätigt. Die Einrichtung zeigt sie deshalb mit „(beta)“.
+  - Rückmeldungen mit Diagnose-Datei sind willkommen.
+
 ## 0.1.0b6 – 2026-10-27
 
 - **AZ-Kennlinie Heizen:** Arbeitszahl je 2-K-Klasse der Tagesmitteltemperatur, laufende und vorige Saison getrennt, als Attribute für ein Diagramm (Beispiel mit apexcharts-card im README). Aktion `performance_curve` für beliebige Zeiträume.

@@ -88,7 +88,7 @@ from .model import (
     Signal,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
-from .profiles import EMS_ESP, TEMPLATES, Template, parse_compressor
+from .profiles import EMS_ESP, Template, parse_compressor
 from .report import (
     OWN_KEYS,
     by_month,
@@ -98,6 +98,7 @@ from .report import (
     statistics_rows,
 )
 from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
+from .templates import TEMPLATES
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry

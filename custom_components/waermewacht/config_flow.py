@@ -1,6 +1,6 @@
 """Config flow: name and source, then the entities per mode (prefilled).
 
-A template (EMS-ESP, Bosch HomeCom) finds the heat pump in the entity registry by platform
+A template (EMS-ESP, Bosch HomeCom and, marked beta, further makers) finds the heat pump in the entity registry by platform
 and unique id and fills in the entities; everything stays editable. Without
 a template, the user picks the entities. Reconfiguring shows the entity step
 again; the options hold the thresholds. Every change reloads the entry.
@@ -50,7 +50,8 @@ from .const import (
 )
 from .counter import UNIT_FACTORS
 from .model import AUX_SIGNALS, ELEC_SIGNALS, ENERGY_SIGNALS, HEAT_SIGNALS, Signal
-from .profiles import TEMPLATES, Match, RegistryEntry, find
+from .profiles import Match, RegistryEntry, find
+from .templates import TEMPLATES
 
 # Form sections and the signals in them.
 SECTIONS: dict[str, tuple[Signal, ...]] = {
@@ -189,6 +190,15 @@ def disabled_entities(hass: HomeAssistant) -> list[str]:
     )
 
 
+def _label(match: Match) -> str:
+    """Name of a found heat pump in the setup; templates without a real
+    installation behind them are marked."""
+    label = match.template.label
+    if match.prefix:
+        label = f"{label} ({match.prefix})"
+    return f"{label} (beta)" if match.template.experimental else label
+
+
 def _source_key(match: Match) -> str:
     return f"{match.template.key}:{match.prefix}"
 
@@ -230,12 +240,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self.async_step_entities()
 
         options: list[selector.SelectOptionDict] = [
-            selector.SelectOptionDict(
-                value=key,
-                label=f"{m.template.label} ({m.prefix})"
-                if m.prefix
-                else m.template.label,
-            )
+            selector.SelectOptionDict(value=key, label=_label(m))
             for key, m in matches.items()
         ]
         options.append(
