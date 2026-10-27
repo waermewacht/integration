@@ -229,6 +229,48 @@
       },
       "gas_savings_season": {
         "name": "Savings vs. gas boiler season"
+      },
+      "starts_today": {
+        "name": "Starts today"
+      },
+      "starts_yesterday": {
+        "name": "Starts yesterday"
+      },
+      "starts_total": {
+        "name": "Starts total"
+      },
+      "runtime_today": {
+        "name": "Run time today"
+      },
+      "run_minutes_today": {
+        "name": "Run time per start today"
+      },
+      "run_minutes_week": {
+        "name": "Run time per start 7 days"
+      },
+      "run_minutes_month": {
+        "name": "Run time per start month"
+      },
+      "short_runs_today": {
+        "name": "Short runs today"
+      },
+      "shortest_pause_today": {
+        "name": "Shortest pause today"
+      },
+      "defrosts_today": {
+        "name": "Defrosts today"
+      },
+      "aux_share_month": {
+        "name": "Backup heater share month"
+      },
+      "aux_share_season": {
+        "name": "Backup heater share season"
+      },
+      "spread_today": {
+        "name": "Flow-return spread today"
+      },
+      "flow_temp_today": {
+        "name": "Flow temperature today"
       }
     }
   },

@@ -229,6 +229,48 @@
       },
       "gas_savings_season": {
         "name": "Ersparnis ggü. Gaskessel Saison"
+      },
+      "starts_today": {
+        "name": "Starts heute"
+      },
+      "starts_yesterday": {
+        "name": "Starts gestern"
+      },
+      "starts_total": {
+        "name": "Starts gesamt"
+      },
+      "runtime_today": {
+        "name": "Laufzeit heute"
+      },
+      "run_minutes_today": {
+        "name": "Laufzeit pro Start heute"
+      },
+      "run_minutes_week": {
+        "name": "Laufzeit pro Start 7 Tage"
+      },
+      "run_minutes_month": {
+        "name": "Laufzeit pro Start Monat"
+      },
+      "short_runs_today": {
+        "name": "Kurzläufe heute"
+      },
+      "shortest_pause_today": {
+        "name": "Kürzeste Pause heute"
+      },
+      "defrosts_today": {
+        "name": "Abtauungen heute"
+      },
+      "aux_share_month": {
+        "name": "Heizstab-Anteil Monat"
+      },
+      "aux_share_season": {
+        "name": "Heizstab-Anteil Saison"
+      },
+      "spread_today": {
+        "name": "Spreizung heute"
+      },
+      "flow_temp_today": {
+        "name": "Vorlauftemperatur heute"
       }
     }
   },
