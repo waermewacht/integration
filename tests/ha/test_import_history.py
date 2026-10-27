@@ -17,7 +17,10 @@ from homeassistant.components.recorder.statistics import (
     statistics_during_period,
 )
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
@@ -102,8 +105,25 @@ async def test_hours_before_setup_are_imported(
     ]
     assert entry.runtime_data.history_imported
 
-    # Once only: a reload does not import again.
-    assert await hass.config_entries.async_reload(entry.entry_id)
+    # 15 minutes later the sums are shifted to start at 0: Home Assistant
+    # takes the change of the earliest row against 0.
+    freezer.tick(timedelta(minutes=16))
+    async_fire_time_changed(hass)
     await hass.async_block_till_done()
     await async_wait_recording_done(hass)
-    assert await sums(hass, entity_id(hass, entry, "heat_heating")) == [-5.0, -3.0, 0.0]
+    assert await sums(hass, entity_id(hass, entry, "heat_heating")) == [1.0, 3.0, 6.0]
+    assert await sums(hass, entity_id(hass, entry, "electricity_heating")) == [
+        0.25,
+        0.75,
+        1.5,
+    ]
+    assert entry.runtime_data.history_adjusted
+
+    # Once only: a reload neither imports nor shifts again.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=16))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    assert await sums(hass, entity_id(hass, entry, "heat_heating")) == [1.0, 3.0, 6.0]

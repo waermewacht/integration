@@ -85,8 +85,11 @@ def statistics_rows(
     """Hourly sums of the own sensors for the hours before the setup.
 
     The sums end at 0 with the last hour: Home Assistant starts the sum of a
-    new sensor at 0, so the imported past joins it without a step and no
-    recorded row has to change. Hours without energy get no row.
+    new sensor at 0, so the imported past joins it without a step. Home
+    Assistant takes the change of the earliest row against 0, though: once
+    the sensor has short-term statistics, all rows are shifted up by the
+    imported energy (own_totals), so the sum starts at 0. Hours without
+    energy get no row.
     """
     changes: dict[str, list[tuple[datetime, float]]] = {}
     for hour in sorted(hours):
@@ -102,6 +105,15 @@ def statistics_rows(
             rows[key].append((hour, round(-remaining, 3) + 0.0))
         rows[key][-1] = (rows[key][-1][0], 0.0)
     return rows
+
+
+def own_totals(hours: Mapping[datetime, Totals]) -> dict[str, float]:
+    """Energy of the own sensors over all `hours` (what an import adds)."""
+    totals: dict[str, float] = {}
+    for hour_totals in hours.values():
+        for key, kwh in own_changes(hour_totals).items():
+            totals[key] = totals.get(key, 0.0) + kwh
+    return totals
 
 
 def own_hour(changes: Mapping[str, float]) -> Totals:

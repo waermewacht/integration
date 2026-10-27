@@ -78,7 +78,14 @@ from .model import (
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .profiles import EMS_ESP, TEMPLATES, Template, parse_compressor
-from .report import OWN_KEYS, by_month, figures, own_hour, statistics_rows
+from .report import (
+    OWN_KEYS,
+    by_month,
+    figures,
+    own_hour,
+    own_totals,
+    statistics_rows,
+)
 from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
 
 if TYPE_CHECKING:
@@ -99,6 +106,9 @@ EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
 RELIABLE_STEPS = 20
 # Entities may appear late after a restart; issues only after this grace time.
 ISSUE_GRACE = timedelta(minutes=10)
+# Imported sums are shifted once the own sensors have short-term statistics
+# (compiled every 5 minutes), so the recorder continues from shifted sums.
+ADJUST_DELAY = timedelta(minutes=15)
 # Day values of a cloud: the electricity of a fetch waits this long for the
 # heat of the same fetch (the entities update one after another), and heat
 # up to SAME_FETCH before the electricity belongs to the same fetch.
@@ -158,8 +168,11 @@ class HeatPumpRuntime:
         self.spread = Mean()  # flow minus return, compressor heating, today
         self.flow = Mean()  # flow temperature, compressor heating, today
         self.since: datetime | None = None  # first setup
-        # The hours before the setup are in the own sensors' statistics.
+        # The hours before the setup are in the own sensors' statistics, and
+        # their sums were shifted to start at 0.
         self.history_imported = False
+        self.history_adjusted = False
+        self._adjusting = False
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
         # Counters seen with decimals; the others count in whole kWh.
         self.decimal: set[Signal] = set()
@@ -320,16 +333,7 @@ class HeatPumpRuntime:
         self.history_imported = True
         self._dirty = True
         before = self.since.replace(minute=0, second=0, microsecond=0)
-        registry = er.async_get(self.hass)
-        ids = {
-            key: entity_id
-            for key in OWN_KEYS
-            if (
-                entity_id := registry.async_get_entity_id(
-                    "sensor", DOMAIN, f"{self.entry.entry_id}_{key}"
-                )
-            )
-        }
+        ids = self._own_ids()
         try:
             recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
             rows = statistics_rows(
@@ -356,6 +360,73 @@ class HeatPumpRuntime:
                 [StatisticData(start=hour, sum=kwh) for hour, kwh in rows[key]],
             )
         _LOGGER.debug("Imported the statistics before %s for %s", before, ids)
+
+    def _own_ids(self) -> dict[str, str]:
+        registry = er.async_get(self.hass)
+        return {
+            key: entity_id
+            for key in OWN_KEYS
+            if (
+                entity_id := registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"{self.entry.entry_id}_{key}"
+                )
+            )
+        }
+
+    async def _async_adjust_history(self) -> None:
+        """Shift the imported sums up by the imported energy, once.
+
+        Home Assistant takes the change of a sensor's earliest row against 0:
+        imported sums ending at 0 would show the whole past as one negative
+        step in the first hour. Shifted, the sum starts at 0 and every
+        change stays the same. Only a sensor whose earliest row is exactly
+        the first imported one is shifted (never twice, never other data).
+        """
+        self._adjusting = True
+        try:
+            if self.since is None:
+                return
+            before = self.since.replace(minute=0, second=0, microsecond=0)
+            ids = self._own_ids()
+            hours = by_hour(await self._async_source_hours(EARLIEST, before))
+            rows, totals = statistics_rows(hours), own_totals(hours)
+            first = await get_instance(self.hass).async_add_executor_job(
+                partial(
+                    statistics_during_period,
+                    self.hass,
+                    EARLIEST,
+                    before,
+                    set(ids.values()),
+                    "hour",
+                    None,
+                    {"sum"},
+                )
+            )
+            for key, entity_id in ids.items():
+                if not rows.get(key) or not first.get(entity_id):
+                    continue
+                hour, imported_sum = rows[key][0]
+                row = first[entity_id][0]
+                start = row["start"]
+                if not isinstance(start, datetime):
+                    start = dt_util.utc_from_timestamp(start)
+                recorded_sum = row.get("sum")
+                if (
+                    start != hour
+                    or recorded_sum is None
+                    or abs(recorded_sum - imported_sum) > 0.01
+                ):
+                    continue
+                get_instance(self.hass).async_adjust_statistics(
+                    entity_id, hour, totals[key], UnitOfEnergy.KILO_WATT_HOUR
+                )
+        except Exception:  # keep running; the first bar then stays negative
+            _LOGGER.exception("Shifting the imported statistics failed")
+        finally:
+            # One attempt: never shift twice.
+            self.history_adjusted = True
+            self._adjusting = False
+            self._dirty = True
 
     async def async_hourly(
         self, entity_ids: set[str], start: datetime, end: datetime
@@ -674,6 +745,14 @@ class HeatPumpRuntime:
         self._resolve_pending(now, final=self.marks.due(now))
         if now - self._started_at >= ISSUE_GRACE:
             self._check_issues()
+        if (
+            self.history_imported
+            and not self.history_adjusted
+            and not self._adjusting
+            and now - self._started_at >= ADJUST_DELAY
+            and "recorder" in self.hass.config.components
+        ):
+            self.hass.async_create_task(self._async_adjust_history())
         if self.marks.rollover(now, self.totals):
             self.spread, self.flow = Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
@@ -806,6 +885,7 @@ class HeatPumpRuntime:
             "saved_at": dt_util.utcnow().isoformat(),
             "since": self.since.isoformat() if self.since else None,
             "history_imported": self.history_imported,
+            "history_adjusted": self.history_adjusted,
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
@@ -827,6 +907,7 @@ class HeatPumpRuntime:
         since = data.get("since")
         self.since = dt_util.parse_datetime(since) if since else None
         self.history_imported = data.get("history_imported", False)
+        self.history_adjusted = data.get("history_adjusted", False)
         for key, counter in data.get("counters", {}).items():
             if (signal := Signal(key)) in self.counters:
                 self.counters[signal].restore(counter)
