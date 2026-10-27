@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b5 – 2026-10-27
+
 - **Kosten und Gasvergleich:**
   - Neue Einstellungen Strompreis, Gas-Arbeitspreis und Gas-Grundpreis, alle optional.
   - Damit gibt es die Sensoren Stromkosten Monat und Saison, Wärmekosten je kWh Saison und Ersparnis gegenüber einem Gaskessel (Wirkungsgrad 0,87 auf den Brennwert).
