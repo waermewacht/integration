@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Effizienz gesunken:** Hat eine Saison Außentemperatur-Klassen zusammengefasst (am Saisonanfang üblich), vergleicht Wärmewacht jetzt mit der Summe der Klassen der anderen Saison über denselben Bereich. Statt „mindestens 2 gemeinsame Klassen“ gilt „mindestens 4 K gemeinsamer Bereich“. Der Vergleich ist damit nicht mehr wochenlang unbekannt.
+
 ## 0.1.0b7 – 2026-10-27
 
 - **Weitere Hersteller (beta):**

@@ -76,6 +76,43 @@ def test_only_common_classes_count() -> None:
     assert result.problem is None and result.reason == TOO_FEW_CLASSES
 
 
+def test_merged_class_is_compared_with_the_summed_classes() -> None:
+    """A young season merges 6-12 °C into one class; the previous season
+    keeps three. Values of a real installation (October, 13 days)."""
+    previous = [
+        row(4, 28, 672.52, 3.4),
+        row(6, 39, 729.54, 3.39),
+        row(8, 34, 473.86, 3.5),
+        row(10, 33, 363.31, 3.62),
+    ]
+    current = [row(6, 13, 172.69, 4.91, upper=12)]
+    result = efficiency_drop(current, previous)
+    assert result.reason == TOO_FEW_DAYS  # 13 < 14, but the range counts
+    (compared,) = result.evidence["classes"]
+    assert (compared["lower"], compared["upper"]) == (6, 12)
+    assert compared["days_previous"] == 106
+    assert compared["ratio_previous"] == pytest.approx(3.47, abs=0.01)
+
+    current = [row(6, 14, 172.69, 4.91, upper=12)]
+    result = efficiency_drop(current, previous)
+    assert result.problem is False
+    assert result.evidence["drop_percent"] < 0  # better than last season
+
+
+def test_merged_previous_class_and_gaps() -> None:
+    previous = [row(-8, 12, 300, 2.5, upper=-4), row(0, 10, 300, 3.0)]
+    current = [row(-8, 8, 200, 1.8), row(-6, 8, 200, 1.8), row(0, 10, 300, 3.0)]
+    result = efficiency_drop(current, previous)
+    assert [(c["lower"], c["upper"]) for c in result.evidence["classes"]] == [
+        (-8, -4),
+        (0, 2),
+    ]
+    assert result.problem is True  # 1.8 against 2.5 in the cold range
+    # A gap in the current season: -8 to -4 cannot be covered.
+    result = efficiency_drop([current[0], current[2]], previous)
+    assert result.reason == TOO_FEW_CLASSES
+
+
 def test_minimum_data() -> None:
     previous = [row(0, 10, 300, 3.0), row(2, 10, 250, 3.0)]
     assert (

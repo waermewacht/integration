@@ -8,7 +8,9 @@ here, never hidden.
 - Efficiency drop (4.1): heating ratio of the current season against the
   previous one at the same outdoor temperature, class by class of the
   performance curve; the previous season is weighted with the current heat
-  per class. On from a drop of 15 %, off below 10 % (hysteresis).
+  per class. Where one season merged classes the other keeps apart (a young
+  season has few days per class), the classes of the other are summed over
+  the same range. On from a drop of 15 %, off below 10 % (hysteresis).
 - Backup heater on mild days (4.2): heater energy for heating on days with a
   mean of at least 5 °C in the last 7 full days; on from 2 kWh. The rolling
   window is the hysteresis. Hot water does not count (disinfection may use
@@ -33,7 +35,7 @@ from .model import Mode
 # about 0.14 at 7 days (3 % at a ratio of 4), so 15 % is well above noise.
 DROP_PERCENT = 15.0
 DROP_RELEASE_POINTS = 5.0  # off below threshold minus this
-MIN_COMMON_CLASSES = 2
+MIN_COMMON_SPAN = 4.0  # K of compared outdoor range, two classes
 MIN_COMMON_DAYS = 14
 MIN_COMPARED_KWH = 10.0
 # 4.2, own assumptions.
@@ -67,8 +69,51 @@ class Finding:
         return {"reason": self.reason, **self.evidence}
 
 
-def _key(row: Mapping[str, Any]) -> tuple[float, float]:
-    return (row["lower"], row["upper"])
+def _usable(rows: Sequence[Mapping[str, Any]]) -> bool:
+    return all(not r.get("sparse") and r.get("ratio") for r in rows)
+
+
+def _sum(rows: Sequence[Mapping[str, Any]], key: str) -> float:
+    return sum(r[key] for r in rows)
+
+
+def common_ranges(
+    current: Sequence[Mapping[str, Any]], previous: Sequence[Mapping[str, Any]]
+) -> list[tuple[list[Mapping[str, Any]], list[Mapping[str, Any]]]]:
+    """Smallest outdoor ranges bounded by class limits of both curves.
+
+    Each pair holds the adjacent classes of either season that cover the
+    same range. A range with a gap, a sparse class or a class without a
+    ratio is left out.
+    """
+    cur = sorted(current, key=lambda r: r["lower"])
+    prev = sorted(previous, key=lambda r: r["lower"])
+    ranges = []
+    i = j = 0
+    while i < len(cur) and j < len(prev):
+        if cur[i]["lower"] != prev[j]["lower"]:
+            if cur[i]["lower"] < prev[j]["lower"]:
+                i += 1
+            else:
+                j += 1
+            continue
+        a, b = [cur[i]], [prev[j]]
+        i, j = i + 1, j + 1
+        while a[-1]["upper"] != b[-1]["upper"]:
+            if a[-1]["upper"] < b[-1]["upper"]:
+                if i == len(cur) or cur[i]["lower"] != a[-1]["upper"]:
+                    break
+                a.append(cur[i])
+                i += 1
+            else:
+                if j == len(prev) or prev[j]["lower"] != b[-1]["upper"]:
+                    break
+                b.append(prev[j])
+                j += 1
+        else:
+            if _usable(a) and _usable(b):
+                ranges.append((a, b))
+    return ranges
 
 
 def efficiency_drop(
@@ -80,18 +125,29 @@ def efficiency_drop(
 ) -> Finding:
     """Compare two performance curves (rows as from curve.curve_as_dicts).
 
-    Only classes with the same bounds, not sparse and with a ratio in both
-    take part. Reference ratio: the previous season with the current heat
-    distribution, Σ heat_cur / Σ (heat_cur / ratio_prev); current ratio:
-    Σ heat_cur / Σ electricity_cur over the same classes.
+    Only ranges covered by usable classes of both seasons take part
+    (common_ranges). Reference ratio: the previous season with the current
+    heat distribution, Σ heat_cur / Σ (heat_cur / ratio_prev); current
+    ratio: Σ heat_cur / Σ electricity_cur over the same ranges.
     """
     if not previous:
         return Finding(None, NO_PREVIOUS)
-    usable = {_key(r): r for r in previous if not r.get("sparse") and r.get("ratio")}
     common = [
-        (row, usable[_key(row)])
-        for row in current
-        if not row.get("sparse") and row.get("ratio") and _key(row) in usable
+        (
+            {
+                "lower": a[0]["lower"],
+                "upper": a[-1]["upper"],
+                "days": _sum(a, "days"),
+                "heat_kwh": _sum(a, "heat_kwh"),
+                "electricity_kwh": _sum(a, "electricity_kwh"),
+                "ratio": _sum(a, "heat_kwh") / _sum(a, "electricity_kwh"),
+            },
+            {
+                "days": _sum(b, "days"),
+                "ratio": _sum(b, "heat_kwh") / _sum(b, "electricity_kwh"),
+            },
+        )
+        for a, b in common_ranges(current, previous)
     ]
     classes = [
         {
@@ -99,13 +155,13 @@ def efficiency_drop(
             "upper": cur["upper"],
             "days_current": cur["days"],
             "days_previous": prev["days"],
-            "ratio_current": cur["ratio"],
-            "ratio_previous": prev["ratio"],
+            "ratio_current": round(cur["ratio"], 2),
+            "ratio_previous": round(prev["ratio"], 2),
         }
         for cur, prev in common
     ]
     evidence: dict[str, Any] = {"threshold_percent": threshold, "classes": classes}
-    if len(common) < MIN_COMMON_CLASSES:
+    if sum(cur["upper"] - cur["lower"] for cur, _ in common) < MIN_COMMON_SPAN:
         return Finding(None, TOO_FEW_CLASSES, evidence)
     if sum(cur["days"] for cur, _ in common) < MIN_COMMON_DAYS:
         return Finding(None, TOO_FEW_DAYS, evidence)

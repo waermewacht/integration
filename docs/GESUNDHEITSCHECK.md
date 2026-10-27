@@ -63,7 +63,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 **Regel.**
 
 - Eingabe: `runtime.curves["current"]` und `["previous"]` (Umfang `heating`, ohne Stillstand, mit Heizstab = H3).
-- Gemeinsame Klassen: gleiche Grenzen `lower`/`upper` in beiden Saisons, beide nicht `sparse`, beide mit `ratio`. Zusammengezogene Randklassen mit verschiedenen Grenzen fallen heraus.
+- Gemeinsame Bereiche: die kleinsten Außentemperatur-Bereiche, deren Grenzen in beiden Saisons Klassengrenzen sind (`health.common_ranges`). Hat eine Saison Klassen zusammengefasst, etwa die junge Saison im Oktober 6–12 °C bei 13 Tagen, werden die Klassen der anderen über denselben Bereich summiert (Wärme und Strom, daraus die AZ). Alle Klassen eines Bereichs nicht `sparse` und mit `ratio`; Bereiche mit Lücke fallen heraus. Bis 0.1.0b7 zählten nur Klassen mit gleichen Grenzen, damit blieb der Vergleich am Saisonanfang wochenlang unbekannt.
 - Vergleichs-AZ: die Vorsaison mit der Wärmeverteilung der laufenden Saison gewichtet:
   `AZ_vergleich = Σ Wärme_akt,k / Σ (Wärme_akt,k / AZ_vor,k)` über die gemeinsamen Klassen k.
   `AZ_akt = Σ Wärme_akt,k / Σ Strom_akt,k` über dieselben Klassen.
@@ -71,7 +71,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 - **An** bei Rückgang ≥ 15 %, **aus** erst unter 10 % (Hysterese).
 - Ausgewertet einmal täglich nach der Kennlinie (gegen 3 Uhr), kein eigener Recorder-Zugriff.
 
-**Mindestdaten.** Mindestens 2 gemeinsame Klassen mit zusammen ≥ 14 Tagen der laufenden Saison; Strom der laufenden Saison in diesen Klassen ≥ 10 kWh und ≥ 20 Zählerschritte (`reliable`). Sonst `unknown` mit `reason`.
+**Mindestdaten.** Gemeinsame Bereiche von zusammen ≥ 4 K (zwei Klassen breit) mit ≥ 14 Tagen der laufenden Saison; Strom der laufenden Saison in diesen Klassen ≥ 10 kWh und ≥ 20 Zählerschritte (`reliable`). Sonst `unknown` mit `reason`.
 
 **Quelle.** Klassen-AZ streut um 0,14 bei n = 7 (Machbarkeit, `ENTWICKLUNG.md` §4). Bei AZ ≈ 4 sind das gut 3 %. 15 % liegt damit weit über dem Rauschen. Die Schwellen 15/10 % sind **eigene Annahme**. Zum Vergleich: Die JAZ von Luft/Wasser-Anlagen im Feld reicht von 2,6 bis 4,9 (Fraunhofer ISE WP-QS) – das ist Streuung zwischen Anlagen, kein Maß für eine Veränderung.
 
