@@ -12,6 +12,7 @@ CONF_NAME: Final = "name"
 CONF_SOURCE: Final = "source"  # setup choice: "<template>:<prefix>" or "manual"
 CONF_TEMPLATE: Final = "template"  # template key, or None for a manual mapping
 CONF_ENTITIES: Final = "entities"  # {signal: entity_id}
+CONF_HISTORY: Final = "history"  # {entity_id: [same counter, other id format]}
 SOURCE_MANUAL: Final = "manual"
 
 # Options.

@@ -63,3 +63,13 @@ def test_seen_activity_values_are_known() -> None:
     seen = load_fixture(FIXTURE)["activity_values_seen"]
     parsed = [EMS_ESP.parse_activity(value) for value in seen]
     assert parsed == [Activity.OFF, Activity.HEATING, Activity.DHW, Activity.DEFROST]
+
+
+def test_older_names_kept_for_the_backfill() -> None:
+    """The real installation has both formats; the older ids carry the longer
+    statistics and are remembered as history of the chosen entity."""
+    (match,) = find(EMS_ESP, entries())
+    assert match.history[Signal.HEAT_DHW] == ["sensor.boiler_nrgww"]
+    assert match.history[Signal.ELEC_DHW] == ["sensor.boiler_wwmeter"]
+    assert match.history[Signal.AUX_DHW] == ["sensor.boiler_auxelecheatnrgconsww"]
+    assert Signal.HEAT_HEATING not in match.history

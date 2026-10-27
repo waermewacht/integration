@@ -1,4 +1,4 @@
-"""Counter increments: resets, jitter, jumps, daily values."""
+"""Counter increments: resets, dips (noise, defrost), jumps, daily values."""
 
 from __future__ import annotations
 
@@ -23,13 +23,31 @@ def test_first_reading_is_baseline() -> None:
     assert counter.update(1000.25, at(10)).delta == pytest.approx(0.25)
 
 
-def test_small_step_back_is_jitter_and_not_booked_twice() -> None:
+def test_small_step_back_is_a_dip_and_not_booked_twice() -> None:
     """Observed: a heat counter went back by 0.02 kWh and up again."""
     counter = Counter()
     counter.update(500.00, at(0))
-    assert counter.update(499.98, at(1)).event is CounterEvent.JITTER
+    assert counter.update(499.98, at(1)).event is CounterEvent.DIP
     assert counter.update(500.00, at(2)).delta == 0
     assert counter.update(500.05, at(3)).delta == pytest.approx(0.05)
+
+
+def test_defrost_dip_books_net_heat() -> None:
+    """Observed pattern: during a defrost the heat counter falls by ~0.3 kWh in
+    steps of 0.04-0.06 every 30 s, then rises again. Only heat above the old
+    maximum is new: the dip and its recovery cancel out (net heat)."""
+    counter = Counter()
+    counter.update(1000.00, at(0))
+    value, booked = 1000.00, 0.0
+    for _ in range(6):  # -0.30 in total
+        value = round(value - 0.05, 2)
+        update = counter.update(value, at(1))
+        assert update.event is CounterEvent.DIP
+        booked += update.delta
+    for step in (0.10, 0.10, 0.10, 0.10, 0.10):  # back to 1000.20
+        value = round(value + step, 2)
+        booked += counter.update(value, at(5)).delta
+    assert booked == pytest.approx(0.20)
 
 
 def test_reset_to_zero_books_nothing() -> None:

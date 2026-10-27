@@ -37,6 +37,7 @@ from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
     CONF_CRITICAL_RUN,
     CONF_ENTITIES,
+    CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
@@ -244,10 +245,29 @@ class HeatPumpRuntime:
     async def _async_source_hours(
         self, start: datetime, end: datetime
     ) -> HourlyChanges:
-        """Hourly changes of the source counters, by signal."""
-        ids = {self.entities[s]: s for s in self.counters}
-        rows = await self.async_hourly(set(ids), start, end)
-        return {ids[entity_id]: values for entity_id, values in rows.items()}
+        """Hourly changes of the source counters, by signal.
+
+        A counter may also exist under an older id with longer statistics
+        (EMS-ESP after a change of its id format): its hours fill in where
+        the configured entity has none.
+        """
+        history: dict[str, list[str]] = self.entry.data.get(CONF_HISTORY, {})
+        ids = {
+            s: [self.entities[s], *history.get(self.entities[s], [])]
+            for s in self.counters
+        }
+        rows = await self.async_hourly(
+            {i for group in ids.values() for i in group}, start, end
+        )
+        result: HourlyChanges = {}
+        for signal, (primary, *older) in ids.items():
+            merged: dict[datetime, float] = {}
+            for entity_id in older:
+                merged.update(rows.get(entity_id, {}))
+            merged.update(rows.get(primary, {}))
+            if merged:
+                result[signal] = merged
+        return result
 
     # Report for any period.
 

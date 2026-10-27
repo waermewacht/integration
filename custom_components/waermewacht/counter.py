@@ -14,10 +14,14 @@ from typing import Any
 # Factor to kWh for the units an energy sensor may report.
 UNIT_FACTORS = {"Wh": 0.001, "kWh": 1.0, "MWh": 1000.0}
 
-# Lifetime counters sometimes step back a little (observed: −0.02 kWh on an
-# EMS-ESP heat counter). That is noise, not a reset: the old maximum stays the
-# baseline, otherwise the same energy would be booked twice.
-JITTER_KWH = 0.1
+# Lifetime counters step back without a reset: noise (observed −0.02 kWh) and,
+# on heat counters, defrosts, which subtract the heat taken from the house
+# (observed −0.31 kWh in steps during one defrost). The old maximum stays the
+# baseline, so only heat above it is booked: that is the net heat, and the
+# recovery after the dip is not booked twice. A reset is a drop by more than
+# 10 % (like Home Assistant's own rule) and more than 1 kWh.
+RESET_FRACTION = 0.1
+RESET_MIN_KWH = 1.0
 
 # Increases above max_kw × hours × margin + tolerance are glitches. The
 # tolerance covers counters in whole kWh, which step by 1 kWh at once.
@@ -29,8 +33,8 @@ class CounterEvent(StrEnum):
     """What a reading did besides delivering energy."""
 
     FIRST = "first"  # no previous reading: baseline only
-    JITTER = "jitter"  # small step back: ignored
-    RESET = "reset"  # counter went back to (near) zero
+    DIP = "dip"  # step back (noise, defrost): baseline held, nothing booked
+    RESET = "reset"  # counter started anew: new baseline
     JUMP = "jump"  # implausibly large increase: new baseline, nothing booked
 
 
@@ -73,9 +77,9 @@ class Counter:
             if self.daily_reset:
                 self.last_value, self.last_time = value, at
                 return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
-            if -delta <= JITTER_KWH:
+            if -delta <= max(RESET_MIN_KWH, RESET_FRACTION * previous_value):
                 self.last_time = at
-                return CounterUpdate(event=CounterEvent.JITTER)
+                return CounterUpdate(event=CounterEvent.DIP)
             self.last_value, self.last_time = value, at
             return CounterUpdate(event=CounterEvent.RESET)
         self.last_value, self.last_time = value, at

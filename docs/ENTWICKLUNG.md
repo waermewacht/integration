@@ -172,7 +172,7 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 |---|---|
 | `model.py` | `Signal`, `Mode`, `Activity` |
 | `profiles.py` | Vorlagen als Daten (EMS-ESP), Erkennung über Registry-Einträge, Aktivitätswerte aller EMS-ESP-Sprachen |
-| `counter.py` | Zählerstände → Zuwächse: erster Wert, kleiner Rücksprung (≤ 0,1 kWh, ignoriert), Reset, Sprung, Tageszähler |
+| `counter.py` | Zählerstände → Zuwächse: erster Wert, Rücksprung (Rauschen, Abtauen: Höchststand halten = netto), Reset (> 10 % und > 1 kWh), Sprung, Tageszähler |
 | `runs.py` | Läufe (Start beobachtet? Lücke?) und Abtauungen; unbekannte Zustände ändern nichts |
 | `cycling.py` | Starts, Laufzeit, Kurzläufe, Pausen, Abtauungen je Zeitfenster; Starts je Stunde |
 | `energy.py` | Energie je Art (Wärme, Strom Lauf, Stillstand, Heizstab) und Modus; Arbeitszahl-Regeln |

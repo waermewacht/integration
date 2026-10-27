@@ -34,6 +34,9 @@ class Template:
     # Keys that must be present to call a device a heat pump of this template.
     required: tuple[Signal, ...]
     activity_values: dict[str, Activity] = field(default_factory=dict)
+    # Keys naming the same counter in another id format (both may exist; the
+    # older one often has the longer statistics, used for the backfill).
+    aliases: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     def parse_activity(self, state: str | None) -> Activity | None:
         """Map an activity state; None while unknown, OTHER if not recognized."""
@@ -49,6 +52,8 @@ class Match:
     template: Template
     prefix: str  # MQTT base of the "multiple instances" format, else ""
     entities: dict[Signal, str]
+    # Other entities of the same counter (other id format), for the backfill.
+    history: dict[Signal, list[str]] = field(default_factory=dict)
 
     @property
     def missing(self) -> list[Signal]:
@@ -170,6 +175,21 @@ EMS_ESP = Template(
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=EMS_ESP_ACTIVITY,
+    # Same telegram field, 3.7+ name vs. 3.6-compatible name (mqtt.cpp,
+    # dhw_old). Observed: after a change of the format setting both exist
+    # with equal values, the old one with statistics reaching further back.
+    aliases={
+        "dhw_nrg": ("nrgww",),
+        "dhw_meter": ("wwmeter",),
+        "dhw_nrgsupp": ("nrgsuppww",),
+        "dhw_nrgconscomp": ("nrgconscompww",),
+        "dhw_auxelecheatnrgcons": ("auxelecheatnrgconsww",),
+        "nrgww": ("dhw_nrg",),
+        "wwmeter": ("dhw_meter",),
+        "nrgsuppww": ("dhw_nrgsupp",),
+        "nrgconscompww": ("dhw_nrgconscomp",),
+        "auxelecheatnrgconsww": ("dhw_auxelecheatnrgcons",),
+    },
 )
 
 TEMPLATES: dict[str, Template] = {EMS_ESP.key: EMS_ESP}
@@ -201,11 +221,20 @@ def find(template: Template, entries: Iterable[RegistryEntry]) -> list[Match]:
 
     matches = []
     for prefix, found in sorted(by_prefix.items()):
-        entities = {
-            signal: next(found[c] for c in candidates if c in found)
-            for signal, candidates in template.signals.items()
-            if any(c in found for c in candidates)
-        }
+        entities: dict[Signal, str] = {}
+        history: dict[Signal, list[str]] = {}
+        for signal, candidates in template.signals.items():
+            chosen = next((c for c in candidates if c in found), None)
+            if chosen is None:
+                continue
+            entities[signal] = found[chosen]
+            domain, key = chosen
+            if others := [
+                found[(domain, alias)]
+                for alias in template.aliases.get(key, ())
+                if (domain, alias) in found
+            ]:
+                history[signal] = others
         if all(s in entities for s in template.required):
-            matches.append(Match(template, prefix, entities))
+            matches.append(Match(template, prefix, entities, history))
     return matches

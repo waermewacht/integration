@@ -27,6 +27,7 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_CRITICAL_RUN,
     CONF_ENTITIES,
+    CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_NAME,
     CONF_SEASON_START,
@@ -174,6 +175,8 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._template: str | None = None
         self._unique_id: str | None = None
         self._prefill: dict[str, str] = {}
+        # Entity -> other entities of the same counter (backfill only).
+        self._history: dict[str, list[str]] = {}
 
     @staticmethod
     @callback
@@ -192,6 +195,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._unique_id = source
                 self._prefill = {
                     s.value: e for s, e in match.entities.items() if s in FORM_SIGNALS
+                }
+                self._history = {
+                    match.entities[s]: aliases for s, aliases in match.history.items()
                 }
             return await self.async_step_entities()
 
@@ -264,6 +270,11 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_NAME: self._name,
                 CONF_TEMPLATE: self._template,
                 CONF_ENTITIES: entities,
+                CONF_HISTORY: {
+                    entity: aliases
+                    for entity, aliases in self._history.items()
+                    if entity in entities.values()
+                },
             },
         )
 

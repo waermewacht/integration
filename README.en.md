@@ -31,7 +31,7 @@ The user interface is available in German and English and follows the language o
 - **Standby kept separate:** Electricity while the compressor stands still does not count in the factor per mode, but it does in heating + hot water. Fraunhofer ISE calculates the same way in its field tests.
 - **Cooling never enters the seasonal factor.** It has its own EER.
 - **Cycling from real compressor runs:** A Home Assistant restart in the middle of a run is not a new start. If the heat pump switches from heating to hot water without stopping, it stays one run. A run that was already going when first seen does not count as a start.
-- **Meter resets and steps back:** Small steps back (up to 0.1 kWh) are ignored, a reset sets a new baseline, implausible jumps are not booked. `unknown` and `unavailable` never count as 0.
+- **Meter resets and steps back:** Steps back – noise, and defrosts, during which the heat pump subtracts the heat it took – keep the highest reading; only heat above it is booked (net). Only a drop of more than 10 % and more than 1 kWh counts as a reset with a new baseline, implausible jumps are not booked. `unknown` and `unavailable` never count as 0.
 - **Look back from the long-term statistics:** Today, yesterday, month, season and total already include the time before the setup.
 
 ## Requirements

@@ -31,7 +31,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Stillstand getrennt:** Strom bei stehendem Kompressor zählt nicht in die Arbeitszahl je Betriebsart, wohl aber in die Arbeitszahl Heizen + Warmwasser. So rechnet auch das Fraunhofer ISE in seinen Feldtests.
 - **Kühlen nie in der Jahresarbeitszahl.** Es hat eine eigene Leistungszahl (EER).
 - **Takte aus echten Läufen** des Kompressors: Ein Neustart von Home Assistant mitten im Lauf ist kein neuer Start. Wechselt die Wärmepumpe ohne Stopp von Heizen auf Warmwasser, bleibt es ein Lauf. Ein Lauf, der beim ersten Blick schon lief, zählt nicht als Start.
-- **Zähler-Resets und Rücksprünge:** Kleine Rücksprünge (bis 0,1 kWh) werden ignoriert, ein Reset ergibt eine neue Basis, unplausible Sprünge werden nicht gebucht. `unknown` und `unavailable` gelten nie als 0.
+- **Zähler-Resets und Rücksprünge:** Rücksprünge – Rauschen und das Abtauen, bei dem die Wärmepumpe die entzogene Wärme abzieht – halten den Höchststand, gebucht wird nur Wärme darüber (netto). Erst ein Rückgang um mehr als 10 % und mehr als 1 kWh gilt als Reset mit neuer Basis, unplausible Sprünge werden nicht gebucht. `unknown` und `unavailable` gelten nie als 0.
 - **Rückblick aus der Langzeitstatistik:** Heute, gestern, Monat, Saison und gesamt enthalten schon bei der Einrichtung die Werte der Zeit davor.
 
 ## Voraussetzungen
