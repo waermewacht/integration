@@ -167,6 +167,7 @@ async def test_options(hass: HomeAssistant) -> None:
             "season_start_month": "9",
             # Optional: a gas price without base price.
             "costs": {"electricity_price": 27.75, "gas_price": 11.5},
+            "heat_load": {"design_outdoor_temp": -12.0},
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -175,4 +176,5 @@ async def test_options(hass: HomeAssistant) -> None:
     assert entry.options["electricity_price"] == 27.75
     assert entry.options["gas_price"] == 11.5
     assert "gas_base_price" not in entry.options
+    assert entry.options["design_outdoor_temp"] == -12.0
     assert "costs" not in entry.options
