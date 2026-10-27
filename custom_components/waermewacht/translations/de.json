@@ -59,6 +59,17 @@
               "return_temp": "Rücklauftemperatur",
               "flow_rate": "Durchfluss"
             }
+          },
+          "activity_parts": {
+            "name": "Betriebsart aus mehreren Entitäten",
+            "data": {
+              "defrost_flag": "Abtauen läuft (an/aus)",
+              "dhw_flag": "Warmwasser läuft (an/aus)",
+              "cooling_flag": "Kühlen läuft (an/aus)",
+              "heating_flag": "Heizen läuft (an/aus)",
+              "cooling_mode": "Eingestellte Betriebsart (Kühlen?)"
+            },
+            "description": "Nur, wenn die Wärmepumpe keine einzelne Betriebsart-Entität hat. Ein Merker „an“ gewinnt in dieser Reihenfolge: Abtauen, Warmwasser, Kühlen, Heizen. Die eingestellte Betriebsart macht aus Heizen Kühlen, solange sie kühlt."
           }
         }
       }
@@ -82,11 +93,15 @@
           "short_run_minutes": "Kurzlauf unter",
           "critical_run_minutes": "Kritischer Lauf unter",
           "starts_per_hour": "Auffällig ab Starts pro Stunde über",
-          "season_start_month": "Saison beginnt im"
+          "season_start_month": "Saison beginnt im",
+          "aux_mild_from": "Heizstab: milde Witterung ab",
+          "efficiency_drop_percent": "Effizienz gesunken ab"
         },
         "data_description": {
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
-          "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+          "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
+          "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
+          "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter."
         },
         "sections": {
           "costs": {
@@ -151,6 +166,17 @@
     "binary_sensor": {
       "cycling_problem": {
         "name": "Auffälliges Takten"
+      },
+      "efficiency_drop": {
+        "name": "Effizienz gesunken"
+      },
+      "aux_mild_weather": {
+        "name": "Heizstab bei milder Witterung"
+      }
+    },
+    "button": {
+      "restart_comparison": {
+        "name": "Effizienzvergleich neu starten"
       }
     },
     "sensor": {
@@ -319,6 +345,22 @@
     "energy_unit": {
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
+    },
+    "counter_stuck": {
+      "title": "Wärmewacht: Zähler steht still",
+      "description": "Bei {name} lief der Kompressor {hours} Stunden, aber diese Zähler sind nicht gestiegen: {entities}. Wärmewacht kann in dieser Zeit nichts buchen. Prüfe, ob die Quelle (etwa EMS-ESP) noch Werte schickt und ob die Entität aktiviert ist. Ist es der falsche Zähler, wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren einen anderen. Der Hinweis verschwindet, sobald der Zähler wieder steigt."
+    },
+    "source_unavailable": {
+      "title": "Wärmewacht: Quelle nicht erreichbar",
+      "description": "Diese Entitäten von {name} sind seit mehr als {minutes} Minuten nicht verfügbar: {entities}. Solange fehlen Wärmewacht Werte. Prüfe die Quelle (etwa EMS-ESP, MQTT oder Bosch HomeCom). Der Hinweis verschwindet, sobald wieder Werte kommen."
+    },
+    "outdoor_temp_stuck": {
+      "title": "Wärmewacht: Außentemperatur unbrauchbar",
+      "description": "Die Außentemperatur von {name} ({entities}) hat sich seit {hours} Stunden nicht verändert. Kennlinie, Heizlast und die Prüfungen „Effizienz gesunken“ und „Heizstab bei milder Witterung“ hängen an ihr. Prüfe den Fühler oder wähle unter Neu konfigurieren eine andere Entität."
+    },
+    "outdoor_temp_implausible": {
+      "title": "Wärmewacht: Außentemperatur unbrauchbar",
+      "description": "Die Außentemperatur von {name} ({entities}) lag gestern {hours} Stunden außerhalb von −35 bis +45 °C. Kennlinie, Heizlast und die Prüfungen „Effizienz gesunken“ und „Heizstab bei milder Witterung“ hängen an ihr. Prüfe den Fühler oder wähle unter Neu konfigurieren eine andere Entität."
     }
   },
   "services": {

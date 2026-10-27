@@ -25,8 +25,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_AUX_MILD_FROM,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
+    CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
@@ -49,6 +51,7 @@ from .const import (
     SOURCE_MANUAL,
 )
 from .counter import UNIT_FACTORS
+from .health import DROP_PERCENT, MILD_FROM
 from .model import AUX_SIGNALS, ELEC_SIGNALS, ENERGY_SIGNALS, HEAT_SIGNALS, Signal
 from .profiles import Match, RegistryEntry, find
 from .templates import TEMPLATES
@@ -63,6 +66,14 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.ACTIVITY,
         Signal.STARTS_TOTAL,
         Signal.AUX_TOTAL,
+    ),
+    # Activity from several entities (activity.py), collapsed when unused.
+    "activity_parts": (
+        Signal.DEFROST_FLAG,
+        Signal.DHW_FLAG,
+        Signal.COOLING_FLAG,
+        Signal.HEATING_FLAG,
+        Signal.COOLING_MODE,
     ),
     "measurements": (
         Signal.OUTDOOR_TEMP,
@@ -81,6 +92,17 @@ def _selector(signal: Signal) -> selector.EntitySelector:
             device_class="energy",
             unit_of_measurement=list(UNIT_FACTORS),
         )
+    elif signal in (
+        Signal.DEFROST_FLAG,
+        Signal.DHW_FLAG,
+        Signal.COOLING_FLAG,
+        Signal.HEATING_FLAG,
+    ):
+        filters = selector.EntityFilterSelectorConfig(
+            domain=["binary_sensor", "switch"]
+        )
+    elif signal is Signal.COOLING_MODE:
+        filters = selector.EntityFilterSelectorConfig(domain=["select", "sensor"])
     elif signal is Signal.COMPRESSOR:
         # On/off, or a speed or modulation in % (Bosch HomeCom).
         filters = selector.EntityFilterSelectorConfig(
@@ -114,7 +136,7 @@ def entities_schema(values: dict[str, str]) -> vol.Schema:
                     }
                 ),
                 {
-                    "collapsed": name in ("cooling", "measurements")
+                    "collapsed": name in ("cooling", "measurements", "activity_parts")
                     and not any(values.get(s.value) for s in signals)
                 },
             )
@@ -379,6 +401,14 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     CONF_STARTS_PER_HOUR,
                     default=options.get(CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR),
                 ): number(1, 12, 1, "/h"),
+                vol.Required(
+                    CONF_AUX_MILD_FROM,
+                    default=options.get(CONF_AUX_MILD_FROM, MILD_FROM),
+                ): number(-5, 15, 0.5, "°C"),
+                vol.Required(
+                    CONF_EFFICIENCY_DROP,
+                    default=options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT),
+                ): number(5, 50, 1, "%"),
                 vol.Required(
                     CONF_SEASON_START,
                     default=str(

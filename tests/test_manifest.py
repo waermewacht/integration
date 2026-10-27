@@ -68,8 +68,9 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
     assert (
         set(strings["binary_sensor"])
         == set(icons["binary_sensor"])
-        == {"cycling_problem"}
+        == {"cycling_problem", "efficiency_drop", "aux_mild_weather"}
     )
+    assert set(strings["button"]) == set(icons["button"]) == {"restart_comparison"}
 
 
 def test_action_translated_and_has_an_icon() -> None:

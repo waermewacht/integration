@@ -3,6 +3,17 @@
     "binary_sensor": {
       "cycling_problem": {
         "default": "mdi:sine-wave"
+      },
+      "efficiency_drop": {
+        "default": "mdi:trending-down"
+      },
+      "aux_mild_weather": {
+        "default": "mdi:heating-coil"
+      }
+    },
+    "button": {
+      "restart_comparison": {
+        "default": "mdi:restart"
       }
     },
     "sensor": {

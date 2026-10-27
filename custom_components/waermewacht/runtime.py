@@ -46,11 +46,14 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .activity import combine
 from .averages import Mean
 from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
+    CONF_AUX_MILD_FROM,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
+    CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
@@ -74,11 +77,25 @@ from .const import (
     STORAGE_VERSION,
 )
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
-from .curve import curve_as_dicts, performance_curve
+from .curve import curve_as_dicts, daily_samples, performance_curve
 from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
 from .energy import Kind, Totals
+from .health import (
+    AUX_KWH,
+    DROP_PERCENT,
+    MILD_FROM,
+    NO_AUX,
+    NOT_ANALYSED,
+    RESTARTED,
+    Finding,
+    aux_mild_weather,
+    efficiency_drop,
+    outdoor_problem,
+    window_days,
+)
 from .heat_load import HeatLoad, heat_load
 from .model import (
+    ACTIVITY_PARTS,
     AUX_SIGNALS,
     ELEC_SIGNALS,
     ENERGY_SIGNALS,
@@ -118,6 +135,16 @@ EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
 RELIABLE_STEPS = 20
 # Entities may appear late after a restart; issues only after this grace time.
 ISSUE_GRACE = timedelta(minutes=10)
+# Health check (docs/GESUNDHEITSCHECK.md, 4.10): a counter of the running
+# mode that does not rise for this long is stuck; whole-kWh counters and cloud
+# day values (hours late) get more time. Own assumptions with a wide margin.
+STUCK_DECIMAL = timedelta(minutes=60)
+STUCK_COARSE = timedelta(hours=6)
+UNAVAILABLE_LIMIT = timedelta(minutes=60)
+# After "restart comparison" the first weeks are the new reference.
+RESTART_BASELINE = timedelta(days=28)
+# Daily diary kept in the history file (about 150 bytes a day).
+DIARY_DAYS = 1100
 # Performance curve and heat load: shortly after the start, then daily.
 ANALYSIS_DELAY = timedelta(minutes=2)
 ANALYSIS_HOUR = 3  # local time
@@ -133,6 +160,10 @@ SAME_FETCH = timedelta(seconds=30)
 
 def _per_kwh(cents: float | None) -> float | None:
     return None if cents is None else cents / 100
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None
 
 
 def _float(state: State | None) -> float | None:
@@ -178,6 +209,25 @@ class HeatPumpRuntime:
         )
         self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
+        self.aux_mild_from: float = options.get(CONF_AUX_MILD_FROM, MILD_FROM)
+        self.drop_threshold: float = options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT)
+        # Activity from the activity entity and/or flags (activity.py).
+        self._activity_configured = {
+            s for s in (Signal.ACTIVITY, *ACTIVITY_PARTS) if s in self.entities
+        }
+        # Health check: daily findings (memory only), their state across
+        # restarts, and the minute checks of the repair issues.
+        self.findings: dict[str, Finding] = {
+            "efficiency_drop": Finding(None, NOT_ANALYSED),
+            "aux_mild_weather": Finding(None, NOT_ANALYSED),
+        }
+        self._efficiency_on = False
+        self.comparison_reset_at: datetime | None = None
+        self._stuck_seconds: dict[str, float] = {}  # running time without rise
+        self._unavailable_since: dict[str, datetime] = {}
+        self._last_tick: datetime | None = None
+        self.outdoor = Mean()  # outdoor temperature today, for the diary
+        self.diary: list[dict[str, Any]] = []
         # Performance curves (current and previous season) and heat load of
         # the last complete season; recomputed daily, kept in memory only.
         self.curves: dict[str, list[dict[str, Any]]] = {}
@@ -314,10 +364,10 @@ class HeatPumpRuntime:
     async def _async_backfill_runs(self, now: datetime) -> bool:
         """Runs and defrosts of the recorded history (about 10 days)."""
         compressor = self.entities.get(Signal.COMPRESSOR)
-        activity = self.entities.get(Signal.ACTIVITY)
         if compressor is None or "recorder" not in self.hass.config.components:
             return False
-        ids = [compressor, *([activity] if activity else [])]
+        parts = {self.entities[s]: s for s in self._activity_configured}
+        ids = [compressor, *sorted(parts)]
         try:
             states = await get_instance(self.hass).async_add_executor_job(
                 partial(
@@ -339,15 +389,17 @@ class HeatPumpRuntime:
                 events.append(
                     (state.last_updated, COMPRESSOR, parse_compressor(state.state))
                 )
-        for state in states.get(activity or "", []):
-            if isinstance(state, State):
-                events.append(
-                    (
-                        state.last_updated,
-                        ACTIVITY,
-                        self.template.parse_activity(state.state),
-                    )
-                )
+        # The activity at each change of one of its entities.
+        changes = sorted(
+            (state.last_updated, parts[entity_id], state.state)
+            for entity_id in parts
+            for state in states.get(entity_id, [])
+            if isinstance(state, State)
+        )
+        current: dict[Signal, str | None] = {}
+        for at, signal, raw in changes:
+            current[signal] = raw
+            events.append((at, ACTIVITY, self._activity_of(current)))
         if not events:
             return False
         self.tracker, self.runs, self.defrosts = replay(events)
@@ -545,12 +597,200 @@ class HeatPumpRuntime:
             )
             self.heat_load_window = (previous, current)
             self.analysed_at = now
+            self._health_findings(now, hours, outdoor, current, previous)
+            await self._async_check_outdoor(now)
         except Exception:  # keep running; the sensors stay as they were
             _LOGGER.exception("Computing performance curve and heat load failed")
         finally:
             self._analysis_day = now.astimezone(self.tz).date()
             self._analysing = False
             self._notify()
+
+    def _health_findings(
+        self,
+        now: datetime,
+        hours: dict[datetime, Totals],
+        outdoor: dict[datetime, float],
+        current: datetime,
+        previous: datetime,
+    ) -> None:
+        """Efficiency drop and backup heater on mild days (health.py)."""
+
+        def curve(start: datetime, end: datetime) -> list[dict[str, Any]]:
+            return curve_as_dicts(
+                performance_curve(
+                    {h: t for h, t in hours.items() if start <= h < end},
+                    {h: v for h, v in outdoor.items() if start <= h < end},
+                    self.tz,
+                    min_electricity=self.min_electricity,
+                )
+            )
+
+        reset = self.comparison_reset_at
+        if reset is not None and reset < previous:
+            reset = self.comparison_reset_at = None  # older than both seasons
+            self._dirty = True
+        if reset is None:
+            drop = efficiency_drop(
+                self.curves["current"],
+                self.curves["previous"],
+                threshold=self.drop_threshold,
+                was_on=self._efficiency_on,
+            )
+        elif reset >= current and now < reset + RESTART_BASELINE:
+            drop = Finding(None, RESTARTED)
+        else:
+            # After a deliberate change: the weeks after the reset are the
+            # reference (or the rest of the previous season after it).
+            end = reset + RESTART_BASELINE if reset >= current else current
+            drop = efficiency_drop(
+                curve(end, now),
+                curve(reset, end),
+                threshold=self.drop_threshold,
+                was_on=self._efficiency_on,
+            )
+        if drop.problem is not None:
+            self._efficiency_on = drop.problem
+            self._dirty = True
+        self.findings["efficiency_drop"] = drop
+
+        if not any(
+            s in self.entities for s in (*AUX_SIGNALS.values(), Signal.AUX_TOTAL)
+        ):
+            self.findings["aux_mild_weather"] = Finding(None, NO_AUX)
+            return
+        first, last = window_days(now.astimezone(self.tz).date())
+        days = [
+            d for d in daily_samples(hours, outdoor, self.tz) if first <= d.day <= last
+        ]
+        self.findings["aux_mild_weather"] = aux_mild_weather(
+            days, mild_from=self.aux_mild_from, threshold_kwh=AUX_KWH
+        )
+
+    async def _async_check_outdoor(self, now: datetime) -> None:
+        """Repair issue when the outdoor temperature stands still or is
+        implausible (from the hourly min/max statistics, so restarts do not
+        hide a stuck sensor)."""
+        entity_id = self.entities.get(Signal.OUTDOOR_TEMP)
+        if entity_id is None:
+            return
+        today = self._local_day(now)
+        yesterday = self._local_day(now, -1)
+        start = min(yesterday, now - timedelta(hours=50))
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            start,
+            now,
+            {entity_id},
+            "hour",
+            {"temperature": UnitOfTemperature.CELSIUS},
+            {"mean", "min", "max"},
+        )
+        stats: dict[datetime, tuple[float | None, float | None, float | None]] = {}
+        for row in rows.get(entity_id, []):
+            hour = row["start"]
+            if not isinstance(hour, datetime):
+                hour = dt_util.utc_from_timestamp(hour)
+            stats[hour] = (row.get("mean"), row.get("min"), row.get("max"))
+        hours_of_yesterday = [h for h in stats if yesterday <= h < today]
+        found = outdoor_problem(stats, hours_of_yesterday)
+        for kind in ("stuck", "implausible"):
+            self._set_issue(
+                f"outdoor_temp_{kind}",
+                [entity_id] if found and found.kind == kind else [],
+                hours=str(found.hours) if found else "",
+            )
+
+    async def async_restart_comparison(self) -> None:
+        """Button: compare efficiency anew from now (after a deliberate
+        change such as a new heating curve)."""
+        self.comparison_reset_at = dt_util.utcnow()
+        self._efficiency_on = False
+        self.findings["efficiency_drop"] = Finding(None, RESTARTED)
+        self._dirty = True
+        await self.async_save()
+        self._notify()
+
+    def _check_stuck(self, now: datetime) -> None:
+        """Running time per counter since it last rose; repair issues for
+        stuck counters and long unavailable sources."""
+        elapsed = (now - self._last_tick).total_seconds() if self._last_tick else 0.0
+        self._last_tick = now
+        mode = self.tracker.mode
+        if self.tracker.compressor and elapsed > 0:
+            if self.has_activity and mode is not None:
+                keys = [
+                    s.value
+                    for s in (HEAT_SIGNALS[mode], ELEC_SIGNALS[mode])
+                    if s in self.counters
+                ]
+            else:
+                keys = (
+                    ["heat"]
+                    if any(s in self.counters for s in HEAT_SIGNALS.values())
+                    else []
+                )
+            for key in keys:
+                self._stuck_seconds[key] = self._stuck_seconds.get(key, 0.0) + elapsed
+        stuck = []
+        for key, seconds in sorted(self._stuck_seconds.items()):
+            if key == "heat":
+                signals = [s for s in HEAT_SIGNALS.values() if s in self.counters]
+            else:
+                signals = [Signal(key)]
+            coarse = self.template.day_values or any(
+                s not in self.decimal for s in signals
+            )
+            limit = STUCK_COARSE if coarse else STUCK_DECIMAL
+            if seconds >= limit.total_seconds():
+                stuck.extend(self.entities[s] for s in signals)
+        longest = max(self._stuck_seconds.values(), default=0.0)
+        self._set_issue("counter_stuck", stuck, hours=f"{longest / 3600:.1f}")
+        unavailable = sorted(
+            entity_id
+            for entity_id, since in self._unavailable_since.items()
+            if now - since >= UNAVAILABLE_LIMIT
+        )
+        self._set_issue(
+            "source_unavailable",
+            unavailable,
+            minutes=str(int(UNAVAILABLE_LIMIT.total_seconds() // 60)),
+        )
+
+    def _write_diary(self, now: datetime) -> None:
+        """One entry for the day that just ended (health check, Stufe 3)."""
+        day = (now.astimezone(self.tz) - timedelta(days=1)).date().isoformat()
+        if self.diary and self.diary[-1].get("day") == day:
+            return
+        stats = self.cycles("yesterday", now)
+        start, end = self.window("yesterday", now)
+        seconds: dict[str, float] = {}
+        for run in self.runs:
+            if run.end is not None and start <= run.end < end:
+                for activity, value in run.activity_seconds.items():
+                    seconds[activity] = seconds.get(activity, 0.0) + value
+        energy = self.marks.energy(Period.YESTERDAY, self.totals)
+        self.diary.append(
+            {
+                "day": day,
+                "outdoor": None
+                if self.outdoor.value is None
+                else round(self.outdoor.value, 1),
+                "starts": stats.starts,
+                "run_seconds": round(stats.runtime_seconds),
+                "activity_seconds": {k: round(v) for k, v in seconds.items()},
+                "short_runs": stats.short_runs,
+                "defrosts": stats.defrosts,
+                "defrost_seconds": round(stats.defrost_seconds),
+                "spread": self.spread.as_dict(),
+                "flow": self.flow.as_dict(),
+                "energy": None
+                if energy is None
+                else {k: round(v, 3) for k, v in energy.values.items() if v},
+            }
+        )
+        del self.diary[:-DIARY_DAYS]
 
     def _analysis_due(self, now: datetime) -> bool:
         if (
@@ -724,10 +964,28 @@ class HeatPumpRuntime:
             return
         self._handle(state.entity_id, state, state.last_updated)
 
+    @property
+    def has_activity(self) -> bool:
+        """Whether an activity is known (entity or flags)."""
+        return bool(self._activity_configured)
+
+    def _activity_of(self, states: dict[Signal, str | None]) -> Activity | None:
+        """Activity from raw states of the activity entity and its parts."""
+        base = (
+            self.template.parse_activity(states.get(Signal.ACTIVITY))
+            if Signal.ACTIVITY in self._activity_configured
+            else None
+        )
+        return combine(base, states, self._activity_configured)
+
     def _handle(self, entity_id: str, state: State, at: datetime) -> None:
         signal = self._signal_of.get(entity_id)
         if signal is None:
             return
+        if state.state == "unavailable":
+            self._unavailable_since.setdefault(entity_id, at)
+        else:
+            self._unavailable_since.pop(entity_id, None)
         self._note_mode(at)
         self._sample(at)
         if signal in self.counters:
@@ -743,10 +1001,19 @@ class HeatPumpRuntime:
                 self._history_dirty = True
                 self.hass.async_create_task(self.async_save())
                 self._notify()
-        elif signal is Signal.ACTIVITY:
-            activity = self.template.parse_activity(state.state)
-            if activity is Activity.OTHER:
+        elif signal in self._activity_configured:
+            if (
+                signal is Signal.ACTIVITY
+                and self.template.parse_activity(state.state) is Activity.OTHER
+            ):
                 self._count(f"activity:{state.state}")
+            current = {
+                s: st.state
+                for s in self._activity_configured
+                if (st := self.hass.states.get(self.entities[s])) is not None
+            }
+            current[signal] = state.state
+            activity = self._activity_of(current)
             if (defrost := self.tracker.set_activity(activity, at)) is not None:
                 self.defrosts.append(defrost)
                 self._dirty = self._history_dirty = True
@@ -769,7 +1036,12 @@ class HeatPumpRuntime:
             self.decimal.add(signal)
         counter = self.counters[signal]
         previous = counter.last_time
+        rose = counter.last_value is not None and kwh > counter.last_value
         update = counter.update(kwh, at)
+        if rose or update.event is CounterEvent.RESET:
+            self._stuck_seconds.pop(signal.value, None)
+            if signal in HEAT_SIGNALS.values():
+                self._stuck_seconds.pop("heat", None)
         if update.event not in (None, CounterEvent.FIRST):
             self._count(f"{update.event}:{signal}")
         if update.delta <= 0:
@@ -881,6 +1153,13 @@ class HeatPumpRuntime:
         self._resolve_pending(now, final=self.marks.due(now))
         if now - self._started_at >= ISSUE_GRACE:
             self._check_issues()
+            self._check_stuck(now)
+        else:
+            self._last_tick = now
+        if (entity_id := self.entities.get(Signal.OUTDOOR_TEMP)) and (
+            value := _float(self.hass.states.get(entity_id))
+        ) is not None:
+            self.outdoor.add(value, 60)
         if self._analysis_due(now):
             self.hass.async_create_task(self._async_refresh_analysis(now))
         if (
@@ -891,8 +1170,13 @@ class HeatPumpRuntime:
             and "recorder" in self.hass.config.components
         ):
             self.hass.async_create_task(self._async_adjust_history())
+        day_changed = self.marks.starts.get(Period.TODAY) != period_start(
+            Period.TODAY, now, self.tz, self.marks.season_month
+        )
         if self.marks.rollover(now, self.totals):
-            self.spread, self.flow = Mean(), Mean()
+            if day_changed:
+                self._write_diary(now)
+            self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
             self._dirty = self._history_dirty = True
             self.hass.async_create_task(self.async_save())
@@ -919,7 +1203,7 @@ class HeatPumpRuntime:
         self._set_issue("missing_entity", missing)
         self._set_issue("energy_unit", wrong_unit)
 
-    def _set_issue(self, key: str, entity_ids: list[str]) -> None:
+    def _set_issue(self, key: str, entity_ids: list[str], **placeholders: str) -> None:
         issue_id = f"{self.entry.entry_id}_{key}"
         text = ", ".join(entity_ids)
         if self._issues.get(issue_id, "") == text:
@@ -932,7 +1216,11 @@ class HeatPumpRuntime:
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=key,
-                translation_placeholders={"name": self.entry.title, "entities": text},
+                translation_placeholders={
+                    "name": self.entry.title,
+                    "entities": text,
+                    **placeholders,
+                },
             )
             self._issues[issue_id] = text
         else:
@@ -1036,6 +1324,10 @@ class HeatPumpRuntime:
             # Electricity of a fetch still waiting for its heat (day values).
             "pending": [[m.value, kwh, at.isoformat()] for m, kwh, at in self._pending],
             "heat_at": {m.value: at.isoformat() for m, at in self._heat_at.items()},
+            "efficiency_on": self._efficiency_on,
+            "comparison_reset_at": _iso(self.comparison_reset_at),
+            "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
+            "outdoor": self.outdoor.as_dict(),
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1065,16 +1357,25 @@ class HeatPumpRuntime:
             Mode(m): datetime.fromisoformat(at)
             for m, at in data.get("heat_at", {}).items()
         }
+        self._efficiency_on = data.get("efficiency_on", False)
+        reset = data.get("comparison_reset_at")
+        self.comparison_reset_at = datetime.fromisoformat(reset) if reset else None
+        self._stuck_seconds = {
+            k: float(v) for k, v in data.get("stuck_seconds", {}).items()
+        }
+        self.outdoor = Mean.from_dict(data.get("outdoor"))
 
     def history_dict(self) -> dict[str, Any]:
         return {
             "runs": [r.as_dict() for r in self.runs],
             "defrosts": [d.as_dict() for d in self.defrosts],
+            "diary": self.diary,
         }
 
     def _restore_history(self, data: dict[str, Any]) -> None:
         self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
         self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
+        self.diary = list(data.get("diary", []))
 
     async def async_save(self) -> None:
         self._saved_at = dt_util.utcnow()

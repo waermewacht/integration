@@ -93,6 +93,11 @@ STIEBEL_ISG = EntryIdTemplate(
         Signal.FLOW_RATE: ((_S, "volume_stream"),),
         # WPMsystem only: inverter input power of compressor 1 (kW).
         Signal.ELEC_POWER: ((_S, "current_power_consumption"),),
+        # Operating status bits (see ACTIVITY_FLAGS below).
+        Signal.DEFROST_FLAG: ((_B, "evaporator_defrost"),),
+        Signal.DHW_FLAG: ((_B, "is_heating_water"),),
+        Signal.COOLING_FLAG: ((_B, "is_cooling"),),
+        Signal.HEATING_FLAG: ((_B, "is_heating"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
 )

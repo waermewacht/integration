@@ -59,6 +59,17 @@
               "return_temp": "Return temperature",
               "flow_rate": "Flow rate"
             }
+          },
+          "activity_parts": {
+            "name": "Activity from several entities",
+            "data": {
+              "defrost_flag": "Defrost running (on/off)",
+              "dhw_flag": "Hot water running (on/off)",
+              "cooling_flag": "Cooling running (on/off)",
+              "heating_flag": "Heating running (on/off)",
+              "cooling_mode": "Set operating mode (cooling?)"
+            },
+            "description": "Only if the heat pump has no single activity entity. An 'on' flag wins in this order: defrost, hot water, cooling, heating. The set mode turns heating into cooling while it cools."
           }
         }
       }
@@ -82,11 +93,15 @@
           "short_run_minutes": "Short run below",
           "critical_run_minutes": "Critical run below",
           "starts_per_hour": "Conspicuous above starts per hour",
-          "season_start_month": "Season starts in"
+          "season_start_month": "Season starts in",
+          "aux_mild_from": "Backup heater: mild weather from",
+          "efficiency_drop_percent": "Efficiency dropped from"
         },
         "data_description": {
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
-          "season_start_month": "The current season is recomputed from the statistics."
+          "season_start_month": "The current season is recomputed from the statistics.",
+          "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
+          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower."
         },
         "sections": {
           "costs": {
@@ -151,6 +166,17 @@
     "binary_sensor": {
       "cycling_problem": {
         "name": "Conspicuous cycling"
+      },
+      "efficiency_drop": {
+        "name": "Efficiency dropped"
+      },
+      "aux_mild_weather": {
+        "name": "Backup heater on mild days"
+      }
+    },
+    "button": {
+      "restart_comparison": {
+        "name": "Restart efficiency comparison"
       }
     },
     "sensor": {
@@ -319,6 +345,22 @@
     "energy_unit": {
       "title": "Wärmewacht: unusable unit",
       "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."
+    },
+    "counter_stuck": {
+      "title": "Wärmewacht: meter stands still",
+      "description": "At {name} the compressor ran for {hours} hours, but these meters did not rise: {entities}. Wärmewacht books nothing meanwhile. Check whether the source (e.g. EMS-ESP) still sends values and whether the entity is enabled. If it is the wrong meter, choose another under Devices & services → Wärmewacht → Reconfigure. The notice disappears as soon as the meter rises again."
+    },
+    "source_unavailable": {
+      "title": "Wärmewacht: source unreachable",
+      "description": "These entities of {name} have been unavailable for more than {minutes} minutes: {entities}. Meanwhile Wärmewacht lacks values. Check the source (e.g. EMS-ESP, MQTT or Bosch HomeCom). The notice disappears as soon as values arrive again."
+    },
+    "outdoor_temp_stuck": {
+      "title": "Wärmewacht: outdoor temperature unusable",
+      "description": "The outdoor temperature of {name} ({entities}) has not changed for {hours} hours. Performance curve, heat load and the checks 'Efficiency dropped' and 'Backup heater on mild days' depend on it. Check the sensor or choose another entity under Reconfigure."
+    },
+    "outdoor_temp_implausible": {
+      "title": "Wärmewacht: outdoor temperature unusable",
+      "description": "The outdoor temperature of {name} ({entities}) was outside -35 to +45 °C for {hours} hours yesterday. Performance curve, heat load and the checks 'Efficiency dropped' and 'Backup heater on mild days' depend on it. Check the sensor or choose another entity under Reconfigure."
     }
   },
   "services": {

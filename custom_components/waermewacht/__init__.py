@@ -13,8 +13,15 @@ from .const import DOMAIN
 from .runtime import HeatPumpRuntime
 from .services import async_setup_services
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
-ISSUES = ("missing_entity", "energy_unit")
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
+ISSUES = (
+    "missing_entity",
+    "energy_unit",
+    "counter_stuck",
+    "source_unavailable",
+    "outdoor_temp_stuck",
+    "outdoor_temp_implausible",
+)
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
 

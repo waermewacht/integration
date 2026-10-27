@@ -231,7 +231,7 @@ CYCLING = [
     HeatPumpSensorDescription(
         key="defrosts_today",
         value=lambda r: r.cycles("today").defrosts,
-        needs=_has(Signal.ACTIVITY),
+        needs=lambda r: r.has_activity,
         attributes=lambda r: {
             "minutes": _minutes(r.cycles("today").defrost_seconds),
             "yesterday": r.cycles("yesterday").defrosts,
@@ -269,7 +269,9 @@ DIAGNOSIS = [
         native_unit_of_measurement=UnitOfTemperature.KELVIN,
         suggested_display_precision=1,
         value=lambda r: None if r.spread.value is None else round(r.spread.value, 1),
-        needs=_has(Signal.FLOW_TEMP, Signal.RETURN_TEMP, Signal.ACTIVITY),
+        needs=lambda r: (
+            r.has_activity and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
+        ),
     ),
     HeatPumpSensorDescription(
         key="flow_temp_today",
@@ -277,7 +279,7 @@ DIAGNOSIS = [
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
         value=lambda r: None if r.flow.value is None else round(r.flow.value, 1),
-        needs=_has(Signal.FLOW_TEMP, Signal.ACTIVITY),
+        needs=lambda r: r.has_activity and _has(Signal.FLOW_TEMP)(r),
     ),
 ]
 

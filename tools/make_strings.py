@@ -127,7 +127,24 @@ SENSORS = {
     ),
 }
 BINARY = {
-    "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave")
+    "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave"),
+    "efficiency_drop": (
+        "Efficiency dropped",
+        "Effizienz gesunken",
+        "mdi:trending-down",
+    ),
+    "aux_mild_weather": (
+        "Backup heater on mild days",
+        "Heizstab bei milder Witterung",
+        "mdi:heating-coil",
+    ),
+}
+BUTTONS = {
+    "restart_comparison": (
+        "Restart efficiency comparison",
+        "Effizienzvergleich neu starten",
+        "mdi:restart",
+    ),
 }
 
 FIELDS = {
@@ -153,6 +170,14 @@ FIELDS = {
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
+    "defrost_flag": ("Defrost running (on/off)", "Abtauen läuft (an/aus)"),
+    "dhw_flag": ("Hot water running (on/off)", "Warmwasser läuft (an/aus)"),
+    "cooling_flag": ("Cooling running (on/off)", "Kühlen läuft (an/aus)"),
+    "heating_flag": ("Heating running (on/off)", "Heizen läuft (an/aus)"),
+    "cooling_mode": (
+        "Set operating mode (cooling?)",
+        "Eingestellte Betriebsart (Kühlen?)",
+    ),
 }
 SECTIONS = {
     "heating": (
@@ -174,6 +199,14 @@ SECTIONS = {
         ("Measurements", "Messwerte"),
         ("outdoor_temp", "flow_temp", "return_temp", "flow_rate"),
         None,
+    ),
+    "activity_parts": (
+        ("Activity from several entities", "Betriebsart aus mehreren Entitäten"),
+        ("defrost_flag", "dhw_flag", "cooling_flag", "heating_flag", "cooling_mode"),
+        (
+            "Only if the heat pump has no single activity entity. An 'on' flag wins in this order: defrost, hot water, cooling, heating. The set mode turns heating into cooling while it cools.",
+            "Nur, wenn die Wärmepumpe keine einzelne Betriebsart-Entität hat. Ein Merker „an“ gewinnt in dieser Reihenfolge: Abtauen, Warmwasser, Kühlen, Heizen. Die eingestellte Betriebsart macht aus Heizen Kühlen, solange sie kühlt.",
+        ),
     ),
 }
 MONTHS_EN = [
@@ -318,6 +351,15 @@ def build(lang: int) -> dict:
                         "season_start_month": t(
                             ("Season starts in", "Saison beginnt im")
                         ),
+                        "aux_mild_from": t(
+                            (
+                                "Backup heater: mild weather from",
+                                "Heizstab: milde Witterung ab",
+                            )
+                        ),
+                        "efficiency_drop_percent": t(
+                            ("Efficiency dropped from", "Effizienz gesunken ab")
+                        ),
                     },
                     "data_description": {
                         "min_electricity": t(
@@ -330,6 +372,18 @@ def build(lang: int) -> dict:
                             (
                                 "The current season is recomputed from the statistics.",
                                 "Die laufende Saison wird aus der Statistik neu berechnet.",
+                            )
+                        ),
+                        "aux_mild_from": t(
+                            (
+                                "Daily mean outdoor temperature from which the heat pump should heat alone.",
+                                "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
+                            )
+                        ),
+                        "efficiency_drop_percent": t(
+                            (
+                                "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+                                "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
                             )
                         ),
                     },
@@ -429,6 +483,7 @@ def build(lang: int) -> dict:
         },
         "entity": {
             "binary_sensor": {k: {"name": t(v[:2])} for k, v in BINARY.items()},
+            "button": {k: {"name": t(v[:2])} for k, v in BUTTONS.items()},
             "sensor": sensors,
         },
         "exceptions": {
@@ -475,6 +530,59 @@ def build(lang: int) -> dict:
                     (
                         "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}.",
                         "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}.",
+                    )
+                ),
+            },
+            "counter_stuck": {
+                "title": t(
+                    ("Wärmewacht: meter stands still", "Wärmewacht: Zähler steht still")
+                ),
+                "description": t(
+                    (
+                        "At {name} the compressor ran for {hours} hours, but these meters did not rise: {entities}. Wärmewacht books nothing meanwhile. Check whether the source (e.g. EMS-ESP) still sends values and whether the entity is enabled. If it is the wrong meter, choose another under Devices & services → Wärmewacht → Reconfigure. The notice disappears as soon as the meter rises again.",
+                        "Bei {name} lief der Kompressor {hours} Stunden, aber diese Zähler sind nicht gestiegen: {entities}. Wärmewacht kann in dieser Zeit nichts buchen. Prüfe, ob die Quelle (etwa EMS-ESP) noch Werte schickt und ob die Entität aktiviert ist. Ist es der falsche Zähler, wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren einen anderen. Der Hinweis verschwindet, sobald der Zähler wieder steigt.",
+                    )
+                ),
+            },
+            "source_unavailable": {
+                "title": t(
+                    (
+                        "Wärmewacht: source unreachable",
+                        "Wärmewacht: Quelle nicht erreichbar",
+                    )
+                ),
+                "description": t(
+                    (
+                        "These entities of {name} have been unavailable for more than {minutes} minutes: {entities}. Meanwhile Wärmewacht lacks values. Check the source (e.g. EMS-ESP, MQTT or Bosch HomeCom). The notice disappears as soon as values arrive again.",
+                        "Diese Entitäten von {name} sind seit mehr als {minutes} Minuten nicht verfügbar: {entities}. Solange fehlen Wärmewacht Werte. Prüfe die Quelle (etwa EMS-ESP, MQTT oder Bosch HomeCom). Der Hinweis verschwindet, sobald wieder Werte kommen.",
+                    )
+                ),
+            },
+            "outdoor_temp_stuck": {
+                "title": t(
+                    (
+                        "Wärmewacht: outdoor temperature unusable",
+                        "Wärmewacht: Außentemperatur unbrauchbar",
+                    )
+                ),
+                "description": t(
+                    (
+                        "The outdoor temperature of {name} ({entities}) has not changed for {hours} hours. Performance curve, heat load and the checks 'Efficiency dropped' and 'Backup heater on mild days' depend on it. Check the sensor or choose another entity under Reconfigure.",
+                        "Die Außentemperatur von {name} ({entities}) hat sich seit {hours} Stunden nicht verändert. Kennlinie, Heizlast und die Prüfungen „Effizienz gesunken“ und „Heizstab bei milder Witterung“ hängen an ihr. Prüfe den Fühler oder wähle unter Neu konfigurieren eine andere Entität.",
+                    )
+                ),
+            },
+            "outdoor_temp_implausible": {
+                "title": t(
+                    (
+                        "Wärmewacht: outdoor temperature unusable",
+                        "Wärmewacht: Außentemperatur unbrauchbar",
+                    )
+                ),
+                "description": t(
+                    (
+                        "The outdoor temperature of {name} ({entities}) was outside -35 to +45 °C for {hours} hours yesterday. Performance curve, heat load and the checks 'Efficiency dropped' and 'Backup heater on mild days' depend on it. Check the sensor or choose another entity under Reconfigure.",
+                        "Die Außentemperatur von {name} ({entities}) lag gestern {hours} Stunden außerhalb von −35 bis +45 °C. Kennlinie, Heizlast und die Prüfungen „Effizienz gesunken“ und „Heizstab bei milder Witterung“ hängen an ihr. Prüfe den Fühler oder wähle unter Neu konfigurieren eine andere Entität.",
                     )
                 ),
             },
@@ -608,6 +716,7 @@ def icons() -> dict:
     return {
         "entity": {
             "binary_sensor": {k: {"default": v[2]} for k, v in BINARY.items()},
+            "button": {k: {"default": v[2]} for k, v in BUTTONS.items()},
             "sensor": sensor,
         },
         "services": {

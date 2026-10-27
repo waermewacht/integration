@@ -48,6 +48,13 @@ class Signal(StrEnum):
     # Operation.
     COMPRESSOR = "compressor"
     ACTIVITY = "activity"
+    # Activity from several entities (activity.py): on/off flags, and the set
+    # operating mode telling cooling from heating behind one valve position.
+    DEFROST_FLAG = "defrost_flag"
+    DHW_FLAG = "dhw_flag"
+    COOLING_FLAG = "cooling_flag"
+    HEATING_FLAG = "heating_flag"
+    COOLING_MODE = "cooling_mode"
     STARTS_TOTAL = "starts_total"
     # Measurements.
     OUTDOOR_TEMP = "outdoor_temp"
@@ -75,4 +82,13 @@ AUX_SIGNALS: dict[Mode, Signal] = {
 ENERGY_SIGNALS: frozenset[Signal] = frozenset(
     {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
     | {Signal.AUX_TOTAL}
+)
+
+# Signals that make up the activity, besides the activity entity itself.
+ACTIVITY_PARTS: tuple[Signal, ...] = (
+    Signal.DEFROST_FLAG,
+    Signal.DHW_FLAG,
+    Signal.COOLING_FLAG,
+    Signal.HEATING_FLAG,
+    Signal.COOLING_MODE,
 )

@@ -44,6 +44,11 @@ async def async_get_config_entry_diagnostics(
         "since": runtime.since.isoformat() if runtime.since else None,
         "events": runtime.events,
         "tracker": runtime.tracker.as_dict(),
+        "findings": {
+            k: f.as_attributes() | {"problem": f.problem}
+            for k, f in runtime.findings.items()
+        },
+        "diary_days": len(runtime.diary),
         "runs_kept": len(runtime.runs),
         "defrosts_kept": len(runtime.defrosts),
         "today": runtime.cycles("today", now).__dict__,

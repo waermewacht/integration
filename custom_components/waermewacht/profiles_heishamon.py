@@ -59,6 +59,9 @@ HEISHAMON = Template(
         # Sums over the modes, made by the integration.
         Signal.HEAT_POWER: ((_S, "heishamon_w_production"),),
         Signal.ELEC_POWER: ((_S, "heishamon_w_consumption"),),
+        # See ACTIVITY_PARTS below: the defrost switch and the set mode.
+        Signal.DEFROST_FLAG: (("switch", "SET12"), ("binary_sensor", "SET12")),
+        Signal.COOLING_MODE: (("select", "SET9"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values={"room": Activity.HEATING, "tank": Activity.DHW},
