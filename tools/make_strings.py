@@ -44,6 +44,27 @@ SENSORS = {
         "mdi:lightning-bolt",
     ),
     "standby": ("Standby electricity", "Strom Stillstand", "mdi:power-sleep"),
+    "cost_month": ("Electricity cost month", "Stromkosten Monat", "mdi:currency-eur"),
+    "cost_season": (
+        "Electricity cost season",
+        "Stromkosten Saison",
+        "mdi:currency-eur",
+    ),
+    "heat_cost_season": (
+        "Heat cost per kWh season",
+        "Wärmekosten je kWh Saison",
+        "mdi:cash",
+    ),
+    "gas_savings_season": (
+        "Savings vs. gas boiler season",
+        "Ersparnis ggü. Gaskessel Saison",
+        "mdi:piggy-bank-outline",
+    ),
+    "co2_savings_season": (
+        "CO₂ savings vs. gas boiler season",
+        "CO₂-Ersparnis ggü. Gaskessel Saison",
+        "mdi:molecule-co2",
+    ),
     "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
     "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
     "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
@@ -320,9 +341,6 @@ def build(lang: int) -> dict:
                                 "electricity_price": t(
                                     ("Electricity price", "Strompreis")
                                 ),
-                                "price_entity": t(
-                                    ("Electricity price sensor", "Strompreis-Sensor")
-                                ),
                                 "gas_price": t(
                                     ("Gas working price", "Gas-Arbeitspreis")
                                 ),
@@ -337,12 +355,6 @@ def build(lang: int) -> dict:
                                         "Bruttopreis je kWh für den Strom der Wärmepumpe.",
                                     )
                                 ),
-                                "price_entity": t(
-                                    (
-                                        "A dynamic tariff: its hourly mean is used, the fixed price fills gaps.",
-                                        "Für dynamische Tarife: gilt stundenweise, der feste Preis füllt Lücken.",
-                                    )
-                                ),
                                 "gas_price": t(
                                     (
                                         "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
@@ -353,25 +365,6 @@ def build(lang: int) -> dict:
                                     (
                                         "Gross per year; spread over the days of a period.",
                                         "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt.",
-                                    )
-                                ),
-                            },
-                        },
-                        "heat_load": {
-                            "name": t(("Heat load (optional)", "Heizlast (optional)")),
-                            "data": {
-                                "design_outdoor_temp": t(
-                                    (
-                                        "Design outdoor temperature",
-                                        "Normaußentemperatur",
-                                    )
-                                ),
-                            },
-                            "data_description": {
-                                "design_outdoor_temp": t(
-                                    (
-                                        "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
-                                        "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
                                     )
                                 ),
                             },

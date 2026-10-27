@@ -26,9 +26,11 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry
-from .energy import Kind, aux_share, combined_ratio, mode_ratio
+from .costs import CostComparison, compare_with_gas
+from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
 from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
 from .periods import RATIO_PERIODS, Period
@@ -276,7 +278,117 @@ DIAGNOSIS = [
     ),
 ]
 
-DESCRIPTIONS: list[HeatPumpSensorDescription] = [*RATIOS, *ENERGY, *CYCLING, *DIAGNOSIS]
+
+def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | None:
+    """Costs of the period with the fixed prices of the options."""
+    totals = runtime.energy(period)
+    start = runtime.marks.starts.get(period)
+    if totals is None or start is None:
+        return None
+    return compare_with_gas(
+        {start: totals},
+        start,
+        dt_util.utcnow(),
+        runtime.tz,
+        electricity_price=runtime.electricity_price,
+        gas_price=runtime.gas_price,
+        gas_base_price_per_year=runtime.gas_base_price,
+    )
+
+
+def _money(value: float | None, digits: int = 2) -> float | None:
+    return None if value is None else round(value, digits)
+
+
+def _cost(period: Period) -> Value:
+    def value(runtime: HeatPumpRuntime) -> float | None:
+        result = _comparison(runtime, period)
+        return None if result is None else _money(result.electricity.cost_eur)
+
+    return value
+
+
+def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    result = _comparison(runtime, Period.SEASON)
+    if result is None:
+        return {}
+    return {
+        "heat_kwh": round(result.heat_kwh, 1),
+        "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),
+        "gas_kwh": round(result.gas_kwh, 1),
+        "gas_cost_eur": _money(result.gas_cost_eur),
+        "gas_base_cost_eur": _money(result.gas_base_cost_eur),
+        "boiler_efficiency": result.boiler_efficiency,
+    }
+
+
+def _co2_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    result = _comparison(runtime, Period.SEASON)
+    if result is None:
+        return {}
+    return {
+        "heat_pump_co2_kg": round(result.heat_pump_co2_kg),
+        "gas_co2_kg": round(result.gas_co2_kg),
+        "electricity_g_per_kwh": result.factors.electricity,
+        "gas_g_per_kwh_hs": round(result.factors.gas_hs, 1),
+    }
+
+
+def _heating_or_dhw(runtime: HeatPumpRuntime) -> bool:
+    return any(_mode_complete(runtime, m) for m in SEASONAL_MODES)
+
+
+HAS_PRICE: Needs = lambda r: r.electricity_price is not None and _heating_or_dhw(r)  # noqa: E731
+EURO = "EUR"
+COSTS = [
+    *(
+        HeatPumpSensorDescription(
+            key=f"cost_{period}",
+            device_class=SensorDeviceClass.MONETARY,
+            native_unit_of_measurement=EURO,
+            suggested_display_precision=2,
+            value=_cost(period),
+            needs=HAS_PRICE,
+        )
+        for period in (Period.MONTH, Period.SEASON)
+    ),
+    HeatPumpSensorDescription(
+        key="heat_cost_season",
+        native_unit_of_measurement=f"{EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
+        suggested_display_precision=3,
+        value=lambda r: _money(
+            (c := _comparison(r, Period.SEASON)) and c.heat_cost_per_kwh, 3
+        ),
+        needs=HAS_PRICE,
+    ),
+    HeatPumpSensorDescription(
+        key="gas_savings_season",
+        device_class=SensorDeviceClass.MONETARY,
+        native_unit_of_measurement=EURO,
+        suggested_display_precision=0,
+        value=lambda r: _money((c := _comparison(r, Period.SEASON)) and c.savings_eur),
+        needs=lambda r: HAS_PRICE(r) and r.gas_price is not None,
+        attributes=_savings_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="co2_savings_season",
+        native_unit_of_measurement="kg",
+        suggested_display_precision=0,
+        value=lambda r: _money(
+            (c := _comparison(r, Period.SEASON)) and c.savings_co2_kg, 0
+        ),
+        needs=_heating_or_dhw,
+        attributes=_co2_attributes,
+    ),
+]
+
+DESCRIPTIONS: list[HeatPumpSensorDescription] = [
+    *RATIOS,
+    *ENERGY,
+    *CYCLING,
+    *DIAGNOSIS,
+    *COSTS,
+]
 
 
 async def async_setup_entry(

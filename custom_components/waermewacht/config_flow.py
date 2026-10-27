@@ -26,7 +26,6 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_CRITICAL_RUN,
-    CONF_DESIGN_TEMP,
     CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
     CONF_GAS_BASE_PRICE,
@@ -34,7 +33,6 @@ from .const import (
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_NAME,
-    CONF_PRICE_ENTITY,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_SOURCE,
@@ -316,16 +314,14 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
     "costs": (
         CONF_ELECTRICITY_PRICE,
-        CONF_PRICE_ENTITY,
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
     ),
-    "heat_load": (CONF_DESIGN_TEMP,),
 }
 
 
 class WaermewachtOptionsFlow(OptionsFlow):
-    """Thresholds, season start, prices and design outdoor temperature."""
+    """Thresholds, season start and prices."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -390,12 +386,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
         )
         optional: dict[str, selector.Selector] = {
             CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
-            CONF_PRICE_ENTITY: selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
-            ),
             CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
             CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
-            CONF_DESIGN_TEMP: number(-30, 5, 0.1, "°C"),
         }
         for name, keys in OPTIONAL_SECTIONS.items():
             schema = schema.extend(

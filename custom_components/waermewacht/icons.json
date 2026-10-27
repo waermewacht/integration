@@ -87,6 +87,21 @@
       "standby": {
         "default": "mdi:power-sleep"
       },
+      "cost_month": {
+        "default": "mdi:currency-eur"
+      },
+      "cost_season": {
+        "default": "mdi:currency-eur"
+      },
+      "heat_cost_season": {
+        "default": "mdi:cash"
+      },
+      "gas_savings_season": {
+        "default": "mdi:piggy-bank-outline"
+      },
+      "co2_savings_season": {
+        "default": "mdi:molecule-co2"
+      },
       "starts_today": {
         "default": "mdi:counter"
       },

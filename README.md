@@ -110,6 +110,9 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Kritischer Lauf unter | 6 min | Mindestlaufzeit laut Dimplex-Projektierungshandbuch etwa 6 Minuten. |
 | Auffällig ab Starts pro Stunde über | 3 | Mehr Starts innerhalb einer Stunde gelten als auffällig. Verdichterhersteller nennen 6 bis 12 Starts pro Stunde als Obergrenze. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
+| Strompreis | – | Optional, ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
+| Gas-Arbeitspreis | – | Optional, ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
+| Gas-Grundpreis | – | Optional, €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
 
 Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
 
@@ -194,6 +197,22 @@ Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts
 | Heizstab-Anteil Monat, Saison | % | Anteil des Heizstabs am Strom für Heizen und Warmwasser (mit Stillstand) | Heizstab-Zähler |
 | Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vor- und Rücklauf |
 | Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf |
+
+### Kosten und Gasvergleich
+
+| Entität | Einheit | Bedeutung | Braucht |
+| --- | --- | --- | --- |
+| Stromkosten Monat, Saison | € | aller Strom der Wärmepumpe (alle Betriebsarten, Stillstand, Heizstab) × Strompreis | Strompreis |
+| Wärmekosten je kWh Saison | €/kWh | Stromkosten für Heizen und Warmwasser (mit Stillstand) je kWh Wärme | Strompreis |
+| Ersparnis ggü. Gaskessel Saison | € | Gaskosten für dieselbe Wärme minus Stromkosten | Strom- und Gaspreis |
+| CO₂-Ersparnis ggü. Gaskessel Saison | kg | CO₂ des Gaskessels minus CO₂ des Stroms | – |
+
+- **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der im Feld gemessene Wirkungsgrad von Brennwertkesseln (Jagnow/Wolff, DBU 2004).
+- **CO₂-Faktoren** mit Vorketten:
+  - Strom: 406 g/kWh, deutscher Strommix 2025 (UBA *Climate Change* 16/2026).
+  - Gas: 240 g/kWh auf den Heizwert (GEG Anlage 9), auf den Brennwert umgerechnet × 0,906.
+- **Eigener PV-Strom** ist nicht abgezogen: Mit PV ist die tatsächliche CO₂-Ersparnis höher.
+- **Preise** gelten fest. Dynamische Tarife folgen mit dem Bericht.
 
 ## Statistik-Karte: Wärme und Strom je Monat
 

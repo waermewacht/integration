@@ -23,10 +23,8 @@ CONF_STARTS_PER_HOUR: Final = "starts_per_hour"
 CONF_SEASON_START: Final = "season_start_month"
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
-CONF_PRICE_ENTITY: Final = "price_entity"  # sensor with the price per kWh
 CONF_GAS_PRICE: Final = "gas_price"  # ct/kWh on the gross calorific value (Hs)
 CONF_GAS_BASE_PRICE: Final = "gas_base_price"  # EUR per year
-CONF_DESIGN_TEMP: Final = "design_outdoor_temp"  # °C, DIN/TS 12831-1 by postcode
 
 # Storage: written every few minutes when something changed, at the end of a
 # run, at local midnight and on shutdown (SD cards: no write per reading).

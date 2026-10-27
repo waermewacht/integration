@@ -46,7 +46,10 @@ from .averages import Mean
 from .backfill import HourlyChanges, by_hour, energy_between
 from .const import (
     CONF_CRITICAL_RUN,
+    CONF_ELECTRICITY_PRICE,
     CONF_ENTITIES,
+    CONF_GAS_BASE_PRICE,
+    CONF_GAS_PRICE,
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_SEASON_START,
@@ -116,6 +119,10 @@ PENDING_DELAY = timedelta(seconds=10)
 SAME_FETCH = timedelta(seconds=30)
 
 
+def _per_kwh(cents: float | None) -> float | None:
+    return None if cents is None else cents / 100
+
+
 def _float(state: State | None) -> float | None:
     if state is None:
         return None
@@ -150,6 +157,12 @@ class HeatPumpRuntime:
             CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR
         )
         self.tz = dt_util.get_default_time_zone()
+        # Prices are entered in ct/kWh; the cost module works in €/kWh.
+        self.electricity_price: float | None = _per_kwh(
+            options.get(CONF_ELECTRICITY_PRICE)
+        )
+        self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
+        self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = self.tz if self.template.day_values else None
         self.counters = {
             s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz)
