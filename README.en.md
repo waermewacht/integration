@@ -188,7 +188,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | --- | --- | --- |
 | Starts today, Starts yesterday | – | observed compressor starts |
 | Starts total | – | the heat pump's counter if mapped (attribute `source: heat_pump`), otherwise starts observed since the setup (`since_setup`) |
-| Run time today | h | compressor run time |
+| Run time today | min | compressor run time |
 | Run time per start today, 7 days, month | min | mean duration of the runs that ended in the period |
 | Short runs today | – | runs below the short-run limit; attributes `threshold_minutes`, `critical_runs`, `critical_threshold_minutes` |
 | Shortest pause today | min | shortest time between the end of a run and the next start |
@@ -252,6 +252,7 @@ With an electricity price in the [settings](#settings) and heating or hot water 
 | Heat cost per kWh season | €/kWh | cost of heating and hot water (electricity with standby, prorated electricity base price) per kWh of heat; unknown below 0.5 kWh of heat | electricity price |
 | Savings vs. gas boiler season | € | gas cost (working price plus prorated gas base price) for the same heat minus the heat pump's cost of heating and hot water (electricity with standby, prorated electricity base price) | electricity price and gas working price |
 
+- **Season** means the heating period from the set month (default: 1 July to 30 June). The attribute `period_start` gives its start.
 - **Prices** are fixed, as entered in the settings. Wärmewacht does not support dynamic tariffs.
 - **Base prices** are spread per day (annual price ÷ 365 or 366). The electricity base price only counts for a separate heat pump meter and belongs to heating and hot water.
 - **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency that field measurements of condensing boilers found (Jagnow/Wolff, DBU 2004). Gas is billed on the gross calorific value, so the figure refers to it.

@@ -194,10 +194,12 @@ CYCLING = [
     ),
     HeatPumpSensorDescription(
         key="runtime_today",
+        # Minutes like every duration here: the frontend shows hours as
+        # "0h, 25 Min." and floors rounded values; minutes stay exact.
         device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.HOURS,
-        suggested_display_precision=1,
-        value=lambda r: round(r.cycles("today").runtime_seconds / 3600, 1),
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_display_precision=0,
+        value=lambda r: round(r.cycles("today").runtime_seconds / 60),
         needs=HAS_COMPRESSOR,
     ),
     *(
@@ -317,11 +319,22 @@ def _cost(period: Period) -> Value:
     return value
 
 
+def _period_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
+    """Start of the period, as the ratio sensors have it."""
+
+    def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+        start = runtime.marks.starts.get(period)
+        return {"period_start": start.isoformat() if start else None}
+
+    return attributes
+
+
 def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     result = _comparison(runtime, Period.SEASON)
     if result is None:
         return {}
     return {
+        **_period_attributes(Period.SEASON)(runtime),
         "heat_kwh": round(result.heat_kwh, 1),
         "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),
         "electricity_base_cost_eur": _money(result.electricity_base_cost_eur),
@@ -347,6 +360,7 @@ COSTS = [
             suggested_display_precision=2,
             value=_cost(period),
             needs=HAS_PRICE,
+            attributes=_period_attributes(period),
         )
         for period in (Period.MONTH, Period.SEASON)
     ),
@@ -358,6 +372,7 @@ COSTS = [
             (c := _comparison(r, Period.SEASON)) and c.heat_cost_per_kwh, 3
         ),
         needs=HAS_PRICE,
+        attributes=_period_attributes(Period.SEASON),
     ),
     HeatPumpSensorDescription(
         key="gas_savings_season",

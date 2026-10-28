@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Laufzeit heute** in Minuten statt Stunden, wie alle anderen Dauern. Home Assistant zeigte sonst „2h, 47 Min.“ neben „166 Min.“; Stunden würde es bei kurzen Dauern als „0h, 25 Min.“ zeigen.
+- **Kosten-Sensoren** nennen im Attribut `period_start`, ab wann Monat bzw. Saison zählen.
 - **Wärme je Gradtag** zählt nur Heiztage (ab 1 kWh Heizwärme am Tag). Kühle Tage ohne Heizbetrieb drückten den Wert bisher auf ein Drittel, wenn die Heizung erst im Oktober anlief. Ohne Heizwärme ist er unbekannt statt 0. Die Gradtage selbst bleiben nach VDI 3807.
 
 ## 0.1.0b8 – 2026-10-27
