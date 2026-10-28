@@ -1,6 +1,6 @@
 # Wärmewacht – Entwicklerdokumentation
 
-Stand: 2026-10-27 (Projektstart). Vor größeren Arbeiten lesen. Maßgeblich ist der Code; dieses Dokument erklärt, was dort nicht steht.
+Stand: 2026-10-28 (vor 0.1.1; Projektstart 2026-10-27). Vor größeren Arbeiten lesen. Maßgeblich ist der Code; dieses Dokument erklärt, was dort nicht steht.
 
 ## 1. Ziel und Umfang
 
@@ -13,7 +13,7 @@ Wärmewacht wertet aus vorhandenen Home-Assistant-Entitäten aus, wie effizient 
 - Takte: Starts (heute, gestern, gesamt), Laufzeit pro Start (heute, 7 Tage, Monat), Kurzläufe, kürzeste Pause, Kompressor-Laufzeit, Binärsensor „auffällig taktend“.
 - Diagnose: Heizstab-Anteil, Abtauungen (Anzahl, Dauer), Spreizung und mittlere Vorlauftemperatur bei laufendem Kompressor im Heizbetrieb (zeitgewichtet; Warmwasser später).
 
-**Stufe 2:** Arbeitszahl über Außentemperatur (Klassen, Aktion mit Antwortdaten für Diagramme), Gradtage und witterungsbereinigte Wärme, Wärmekosten (fester Preis oder Preissensor), Vergleich mit Gaskessel (Kosten, CO₂), PV-Anteil als Näherung.
+**Stufe 2:** Arbeitszahl über Außentemperatur (Klassen, Aktion mit Antwortdaten für Diagramme), Gradtage und witterungsbereinigte Wärme, Wärmekosten (fester Preis oder Preissensor), Vergleich mit Gaskessel (Kosten, CO₂), PV-Anteil als Näherung. Umgesetzt mit festen Preisen (noch kein Preissensor); CO₂ in der Oberfläche und PV-Anteil verworfen (Abschnitt 6).
 
 **Stufe 3:** Heizlast-Schätzung (Energiesignatur), Einordnung gegen Feldtests, Warmwasser je Ladung und Legionellenschaltungen.
 
@@ -49,7 +49,7 @@ Name: keine Treffer für „Wärmewacht“/`waermewacht` auf GitHub, PyPI, HACS,
 2. Keine Wärme oder Strom unter Mindestmenge (Vorgabe 0,5 kWh) → `unknown`, nie 0.
 3. Heizstab gehört zum Strom des jeweiligen Modus (H3); optional zusätzlich ohne Heizstab.
 4. Stillstand (Strom bei stehendem Kompressor) getrennt buchen: nicht in Arbeitszahlen je Modus, wohl in der Gesamt-JAZ.
-5. Abtauung: dem Heizsystem entzogene Wärme abziehen, nicht abschneiden (Fraunhofer S. 68; OEM: ~0,1 SPF/Jahr, [EoH-Analyse](https://docs.openenergymonitor.org/heatpumpmonitor/eoh.html)). Ob die Bosch-Zähler das schon tun, ist offen (Abschnitt 8).
+5. Abtauung: dem Heizsystem entzogene Wärme abziehen, nicht abschneiden (Fraunhofer S. 68; OEM: ~0,1 SPF/Jahr, [EoH-Analyse](https://docs.openenergymonitor.org/heatpumpmonitor/eoh.html)). Die Bosch-Zähler tun das schon (geklärt 2026-10-27, Abschnitt 9).
 6. Zähler: echte Resets erkennen (neue Basis, nichts buchen); kleine Rücksprünge (an einer Anlage beobachtet: −0,02 kWh) glätten, nicht als Reset werten – sonst wird doppelt gebucht.
 7. `unknown`/`unavailable` nie als 0 lesen.
 
@@ -173,16 +173,21 @@ Rangfolge nach Bosch: **Luxtronik** (passt fast 1:1, nur Erkennung über Endung)
 
 **Nachtrag 2026-10-27 (Subagenten, Quellcode an festen Commits):**
 
-- **Vorlagen gebaut** (noch nicht eingebunden, „experimentell“): Luxtronik (`profiles_luxtronik.py`; Strom je Modus erst ab neuerer Firmware), Stiebel Eltron ISG (`profiles_stiebel.py`; `compressor_on`, `evaporator_defrost`, Energie als `day_and_total` in ganzen kWh, kein Kühlstrom), HeishaMon/`aquarea` (`profiles_heishamon.py`; Aktivität aus Ventil, Abtau-Schalter und Modus), Lambda (`profiles_lambda.py`; eigene Lebenszeit-Zähler je Modus inkl. Abtauen und Standby), iDM Navigator 2.0 mit Weboberfläche (`profiles_idm.py`; Strom je Modus nur aus der Web-Statistik).
+- **Vorlagen gebaut** (eingebunden seit 0.1.0b7, „experimentell“, in der Einrichtung „(beta)“): Luxtronik (`profiles_luxtronik.py`; Strom je Modus erst ab neuerer Firmware), Stiebel Eltron ISG (`profiles_stiebel.py`; `compressor_on`, `evaporator_defrost`, Energie als `day_and_total` in ganzen kWh, kein Kühlstrom), HeishaMon/`aquarea` (`profiles_heishamon.py`; Aktivität aus Ventil, Abtau-Schalter und Modus), Lambda (`profiles_lambda.py`; eigene Lebenszeit-Zähler je Modus inkl. Abtauen und Standby), iDM Navigator 2.0 mit Weboberfläche (`profiles_idm.py`; Strom je Modus nur aus der Web-Statistik).
 - **Nicht ohne Kernarbeit:** Ecodan (`ecodan-ha-local`; Energie sind Vortageswerte), Waterkotte (nur Jahressumme Kompressorstrom), Vaillant und ViCare (siehe Tabelle).
 - **Nicht sinnvoll:** Remeha (keine Energie), Wolf (`wolflink` ohne nutzbare Daten), Kermi, Dimplex, Ochsner (nur Bastelprojekte), LG Therma V (Strom nur bei neueren Geräten), Samsung EHS, NIBE über myUplink, Daikin über ESPAltherma (ohne externen Zähler).
 - Entwürfe: `raw/vorlagen/lambda-ecodan-2026-10-27.md`, `raw/entwurf-idm-waterkotte.md`.
 
-**Nachtrag 2026-10-28 (Subagenten-Entwürfe, umgesetzt in 0.1.0b9, alle beta):**
+**Nachtrag 2026-10-28 (Subagenten-Entwürfe, umgesetzt für 0.1.1, alle beta):**
 
 - **Viessmann ViCare** (`profiles_viessmann.py`): Takte und Strom ohne Wärme. Kern: Einrichtung nur mit Kompressor, Strom ohne Wärmezähler ist Laufstrom (`heat_modes`), Vorlagenfelder `activity_foreign` (E3-Phase, Reparaturhinweis `activity_foreign`) und `day_timezone` (ViCare-Tageswerte laut Forum ab Mitternacht UTC, unbelegt; UTC ist die sichere Wahl, weil ein Tageswechsel um lokale Mitternacht dann nur eine Verspätung von 1–2 h bedeutet). Abtauen aus der Aktivität geht der WW-Flagge vor.
 - **Mitsubishi Ecodan über MELCloud** (`profiles_melcloud.py`, Core `melcloud` ab 2026.5): sechs Tageswerte je Modus, ohne Kompressor (nur 30-min-Momentwert). **Vortageswerte** (Recherche 28.10., ~85 % sicher): ListDevices-Dump mit `DailyEnergyConsumedDate` = gestern neben den Werten ([melcloud2mqtt](https://github.com/trx-base/melcloud2mqtt/blob/main/src/test/resources/mock-responses/ListDevices.json)), 5-Minuten-Log einer Ecodan mit konstantem Wert trotz Heizbetrieb ([Melcloudsimple](https://github.com/ferndalehall/Melcloudsimple/tree/master/src/Melcloudsimple/scripts)), [OpenEnergyMonitor](https://community.openenergymonitor.org/t/ecodan-energy-monitor/24646) („the daily energy numbers are for yesterday“). Sprung kurz nach Mitternacht, 0,01 kWh, gelegentlich ausbleibend. Umsetzung: `previous_day` (Zähler prüft gegen 24 h + Zeit seit Mitternacht, Buchung über `PeriodMarks.book_late` auf den Vortag 12 Uhr). Die HA-Doku („reset at midnight“) gilt für ATA. Folge für Core `melcloud`: `total_increasing` bucht den Vortag in die Stunde nach Mitternacht und bei höherem Folgewert nur die Differenz (Upstream-Kandidat, nur nach Rückfrage).
 - **Vaillant myVAILLANT** (`profiles_vaillant.py`, `mypyllant` v0.9.19): Erkennung über `original_name` der Energiereihen (die Position in der Cloud-Liste trägt keine Bedeutung), Buchung Stunde für Stunde aus der externen Statistik `mypyllant:<unique_id>` (`hourly_statistics`, `backfill.bookable_hours`, `PeriodMarks.book_late`), Stillstand = Stunde ohne Umweltwärme (`heat_includes_electricity`). Reparaturhinweise `energy_stale` (30 h ohne neue Stunde) und `source_changed` (Zuordnung passt nicht mehr, dann keine Buchung). HA-Test belegt die Umrechnung Wh → kWh externer Statistiken.
+- **Mitsubishi Ecodan über die F1p-Brücke** (`profiles_f1p.py`, Firmware v7.1.1, MQTT, CN105): Energie als Vortageswert (`previous_day`, 0,01 kWh, ohne `state_class`, also kein Rückblick vor der Einrichtung); vor dem echten Wert sendet die Brücke manchmal eine eigene Schätzung. Kompressor aus der Frequenz, Betriebsart aus „System Operation Mode“ (mit „Defrosting“), Starts in Hundertern, Heizstab nur an/aus. Belege im Docstring der Vorlage.
+- **Mitsubishi Ecodan mit ESPHome** (`profiles_esphome_ecodan.py`, gekkekoe/esphome-ecodan-hp 30eb1b4): Erkennung über `original_name` bzw. den Namen in der unique_id (v1–v3) gegen die Firmware-Labels aller 14 Sprachen, Gruppe je MAC. Tageswerte als `previous_day` wie F1p (die Lebenszeit-Zähler springen ebenso erst nach Mitternacht und addieren ohne Datumsprüfung). Keine Starts (in Hundertern). Abtauen = byte3 ≠ 0, schließt Standby/Wiederanlauf ein.
+- **Waterkotte** (`profiles_waterkotte.py`, marq24/ha-waterkotte 2026.10.7): unique_id `waterkotte_heatpump.<key>[_<serial>]`. Jahressummen (Reset am 1.1. = RESET des Zählers). Neues Kernsignal `ELEC_TOTAL`: Kompressorstrom aller Modi in einem Zähler, `model.has_elec()` gibt jedem Modus mit Wärmezähler (und Heizen) Strom. Live wie `AUX_TOTAL` auf `tracker.mode` (sonst Heizen), Lauf/Stillstand über `_running()`; im Rückblick (`backfill.hour_totals`) anteilig zur Wärme der Stunde, Stunde ohne Wärme = Stillstand Heizen. Nicht zusammen mit `ELEC_<Modus>` (Fehler `elec_twice`).
+- **Vitocal 200-A** (geteilt): zwei Geräte am selben Gateway (`<gw>_<serial>`). `ViCareTemplate.group()` führt zusammen, wenn genau ein Gerät den Kompressor hat und genau ein anderes ohne Brenner ein Energiesignal liefert, das dem Kompressorgerät fehlt; die eigenen Entitäten des Kompressorgeräts haben Vorrang, der Treffer behält dessen Präfix. Belegt nur mit PyViCare-Testdaten (90c102f).
+- **Vortageswerte und „Zähler hängt“:** Bei `previous_day` gilt `STUCK_PREVIOUS_DAY` (30 h Laufzeit), sonst meldete die Prüfung im Winter täglich.
 - Entwürfe mit allen Quellen: `raw/vorlagen/ecodan-2026-10-28.md`, `raw/vorlagen/vaillant-2026-10-28.md`, `raw/vorlagen/viessmann-2026-10-28.md` (lokal); die Belege stehen auch in den Docstrings der Vorlagen.
 
 Folge für den Kern: Erkennung als Daten verallgemeinern (Muster mit `prefix`/`key`, ggf. `original_name`); Zählerart je Signal (fortlaufend, täglich, monatlich, „aus Statistik buchen“); Kompressor aus Zahlwert > Schwelle; Aktivität aus mehreren Entitäten; Modus „Takte ohne Energie“; Heizstab gesamt → Modus.
@@ -201,7 +206,7 @@ Folge für den Kern: Erkennung als Daten verallgemeinern (Muster mit `prefix`/`k
 - **Helfer verworfen:** Seit 2026.8 darf ein Helfer seinen Eintrag nicht an das Gerät einer fremden Integration hängen ([Blog 2026-07-21](https://contributors.home-assistant.io/blog/2026/07/21/device-registry-single-config-entry/), [Folge 2026-08-24](https://contributors.home-assistant.io/blog/2026/08/24/device-registry-follow-up-changes/)). Wärmewacht ist `service` mit eigenem Gerät.
 - **Subentries verworfen:** bei höchstens drei festen Modi zu viel Listener-/Reload-Logik. Ab 2026.11 bedingte Formularfelder (`visible=…`, [Blog](https://contributors.home-assistant.io/blog/2026/10/21/form-fields-visible/)) – erst nutzen, wenn die Mindestversion es erlaubt.
 - Entity-Selector filtert seit **2026.4** nach `unit_of_measurement` (im Code geprüft) → Mindestversion 2026.4. Kein Filter nach `state_class`: in der Einrichtung selbst prüfen.
-- **Sensoren:** Arbeitszahl ohne `device_class` und Einheit, mit `state_class: measurement` (sonst formatiert die Oberfläche den Wert nicht als Zahl – Rohwert mit 14 Nachkommastellen), `suggested_display_precision=2`. Energie `energy`/kWh mit `total_increasing`. Zähler „Starts heute“ `total_increasing` (Rücksprung auf 0 gilt als Reset) – sauberer ist ein nie zurückgesetzter Lebenszeit-Zähler. Laufzeit `duration`/h. `state_class` von Anfang an richtig setzen (spätere Änderung erzeugt Reparaturmeldungen).
+- **Sensoren:** Arbeitszahl ohne `device_class` und Einheit, mit `state_class: measurement` (sonst formatiert die Oberfläche den Wert nicht als Zahl – Rohwert mit 14 Nachkommastellen), `suggested_display_precision=2`. Energie `energy`/kWh mit `total_increasing`. „Starts heute“ ohne `state_class`; „Starts gesamt“ und „Starts Saison“ `total_increasing` (sauberer als ein täglich zurückgesetzter Zähler, bei dem der Rücksprung auf 0 als Reset gälte). Laufzeit `duration`/min (seit 0.1.1, vorher h). `state_class` von Anfang an richtig setzen (spätere Änderung erzeugt Reparaturmeldungen).
 - **Recorder-Statistik:** `statistics_during_period(..., types={"change"} | {"sum"})`; `state` ist der rohe Zählerstand, nicht reset-korrigiert. Für reines Lesen keine Änderung durch `mean_type`/`unit_class` (2026.11).
 - **Aktion mit Antwort:** `SupportsResponse.ONLY`, Registrierung in `async_setup`.
 - Flow-Methoden `async_show_form/menu/progress` und `async_external_step` mit `step_id` aufrufen (Pflicht ab 2027.5, [Blog](https://contributors.home-assistant.io/blog/2026/10/23/flow-results-require-step-id/)).
@@ -240,11 +245,19 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 | `backfill.py` | Stunden der Langzeitstatistik → Energie, Stillstand = Strom ohne Wärme in derselben Stunde |
 | `averages.py` | zeitgewichtete Mittel (Spreizung, Vorlauf) |
 | `report.py` | Kennzahlen der Aktion „Bericht“ je Bereich und Monat |
+| `profiles_*.py`, `templates.py` | Vorlagen der weiteren Hersteller (beta) und ihre Sammlung |
+| `activity.py` | Betriebsart aus mehreren Merkern |
+| `adopt.py` | neue Signale einer Vorlage bei bestehenden Einträgen übernehmen |
+| `charges.py` | Warmwasser-Ladungen, thermische Desinfektion |
+| `curve.py`, `heat_load.py`, `degree_days.py`, `heating_curve.py` | AZ-Kennlinie, Energiesignatur, Gradtage, Vorlauf bei 0 °C |
+| `costs.py` | Kosten und Gasvergleich (CO₂ gerechnet, nicht angezeigt) |
+| `health.py`, `health_extra.py` | Gesundheits-Check (`docs/GESUNDHEITSCHECK.md`) |
+| `anonymize.py` | erfundene Werte für Seriennummern und IDs in der Diagnose-Datei |
 
-HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speichern, Reparaturhinweise), `config_flow.py`, `sensor.py`, `binary_sensor.py`, `services.py` (Aktion `report`), `diagnostics.py`. Texte und Icons erzeugt `tools/make_strings.py` (DE/EN aus einer Tabelle; danach `ruff format`).
+HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speichern, Reparaturhinweise), `config_flow.py`, `sensor.py`, `binary_sensor.py`, `button.py`, `services.py` (Aktionen `report`, `performance_curve`, `heat_load`), `diagnostics.py`. Texte und Icons erzeugt `tools/make_strings.py` (DE/EN aus einer Tabelle; danach `ruff format`).
 
 - **Aktion „Bericht“** (`waermewacht.report`): beliebiger Zeitraum (Vorgabe: laufende Saison bis jetzt), Antwort mit Bereichen `heating`, `dhw`, `heating_dhw` (mit Stillstand), `cooling` und `months`. Stunden vor der ersten vollen Stunde nach der Einrichtung aus den Quell-Zählern (Stillstand stundenweise geschätzt, `estimated_until`), danach aus den eigenen Energie-Sensoren. Nur volle Stunden der Statistik (`data_until`). Ohne Recorder: Fehlermeldung statt 0.
-- **Reparaturhinweise** nach 10 Minuten Laufzeit: `missing_entity` (Quell-Entität fehlt), `energy_unit` (keine Wh/kWh/MWh). Verschwinden, sobald behoben; beim Löschen des Eintrags entfernt.
+- **Reparaturhinweise** nach 10 Minuten Laufzeit: `missing_entity` (Quell-Entität fehlt), `energy_unit` (keine Wh/kWh/MWh), dazu die des Gesundheits-Checks `counter_stuck`, `source_unavailable`, `outdoor_temp_stuck`, `outdoor_temp_implausible`, `flow_return_swapped`, `flow_implausible`, `flow_zero` (`docs/GESUNDHEITSCHECK.md` 4.10) und die der Beta-Quellen `activity_foreign` (ViCare E3), `energy_stale` und `source_changed` (myVAILLANT). Verschwinden, sobald behoben; beim Löschen des Eintrags entfernt (Liste `ISSUES` in `__init__.py`).
 - **Zählerschritt:** Ein Zähler, der nie Nachkommastellen zeigte, gilt als ganzzahlig. Arbeitszahlen tragen `counter_step_kwh` und `reliable` (Strom ≥ 20 Schritte, also Rundung ≤ 5 %).
 
 - **Stillstand live:** Strom eines Modus ist Stillstand, wenn seit dem letzten Zählerwert weder Wärme dieses Modus kam noch der Kompressor in diesem Modus lief (`runtime._running`). Ohne Kompressorsignal entscheidet nur die Wärme. Stillstand aller Zähler (auch eines Kühlen-Zählers) geht in die Arbeitszahl Heizen + Warmwasser ein – er gehört zum Gerät, nicht zu einem Modus.
@@ -253,7 +266,7 @@ HA-Schicht: `runtime.py` (Zustandsänderungen, Minuten-Takt, Statistik, Speicher
 - **Diagnose-Datei** enthält Zustände der Quell-Entitäten und Energiesummen (anders als bei Tarifwacht) – README rät, sie vor dem Teilen zu prüfen.
 - **Schreiblast (SD-Karten, Raspberry Pi):**
   - Zwei `Store`-Dateien: `waermewacht.<entry>` (Zähler, Summen, Marken, laufender Lauf, wenige KB) alle 10 Minuten, wenn sich etwas geändert hat, sowie um Mitternacht und beim Beenden; `waermewacht.<entry>.history` (Läufe und Abtauungen der letzten 40 Tage, einige 10 KB) nur am Ende eines Laufs, nach einer Abtauung (mit dem nächsten Speichern) und um Mitternacht. Nie `async_delay_save` je Zählerwert.
-  - Sensoren rechnen einmal pro Minute und bei Ereignissen; der Recorder schreibt aber nur bei geändertem Zustand oder Attribut. Deshalb werden die Werte auf die angezeigte Genauigkeit gerundet (Arbeitszahl 0,01; Energie 0,1 kWh; Laufzeit 0,1 h; Temperaturen 0,1) und die minütlich wandernden Attribute `heat_kwh`, `electricity_kwh`, `standby_kwh` nicht aufgezeichnet (`_unrecorded_attributes`).
+  - Sensoren rechnen einmal pro Minute und bei Ereignissen; der Recorder schreibt aber nur bei geändertem Zustand oder Attribut. Deshalb werden die Werte auf die angezeigte Genauigkeit gerundet (Arbeitszahl 0,01; Energie 0,1 kWh; Laufzeit heute 5 min; Stromkosten 0,1 €; Ersparnis 1 €; Temperaturen 0,1) und die minütlich wandernden Attribute `heat_kwh`, `electricity_kwh`, `standby_kwh` sowie die großen Listen (`current`, `previous`, `weeks`, `classes`, `days`) nicht aufgezeichnet (`_unrecorded_attributes`).
   - Abschätzung bei 8 Laufstunden am Tag: einige hundert Zustandszeilen am Tag für alle Wärmewacht-Sensoren zusammen (Energie ~0,1 kWh-Schritte, Arbeitszahlen nur bei Änderung in der 2. Nachkommastelle) – weniger als die Quell-Entitäten von EMS-ESP selbst. Dazu die üblichen Statistikzeilen der `measurement`-Sensoren (Kurzzeit alle 5 min, 10 Tage gehalten; Langzeit stündlich). Vor dem ersten stabilen Release an der Anlage des Inhabers messen (Zeilen je Entität im Recorder), nicht nur schätzen.
 - **Rückblick:** nur bei der ersten Einrichtung, aus den Stundenwerten (`change`) der Energie-Entitäten. Die angebrochene Stunde vor der Einrichtung fehlt (bekannte kleine Lücke).
 - **Lücken (HA aus):** Der erste Zählerwert danach bucht den ganzen Zuwachs; ob er Lauf oder Stillstand war, entscheidet die Wärme im selben Zeitraum.
@@ -264,7 +277,7 @@ Ziel Bronze. Für Custom-Integrationen vergibt Home Assistant keine Stufe.
 
 | Bronze-Regel | Stand |
 |---|---|
-| action-setup | ✅ Aktion `report` in `async_setup` (`services.py`) |
+| action-setup | ✅ Aktionen `report`, `performance_curve`, `heat_load` in `async_setup` (`services.py`) |
 | appropriate-polling | ➖ kein Polling – Zustandsänderungen und Minuten-Takt |
 | brands | ⏳ Branding folgt (`brand/`) |
 | common-modules | ✅ `entity.py`, `runtime.py` |

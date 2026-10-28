@@ -1,6 +1,6 @@
 # Wärmewacht – Gesundheits-Check
 
-Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Seit 0.1.0b9: 4.5 als „Vorlauf bei 0 °C“ (aus der Langzeitstatistik statt dem Tagebuch, Stunden mit Heizwärme ohne Warmwasser; 0 °C statt −3 °C, weil dort meist ohne Hochrechnung gemessen), 4.6 als „Starts Saison“ mit Starts je Tag, 4.10 d (`flow_return_swapped`, Urteil um Mitternacht, gespeichert). Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
+Stand: 2026-10-28. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Für 0.1.1 (noch unveröffentlicht): 4.5 als „Vorlauf bei 0 °C“ (aus der Langzeitstatistik statt dem Tagebuch, Stunden mit Heizwärme ohne Warmwasser; 0 °C statt −3 °C, weil dort meist ohne Hochrechnung gemessen), 4.6 als „Starts Saison“ mit Starts je Tag, 4.10 d (`flow_return_swapped`, Urteil um Mitternacht, gespeichert), dazu 4.3 (nur Attribute), 4.4, 4.7, 4.8 und 4.10 e (Anfang von Abschnitt 4). Der Rest ist Entwurf; die Abschnitte 4 bis 10 beschreiben den Entwurf, wo nicht anders vermerkt. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
 
 Jede Schwelle hat eine Quelle oder ist als **eigene Annahme** markiert. Eigene Annahmen werden nach dem ersten Winter an echten Daten überprüft (Anlage des Inhabers, `CLAUDE.local.md`) und hier nachgetragen.
 
@@ -46,19 +46,19 @@ Ein Sammel-Sensor („Gesundheit: 2 Auffälligkeiten“) ist verlockend, aber ni
 | Kennlinie laufende und vorige Saison (2-K-Klassen, ≥ 7 Tage) | `runtime.curves`, täglich gegen 3 Uhr | zwei Saisons |
 | Energiesignatur, Heizlast | `runtime.heat_load`, letzte volle Saison | eine Saison |
 | Läufe (mit Sekunden je Betriebsart), Abtauungen (Beginn, Ende) | `runtime.runs`, `runtime.defrosts` | 40 Tage (`HISTORY_DAYS`) |
-| Spreizung, Vorlauf im Heizbetrieb | `runtime.spread`, `runtime.flow` | **nur heute**, um Mitternacht verworfen |
+| Spreizung, Vorlauf im Heizbetrieb | `runtime.spread`, `runtime.flow` | **nur heute**, um Mitternacht verworfen (Tagesmittel seit 0.1.0b7 im Tagebuch) |
 | Heizstab-Anteil Monat, Saison | `energy.aux_share` | Perioden |
-| Warmwasser-Ladungen, Legionellenschaltung | `charges.py` | **nur Kern**, noch nicht verdrahtet; kein Signal „Warmwasser-Temperatur“ in `model.Signal` |
-| Durchfluss | Signal `flow_rate` | zugeordnet, aber nicht ausgewertet |
+| Warmwasser-Ladungen, Legionellenschaltung | `charges.py` | damals nur Kern; seit 0.1.0b8 verdrahtet (Signal `dhw_temp`), 40 Tage |
+| Durchfluss | Signal `flow_rate` | damals nicht ausgewertet; ab 0.1.1 Tagesmittel im Heizbetrieb (Tagebuch) für 4.10 e |
 | Luftfeuchte | – | keine |
 
 Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung, Vorlauf und Abtauen über mehr als 40 Tage fehlt ein **Tagesbuch** (Abschnitt 4.11).
 
 ## 4. Prüfungen
 
-**Umsetzung 0.1.0b9 (`health_extra.py`):**
+**Umsetzung 0.1.1 (`health_extra.py`):**
 
-- **4.3:** Attribute am Sensor „Abtauungen heute“: Abtauungen, warme Abtauungen (Stundenmittel ab 10 °C, eigene Annahme), mittlere und längste Dauer der letzten 7 Tage. Für später vorbereitet: Abtauungen je Laufstunde je 2-K-Klasse aus dem Tagebuch, laufende gegen vorige Saison (`defrost_classes`, `compare_defrost_classes`). Kein Binärsensor.
+- **4.3:** Attribute am Sensor „Abtauungen heute“: Abtauungen, warme Abtauungen (Stundenmittel ab 10 °C, eigene Annahme), mittlere und längste Dauer der letzten 7 Tage. Dazu Attribut `classes`: Abtauungen je Laufstunde je 2-K-Klasse aus dem Tagebuch, laufende gegen vorige Saison (`defrost_classes`, `compare_defrost_classes`), ohne Schwelle. Kein Binärsensor.
 - **4.4:** Sensor „Spreizung 7 Tage“: Mittel der Heizzeit an Tagen unter 5 °C, ab 10 Stunden (beides eigene Annahme). Attribut `all_days` für alle Tage, Feldwert 6,8 K (WPsmart).
 - **4.7:** Einstellungen „Heizleistung bei A−7/W35“ und „Kleinste Heizleistung“ im Abschnitt Heizlast. Der Faktor bezieht sich auf die normgerechte Heizlast; `measured_factor` auf die gemessene; `cycling_expected`, wenn die gemessene Heizlast bei +7 °C unter der kleinsten Leistung liegt. Feldmittel 1,5, keine Schwelle.
 - **4.8:** Attribute am Stillstand-Sensor: mittlere Leistung 7 Tage, kleinster und größter Tag, Median der 30 Tage davor, `rising` ab +50 % und +10 W (eigene Annahme). Stunden ohne Lauf je Tag aus dem Tagebuch, Umstellungstage mit 23/25 h.
@@ -79,7 +79,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 - **An** bei Rückgang ≥ 15 %, **aus** erst unter 10 % (Hysterese).
 - Ausgewertet einmal täglich nach der Kennlinie (gegen 3 Uhr), kein eigener Recorder-Zugriff.
 
-**Mindestdaten.** Gemeinsame Bereiche von zusammen ≥ 4 K (zwei Klassen breit) mit ≥ 14 Tagen der laufenden Saison; Strom der laufenden Saison in diesen Klassen ≥ 10 kWh und ≥ 20 Zählerschritte (`reliable`). Sonst `unknown` mit `reason`.
+**Mindestdaten.** Gemeinsame Bereiche von zusammen ≥ 4 K (zwei Klassen breit) mit ≥ 14 Tagen der laufenden Saison; Strom der laufenden Saison in diesen Klassen ≥ 10 kWh. Sonst `unknown` mit `reason`. (Entwurf: zusätzlich ≥ 20 Zählerschritte wie `reliable`; nicht umgesetzt.)
 
 **Quelle.** Klassen-AZ streut um 0,14 bei n = 7 (Machbarkeit, `ENTWICKLUNG.md` §4). Bei AZ ≈ 4 sind das gut 3 %. 15 % liegt damit weit über dem Rauschen. Die Schwellen 15/10 % sind **eigene Annahme**. Zum Vergleich: Die JAZ von Luft/Wasser-Anlagen im Feld reicht von 2,6 bis 4,9 (Fraunhofer ISE WP-QS) – das ist Streuung zwischen Anlagen, kein Maß für eine Veränderung.
 
@@ -91,7 +91,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 - **Feuchter Winter mit vielen Abtauungen** senkt die AZ bei 0 … 5 °C. Wird erst mit dem Tagesbuch erkennbar.
 - **Anfang der Saison:** wenige Klassen, milde Tage mit wenig Wärme. Die Mindestdaten fangen das ab.
 
-**Anzeige.** Binärsensor „Effizienz gesunken“. Attribute: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `classes` (je Klasse `lower`, `upper`, `days_current`, `days_previous`, `ratio_current`, `ratio_previous`; nicht aufgezeichnet), `aux_share_current`, `aux_share_previous`, `threshold_percent`, `reason`.
+**Anzeige.** Binärsensor „Effizienz gesunken“. Attribute: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `classes` (je gemeinsamem Bereich `lower`, `upper`, `days_current`, `days_previous`, `ratio_current`, `ratio_previous`; nicht aufgezeichnet), `threshold_percent`, `reason`. Die im Entwurf vorgesehenen `aux_share_current` und `aux_share_previous` gibt es nicht.
 
 ### 4.2 Heizstab im Heizbetrieb bei milder Witterung
 
@@ -113,7 +113,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Anzeige.** Binärsensor „Heizstab bei milder Witterung“. Attribute: `aux_kwh_7d`, `mild_days_7d`, `days` (je Tag Datum, Mittel, Heizstab kWh; nicht aufgezeichnet), `min_outdoor_temp`, `threshold_kwh`, `reason`.
 
-Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung.
+Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (noch nicht umgesetzt).
 
 ### 4.3 Abtauungen auffällig
 
@@ -127,9 +127,9 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Quelle.** Beobachtet 3–4 min je Abtauung an der Anlage des Inhabers (`ENTWICKLUNG.md` §4). Alle Schwellen **eigene Annahme**; für Häufigkeit und Dauer keine Quelle gefunden. Abtauen hängt stark an der **Luftfeuchte** (am meisten bei 0 … 5 °C und hoher Feuchte), und die hat Wärmewacht nicht.
 
-**Fehlalarme.** Hoch: Nebel, Nieselregen, Schnee. Hersteller tauen auch zeitgesteuert ab. Nur EMS-ESP liefert Abtauen (`hpactivity`), HomeCom nicht.
+**Fehlalarme.** Hoch: Nebel, Nieselregen, Schnee. Hersteller tauen auch zeitgesteuert ab. Abtauen liefern nur Quellen mit Betriebsart (EMS-ESP `hpactivity` und mehrere Beta-Vorlagen), HomeCom nicht.
 
-**Anzeige.** Zunächst nur Attribute am Sensor „Abtauungen heute“ (`warm_defrosts_7d`, `mean_minutes_7d`, `longest_minutes_7d`). Kein Binärsensor, bis eine Quelle oder ein Winter Daten liefert.
+**Anzeige.** Zunächst nur Attribute am Sensor „Abtauungen heute“ (`defrosts_7d`, `warm_defrosts_7d`, `mean_minutes_7d`, `longest_minutes_7d`, `warm_from`, `classes`). Kein Binärsensor, bis eine Quelle oder ein Winter Daten liefert.
 
 ### 4.4 Spreizung zu klein oder zu groß
 
@@ -157,7 +157,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Fehlalarme.** Heizkörper brauchen mehr als Fußbodenheizung; Altbau ist kein Fehler. Taktende Anlagen haben kurze Läufe mit Anlauf-Überschwingen.
 
-**Anzeige.** Sensor „Vorlauf bei −3 °C“ (°C), Attribute `previous_season`, `days`, `r_squared`, `field_reference`. Kein Binärsensor.
+**Anzeige.** Sensor „Vorlauf bei −3 °C“ (°C), Attribute `previous_season`, `days`, `r_squared`, `field_reference`. Kein Binärsensor. Umgesetzt als „Vorlauf bei 0 °C“ mit `slope`, `r_squared`, `days`, `spread`, `reasons`, `previous_season`, `previous_slope`, ohne `field_reference` (Definition des WPsmart-Werts noch offen).
 
 ### 4.6 Takten (bestehend) und Starts je Jahr
 
@@ -179,7 +179,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Fehlalarme.** Nennleistung je Datenblatt bei anderen Bedingungen (A2/W35, A7/W35); Heizlast aus nur einer Saison; Warmwasserbedarf und Sperrzeiten rechtfertigen Reserve.
 
-**Anzeige.** Sensor „Leistung je Heizlast“ (Faktor), Attribute `rated_kw`, `heat_load_kw`, `field_mean: 1.5`. Als Hinweis-Attribut am Takt-Binärsensor (`oversized_factor`), wenn vorhanden.
+**Anzeige.** Sensor „Leistung je Heizlast“ (Faktor), Attribute `rated_kw`, `heat_load_kw`, `field_mean: 1.5`. Als Hinweis-Attribut am Takt-Binärsensor (`oversized_factor`), wenn vorhanden (noch nicht umgesetzt).
 
 ### 4.8 Stillstand ungewöhnlich hoch
 
@@ -220,7 +220,7 @@ Diese Prüfungen schützen die Zahlen von Wärmewacht selbst. Sie sind robust (P
 
 **b) Quelle lange nicht verfügbar** (`source_unavailable`): Eine zugeordnete Entität ist länger als 60 min `unavailable` (z. B. EMS-ESP oder MQTT aus). Ergänzt `missing_entity` (Entität fehlt ganz). Grenze **eigene Annahme**; nach einem EMS-ESP-Neustart dauert es Minuten, bis alle Telegramme da sind.
 
-**c) Außentemperatur steht still oder ist unplausibel** (`outdoor_temp`)
+**c) Außentemperatur steht still oder ist unplausibel** (`outdoor_temp_stuck`, `outdoor_temp_implausible`; im Entwurf ein Schlüssel `outdoor_temp`)
 
 - Steht: In der Langzeitstatistik 48 aufeinanderfolgende Stunden mit Min = Max (über Neustarts hinweg; `last_changed` taugt nicht, weil ein Neustart ihn zurücksetzt).
 - Unplausibel: Stundenmittel außerhalb −35 … +45 °C in mehr als 3 Stunden des Vortags. Diese Werte verwirft `curve.py` schon (Sommerspitzen bis 44 °C durch Sonne/Abwärme, `ENTWICKLUNG.md` §4).
@@ -229,7 +229,7 @@ Diese Prüfungen schützen die Zahlen von Wärmewacht selbst. Sie sind robust (P
 
 **d) Vor- und Rücklauf vertauscht** (`flow_return_swapped`): Tagesmittel der Spreizung im Heizbetrieb < −1 K bei mindestens 60 min Heizbetrieb. Im Heizbetrieb hebt die Wärmepumpe die Wassertemperatur; der Vorlauf ist wärmer als der Rücklauf (Physik). Abtauen ist ausgenommen (gemessen wird nur bei Betriebsart Heizen). Fehlalarm möglich, wenn der Vorlauf hinter einem Mischer gemessen wird.
 
-**e) Durchfluss 0 oder unplausibel bei laufendem Kompressor** (später): Durchfluss 0 über 15 min Heizbetrieb, oder Abweichung um mehr als den Faktor 10 von `Wärmeleistung / (1,163 Wh/(l·K) × Spreizung)` (spezifische Wärme von Wasser). Fängt Einheitenfehler wie bei HomeCom (l/h als „L/min“). Braucht eine Beobachtung, was `pc0flow` bei Warmwasser und Abtauen zeigt (Fixture), deshalb nicht im MVP.
+**e) Durchfluss 0 oder unplausibel bei laufendem Kompressor** (`flow_zero`, `flow_implausible`; umgesetzt für 0.1.1, siehe Anfang von Abschnitt 4): Durchfluss 0 über 15 min Heizbetrieb, oder Abweichung um mehr als den Faktor 10 von `Wärmeleistung / (1,163 Wh/(l·K) × Spreizung)` (spezifische Wärme von Wasser). Fängt Einheitenfehler wie bei HomeCom (l/h als „L/min“). Braucht eine Beobachtung, was `pc0flow` bei Warmwasser und Abtauen zeigt (Fixture), deshalb nicht im MVP; gemessen wird nur bei Betriebsart Heizen.
 
 ### 4.11 Grundlage: Tagesbuch
 
@@ -243,7 +243,7 @@ Attribut `field_reference` an „AZ Heizen+WW Saison“: Fraunhofer ISE WP-QS (L
 
 ## 5. Rangfolge
 
-Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf).
+Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf). Bewertung vor der Umsetzung; was inzwischen umgesetzt ist, steht oben unter „Stand“.
 
 | Rang | Prüfung | Nutzen | Robustheit | Daten heute | Anzeige |
 | --- | --- | --- | --- | --- | --- |
@@ -273,7 +273,7 @@ Warum diese: Alle gehen mit den heutigen Daten, ohne neues Signal und ohne Tages
 
 ## 7. Texte (Deutsch) für das MVP
 
-Englisch entsteht wie immer über `tools/make_strings.py`.
+Englisch entsteht wie immer über `tools/make_strings.py`. Die Texte hier sind der Entwurf; maßgeblich sind die in `tools/make_strings.py` (dort u. a. ohne `{mode}` und mit zwei Hinweisen für die Außentemperatur).
 
 ### Reparaturhinweise
 
@@ -302,7 +302,7 @@ README: „An, wenn der Heizstab in den letzten 7 Tagen an Tagen mit einem Mitte
 
 **„Effizienz gesunken“** (`efficiency_drop`, Problem)
 
-README: „An, wenn die Arbeitszahl Heizen dieser Saison bei gleicher Außentemperatur mindestens 15 % unter der Vorsaison liegt; aus erst unter 10 %. Verglichen werden nur 2-K-Klassen der Kennlinie, die es in beiden Saisons gibt. Häufigster harmloser Grund: eine steilere Heizkurve oder höhere Raumtemperatur. Sonst lohnt ein Blick auf Heizstab-Anteil, Verdampfer (Laub, Schmutz) und Filter; bleibt es, frag deinen Fachbetrieb. Unbekannt ohne Vorsaison in der Langzeitstatistik oder mit weniger als 2 gemeinsamen Klassen und 14 Tagen.“
+README: „An, wenn die Arbeitszahl Heizen dieser Saison bei gleicher Außentemperatur mindestens 15 % unter der Vorsaison liegt; aus erst unter 10 %. Verglichen werden nur Außentemperatur-Bereiche der Kennlinie, die es in beiden Saisons gibt. Häufigster harmloser Grund: eine steilere Heizkurve oder höhere Raumtemperatur. Sonst lohnt ein Blick auf Heizstab-Anteil, Verdampfer (Laub, Schmutz) und Filter; bleibt es, frag deinen Fachbetrieb. Unbekannt ohne Vorsaison in der Langzeitstatistik oder mit weniger als 4 K gemeinsamem Bereich und 14 Tagen.“
 
 Gründe für „unbekannt“ (Attribut `reason`):
 
@@ -311,10 +311,12 @@ Gründe für „unbekannt“ (Attribut `reason`):
 | `no_outdoor_temp` | keine Außentemperatur zugeordnet |
 | `no_aux_counter` | kein Heizstab-Zähler zugeordnet |
 | `no_previous_season` | keine Vorsaison in der Langzeitstatistik |
-| `too_few_classes` | weniger als 2 gemeinsame Temperaturklassen |
+| `too_few_classes` | weniger als 4 K gemeinsamer Temperaturbereich (seit 0.1.0b8; vorher 2 gemeinsame Klassen) |
 | `too_few_days` | zu wenige Tage im Vergleich |
 | `too_little_electricity` | zu wenig Strom für einen sicheren Vergleich |
 | `not_analysed_yet` | noch nicht gerechnet (2 min nach dem Start, dann täglich gegen 3 Uhr) |
+| `comparison_restarted` | Vergleich neu gestartet (Schaltfläche), die neue Basis sammelt noch 28 Tage |
+| `too_few_charges` | „Heizstab bei Warmwasserladungen“: weniger als 10 normale Ladungen in 30 Tagen |
 
 ## 8. Einstellungen
 
@@ -324,7 +326,9 @@ Wenige, mit Vorgabe und Quelle wie die bestehenden:
 | --- | --- | --- | --- |
 | Heizstab: milde Witterung ab | 5 °C | 4.2 | eigene Annahme; Anlagen mit hoher Normaußentemperatur (Küste) wollen eher höher |
 | Effizienz gesunken ab | 15 % | 4.1 | eigene Annahme; die Rückstellung liegt fest 5 Punkte darunter |
-| Nennleistung bei A−7/W35 (optional, später) | – | 4.7 | Datenblatt |
+| Thermische Desinfektion ab | 60 °C | 4.9 | DVGW W 551; einstellbar, weil der Speicherfühler nicht der Austritt ist |
+| Heizleistung bei A−7/W35 (optional, Abschnitt Heizlast) | – | 4.7 | Datenblatt |
+| Kleinste Heizleistung (optional, Abschnitt Heizlast) | – | 4.7 | Datenblatt |
 
 Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten, nicht der Anlage) und die 2-kWh-Menge in 4.2. Abschalten einer Prüfung geht über das Deaktivieren der Entität; Reparaturhinweise lassen sich in HA ignorieren.
 
@@ -340,13 +344,13 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 ## 10. Offene Fragen
 
 - Schwellen 15 % (4.1) und 5 °C/2 kWh (4.2) nach dem ersten Winter an der Anlage des Inhabers prüfen.
-- Problem-Sensoren mit `entity_category: diagnostic` (nicht auf automatischen Dashboards) oder ohne, wie „Auffälliges Takten“?
+- ~~Problem-Sensoren mit `entity_category: diagnostic` oder ohne?~~ Entschieden 2026-10-27: ohne, wie „Auffälliges Takten“ (`ENTWICKLUNG.md` §6).
 - Soll 4.1 auch Heizen + Warmwasser vergleichen? Warmwasser schwankt mit Kaltwassertemperatur und Verbrauch; deshalb vorerst nur Heizen.
-- Braucht 4.1 eine Möglichkeit, den Vergleich nach einer gewollten Änderung der Heizkurve zurückzusetzen (Aktion oder Datum „Vergleich ab“)? Vorerst nur der Hinweis im Text.
+- ~~Braucht 4.1 eine Möglichkeit, den Vergleich nach einer gewollten Änderung der Heizkurve zurückzusetzen?~~ Umgesetzt in 0.1.0b7: Schaltfläche „Effizienzvergleich neu starten“ (die nächsten 28 Tage werden die Vergleichsbasis).
 - WPsmart im Bestand: Bericht-URL und genaue Definition der „maximalen Vorlauftemperatur bei −3 °C“ nachtragen (in `ENTWICKLUNG.md` §3).
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.
 - Abtauen (4.3): Quelle für übliche Häufigkeit und Dauer suchen; ohne Feuchte bleibt es Attribut.
-- Tagesbuch (4.11): mit dem Inhaber abstimmen, bevor Stufe 3 (Warmwasser je Ladung) gebaut wird – beide brauchen es.
+- ~~Tagesbuch (4.11) mit dem Inhaber abstimmen~~ Erlaubt 2026-10-27 (`ENTWICKLUNG.md` §6), umgesetzt in 0.1.0b7.
 
 ## Quellen
 

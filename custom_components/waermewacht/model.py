@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from enum import StrEnum
 
 
@@ -45,6 +46,9 @@ class Signal(StrEnum):
     AUX_HEATING = "aux_heating"
     AUX_DHW = "aux_dhw"
     AUX_TOTAL = "aux_total"
+    # Compressor electricity of all modes in one meter (Waterkotte): booked
+    # to the mode running, like AUX_TOTAL.
+    ELEC_TOTAL = "elec_total"
     # Electricity a source books apart (Lambda, iDM): defrosts belong to the
     # mode running (mostly heating), standby is standby.
     ELEC_DEFROST = "elec_defrost"
@@ -67,7 +71,7 @@ class Signal(StrEnum):
     FLOW_RATE = "flow_rate"
     DHW_TEMP = "dhw_temp"  # hot water storage, for charges and disinfection
     # No longer mapped (never evaluated); kept so entries that stored them
-    # before 0.1.0b9 still load.
+    # before 0.1.1 still load.
     HEAT_POWER = "heat_power"
     ELEC_POWER = "elec_power"
 
@@ -88,8 +92,19 @@ AUX_SIGNALS: dict[Mode, Signal] = {
 }
 ENERGY_SIGNALS: frozenset[Signal] = frozenset(
     {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
-    | {Signal.AUX_TOTAL, Signal.ELEC_DEFROST, Signal.ELEC_STANDBY}
+    | {Signal.AUX_TOTAL, Signal.ELEC_TOTAL, Signal.ELEC_DEFROST, Signal.ELEC_STANDBY}
 )
+
+
+def has_elec(entities: Collection[Signal], mode: Mode) -> bool:
+    """Whether `mode` gets electricity: its own meter, or the common one
+    for the modes with a heat meter (heating always)."""
+    if ELEC_SIGNALS[mode] in entities:
+        return True
+    return Signal.ELEC_TOTAL in entities and (
+        mode is Mode.HEATING or HEAT_SIGNALS[mode] in entities
+    )
+
 
 # Signals that make up the activity, besides the activity entity itself.
 ACTIVITY_PARTS: tuple[Signal, ...] = (

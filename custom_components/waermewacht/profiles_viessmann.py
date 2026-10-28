@@ -19,6 +19,23 @@ Two controller generations, see docs/ENTWICKLUNG.md:
 There is no heat counter in Home Assistant (PyViCare has no getter), so
 there are no ratios: cycling and electricity only.
 
+Split systems (Vitocal 200-A; PyViCare test data Vitocal200A_SystemController
+= device 0, Vitocal200A_OutdoorUnit = device 1, same gateway): the outdoor
+unit carries compressor, phase, starts and the heat pump flow, the system
+controller the electricity, hot water and heating circuits. Home Assistant
+makes two devices with two prefixes of the same gateway. Rule (group()):
+- Devices are told apart by registry entries, disabled ones included.
+- Per gateway (prefix up to the first "_"), only when exactly one device has
+  the compressor: the donor is the one other device without a burner that
+  has an energy signal the compressor device has no entity for at all.
+- With exactly one donor, its entities fill every signal the compressor
+  device has no entity for; the compressor device's own always win. The
+  match keeps the compressor device's prefix; the donor is no group of its
+  own any more.
+- Two compressor devices (two heat pumps) or several donors merge nothing:
+  the user picks by hand. A device with a burner (gas boiler of a hybrid)
+  is never a donor.
+
 The cloud's day values are said to start anew at midnight UTC (forum
 reports, unconfirmed). Counting days in UTC is the safe choice: if the cloud
 uses local midnight after all, a day's first value is only booked an hour or
@@ -28,8 +45,10 @@ the wrong day.
 
 from __future__ import annotations
 
-from .model import Activity, Signal
-from .profiles import Template
+from collections.abc import Iterable
+
+from .model import ENERGY_SIGNALS, Activity, Signal
+from .profiles import RegistryEntry, Template
 
 # Compressor phase after vicare's normalize_state ("-" -> "_"), Vitotronic
 # vocabulary (setPhase enum in PyViCare test data Vitocal 300-G, 333-G,
@@ -49,8 +68,72 @@ VICARE_ACTIVITY: dict[str, Activity | None] = {
 # E3 vocabulary: "ready" is reported while the compressor runs as well.
 VICARE_FOREIGN = frozenset({"ready", "not_ready"})
 
+# Keys of a gas or oil burner (binary_sensor burner_active-N, sensor
+# burner_starts-N ...): such a device is a boiler, never a donor.
+_BURNER = "burner_"
+
+
+class ViCareTemplate(Template):
+    """Groups by device; a split system's controller joins its outdoor unit
+    (rule in the module docstring)."""
+
+    def group(
+        self, entries: Iterable[RegistryEntry]
+    ) -> dict[str, dict[tuple[str, str], str]]:
+        entries = list(entries)
+        by_prefix = super().group(entries)
+        # Every (domain, key) per device, disabled entries included.
+        known: dict[str, set[tuple[str, str]]] = {}
+        for entry in entries:
+            if entry.platform != self.platform:
+                continue
+            if (parts := self.split(entry.unique_id)) is not None:
+                domain = entry.entity_id.split(".", 1)[0]
+                known.setdefault(parts[0], set()).add((domain, parts[1]))
+        gateways: dict[str, list[str]] = {}
+        for prefix in sorted(known):
+            gateways.setdefault(prefix.partition("_")[0], []).append(prefix)
+        for prefixes in gateways.values():
+            self._merge(by_prefix, known, prefixes)
+        return by_prefix
+
+    def _merge(
+        self,
+        by_prefix: dict[str, dict[tuple[str, str], str]],
+        known: dict[str, set[tuple[str, str]]],
+        prefixes: list[str],
+    ) -> None:
+        """Fill the compressor device of one gateway from its single donor."""
+        compressor = set(self.signals[Signal.COMPRESSOR])
+        pumps = [p for p in prefixes if known[p] & compressor]
+        if len(pumps) != 1 or pumps[0] not in by_prefix:
+            return
+        pump = pumps[0]
+        lacking = [
+            signal
+            for signal, candidates in self.signals.items()
+            if not known[pump].intersection(candidates)
+        ]
+        energy = {c for s in lacking if s in ENERGY_SIGNALS for c in self.signals[s]}
+        donors = [
+            p
+            for p in prefixes
+            if p != pump
+            and not any(key.startswith(_BURNER) for _, key in known[p])
+            and energy.intersection(by_prefix.get(p, ()))
+        ]
+        if len(donors) != 1:
+            return
+        donor = by_prefix.pop(donors[0])
+        found = by_prefix[pump]
+        for signal in lacking:
+            for candidate in self.signals[signal]:
+                if candidate in donor:
+                    found[candidate] = donor[candidate]
+
+
 _S, _B = "sensor", "binary_sensor"
-VICARE = Template(
+VICARE = ViCareTemplate(
     experimental=True,
     key="vicare",
     label="Viessmann ViCare",

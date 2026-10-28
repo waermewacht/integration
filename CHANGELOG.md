@@ -4,21 +4,23 @@
 
 **Neue Hersteller (beta, aus dem Quellcode der Integrationen, noch ohne echte Anlage bestätigt):**
 
-- **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
+- **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen. Neuer Reparaturhinweis „Betriebsart-Entität ohne Betriebsart“ (E3-Regler melden nur „ready“ / „not_ready“).
 - **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte. MELCloud meldet die Summen des Vortags; Wärmewacht bucht sie in den Vortag.
 - **Vaillant myVAILLANT** (`mypyllant`): Arbeitszahlen Stunde für Stunde aus der Statistik von mypyllant, ohne Takte. Neue Reparaturhinweise „keine neuen Energiewerte“ und „Energie-Entitäten haben ihre Bedeutung geändert“.
 - **Mitsubishi Ecodan über die F1p-Brücke** (MQTT, CN105): Arbeitszahlen, Takte und Abtauungen; Energie als Vortageswert.
-- **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus.
+- **Mitsubishi Ecodan mit ESPHome-Firmware** ([esphome-ecodan-hp](https://github.com/gekkekoe/esphome-ecodan-hp)): wie die F1p-Brücke, ohne Startzähler. Erkannt an den Firmware-Namen der Entitäten in allen 14 Sprachen.
+- **Waterkotte** (`waterkotte_heatpump`, EcoTouch): Arbeitszahlen, Takte. Der Kompressorstrom kommt nur als Jahressumme für alle Betriebsarten; Wärmewacht ordnet ihn der laufenden Betriebsart zu (neues Feld „Strom Kompressor gesamt“ im Abschnitt Betrieb).
+- **Viessmann Vitocal 200-A** (geteilt in Außengerät und Systemsteuerung): Die ViCare-Vorlage führt beide Geräte zu einer Wärmepumpe zusammen.
+- **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus. Dafür gibt es im Abschnitt Betrieb die neuen Felder „Strom Abtauen“ und „Strom Stillstand“.
 - Einrichtung auch nur mit Kompressor: dann Takte und Strom ohne Arbeitszahl. Strom ohne Wärmezähler zählt als Laufstrom.
 
 **Gesundheits-Check:**
 
-- **„Effizienz gesunken“** vergleicht auch zusammengefasste Außentemperatur-Klassen (am Saisonanfang üblich) mit der Summe der Klassen der anderen Saison. Statt „mindestens 2 gemeinsame Klassen“ gilt „mindestens 4 K gemeinsamer Bereich“.
 - **Neue Reparaturhinweise:** „Vor- und Rücklauf vertauscht?“ (Spreizung beim Heizen einen Tag lang unter −1 K), „Durchfluss unplausibel“ (Faktor 10 gegen Wärme und Spreizung), „Durchfluss 0 beim Heizen“ (15 Minuten).
 - **Neue Kennwerte:** „Spreizung 7 Tage“ (kalte Tage), „Leistung je Heizlast“ (mit den neuen Einstellungen Heizleistung bei A−7/W35 und kleinste Heizleistung), „Vorlauf bei 0 °C“ (die Heizkurve, mit dem Wert der Vorsaison), „Starts Saison“ mit Starts je Tag.
 - **Neue Attribute:** Anstieg des Stillstands (`rising`), Abtauungen der letzten 7 Tage und je Außentemperatur-Klasse gegen die Vorsaison.
 
-**Warmwasser, Gradtage, Kosten:**
+**Gradtage, Kosten:**
 
 - **Wärme je Gradtag** zählt nur Heiztage (ab 1 kWh Heizwärme am Tag). Kühle Tage ohne Heizbetrieb drückten den Wert bisher auf ein Drittel, wenn die Heizung erst im Oktober anlief. Ohne Heizwärme ist er unbekannt statt 0.
 - **Kosten-Sensoren** nennen im Attribut `period_start`, ab wann Monat bzw. Saison zählen.
@@ -28,6 +30,7 @@
 - **Laufzeit heute** in Minuten statt Stunden, wie alle anderen Dauern.
 - **Weniger Schreibvorgänge:** Stromkosten in 10-Cent-Schritten, Ersparnis ggü. Gaskessel in ganzen Euro (wie angezeigt), Laufzeit heute in 5-Minuten-Schritten. Gemessen vorher: 78 Zustände pro Stunde für 98 Entitäten, ein Viertel aus Kosten und Ersparnis.
 - **Diagnose-Datei:** Buchungsart der Vorlage, Zeitpunkt der letzten Zählerwerte, Stand der Stundenbuchung, letzte Tagebuch-Einträge. Die Entity-IDs der Zuordnung sind jetzt ebenfalls maskiert.
+- **„Zähler hängt“ bei Vortageswerten** (F1p, ESPHome) erst nach 30 Stunden Laufzeit ohne neuen Wert statt nach 6: Diese Zähler steigen nur einmal am Tag.
 - **Vorlagen ohne Wärme- und Stromleistung:** Wärmewacht hat sie nie ausgewertet, und beim Neu-Konfigurieren gingen sie verloren.
 
 **Beim Update beachten:**

@@ -37,7 +37,7 @@ from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
 from .heat_load import heat_load_as_dict
 from .heating_curve import flow_curve_as_dict
-from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
+from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
 from .periods import RATIO_PERIODS, Period
 from .runtime import HeatPumpRuntime
 
@@ -59,10 +59,7 @@ def _has(*signals: Signal) -> Needs:
 
 
 def _mode_complete(runtime: HeatPumpRuntime, mode: Mode) -> bool:
-    return (
-        HEAT_SIGNALS[mode] in runtime.entities
-        and ELEC_SIGNALS[mode] in runtime.entities
-    )
+    return HEAT_SIGNALS[mode] in runtime.entities and has_elec(runtime.entities, mode)
 
 
 # Ratios: scope -> (modes, function).
@@ -154,7 +151,9 @@ ENERGY = [
         for m in Mode
     ),
     *(
-        _energy_description(f"electricity_{m}", Kind.ELEC, m, _has(ELEC_SIGNALS[m]))
+        _energy_description(
+            f"electricity_{m}", Kind.ELEC, m, lambda r, m=m: has_elec(r.entities, m)
+        )
         for m in Mode
     ),
     HeatPumpSensorDescription(
@@ -391,8 +390,7 @@ def _heating_or_dhw(runtime: HeatPumpRuntime) -> bool:
 HAS_PRICE: Needs = lambda r: r.electricity_price is not None and _heating_or_dhw(r)  # noqa: E731
 # Electricity costs need no heat (ViCare: electricity and cycling only).
 HAS_ELEC_PRICE: Needs = lambda r: (  # noqa: E731
-    r.electricity_price is not None
-    and any(s in r.entities for s in ELEC_SIGNALS.values())
+    r.electricity_price is not None and any(has_elec(r.entities, m) for m in Mode)
 )
 EURO = "EUR"
 COSTS = [

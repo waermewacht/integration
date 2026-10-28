@@ -19,9 +19,9 @@ The electric booster and the LWZ cooling heat exist as totals only.
 
 Activity: there is no single activity entity, but four binary sensors from
 bits of the operating status register (is_heating, is_heating_water,
-is_cooling, evaporator_defrost). The core reads one activity entity, so
-ACTIVITY is not among the signals; ACTIVITY_FLAGS and activity_from_flags()
-describe the mapping for a core extension.
+is_cooling, evaporator_defrost). They are mapped as DEFROST_FLAG, DHW_FLAG,
+COOLING_FLAG and HEATING_FLAG; ACTIVITY_FLAGS and activity_from_flags()
+document their order and are checked against the core in the tests.
 """
 
 from __future__ import annotations

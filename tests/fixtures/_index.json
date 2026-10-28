@@ -63,5 +63,20 @@
     "source": "Derived from the source code of F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT v7.1.1 (commit e2ab484, 2026-10-23) on 2026-10-28 (MQTTDiscovery.h, MQTTConfig.h, ECODAN_Bridge.ino, EcodanDecoder.h/.cpp); not read from a real installation.",
     "real": "unique id format '<key><deviceId>' (platform mqtt) incl. keys without '_', entity domains, units, device and state classes (kWh energy without state_class), English entity names giving 'sensor.ecodan_ashp_<name>', the values of System Operation Mode and Defrost.",
     "made_up": "deviceId 'abcdef123456', every state value, the subset of entities."
+  },
+  "vicare_vitocal200a.json": {
+    "source": "As vicare_vitocal250a.json, with PyViCare test data Vitocal200A_SystemController.json (device 0) and Vitocal200A_OutdoorUnit.json (device 1) at openviess/PyViCare 90c102f (2026-10-27): a split E3 heat pump, two devices of one gateway.",
+    "real": "which entities land on which device (compressor, phase, starts, secondary circuit supply on the outdoor unit; electricity, DHW storage, heating circuit, SPF on the system controller), unique id format with two prefixes of one gateway, keys, units, device and state classes, entities disabled by default, phase 'null' and the setPhase enum of the outdoor unit.",
+    "made_up": "gateway and device serials, the model names 'Vitocal 200A' / 'Vitocal 200A Outdoor' in the entity ids, every state value; subset of the entities."
+  },
+  "waterkotte_ecotouch.json": {
+    "source": "Derived from the source code of marq24/ha-waterkotte 2026.10.7 (commit 311382f, 2026-10-24) on 2026-10-28 (__init__.py, const.py, binary_sensor.py, sensor.py, config_flow.py, translations/de.json, pywaterkotte_ha/tags.py); EcoTouch without the option add_serial_as_id; not read from a real installation.",
+    "real": "unique id format 'waterkotte_heatpump.<key>[_<serial>]' (lower case, platform waterkotte_heatpump), entity ids 'wkh_[<serial>_]<key>', keys, units, device and state classes (yearly sums, total_increasing), entities disabled by default, German entity names, binary states on/off.",
+    "made_up": "the serial, the device name 'Waterkotte', every state value, the subset of entities."
+  },
+  "esphome_ecodan.json": {
+    "source": "Derived from the source code of gekkekoe/esphome-ecodan-hp main 30eb1b4 (2026-10-28; confs/base.yaml, energy.yaml, request-codes.yaml, ecodan-labels-*.yaml, components/ecodan) with Home Assistant core esphome dev 33ee669 and aioesphomeapi 46.21.0 (build_unique_id); not read from a real installation.",
+    "real": "unique id format version 3 '<MAC>/<device id>/<type>/<name>' (platform esphome), English entity names (labels of ecodan-labels-en.yaml) as original_name, entity domains (text sensor -> sensor), units, device and state classes, the operation mode words, the select whose German label equals the operation mode's.",
+    "made_up": "MAC, entity ids (device name ecodan-heatpump), every state value, the selection of entities."
   }
 }

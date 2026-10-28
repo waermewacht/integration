@@ -18,14 +18,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WaermewachtConfigEntry
 from .entity import HeatPumpEntity
-from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
+from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
 from .runtime import HeatPumpRuntime
 
 
 def _heating(runtime: HeatPumpRuntime) -> bool:
     return (
         HEAT_SIGNALS[Mode.HEATING] in runtime.entities
-        and ELEC_SIGNALS[Mode.HEATING] in runtime.entities
+        and has_elec(runtime.entities, Mode.HEATING)
         and Signal.OUTDOOR_TEMP in runtime.entities
     )
 

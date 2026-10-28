@@ -1,7 +1,7 @@
 """Signals a template learned after an entry was set up. Pure Python.
 
 A template gains signals over time (the hot water temperature in 0.1.0b8,
-defrost and standby electricity in 0.1.0b9). An existing entry does not get
+defrost and standby electricity in 0.1.1). An existing entry does not get
 them by itself; the user would have to reconfigure. Instead, at setup the
 signals the template offers now but did not offer when the entry was last
 set up or reconfigured are taken over, if the template finds them for the

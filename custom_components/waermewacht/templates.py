@@ -8,6 +8,7 @@ import from profiles.py without a cycle.
 from __future__ import annotations
 
 from .profiles import BOSCH_HOMECOM, EMS_ESP, Template
+from .profiles_esphome_ecodan import ESPHOME_ECODAN
 from .profiles_f1p import F1P
 from .profiles_heishamon import HEISHAMON
 from .profiles_idm import IDM
@@ -17,6 +18,7 @@ from .profiles_melcloud import MELCLOUD
 from .profiles_stiebel import STIEBEL_ISG
 from .profiles_vaillant import VAILLANT
 from .profiles_viessmann import VICARE
+from .profiles_waterkotte import WATERKOTTE
 
 TEMPLATES: dict[str, Template] = {
     t.key: t
@@ -32,5 +34,7 @@ TEMPLATES: dict[str, Template] = {
         MELCLOUD,
         VAILLANT,
         F1P,
+        WATERKOTTE,
+        ESPHOME_ECODAN,
     )
 }

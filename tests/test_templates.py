@@ -24,6 +24,9 @@ FIXTURES = {
     "melcloud_ecodan.json": "melcloud",
     "vaillant_mypyllant_arotherm.json": "mypyllant",
     "f1p_ecodan.json": "f1p",
+    "vicare_vitocal200a.json": "vicare",
+    "waterkotte_ecotouch.json": "waterkotte",
+    "esphome_ecodan.json": "esphome_ecodan",
 }
 
 

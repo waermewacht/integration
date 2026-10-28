@@ -208,6 +208,10 @@ FIELDS = {
     ),
     "activity": ("Activity", "Betriebsart (Aktivität)"),
     "starts_total": ("Compressor starts total", "Kompressorstarts gesamt"),
+    "elec_total": (
+        "Compressor electricity total (only without per mode)",
+        "Strom Kompressor gesamt (nur ohne Aufteilung je Modus)",
+    ),
     "aux_total": (
         "Backup heater total (only without per mode)",
         "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)",
@@ -246,6 +250,7 @@ SECTIONS = {
             "compressor",
             "activity",
             "starts_total",
+            "elec_total",
             "aux_total",
             "elec_defrost",
             "elec_standby",
@@ -321,8 +326,8 @@ def build(lang: int) -> dict:
                     "title": t(("Set up a heat pump", "Wärmepumpe einrichten")),
                     "description": t(
                         (
-                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates (EMS-ESP, Bosch HomeCom) found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
-                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen (EMS-ESP, Bosch HomeCom) haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
+                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
                         )
                     ),
                     "data": {
@@ -369,6 +374,12 @@ def build(lang: int) -> dict:
                     (
                         "Backup heater either per mode or as total, not both.",
                         "Heizstab entweder je Modus oder gesamt, nicht beides.",
+                    )
+                ),
+                "elec_twice": t(
+                    (
+                        "Compressor electricity either per mode or as total, not both.",
+                        "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
                     )
                 ),
             },

@@ -57,7 +57,14 @@ from .const import (
 )
 from .counter import UNIT_FACTORS
 from .health import DROP_PERCENT, MILD_FROM
-from .model import AUX_SIGNALS, ELEC_SIGNALS, ENERGY_SIGNALS, HEAT_SIGNALS, Signal
+from .model import (
+    AUX_SIGNALS,
+    ELEC_SIGNALS,
+    ENERGY_SIGNALS,
+    HEAT_SIGNALS,
+    Signal,
+    has_elec,
+)
 from .profiles import Match, RegistryEntry, drop_foreign_activity, find
 from .templates import TEMPLATES
 
@@ -70,6 +77,7 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.COMPRESSOR,
         Signal.ACTIVITY,
         Signal.STARTS_TOTAL,
+        Signal.ELEC_TOTAL,
         Signal.AUX_TOTAL,
         Signal.ELEC_DEFROST,
         Signal.ELEC_STANDBY,
@@ -169,9 +177,9 @@ def flatten(user_input: dict[str, Any]) -> dict[str, str]:
 
 def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
     """Error key, or None if the mapping can be used."""
+    signals = {Signal(key) for key in entities}
     complete = any(
-        HEAT_SIGNALS[m].value in entities and ELEC_SIGNALS[m].value in entities
-        for m in HEAT_SIGNALS
+        HEAT_SIGNALS[m] in signals and has_elec(signals, m) for m in HEAT_SIGNALS
     )
     # Without a complete mode: cycling (and electricity) only, which needs
     # the compressor.
@@ -181,6 +189,10 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         s.value in entities for s in AUX_SIGNALS.values()
     ):
         return "aux_twice"  # the backup heater would be booked twice
+    if Signal.ELEC_TOTAL.value in entities and any(
+        s.value in entities for s in ELEC_SIGNALS.values()
+    ):
+        return "elec_twice"
     for signal in ENERGY_SIGNALS:
         if (entity_id := entities.get(signal.value)) is None:
             continue
@@ -353,7 +365,12 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         unique_id = self._unique_id or next(
             entities[s.value]
-            for s in (*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), Signal.COMPRESSOR)
+            for s in (
+                *HEAT_SIGNALS.values(),
+                *ELEC_SIGNALS.values(),
+                Signal.ELEC_TOTAL,
+                Signal.COMPRESSOR,
+            )
             if s.value in entities
         )
         await self.async_set_unique_id(unique_id)

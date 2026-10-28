@@ -132,6 +132,7 @@ from .model import (
     Activity,
     Mode,
     Signal,
+    has_elec,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .profiles import EMS_ESP, RegistryEntry, Template, find, parse_compressor
@@ -186,6 +187,8 @@ ISSUE_GRACE = timedelta(minutes=10)
 # day values (hours late) get more time. Own assumptions with a wide margin.
 STUCK_DECIMAL = timedelta(minutes=60)
 STUCK_COARSE = timedelta(hours=6)
+# Previous-day values move once a day: more than a day of running.
+STUCK_PREVIOUS_DAY = timedelta(hours=30)
 UNAVAILABLE_LIMIT = timedelta(minutes=60)
 # After "restart comparison" the first weeks are the new reference.
 RESTART_BASELINE = timedelta(days=28)
@@ -968,7 +971,7 @@ class HeatPumpRuntime:
             if self.has_activity and mode is not None:
                 keys = [
                     s.value
-                    for s in (HEAT_SIGNALS[mode], ELEC_SIGNALS[mode])
+                    for s in (HEAT_SIGNALS[mode], ELEC_SIGNALS[mode], Signal.ELEC_TOTAL)
                     if s in self.counters
                 ]
             else:
@@ -989,6 +992,8 @@ class HeatPumpRuntime:
                 s not in self.decimal for s in signals
             )
             limit = STUCK_COARSE if coarse else STUCK_DECIMAL
+            if self.template.previous_day:
+                limit = STUCK_PREVIOUS_DAY
             if seconds >= limit.total_seconds():
                 stuck.extend(self.entities[s] for s in signals)
         longest = max(self._stuck_seconds.values(), default=0.0)
@@ -1239,17 +1244,13 @@ class HeatPumpRuntime:
 
     @property
     def elec_modes(self) -> list[Mode]:
-        """Modes with an electricity counter."""
-        return [m for m in Mode if ELEC_SIGNALS[m] in self.entities]
+        """Modes with electricity (own counter or the common one)."""
+        return [m for m in Mode if has_elec(self.entities, m)]
 
     @property
     def modes(self) -> list[Mode]:
-        """Modes with a heat and an electricity counter."""
-        return [
-            m
-            for m in Mode
-            if HEAT_SIGNALS[m] in self.entities and ELEC_SIGNALS[m] in self.entities
-        ]
+        """Modes with a heat counter and electricity."""
+        return [m for m in self.elec_modes if HEAT_SIGNALS[m] in self.entities]
 
     async def async_report(self, start: datetime, end: datetime) -> dict[str, Any]:
         """Figures for [start, end) from the long-term statistics.
@@ -1391,7 +1392,7 @@ class HeatPumpRuntime:
         """Whether standby can be told apart for a metered mode: from its
         heat, or from the compressor with live counters."""
         return any(
-            ELEC_SIGNALS[m] in self.entities
+            has_elec(self.entities, m)
             and (
                 m in self.heat_modes
                 or (not self.template.day_values and Signal.COMPRESSOR in self.entities)
@@ -1408,7 +1409,7 @@ class HeatPumpRuntime:
             and not self.template.day_values
             and not self.hourly
             and HEAT_SIGNALS[Mode.DHW] in self.entities
-            and ELEC_SIGNALS[Mode.DHW] in self.entities
+            and has_elec(self.entities, Mode.DHW)
         )
 
     def charge_split(self, now: datetime) -> DisinfectionSplit:
@@ -1557,6 +1558,12 @@ class HeatPumpRuntime:
         if signal is Signal.AUX_TOTAL:
             mode = self.tracker.mode or Mode.HEATING
             kind = Kind.AUX
+        elif signal is Signal.ELEC_TOTAL:
+            # One meter for all modes: the mode running, else heating.
+            mode = self.tracker.mode
+            if mode is None or not has_elec(self.entities, mode):
+                mode = Mode.HEATING
+            kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
         elif signal is Signal.ELEC_DEFROST:
             # A defrost serves the mode that ran (Lambda, iDM count it apart).
             mode = self.tracker.mode or Mode.HEATING
@@ -1825,7 +1832,11 @@ class HeatPumpRuntime:
         """Step of the coarsest counter of the modes, in kWh."""
         if self.hourly:
             return 0.01  # unrounded hourly statistics
-        signals = [s for m in modes for s in (HEAT_SIGNALS[m], ELEC_SIGNALS[m])]
+        signals = [
+            s
+            for m in modes
+            for s in (HEAT_SIGNALS[m], ELEC_SIGNALS[m], Signal.ELEC_TOTAL)
+        ]
         coarse = any(s in self.entities and s not in self.decimal for s in signals)
         return 1.0 if coarse else 0.01
 

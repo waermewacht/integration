@@ -8,7 +8,7 @@ import pytest
 
 from custom_components.waermewacht.backfill import energy_between, hour_totals
 from custom_components.waermewacht.energy import Kind
-from custom_components.waermewacht.model import Mode, Signal
+from custom_components.waermewacht.model import Mode, Signal, has_elec
 
 H0 = datetime(2026, 7, 15, 0, tzinfo=UTC)
 
@@ -37,6 +37,29 @@ def test_aux_total_goes_to_mode_with_most_heat() -> None:
     assert t.get(Kind.AUX, Mode.DHW) == pytest.approx(1.5)
     t = hour_totals({Signal.AUX_TOTAL: 1.0})
     assert t.get(Kind.AUX, Mode.HEATING) == pytest.approx(1.0)
+
+
+def test_elec_total_split_by_heat() -> None:
+    """One compressor meter for all modes (Waterkotte): split by the heat."""
+    t = hour_totals(
+        {Signal.HEAT_HEATING: 3.0, Signal.HEAT_DHW: 1.0, Signal.ELEC_TOTAL: 1.2}
+    )
+    assert t.get(Kind.ELEC, Mode.HEATING) == pytest.approx(0.9)
+    assert t.get(Kind.ELEC, Mode.DHW) == pytest.approx(0.3)
+    assert t.standby() == 0
+    t = hour_totals({Signal.HEAT_HEATING: 0.0, Signal.ELEC_TOTAL: 0.03})
+    assert t.get(Kind.STANDBY, Mode.HEATING) == pytest.approx(0.03)
+    assert t.electricity(*Mode) == 0
+
+
+def test_has_elec() -> None:
+    entities = {Signal.HEAT_HEATING, Signal.HEAT_DHW, Signal.ELEC_TOTAL}
+    assert has_elec(entities, Mode.HEATING)
+    assert has_elec(entities, Mode.DHW)
+    assert not has_elec(entities, Mode.COOLING)
+    assert has_elec({Signal.ELEC_TOTAL}, Mode.HEATING)
+    assert has_elec({Signal.ELEC_COOLING}, Mode.COOLING)
+    assert not has_elec({Signal.HEAT_COOLING}, Mode.COOLING)
 
 
 def test_energy_between() -> None:

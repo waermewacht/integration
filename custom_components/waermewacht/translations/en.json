@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up a heat pump",
-        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates (EMS-ESP, Bosch HomeCom) found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
         "data": {
           "name": "Name",
           "source": "Source"
@@ -48,6 +48,7 @@
               "compressor": "Compressor running (on/off or speed)",
               "activity": "Activity",
               "starts_total": "Compressor starts total",
+              "elec_total": "Compressor electricity total (only without per mode)",
               "aux_total": "Backup heater total (only without per mode)",
               "elec_defrost": "Electricity defrost",
               "elec_standby": "Electricity standby"
@@ -80,7 +81,8 @@
     "error": {
       "no_mode": "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
-      "aux_twice": "Backup heater either per mode or as total, not both."
+      "aux_twice": "Backup heater either per mode or as total, not both.",
+      "elec_twice": "Compressor electricity either per mode or as total, not both."
     },
     "abort": {
       "already_configured": "This heat pump is already set up.",

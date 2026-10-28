@@ -8,6 +8,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.waermewacht.const import (
@@ -24,6 +25,7 @@ from .test_init import START, tick, value
 S = "sensor.ecodan_"
 HEAT = S + "daily_heating_energy_produced"
 ELEC = S + "daily_heating_energy_consumed"
+COMPRESSOR = "binary_sensor.ecodan_compressor"
 
 
 @pytest.mark.freeze_time(START)
@@ -60,6 +62,41 @@ async def test_ratio_from_day_values_without_compressor(
     assert value(hass, entry, "electricity_heating") == pytest.approx(1.0)
     assert value(hass, entry, "standby") == 0
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(4.0)
+
+
+@pytest.mark.freeze_time(START)
+async def test_previous_day_counters_stuck_only_after_a_day_of_running(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Previous-day values rise once a day: hours of running without a new
+    value are normal (F1p, ESPHome Ecodan; template melcloud stands in)."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT, "10.0", ENERGY)
+    hass.states.async_set(ELEC, "3.0", ENERGY)
+    hass.states.async_set(COMPRESSOR, "on")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data={
+            CONF_NAME: "WP",
+            CONF_TEMPLATE: "melcloud",
+            CONF_ENTITIES: {
+                "heat_heating": HEAT,
+                "elec_heating": ELEC,
+                "compressor": COMPRESSOR,
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    key = f"{entry.entry_id}_counter_stuck"
+    await tick(hass, freezer, 11)
+    await tick(hass, freezer, 20 * 60)
+    assert issues.async_get_issue(DOMAIN, key) is None
+    await tick(hass, freezer, 11 * 60)
+    assert issues.async_get_issue(DOMAIN, key) is not None
 
 
 @pytest.mark.freeze_time(START)

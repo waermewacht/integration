@@ -153,6 +153,39 @@ async def test_manual_needs_one_complete_mode(hass: HomeAssistant) -> None:
     assert result["errors"] == {"base": "no_mode"}
 
 
+async def test_manual_elec_total_completes_a_mode(hass: HomeAssistant) -> None:
+    """Compressor electricity as one meter (Waterkotte), not with per mode."""
+    for entity_id in ("sensor.heat", "sensor.elec", "sensor.elec_heating"):
+        hass.states.async_set(entity_id, "1.0", ENERGY)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            **EMPTY_SECTIONS,
+            "heating": {
+                "heat_heating": "sensor.heat",
+                "elec_heating": "sensor.elec_heating",
+            },
+            "operation": {"elec_total": "sensor.elec"},
+        },
+    )
+    assert result["errors"] == {"base": "elec_twice"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            **EMPTY_SECTIONS,
+            "heating": {"heat_heating": "sensor.heat"},
+            "operation": {"elec_total": "sensor.elec"},
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
 async def test_manual_compressor_only_is_cycling(hass: HomeAssistant) -> None:
     """Without heat counters (ViCare): cycling and electricity only."""
     hass.states.async_set("binary_sensor.compressor", "off")

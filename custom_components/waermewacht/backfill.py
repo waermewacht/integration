@@ -63,6 +63,17 @@ def hour_totals(
             mode = Mode.HEATING
         totals.add(Kind.ELEC, mode, defrost)
     totals.add(Kind.STANDBY, Mode.HEATING, changes.get(Signal.ELEC_STANDBY, 0.0))
+    elec_total = changes.get(Signal.ELEC_TOTAL, 0.0)
+    if elec_total:
+        # One meter for all modes: split by the heat of the hour; an hour
+        # without heat is standby.
+        heat = sum(heat_by_mode.values())
+        if heat <= 0:
+            totals.add(Kind.STANDBY, Mode.HEATING, elec_total)
+        else:
+            for mode, part in heat_by_mode.items():
+                if part > 0:
+                    totals.add(Kind.ELEC, mode, elec_total * part / heat)
     aux_total = changes.get(Signal.AUX_TOTAL, 0.0)
     if aux_total:
         # One backup heater for all modes: the mode with the most heat that hour.
