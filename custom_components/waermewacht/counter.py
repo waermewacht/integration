@@ -68,6 +68,9 @@ class Counter:
 
     max_kw: float | None = None
     day_tz: tzinfo | None = None
+    # Day values of the previous day (MELCloud): a whole day of energy may
+    # arrive just after midnight.
+    previous_day: bool = False
     last_value: float | None = None
     last_time: datetime | None = None
 
@@ -125,6 +128,8 @@ class Counter:
         # Aware datetimes of different zones subtract in real time (23/25 h days).
         midnight = datetime.combine(day, time(0), tzinfo=self.day_tz)
         hours = (at - midnight).total_seconds() / 3600
+        if self.previous_day:
+            hours += 24
         return value <= self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH
 
     def as_dict(self) -> dict[str, Any]:

@@ -10,11 +10,13 @@ zone climates "<serial>-<zone>". Split at a known key at the end.
 
 Energy: the six "Daily ..." values of MELCloud's ListDevices (HA 2026.5+),
 kWh, total_increasing in HA; heat (produced) and all cooling values are
-disabled by default in melcloud. Booked as day values like Bosch HomeCom.
-Whether MELCloud reports today's running value (HA docs: "reset at
-midnight") or the previous day's (CN105 frames carry a date; one community
-report) is unconfirmed. If it is the previous day, each day is booked one
-day late; heat and electricity move together, so the ratios hold.
+disabled by default in melcloud. They are the previous day's totals
+(0.01 kWh), constant all day and changing once just after midnight:
+ListDevices dumps show DailyEnergyConsumedDate = yesterday next to them, a
+5-minute log of an Ecodan shows the value unchanged while it heated, and
+OpenEnergyMonitor users report the same (research 2026-10-28, see
+docs/ENTWICKLUNG.md). Wärmewacht books them into the previous day
+(previous_day); today's figures of this source stay empty.
 
 Left out on purpose: the compressor frequency (key "fan_frequency") comes
 from ListDevices, refreshed at most every 30 minutes: runs and starts from
@@ -81,4 +83,5 @@ MELCLOUD = DashSuffixTemplate(
     # No compressor signal (see above): heat and electricity of heating only.
     required=(Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     day_values=True,
+    previous_day=True,
 )

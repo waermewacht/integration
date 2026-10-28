@@ -77,6 +77,6 @@ def test_unique_ids(unique_id: str, expected: tuple[str, str] | None) -> None:
     assert MELCLOUD.split(unique_id) == expected
 
 
-def test_day_values_without_compressor() -> None:
-    assert MELCLOUD.day_values and MELCLOUD.experimental
+def test_previous_day_values_without_compressor() -> None:
+    assert MELCLOUD.day_values and MELCLOUD.previous_day and MELCLOUD.experimental
     assert MELCLOUD.required == (Signal.HEAT_HEATING, Signal.ELEC_HEATING)

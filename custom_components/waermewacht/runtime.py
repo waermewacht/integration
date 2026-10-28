@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
@@ -339,7 +339,14 @@ class HeatPumpRuntime:
         self.counters = (
             {}
             if self.hourly
-            else {s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz) for s in self._energy}
+            else {
+                s: Counter(
+                    max_kw=MAX_POWER_KW,
+                    day_tz=day_tz,
+                    previous_day=self.template.previous_day,
+                )
+                for s in self._energy
+            }
         )
         self._statistic_ids = self._source_statistic_ids()
         self.booked_until: datetime | None = None  # hourly: next hour to book
@@ -1500,9 +1507,20 @@ class HeatPumpRuntime:
                 kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
             else:
                 kind = Kind.AUX
-        self.totals.add(kind, mode, kwh)
+        self._add(kind, mode, kwh, at)
         if mode is Mode.DHW:
             self.charge_tracker.add(kind, kwh, at)
+
+    def _add(self, kind: Kind, mode: Mode, kwh: float, at: datetime) -> None:
+        """Book energy that arrived at `at`; a previous-day value goes into
+        the previous day (and its month and season)."""
+        self.totals.add(kind, mode, kwh)
+        if self.template.previous_day:
+            day = at.astimezone(self.tz).date() - timedelta(days=1)
+            noon = datetime.combine(day, time(12), tzinfo=self.tz)
+            booked = Totals()
+            booked.add(kind, mode, kwh)
+            self.marks.book_late(noon, booked)
 
     def _resolve_pending(self, now: datetime, final: bool = False) -> None:
         """Book waiting electricity of day values: standby when the same
@@ -1515,12 +1533,12 @@ class HeatPumpRuntime:
                 continue
             if mode not in self.heat_modes:
                 # No heat to tell standby from: running electricity.
-                self.totals.add(Kind.ELEC, mode, kwh)
+                self._add(Kind.ELEC, mode, kwh, at)
                 self._dirty = True
                 continue
             heat_at = self._heat_at.get(mode)
             running = heat_at is not None and heat_at >= at - SAME_FETCH
-            self.totals.add(Kind.ELEC if running else Kind.STANDBY, mode, kwh)
+            self._add(Kind.ELEC if running else Kind.STANDBY, mode, kwh, at)
             self._dirty = True
         self._pending = waiting
 

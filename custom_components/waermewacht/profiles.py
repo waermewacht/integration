@@ -56,6 +56,9 @@ class Template:
     day_values: bool = False
     # Time zone in which the day values start anew; None: local time.
     day_timezone: str | None = None
+    # The day values are the previous day's total (MELCloud): booked into
+    # the previous day.
+    previous_day: bool = False
     # Built from the integration's source code, not yet confirmed on a real
     # installation: shown as "(beta)" in the setup.
     experimental: bool = False

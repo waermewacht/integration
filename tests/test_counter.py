@@ -181,3 +181,18 @@ def test_units() -> None:
     assert to_kwh(1.5, "MWh") == 1500
     with pytest.raises(KeyError):
         to_kwh(1, "J")
+
+
+def test_previous_day_value_arrives_just_after_midnight() -> None:
+    """MELCloud: a whole day of energy right after midnight is plausible."""
+    counter = Counter(max_kw=20.0, day_tz=BERLIN, previous_day=True)
+    counter.update(30.0, datetime(2026, 1, 14, 0, 20, tzinfo=BERLIN))
+    update = counter.update(51.08, datetime(2026, 1, 15, 0, 21, tzinfo=BERLIN))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(51.08)
+    # A plain day counter would reject it as a jump.
+    plain = Counter(max_kw=20.0, day_tz=BERLIN)
+    plain.update(30.0, datetime(2026, 1, 14, 0, 20, tzinfo=BERLIN))
+    assert plain.update(51.08, datetime(2026, 1, 15, 0, 21, tzinfo=BERLIN)).event is (
+        CounterEvent.JUMP
+    )
