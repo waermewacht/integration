@@ -506,11 +506,13 @@ Die Entity-IDs hängen vom Namen des Eintrags ab (hier die Vorgabe „Wärmepump
 
 ### Statistik-Karte: Wärme und Strom je Monat
 
-Eine Arbeitszahl je Monat liefert der [Bericht](#bericht). Wärme und Strom je Monat zeigt eine Statistik-Karte:
+Eine Arbeitszahl je Monat liefert der [Bericht](#bericht). Wärme und Strom je Monat zeigt eine Statistik-Karte, der Stillstand als eigener Balken. Die Monate vor der Einrichtung stammen aus der Langzeitstatistik der Zähler:
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/monatsdiagramm.png" alt="Balkendiagramm Wärme und Strom je Monat für Heizen und Warmwasser, dazu der Stillstand" width="480">
 
 ```yaml
 type: statistics-graph
-title: Heizen je Monat
+title: Wärme und Strom je Monat
 chart_type: bar
 period: month
 stat_types:
@@ -518,9 +520,15 @@ stat_types:
 days_to_show: 365
 entities:
   - entity: sensor.warmepumpe_warme_heizen
-    name: Wärme
+    name: Wärme Heizen
+  - entity: sensor.warmepumpe_warme_warmwasser
+    name: Wärme Warmwasser
   - entity: sensor.warmepumpe_strom_heizen
-    name: Strom
+    name: Strom Heizen
+  - entity: sensor.warmepumpe_strom_warmwasser
+    name: Strom Warmwasser
+  - entity: sensor.warmepumpe_strom_stillstand
+    name: Stillstand
 ```
 
 ### AZ-Kennlinie und Energiesignatur
