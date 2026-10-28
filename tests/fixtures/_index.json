@@ -48,5 +48,10 @@
     "source": "As vicare_vitocal250a.json, with PyViCare test data Vitocal333G(-with-Vitovent300F).json and the HA snapshot of Vitocal222G_Vitovent300W: a Vitotronic heat pump without energy features.",
     "real": "as vicare_vitocal250a.json; the Vitotronic phase vocabulary (setPhase enum of Vitocal 300-G/333-G), the DHW charging binary sensor.",
     "made_up": "serials, the model name 'Vitocal_333G' in the entity ids, every state value; subset of the entities."
+  },
+  "melcloud_ecodan.json": {
+    "source": "Derived from the source code of the Home Assistant core integration melcloud (dev 8f785c4, 2026-10-28) with python-melcloud 0.1.3 on 2026-10-28 (entity.py, sensor.py, binary_sensor.py, water_heater.py, climate.py, strings.json, pymelcloud/atw_device.py); not read from a real installation.",
+    "real": "unique id format '<serial>-<mac>-<key>' (platform melcloud), zone 2 suffix '-zone-2', bare serial for the water heater and '<serial>-<zone>' for zone climates, keys, units, device and state classes, which entities melcloud disables by default, entity names from strings.json, the values of the status attribute.",
+    "made_up": "serial, MAC (format unverified), device and zone names, every state value, the air conditioner decoy."
   }
 }

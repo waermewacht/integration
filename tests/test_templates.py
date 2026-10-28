@@ -21,6 +21,7 @@ FIXTURES = {
     "idm_navigator20.json": "idm",
     "vicare_vitocal250a.json": "vicare",
     "vicare_vitocal333g.json": "vicare",
+    "melcloud_ecodan.json": "melcloud",
 }
 
 

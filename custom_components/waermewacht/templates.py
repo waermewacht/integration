@@ -12,6 +12,7 @@ from .profiles_heishamon import HEISHAMON
 from .profiles_idm import IDM
 from .profiles_lambda import LAMBDA
 from .profiles_luxtronik import LUXTRONIK
+from .profiles_melcloud import MELCLOUD
 from .profiles_stiebel import STIEBEL_ISG
 from .profiles_viessmann import VICARE
 
@@ -26,5 +27,6 @@ TEMPLATES: dict[str, Template] = {
         LAMBDA,
         IDM,
         VICARE,
+        MELCLOUD,
     )
 }
