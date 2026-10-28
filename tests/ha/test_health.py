@@ -265,10 +265,11 @@ async def test_flow_rate_zero_while_heating(
     entry = await setup(hass, flow_rate=flow_rate)
     hass.states.async_set(COMPRESSOR, "on")
     hass.states.async_set(ACTIVITY, "Heizen")
+    # Heating with a flow of 0 since the setup: 15 minutes are needed.
     await tick(hass, freezer, 11)
-    await tick(hass, freezer, 10)
-    assert issue(hass, entry, "flow_zero") is None  # 15 minutes needed
-    await tick(hass, freezer, 6)
+    await tick(hass, freezer, 3)
+    assert issue(hass, entry, "flow_zero") is None
+    await tick(hass, freezer, 2)
     found = issue(hass, entry, "flow_zero")
     assert found is not None
     assert found.translation_placeholders["entities"] == flow_rate

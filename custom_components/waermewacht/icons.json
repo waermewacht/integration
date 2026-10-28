@@ -167,6 +167,12 @@
       "flow_temp_today": {
         "default": "mdi:thermometer-water"
       },
+      "spread_7d": {
+        "default": "mdi:arrow-expand-vertical"
+      },
+      "oversize_factor": {
+        "default": "mdi:resize"
+      },
       "flow_at_zero": {
         "default": "mdi:chart-line-variant"
       },
