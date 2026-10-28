@@ -7,11 +7,17 @@ Sources of every name and value: docs/ENTWICKLUNG.md, section 4.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
+from functools import cached_property
 from typing import NamedTuple
 
 from .model import ACTIVITY_PARTS, Activity, Signal
+
+# "<gateway>-<key>" (Bosch HomeCom, HeishaMon "<entry id>-<TOPxx>"): split
+# at the first "-", keys may contain one ("dhw1-delta_t").
+DASH_ID = r"(?P<prefix>[^-]+)-(?P<key>.+)"
 
 
 class RegistryEntry(NamedTuple):
@@ -35,13 +41,16 @@ class Template:
     key: str
     label: str  # shown in the setup
     platform: str
-    # Device part of "[<prefix>_]<device>_<key>" unique ids (EMS-ESP:
-    # "boiler"); None for "<gateway>-<key>" (Bosch HomeCom).
-    device: str | None
     # Candidate keys per signal, preferred first: (entity domain, key).
     signals: dict[Signal, tuple[tuple[str, str], ...]]
     # Keys that must be present to call a device a heat pump of this template.
     required: tuple[Signal, ...]
+    # Format of the unique ids: a regular expression for the whole id with
+    # the groups "key" and, optionally, "prefix" (one heat pump each; missing
+    # means ""). "{key}" stands for the template's own keys, tried longest
+    # first, where the key cannot be told apart otherwise. With a group
+    # "domain", only keys of that entity domain count.
+    id_format: str = DASH_ID
     # None: the source itself does not know (ViCare "null").
     activity_values: dict[str, Activity | None] = field(default_factory=dict)
     # Values showing that the activity entity carries no activity on this
@@ -91,17 +100,28 @@ class Template:
 
     def split(self, unique_id: str) -> tuple[str, str] | None:
         """(prefix, key) of a unique id, None if it is not of this format."""
-        if self.device is None:
-            # Split at the first "-": keys may contain one ("dhw1-delta_t").
-            prefix, separator, key = unique_id.partition("-")
-            return (prefix, key) if separator and prefix and key else None
-        marker = f"{self.device}_"
-        if unique_id.startswith(marker):
-            return "", unique_id[len(marker) :]
-        position = unique_id.find(f"_{marker}")
-        if position <= 0:
-            return None
-        return unique_id[:position], unique_id[position + len(marker) + 1 :]
+        for pattern, domain in self._id_patterns:
+            match = pattern.fullmatch(unique_id)
+            if match is None or (domain is not None and match["domain"] != domain):
+                continue
+            return match.groupdict().get("prefix") or "", match["key"]
+        return None
+
+    @cached_property
+    def _id_patterns(self) -> tuple[tuple[re.Pattern[str], str | None], ...]:
+        """`id_format` compiled, once per key where it names them."""
+        if "{key}" not in self.id_format:
+            return ((re.compile(self.id_format), None),)
+        by_domain = "(?P<domain>" in self.id_format
+        candidates = {
+            (domain if by_domain else None, key)
+            for keys in self.signals.values()
+            for domain, key in keys
+        }
+        return tuple(
+            (re.compile(self.id_format.replace("{key}", re.escape(key))), domain)
+            for domain, key in sorted(candidates, key=lambda c: -len(c[1]))
+        )
 
     def parse_activity(self, state: str | None) -> Activity | None:
         """Map an activity state; None while unknown, OTHER if not recognized."""
@@ -240,7 +260,9 @@ EMS_ESP = Template(
     key="ems_esp",
     label="EMS-ESP",
     platform="mqtt",
-    device="boiler",
+    # "[<prefix>_]boiler_<key>"; the prefix is the MQTT base of the
+    # "multiple instances" format.
+    id_format=r"(?:(?P<prefix>(?!boiler_).+?)_)?boiler_(?P<key>.+)",
     signals={
         Signal.HEAT_HEATING: ((_S, "nrgheat"), (_S, "nrgsuppheating")),
         Signal.HEAT_DHW: (
@@ -300,7 +322,6 @@ BOSCH_HOMECOM = Template(
     key="bosch_homecom",
     label="Bosch HomeCom",
     platform="bosch_homecom",
-    device=None,
     signals={
         Signal.HEAT_HEATING: ((_S, "heat_produced_ch"),),
         Signal.HEAT_DHW: ((_S, "heat_produced_dhw"),),

@@ -27,44 +27,18 @@ starts, no backup heater energy.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from .model import Signal
 from .profiles import Template
 
-
-def split_dash_suffix(unique_id: str, keys: set[str]) -> tuple[str, str] | None:
-    """(prefix, key) of "<serial>-<mac>-<key>", None if no key fits.
-
-    The longest key first; the prefix must itself contain a "-" (serial and
-    MAC), which keeps "<gateway>-<key>" ids of other integrations out.
-    """
-    for key in sorted(keys, key=len, reverse=True):
-        marker = f"-{key}"
-        if unique_id.endswith(marker):
-            prefix = unique_id[: -len(marker)]
-            if "-" in prefix.strip("-"):
-                return prefix, key
-    return None
-
-
-@dataclass(frozen=True)
-class DashSuffixTemplate(Template):
-    """A template whose unique ids are "<serial>-<mac>-<key>"."""
-
-    def split(self, unique_id: str) -> tuple[str, str] | None:
-        return split_dash_suffix(
-            unique_id, {k for keys in self.signals.values() for _, k in keys}
-        )
-
-
 _S = "sensor"
-MELCLOUD = DashSuffixTemplate(
+MELCLOUD = Template(
     experimental=True,
     key="melcloud",
     label="Mitsubishi Ecodan (MELCloud)",
     platform="melcloud",
-    device=None,
+    # "<serial>-<mac>-<key>": the prefix holds a "-" itself, which keeps
+    # "<gateway>-<key>" ids of other integrations out.
+    id_format=r"(?P<prefix>.*[^-]-+[^-].*)-(?P<key>{key})",
     signals={
         Signal.HEAT_HEATING: ((_S, "daily_heating_energy_produced"),),
         Signal.HEAT_DHW: ((_S, "daily_hot_water_energy_produced"),),

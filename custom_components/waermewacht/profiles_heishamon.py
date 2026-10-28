@@ -15,7 +15,7 @@ pick the entities by hand).
 
 Unique ids are "<config entry id>-<topic id>" (`TOPxx`, `SETxx` for switches
 and selects, which also carry the TOP value). The entry id (UUID hex or ULID)
-has no "-", so `Template.split` with `device=None` fits as it is.
+has no "-", so the default `id_format` (split at the first "-") fits.
 
 Energy: HeishaMon delivers power per mode only (W, TOP15/16 heating, TOP38/39
 cooling, TOP40/41 DHW; on K/L series the extra block XTOP0-5, merged into the
@@ -36,7 +36,6 @@ HEISHAMON = Template(
     key="heishamon",
     label="HeishaMon (Panasonic Aquarea)",
     platform="aquarea",
-    device=None,
     signals={
         Signal.HEAT_HEATING: ((_S, "TOP15_integration"),),
         Signal.HEAT_DHW: ((_S, "TOP40_integration"),),

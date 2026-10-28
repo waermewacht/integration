@@ -144,7 +144,6 @@ VAILLANT = VaillantTemplate(
     key="mypyllant",
     label="Vaillant myVAILLANT",
     platform=PLATFORM,
-    device=None,
     signals={
         Signal.HEAT_HEATING: ((_S, "hp:heat_heating"),),
         Signal.HEAT_DHW: ((_S, "hp:heat_dhw"),),

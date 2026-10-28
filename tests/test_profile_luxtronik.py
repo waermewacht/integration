@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from custom_components.waermewacht.counter import UNIT_FACTORS
@@ -12,7 +14,7 @@ from custom_components.waermewacht.profiles import (
     RegistryEntry,
     find,
 )
-from custom_components.waermewacht.profiles_luxtronik import LUXTRONIK, split_suffix
+from custom_components.waermewacht.profiles_luxtronik import LUXTRONIK
 
 from .conftest import load_fixture
 
@@ -146,8 +148,14 @@ def test_unique_ids(unique_id: str, expected: tuple[str, str] | None) -> None:
 
 
 def test_longest_key_wins() -> None:
-    candidates = [("sensor", "energy"), ("sensor", "generator_energy")]
-    assert split_suffix("sensor.lux_generator_energy", candidates) == (
+    template = replace(
+        LUXTRONIK,
+        signals={
+            Signal.HEAT_HEATING: (("sensor", "energy"),),
+            Signal.HEAT_DHW: (("sensor", "generator_energy"),),
+        },
+    )
+    assert template.split("sensor.lux_generator_energy") == (
         "lux",
         "generator_energy",
     )

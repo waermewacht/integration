@@ -8,8 +8,7 @@ not yet checked against a real installation, so experimental.
 Unique ids are "<config entry id>_<key>" (`entity.build_entity_unique_id`):
 the register name for Modbus entities, "web_<value>" for values of the local
 web interface. The entry id (ULID, or UUID hex on old entries) has no "_",
-so the id splits at the first "_". `Template.split` only knows "-"
-(device=None) and the EMS-ESP format, hence `IdmTemplate` below.
+so the id splits at the first "_" (`id_format`).
 
 Energy: the Modbus registers 1748-1762 (`energy_heating`, `energy_dhw`,
 `energy_cooling`, `energy_total`, `energy_electric_heater`, ...) are heat
@@ -32,20 +31,8 @@ out, as its sign is not documented.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from .model import Activity, Signal
 from .profiles import Template, _words
-
-
-@dataclass(frozen=True)
-class IdmTemplate(Template):
-    """Template whose unique ids are "<entry id>_<key>"."""
-
-    def split(self, unique_id: str) -> tuple[str, str] | None:
-        prefix, separator, key = unique_id.partition("_")
-        return (prefix, key) if separator and prefix and key else None
-
 
 # hp_operating_mode (Modbus 1090; 1501 on Navigator 1.7) is a UCHAR enum
 # without a slug map: the sensor state is the English label of
@@ -64,12 +51,12 @@ IDM_ACTIVITY = _words(
 )
 
 _S, _B = "sensor", "binary_sensor"
-IDM = IdmTemplate(
+IDM = Template(
     experimental=True,
     key="idm",
     label="iDM (Navigator 2.0)",
     platform="idm_heatpump",
-    device=None,
+    id_format=r"(?P<prefix>[^_]+)_(?P<key>.+)",
     signals={
         # Web statistics first (same source as the electricity), the Modbus
         # heat quantities as fallback.

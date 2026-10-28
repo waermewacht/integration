@@ -31,42 +31,16 @@ from collections.abc import Mapping
 from .model import Activity, Signal
 from .profiles import Template
 
-# Config entry ids: ULID (26 characters) or, for old entries, a uuid4 in hex
-# (32). Neither contains "_", so the first "_" ends the prefix; keys contain
-# more of them ("produced_heating_total").
-_ENTRY_ID_MIN_LENGTH = 26
-
-
-def split_entry_id(unique_id: str) -> tuple[str, str] | None:
-    """(config entry id, key) of a "<entry id>_<key>" unique id, else None."""
-    prefix, separator, key = unique_id.partition("_")
-    if not separator or not key:
-        return None
-    if len(prefix) < _ENTRY_ID_MIN_LENGTH or not (
-        prefix.isascii() and prefix.isalnum()
-    ):
-        return None  # e.g. a leftover "stiebel_eltron_isg_<name>_<key>" id
-    return prefix, key
-
-
-class EntryIdTemplate(Template):
-    """Template for "<config entry id>_<key>" unique ids.
-
-    Stopgap until Template itself can be told the separator ("-" for Bosch
-    HomeCom, "_" here) and a pattern for the prefix.
-    """
-
-    def split(self, unique_id: str) -> tuple[str, str] | None:
-        return split_entry_id(unique_id)
-
-
 _S, _B = "sensor", "binary_sensor"
-STIEBEL_ISG = EntryIdTemplate(
+STIEBEL_ISG = Template(
     experimental=True,
     key="stiebel_isg",
     label="Stiebel Eltron / Tecalor ISG",
     platform="stiebel_eltron_isg",
-    device=None,
+    # Config entry id: ULID (26 characters) or, for old entries, a uuid4
+    # in hex (32), without "_"; keys contain more of them. A leftover
+    # "stiebel_eltron_isg_<name>_<key>" id does not fit.
+    id_format=r"(?P<prefix>[A-Za-z0-9]{26,})_(?P<key>.+)",
     signals={
         # Day-and-total counters (sensor.py ENERGY_SENSOR_TYPES and
         # LWZ_ENERGY_SENSOR_TYPES), kWh, total_increasing, enabled by default.

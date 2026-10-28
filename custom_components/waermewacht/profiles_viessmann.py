@@ -138,7 +138,6 @@ VICARE = ViCareTemplate(
     key="vicare",
     label="Viessmann ViCare",
     platform="vicare",
-    device=None,
     signals={
         # E3 only; today's sum of the cloud (0.1 kWh), enabled by default.
         Signal.ELEC_HEATING: ((_S, "energy_summary_consumption_heating_currentday"),),

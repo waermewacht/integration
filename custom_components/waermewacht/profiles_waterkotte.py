@@ -11,8 +11,8 @@ in lower case; with the setup option "add_serial_as_id" (several heat pumps,
 off by default) "waterkotte_heatpump.<key>_<serial>". The serial is
 "WE"/"00" plus digits (`_decode_ro_sn`), or a random uuid in hex when the
 controller reports none; neither contains "_". Entity ids are
-"<domain>.wkh_[<serial>_]<key>". `Template.split` has no such format;
-`WaterkotteTemplate` adds it here until the core does.
+"<domain>.wkh_[<serial>_]<key>". `id_format` tells key and serial apart by
+the known keys.
 
 Energy: every counter is the controller's sum of the current year (tags
 A444..A463, float word pairs, kWh with decimals, state class
@@ -40,57 +40,21 @@ No compressor start counter and no flow rate entity exist.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from .model import Signal
 from .profiles import Template
 
 PLATFORM = "waterkotte_heatpump"
-UNIQUE_ID_PREFIX = f"{PLATFORM}."
-# A serial suffix is alphanumeric with digits ("we0612345" or a uuid in
-# hex); key endings such as "_1h", "_24h" or "_setpoint" are none.
-_SERIAL_MIN_LENGTH = 5
-
-
-def _is_serial(text: str) -> bool:
-    return (
-        len(text) >= _SERIAL_MIN_LENGTH
-        and text.isascii()
-        and text.isalnum()
-        and any(c.isdigit() for c in text)
-    )
-
-
-def split_waterkotte(unique_id: str, keys: frozenset[str]) -> tuple[str, str] | None:
-    """(serial or "", key) of a Waterkotte unique id, None if no known key fits."""
-    if not unique_id.startswith(UNIQUE_ID_PREFIX):
-        return None
-    rest = unique_id[len(UNIQUE_ID_PREFIX) :]
-    if rest in keys:
-        return "", rest
-    key, separator, serial = rest.rpartition("_")
-    if separator and key in keys and _is_serial(serial):
-        return serial, key
-    return None
-
-
-@dataclass(frozen=True)
-class WaterkotteTemplate(Template):
-    """A template whose unique ids are "waterkotte_heatpump.<key>[_<serial>]"."""
-
-    def split(self, unique_id: str) -> tuple[str, str] | None:
-        return split_waterkotte(
-            unique_id, frozenset(k for cs in self.signals.values() for _, k in cs)
-        )
-
-
 _S, _B = "sensor", "binary_sensor"
-WATERKOTTE = WaterkotteTemplate(
+WATERKOTTE = Template(
     experimental=True,
     key="waterkotte",
     label="Waterkotte",
     platform=PLATFORM,
-    device=None,
+    # "waterkotte_heatpump.<key>[_<serial>]": the serial is alphanumeric
+    # with digits ("we0612345" or a uuid in hex); key endings such as
+    # "_1h" or "_setpoint" are none.
+    id_format=r"waterkotte_heatpump\.(?P<key>{key})"
+    r"(?:_(?P<prefix>(?=[A-Za-z0-9]*\d)[A-Za-z0-9]{5,}))?",
     signals={
         # Yearly sums in kWh (see above).
         Signal.HEAT_HEATING: ((_S, "heating_energy_production_year"),),

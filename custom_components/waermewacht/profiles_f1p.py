@@ -201,7 +201,11 @@ def split_key_prefix(unique_id: str) -> tuple[str, str] | None:
 
 @dataclass(frozen=True)
 class KeyPrefixTemplate(Template):
-    """A template whose unique ids are "<key><deviceId>"."""
+    """A template whose unique ids are "<key><deviceId>".
+
+    Code, not `id_format`: the first key the id starts with decides, even
+    when what follows is no deviceId (then the id belongs to no key).
+    """
 
     def split(self, unique_id: str) -> tuple[str, str] | None:
         return split_key_prefix(unique_id)
@@ -228,7 +232,6 @@ F1P = KeyPrefixTemplate(
     key="f1p",
     label="Mitsubishi Ecodan (F1p Ecodan Bridge)",
     platform="mqtt",
-    device=None,
     signals={
         # Previous day's totals, kWh, device class energy, no state class.
         Signal.HEAT_HEATING: ((_S, "ashp_delivered_heat_"),),

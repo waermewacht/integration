@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Intern:** Vorlagen beschreiben das Format ihrer unique_ids als Muster (`id_format`) statt mit eigenem Code; fünf Sonderklassen entfallen. Am Verhalten ändert sich nichts.
+
 ## 0.1.2 – 2026-10-28
 
 - **Leistung je Heizlast** wird wie die Arbeitszahlen als Zahl angezeigt (Dezimalkomma statt „1.56“) und bekommt Langzeitstatistik.

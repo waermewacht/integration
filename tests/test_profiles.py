@@ -133,6 +133,22 @@ def test_homecom_unique_ids(unique_id: str, expected: tuple[str, str] | None) ->
 
 
 @pytest.mark.parametrize(
+    ("unique_id", "expected"),
+    [
+        ("boiler_nrgheat", ("", "nrgheat")),
+        ("ems-esp_boiler_nrgheat", ("ems-esp", "nrgheat")),  # multiple instances
+        ("ems-esp2_boiler_dhw_nrg", ("ems-esp2", "dhw_nrg")),
+        ("boiler_x_boiler_y", ("", "x_boiler_y")),  # no prefix: the first "boiler_"
+        ("_boiler_nrgheat", None),
+        ("boiler_", None),
+        ("thermostat_hc1_seltemp", None),
+    ],
+)
+def test_ems_esp_unique_ids(unique_id: str, expected: tuple[str, str] | None) -> None:
+    assert EMS_ESP.split(unique_id) == expected
+
+
+@pytest.mark.parametrize(
     ("state", "running"),
     [
         ("on", True),

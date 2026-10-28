@@ -11,8 +11,9 @@ sensors of heat pump N and "<name>_<key>" for those of the main device
 "hp<N>_<key>" and "<key>". <name> is the name of the config entry, lower case
 without spaces (`normalize_name_prefix`, default "EU08L"); it may contain "_".
 Names set in "sensors_names_override" (lambda_wp_config.yaml) replace
-"hp<N>_<key>" by a free name and are not recognized. `Template.split` has no
-such format; `LambdaTemplate` adds it here until the core does.
+"hp<N>_<key>" by a free name and are not recognized. A pattern is not enough
+(keys of the main device belong to heat pump 1, sub-devices are told apart):
+`LambdaTemplate` splits in code.
 
 Energy: the Modbus registers 1020/1022 (+100 per heat pump) are lifetime
 totals in Wh of electricity and heat, but not split by mode. Lambda splits
@@ -114,7 +115,6 @@ LAMBDA = LambdaTemplate(
     key="lambda",
     label="Lambda",
     platform="lambda_heat_pumps",
-    device=None,
     signals={
         Signal.HEAT_HEATING: ((_S, "heating_thermal_energy_total"),),
         Signal.HEAT_DHW: ((_S, "hot_water_thermal_energy_total"),),

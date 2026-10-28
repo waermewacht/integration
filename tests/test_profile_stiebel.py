@@ -16,7 +16,6 @@ from custom_components.waermewacht.profiles_stiebel import (
     ACTIVITY_FLAGS,
     STIEBEL_ISG,
     activity_from_flags,
-    split_entry_id,
 )
 
 from .conftest import load_fixture
@@ -37,7 +36,7 @@ def by_key(name: str) -> dict[str, str]:
     """Entity id per key of a fixture (binary sensors prefixed "b:")."""
     found = {}
     for e in load_fixture(name)["entities"]:
-        _, key = split_entry_id(e["unique_id"]) or ("", "")
+        _, key = STIEBEL_ISG.split(e["unique_id"]) or ("", "")
         prefix = "b:" if e["entity_id"].startswith("binary_sensor.") else ""
         found[prefix + key] = e["entity_id"]
     return found
@@ -232,7 +231,7 @@ def test_activity_from_flags(
 def test_activity_of_the_fixture(name: str) -> None:
     states = {}
     for e in load_fixture(name)["entities"]:
-        _, key = split_entry_id(e["unique_id"]) or ("", "")
+        _, key = STIEBEL_ISG.split(e["unique_id"]) or ("", "")
         if e["entity_id"].startswith("binary_sensor."):
             states[key] = e["state"]
     flags = {key: states[key] for key, _ in ACTIVITY_FLAGS}

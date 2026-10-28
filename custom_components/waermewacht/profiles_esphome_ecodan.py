@@ -510,7 +510,6 @@ ESPHOME_ECODAN = EsphomeEcodanTemplate(
     key="esphome_ecodan",
     label="Mitsubishi Ecodan (ESPHome esphome-ecodan-hp)",
     platform=PLATFORM,
-    device=None,
     signals={
         # Previous day's totals, kWh, state class total.
         Signal.HEAT_HEATING: ((_S, "heating_delivered"),),

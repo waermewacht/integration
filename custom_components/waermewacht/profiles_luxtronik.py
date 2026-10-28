@@ -11,48 +11,13 @@ ENTITY_ID_FORMAT.format(f"{prefix}_{description.key}")`, `_attr_unique_id =
 self.entity_id`). The prefix is "luxtronik_<serial>" for new entries
 (config_flow.py), "luxtronik" or "luxtronik2" for entries migrated from config
 entry versions 1 and 3 (__init__.py). Prefix and key both contain "_", so the
-id is split at a known key at its end. `Template.split` has no such format;
-`SuffixTemplate` adds it here until the core does.
+id is split at a known key at its end (`id_format` with "{key}").
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from dataclasses import dataclass
-
 from .model import Activity, Signal
 from .profiles import Template
-
-
-def split_suffix(
-    unique_id: str, candidates: Iterable[tuple[str, str]]
-) -> tuple[str, str] | None:
-    """(prefix, key) of "<domain>.<prefix>_<key>", None if no candidate fits.
-
-    `candidates` are (entity domain, key) pairs; only keys of the id's own
-    domain count, the longest one first. Keys of the integration that merely
-    end in a candidate ("smart_grid_status" ends in "_status") give a longer
-    prefix, so they land in a group of their own that never holds the
-    required signals.
-    """
-    domain, dot, rest = unique_id.partition(".")
-    if not dot or not domain:
-        return None
-    keys = sorted({k for d, k in candidates if d == domain}, key=len, reverse=True)
-    for key in keys:
-        marker = f"_{key}"
-        if rest.endswith(marker) and len(rest) > len(marker):
-            return rest[: -len(marker)], key
-    return None
-
-
-@dataclass(frozen=True)
-class SuffixTemplate(Template):
-    """A template whose unique ids are "<domain>.<prefix>_<key>"."""
-
-    def split(self, unique_id: str) -> tuple[str, str] | None:
-        return split_suffix(unique_id, (c for cs in self.signals.values() for c in cs))
-
 
 # Status sensor (key "status", register C0080): an enum whose state is the
 # option key (LuxOperationMode in const.py, normalized in common.py: spaces and
@@ -80,12 +45,16 @@ LUXTRONIK_ACTIVITY: dict[str, Activity] = {
 # Disabled by default in luxtronik2: compressor1_impulses,
 # current_heat_output, current_power_consumption.
 _S, _B = "sensor", "binary_sensor"
-LUXTRONIK = SuffixTemplate(
+LUXTRONIK = Template(
     experimental=True,
     key="luxtronik",
     label="Luxtronik",
     platform="luxtronik2",
-    device=None,
+    # "<domain>.<prefix>_<key>", only keys of the id's own domain. Keys of
+    # the integration that merely end in one ("smart_grid_status" ends in
+    # "_status") give a longer prefix, a group that never holds the
+    # required signals.
+    id_format=r"(?P<domain>[^.]+)\.(?P<prefix>.+)_(?P<key>{key})",
     signals={
         Signal.HEAT_HEATING: ((_S, "heat_amount_heating"),),
         Signal.HEAT_DHW: ((_S, "dhw_heat_amount"),),
