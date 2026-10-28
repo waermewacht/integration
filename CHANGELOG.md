@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Gesundheits-Check erweitert:** Sensoren „Spreizung 7 Tage“ und „Leistung je Heizlast“ (neue Einstellungen Heizleistung bei A−7/W35 und kleinste Heizleistung), Anstieg des Stillstands und Abtauungen der letzten 7 Tage als Attribute, Reparaturhinweise „Durchfluss unplausibel“ und „Durchfluss 0 beim Heizen“.
 - **Weitere Hersteller (beta):**
   - **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
   - **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte.

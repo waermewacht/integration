@@ -56,6 +56,14 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 ## 4. Prüfungen
 
+**Umsetzung 0.1.0b9 (`health_extra.py`):**
+
+- **4.3:** Attribute am Sensor „Abtauungen heute“: Abtauungen, warme Abtauungen (Stundenmittel ab 10 °C, eigene Annahme), mittlere und längste Dauer der letzten 7 Tage. Für später vorbereitet: Abtauungen je Laufstunde je 2-K-Klasse aus dem Tagebuch, laufende gegen vorige Saison (`defrost_classes`, `compare_defrost_classes`). Kein Binärsensor.
+- **4.4:** Sensor „Spreizung 7 Tage“: Mittel der Heizzeit an Tagen unter 5 °C, ab 10 Stunden (beides eigene Annahme). Attribut `all_days` für alle Tage, Feldwert 6,8 K (WPsmart).
+- **4.7:** Einstellungen „Heizleistung bei A−7/W35“ und „Kleinste Heizleistung“ im Abschnitt Heizlast. Der Faktor bezieht sich auf die normgerechte Heizlast; `measured_factor` auf die gemessene; `cycling_expected`, wenn die gemessene Heizlast bei +7 °C unter der kleinsten Leistung liegt. Feldmittel 1,5, keine Schwelle.
+- **4.8:** Attribute am Stillstand-Sensor: mittlere Leistung 7 Tage, kleinster und größter Tag, Median der 30 Tage davor, `rising` ab +50 % und +10 W (eigene Annahme). Stunden ohne Lauf je Tag aus dem Tagebuch, Umstellungstage mit 23/25 h.
+- **4.10 e:** Die Wärmeleistung kommt aus dem Zuwachs des Wärmezählers Heizen über die Heizzeit eines Tages, weil die Vorlagen kein Leistungssignal mehr zuordnen. Unplausibel ab Faktor 10, mindestens 1 Stunde Heizen, 1 kWh und 2 K (eigene Annahmen). Durchfluss 0: 15 Minuten Heizbetrieb ohne einen Wert über 0. Nicht bei Quellen ohne Betriebsart, also nicht bei HomeCom.
+
 ### 4.1 Arbeitszahl gesunken gegenüber der Vorsaison (gleiche Außentemperatur)
 
 **Was und warum.** Die Arbeitszahl Heizen ist bei gleicher Außentemperatur deutlich schlechter als in der Vorsaison. Mögliche Ursachen: verschmutzter Verdampfer oder Filter, Kältemittelverlust, geänderte Heizkurve, Heizstab läuft mit. Das ist der wichtigste Befund, weil er Geld kostet und schleichend kommt.
@@ -250,7 +258,7 @@ Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Qu
 | 9 | 4.3 Abtauungen | mittel | niedrig (keine Feuchte, keine Quelle) | teils | Attribute |
 | 10 | 4.9 Warmwasser | mittel | mittel | nein (Ladungen nicht verdrahtet) | später |
 | 11 | 4.8 Stillstand | niedrig (bei Bosch Modellwert) | niedrig | ja | Attribut |
-| – | 4.10 e Durchfluss | mittel | unbekannt | Fixture fehlt | später |
+| – | 4.10 e Durchfluss | mittel | unbekannt | Tagesbuch + neues Mittel Durchfluss | Reparatur |
 
 ## 6. MVP
 

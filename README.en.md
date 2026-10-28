@@ -142,6 +142,8 @@ Several heat pumps: add one entry each.
 | Gas base price | – | €/year gross, spread per day. Without it only the working prices are compared. |
 | ***Heat load (optional)*** | | |
 | Design outdoor temperature | – | °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
+| Rated heating power at A-7/W35 | – | kW from the data sheet. Gives the sensor "Power per heat load". |
+| Smallest heating power | – | kW from the data sheet. Shows whether cycling is to be expected in mild weather. |
 
 Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
 
@@ -186,7 +188,7 @@ Attributes:
 | --- | --- | --- |
 | Heat heating / hot water, Heat removed cooling | kWh | heat since the setup (cooling: heat removed) |
 | Electricity heating / hot water / cooling | kWh | electricity while the compressor runs, with backup heater, without standby |
-| Standby electricity | kWh | electricity while the compressor stands still, all modes |
+| Standby electricity | kWh | electricity while the compressor stands still, all modes. Attributes from the diary: mean power of the last 7 days against the median of the 30 days before, smallest and largest day; `rising` is on from +50 % **and** +10 W (own assumption) |
 
 All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. Please do not disable them: the report, the performance curve and the heat load read their statistics for the time after the setup.
 
@@ -207,7 +209,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | Run time per start today, 7 days, month | min | mean duration of the runs that ended in the period |
 | Short runs today | – | runs below the short-run limit; attributes `threshold_minutes`, `critical_runs`, `critical_threshold_minutes` |
 | Shortest pause today | min | shortest time between the end of a run and the next start |
-| Defrosts today | – | count; attributes `minutes` (duration today) and `yesterday` (count yesterday) |
+| Defrosts today | – | count; attributes `minutes` (duration today), `yesterday` (count yesterday) and for the last 7 days the count, warm defrosts (hourly mean of 10 °C or more), mean and longest duration |
 
 If the compressor state was missing for more than 5 minutes (Home Assistant or the source down), the affected run counts as uncertain. It is then left out of run time per start, short runs and pauses.
 
@@ -294,6 +296,8 @@ Both need the outdoor temperature plus heat and electricity heating, and the rec
 | Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
 | Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
+| Flow-return spread 7 days | K | Spread while heating on cold days (below 5 °C) of the last 7 days, from 10 hours of heating. Attributes `all_days` (every day) and `field_reference` (field test WPsmart: 6.8 K, 3.2–9.8 K). No alarm: hydraulics and sensor positions shape the value. |
+| Power per heat load | – | Rated heating power from the data sheet divided by the standard heat load. Only with the setting rated heating power. Attributes `measured_factor` (against the measured heat load), `load_at_7c_kw` and, with the smallest heating power, `cycling_expected`. Field mean 1.5 (Fraunhofer WP-QS). |
 | Flow temperature at 0 °C | °C | The heating curve as a figure: least-squares line of the flow over the outdoor temperature, read off at 0 °C. Per day only hours with heating heat (at least 0.3 kWh) and no hot water count, at least 2 per day; it needs 14 days spanning 6 K. Attributes `slope` (K flow per K outdoor), `r_squared`, `days`, `spread`, `reasons`, `previous_season` and `previous_slope` (the same for the previous season). Shows whether a changed heating curve works. A little below the set value, because pauses within the hour count. |
 | Degree days season | K·d | Degree days G20/15 after VDI 3807 from the start of the season to yesterday: per day 20 °C minus the daily mean, only on days below 15 °C. As a meter: a statistics card shows the degree days per month. Attributes `days_counted`, `days_missing` (fewer than 20 hourly values), `days_without_heating`. |
 | Heat per degree day season | kWh/K·d | Heating heat divided by the degree days, over heating days only (at least 1 kWh of heating heat per day), from 10 K·d. Cool days without heating in summer and autumn would otherwise push it down a lot. Without heating heat it is unknown. Attribute `degree_days_heating` of the degree days sensor: the degree days of these heating days. Attribute `previous_season`: the same value of the whole previous season. A measure of the heat demand of the house, corrected for the weather. It scatters by about 18 % from month to month, so it is a season value only. |
@@ -647,6 +651,8 @@ Wärmewacht reports problems under *Settings → Repairs*. This happens at the e
 - **Meter stands still:** The compressor ran, but a meter of the current mode did not rise: 1 hour for meters with decimals, 6 hours for whole kWh or daily values. Usually the source no longer sends values, the entity is disabled or the wrong meter is mapped.
 - **Source unreachable:** A mapped entity has been `unavailable` for more than 60 minutes. Check the source (EMS-ESP, MQTT, cloud).
 - **Outdoor temperature unusable:** It has not changed for 48 hours or was outside −35 to +45 °C for hours yesterday. The performance curve, heat load and health check depend on it.
+- **Flow rate implausible:** Yesterday the measured flow rate while heating was more than ten times off the value heat and spread give. Usually the unit is wrong.
+- **Flow rate 0 while heating:** 15 minutes of heating with a flow rate of 0. Usually the sensor delivers no real value.
 - **Flow and return swapped?** Yesterday the flow was on average more than 1 K colder than the return while heating, after at least one hour of heating. Usually the entities or the sensors are swapped; a flow sensor behind a mixing valve can also cause it. The notice disappears after a day with a normal spread.
 
 The issues disappear on their own once the problem is solved.
@@ -672,6 +678,8 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 ## Reporting issues
 
 Please open an [issue](https://github.com/waermewacht/integration/issues), ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+
+**Do you own a heat pump with a beta template?** Especially for Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) and Vaillant (myVAILLANT) some assumptions rest on the integrations' source code only. Feedback with a diagnostics file after a few days of operation helps to confirm them: whether the figures are plausible and when the day values jump.
 
 **Heat pump without a template?** Set up Wärmewacht manually (at least heat and electricity for heating and "Compressor running") and attach the diagnostics file to an issue. Under `source` it lists every entity of the devices behind it, with platform, unique_id, unit and state. That is enough to build a template.
 
