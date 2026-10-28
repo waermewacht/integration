@@ -1,6 +1,8 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.1 – 2026-10-28
+
+Erste Version ohne Beta-Kennzeichen. Die Vorlagen für EMS-ESP und Bosch HomeCom laufen an einer echten Anlage; alle anderen Vorlagen bleiben beta, bis Rückmeldungen mit Diagnose-Datei sie bestätigen. Änderungen seit 0.1.0b8:
 
 **Neue Hersteller (beta, aus dem Quellcode der Integrationen, noch ohne echte Anlage bestätigt):**
 
