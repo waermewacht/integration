@@ -555,6 +555,8 @@ ANALYSIS = [
     ),
     HeatPumpSensorDescription(
         key="oversize_factor",
+        # Without a unit, the state class makes the frontend format the number.
+        state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         value=_oversize,
         needs=lambda r: HAS_OUTDOOR(r) and r.rated_power is not None,

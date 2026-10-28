@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Leistung je Heizlast** wird wie die Arbeitszahlen als Zahl angezeigt (Dezimalkomma statt „1.56“) und bekommt Langzeitstatistik.
+
 ## 0.1.1 – 2026-10-28
 
 Erste Version ohne Beta-Kennzeichen. Die Vorlagen für EMS-ESP und Bosch HomeCom laufen an einer echten Anlage; alle anderen Vorlagen bleiben beta, bis Rückmeldungen mit Diagnose-Datei sie bestätigen. Änderungen seit 0.1.0b8:
