@@ -58,5 +58,10 @@
     "source": "Derived from the source code of signalkraft/mypyllant-component v0.9.19 (c8cb4c4) and myPyllant 0.9.18 (a4b8773) on 2026-10-28 (sensor.py, coordinator.py, utils.py, models.py, enums.py, test data heatpump_cooling and two_systems); not read from a real installation.",
     "real": "unique id formats (platform mypyllant), original names as mypyllant builds them, entity ids slugified from them, units (Wh) and device/state classes, energy manager states, order of the device data lists in the library's test data, statistic id format and that only completed hours are written.",
     "made_up": "system id, device uuids, home name, every state value and statistic sum; whether real system ids contain '-'."
+  },
+  "f1p_ecodan.json": {
+    "source": "Derived from the source code of F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT v7.1.1 (commit e2ab484, 2026-10-23) on 2026-10-28 (MQTTDiscovery.h, MQTTConfig.h, ECODAN_Bridge.ino, EcodanDecoder.h/.cpp); not read from a real installation.",
+    "real": "unique id format '<key><deviceId>' (platform mqtt) incl. keys without '_', entity domains, units, device and state classes (kWh energy without state_class), English entity names giving 'sensor.ecodan_ashp_<name>', the values of System Operation Mode and Defrost.",
+    "made_up": "deviceId 'abcdef123456', every state value, the subset of entities."
   }
 }

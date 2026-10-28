@@ -28,7 +28,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Kosten und Gasvergleich** (optional, mit festen Preisen): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume.
 - **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
-- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) und Vaillant (myVAILLANT). Andere Wärmepumpen ordnest du von Hand zu.
+- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud oder F1p-Brücke) und Vaillant (myVAILLANT). Andere Wärmepumpen ordnest du von Hand zu.
 - **Schont SD-Karten:** schreibt nur, wenn sich etwas geändert hat, und dann höchstens alle 10 Minuten. Dazu am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 
 ## Was Wärmewacht anders macht als Template-Sensoren
@@ -59,6 +59,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 | [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (Core `vicare`) | Beta, aus dem Quellcode; **nur Takte und Strom, keine Arbeitszahl** |
 | [Mitsubishi Ecodan über MELCloud](https://www.home-assistant.io/integrations/melcloud/) (Core `melcloud`, ab HA 2026.5) | Beta, aus dem Quellcode; Arbeitszahlen ohne Takte |
 | [Vaillant myVAILLANT](https://github.com/signalkraft/mypyllant-component) (`mypyllant`) | Beta, aus dem Quellcode; Arbeitszahlen ohne Takte |
+| [Mitsubishi Ecodan über F1p-Brücke](https://github.com/F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT) (MQTT, CN105) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
 Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
@@ -76,6 +77,7 @@ Läuft bei dir EMS-ESP, nimm EMS-ESP: Zähler auf 0,01 kWh im Minutentakt und di
 
 - **Viessmann ViCare:** Home Assistant liefert keine Wärme (die Bibliothek PyViCare liest sie noch nicht aus). Wärmewacht zeigt deshalb Takte, Laufzeiten, Strom je Betriebsart und Kosten, aber keine Arbeitszahl. E3-Regler (Vitocal 150-A bis 252-A) melden keine Betriebsart; ältere Vitotronic-Regler melden Abtauen, aber keine Energie. Die Tageswerte der Cloud zählt Wärmewacht in UTC-Tagen: Beginnt die Cloud doch um Mitternacht Ortszeit, kommt der erste Wert eines Tages nur ein bis zwei Stunden später an.
 - **Mitsubishi Ecodan (MELCloud):** Die Wärme je Betriebsart legt `melcloud` deaktiviert an: Aktiviere sie zuerst. Ohne brauchbares Kompressorsignal (nur alle 30 Minuten) gibt es keine Takte und keine Abtauungen. MELCloud meldet die Summen des **Vortags**: Sie springen einmal kurz nach Mitternacht und bleiben dann den Tag über gleich. Wärmewacht bucht sie deshalb in den Vortag, und Monat und Saison stimmen auch am Monatswechsel. „Heute“ bleibt bei dieser Quelle leer, „gestern“ ist der früheste Wert. Bleibt die Aktualisierung der Cloud einmal aus, fehlt der Tag.
+- **Mitsubishi Ecodan (F1p-Brücke):** Lokal über den CN105-Anschluss, mit Kompressor und Betriebsart, also mit Takten und Abtauungen. Die Energie kommt wie bei MELCloud als Summe des Vortags. Die Brücke sendet vor dem echten Wert manchmal eine eigene Schätzung; liegt sie höher, zählt Wärmewacht etwas zu viel. Ohne `state_class` der Brücke gibt es keinen Rückblick vor der Einrichtung.
 - **Vaillant (myVAILLANT):** Wärmewacht bucht Stunde für Stunde aus der Statistik, die mypyllant selbst schreibt. Stelle in mypyllant die Option „Seconds between energy data updates“ auf 3600 bis 7200 Sekunden, sonst ruft es die Energie nur beim Start ab. Die Zahlen hinken dadurch ein bis drei Stunden nach. Es gibt kein Kompressorsignal und kein Abtauen, also keine Takte. Stillstand ist eine Stunde ohne Umweltwärme.
 
 ## Installation

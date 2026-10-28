@@ -1,8 +1,8 @@
 # Wärmewacht – Projektkontext für Claude
 
-Home-Assistant-Custom-Integration (HACS), Domain `waermewacht`, Anzeigename „Wärmewacht“. Wertet aus vorhandenen Entitäten Effizienz und Betriebsverhalten einer Wärmepumpe aus: Arbeitszahlen je Modus und Zeitraum, Takte, Abtauungen, Diagnose; später Kennlinie über Außentemperatur, Kosten und CO₂ gegen Gas, Heizlast. **Nur lesen, nie steuern.** Schwesterprojekt von Streckenwacht (`../streckenwacht`), Eilwacht (`../eilwacht`), Einspeisewacht (`../einspeisewacht`) und Tarifwacht (`../tarifwacht`) – deren Muster übernehmen, wo es passt.
+Home-Assistant-Custom-Integration (HACS), Domain `waermewacht`, Anzeigename „Wärmewacht“. Wertet aus vorhandenen Entitäten Effizienz und Betriebsverhalten einer Wärmepumpe aus: Arbeitszahlen je Modus und Zeitraum, Takte, Abtauungen, Warmwasser je Ladung, Kosten und Gasvergleich, AZ-Kennlinie, Heizlast, Gradtage und ein Gesundheits-Check (`docs/GESUNDHEITSCHECK.md`). Vorlagen für EMS-ESP und Bosch HomeCom (erprobt) sowie als Beta für Luxtronik, Stiebel ISG, HeishaMon, Lambda, iDM, Viessmann ViCare, Mitsubishi Ecodan (MELCloud, F1p) und Vaillant (mypyllant). **Nur lesen, nie steuern.** Schwesterprojekt von Streckenwacht (`../streckenwacht`), Eilwacht (`../eilwacht`), Einspeisewacht (`../einspeisewacht`) und Tarifwacht (`../tarifwacht`) – deren Muster übernehmen, wo es passt.
 
-Stand: Projektstart 2026-10-27, erster Stand auf `dev`, noch kein Release. Arbeitsstand in `NOTES.md`.
+Stand: Betas 0.1.0b1–b8 seit 2026-10-27, das erste Release ohne Beta wird 0.1.1 (nicht 0.1.0, siehe Release Schritt 1). Arbeitsstand in `NOTES.md`.
 
 ## Dokumentation
 

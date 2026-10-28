@@ -23,6 +23,7 @@ FIXTURES = {
     "vicare_vitocal333g.json": "vicare",
     "melcloud_ecodan.json": "melcloud",
     "vaillant_mypyllant_arotherm.json": "mypyllant",
+    "f1p_ecodan.json": "f1p",
 }
 
 
@@ -35,8 +36,11 @@ def entries(fixture: str, platform: str) -> list[RegistryEntry]:
 
 def test_keys_and_platforms_are_unique() -> None:
     assert all(key == t.key for key, t in TEMPLATES.items())
-    platforms = [t.platform for t in TEMPLATES.values()]
+    # Only EMS-ESP and the F1p bridge share a platform (both MQTT); their
+    # keys keep them apart (test_each_fixture_found_by_its_template_only).
+    platforms = [t.platform for t in TEMPLATES.values() if t.key != "f1p"]
     assert len(platforms) == len(set(platforms))
+    assert TEMPLATES["f1p"].platform == TEMPLATES["ems_esp"].platform == "mqtt"
 
 
 def test_only_the_bosch_templates_are_confirmed() -> None:

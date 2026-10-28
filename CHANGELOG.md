@@ -7,6 +7,7 @@
 - **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
 - **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte. MELCloud meldet die Summen des Vortags; Wärmewacht bucht sie in den Vortag.
 - **Vaillant myVAILLANT** (`mypyllant`): Arbeitszahlen Stunde für Stunde aus der Statistik von mypyllant, ohne Takte. Neue Reparaturhinweise „keine neuen Energiewerte“ und „Energie-Entitäten haben ihre Bedeutung geändert“.
+- **Mitsubishi Ecodan über die F1p-Brücke** (MQTT, CN105): Arbeitszahlen, Takte und Abtauungen; Energie als Vortageswert.
 - **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus.
 - Einrichtung auch nur mit Kompressor: dann Takte und Strom ohne Arbeitszahl. Strom ohne Wärmezähler zählt als Laufstrom.
 

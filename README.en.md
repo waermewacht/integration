@@ -28,7 +28,7 @@ The user interface is available in German and English and follows the language o
 - **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period.
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
-- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) and Vaillant (myVAILLANT). Other heat pumps are mapped by hand.
+- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud or F1p bridge) and Vaillant (myVAILLANT). Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
 
 ## What Wärmewacht does differently from template sensors
@@ -59,6 +59,7 @@ The user interface is available in German and English and follows the language o
 | [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (core `vicare`) | beta, from the source code; **cycling and electricity only, no performance factor** |
 | [Mitsubishi Ecodan via MELCloud](https://www.home-assistant.io/integrations/melcloud/) (core `melcloud`, HA 2026.5+) | beta, from the source code; performance factors without cycling |
 | [Vaillant myVAILLANT](https://github.com/signalkraft/mypyllant-component) (`mypyllant`) | beta, from the source code; performance factors without cycling |
+| [Mitsubishi Ecodan via F1p bridge](https://github.com/F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT) (MQTT, CN105) | beta, from the source code; performance factors, cycling and defrosts |
 | any heat and electricity meters | manual mapping |
 
 The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID, so renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
@@ -76,6 +77,7 @@ If you run EMS-ESP, use EMS-ESP: meters in 0.01 kWh every minute, and the activi
 
 - **Viessmann ViCare:** Home Assistant provides no heat (the library PyViCare does not read it yet). Wärmewacht therefore shows cycling, run times, electricity per mode and costs, but no performance factor. E3 controllers (Vitocal 150-A to 252-A) report no activity; older Vitotronic controllers report defrosts but no energy. Wärmewacht counts the cloud's day values in UTC days: if the cloud starts at local midnight after all, a day's first value only arrives an hour or two later.
 - **Mitsubishi Ecodan (MELCloud):** `melcloud` creates the heat per mode disabled: enable it first. Without a usable compressor signal (only every 30 minutes) there is no cycling and no defrost count. MELCloud reports the totals of the **previous day**: they jump once just after midnight and then stay the same all day. Wärmewacht therefore books them into the previous day, so month and season are right at month boundaries too. "Today" stays empty for this source, "yesterday" is the earliest figure. If the cloud misses an update, that day is missing.
+- **Mitsubishi Ecodan (F1p bridge):** Local via the CN105 port, with compressor and activity, so with cycling and defrosts. The energy comes as the previous day's total, as with MELCloud. The bridge sometimes sends its own estimate before the real value; if it is higher, Wärmewacht counts a little too much. As the bridge sets no `state_class`, there is no look back before the setup.
 - **Vaillant (myVAILLANT):** Wärmewacht books hour by hour from the statistics mypyllant writes itself. Set mypyllant's option "Seconds between energy data updates" to 3600 to 7200 seconds, otherwise it fetches the energy only at start. The figures therefore lag one to three hours behind. There is no compressor signal and no defrost, so no cycling. Standby is an hour without environmental yield.
 
 ## Installation

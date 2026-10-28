@@ -8,6 +8,7 @@ import from profiles.py without a cycle.
 from __future__ import annotations
 
 from .profiles import BOSCH_HOMECOM, EMS_ESP, Template
+from .profiles_f1p import F1P
 from .profiles_heishamon import HEISHAMON
 from .profiles_idm import IDM
 from .profiles_lambda import LAMBDA
@@ -30,5 +31,6 @@ TEMPLATES: dict[str, Template] = {
         VICARE,
         MELCLOUD,
         VAILLANT,
+        F1P,
     )
 }
