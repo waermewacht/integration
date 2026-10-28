@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Weitere Hersteller (beta):**
+  - **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
+  - **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte.
+  - **Vaillant myVAILLANT** (`mypyllant`): Arbeitszahlen Stunde für Stunde aus der Statistik von mypyllant, ohne Takte. Neue Reparaturhinweise „keine neuen Energiewerte“ und „Energie-Entitäten haben ihre Bedeutung geändert“.
+  - Einrichtung auch nur mit Kompressor (dann Takte und Strom ohne Arbeitszahl). Strom ohne Wärmezähler zählt als Laufstrom.
 - **Vorlauf bei 0 °C:** die Heizkurve als Kennwert, aus Stunden mit Heizwärme und ohne Warmwasser, mit dem Wert der Vorsaison. Zeigt, ob eine geänderte Heizkurve wirkt.
 - **Starts Saison** aus dem Startzähler der Wärmepumpe und seiner Statistik, mit Starts je Tag.
 - **Reparaturhinweis „Vor- und Rücklauf vertauscht?“**, wenn die Spreizung beim Heizen einen Tag lang im Mittel unter −1 K liegt.
