@@ -187,6 +187,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | Entity | Unit | Meaning |
 | --- | --- | --- |
 | Starts today, Starts yesterday | – | observed compressor starts |
+| Starts season | – | Starts since the start of the season from the heat pump's counter and its long-term statistics. If the statistics do not reach back that far, it counts from their first value. Attributes `since` and `per_day`. For comparison: 90 % of the air/water heat pumps in the Fraunhofer field test stay below 5,500 starts a year, about 15 a day. Needs the start counter and the outdoor temperature (set with the daily analysis). |
 | Starts total | – | the heat pump's counter if mapped (attribute `source: heat_pump`), otherwise starts observed since the setup (`since_setup`) |
 | Run time today | min | compressor run time |
 | Run time per start today, 7 days, month | min | mean duration of the runs that ended in the period |
@@ -231,7 +232,7 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 - **Attributes:** Efficiency: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` and `classes` (days and performance factor of both seasons per class). Backup heater: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` and `days` (per mild day). The lists are not recorded.
 - **Reasons for *unknown*:** `not_analysed_yet` (after start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`.
 - **Restart efficiency comparison** (button, configuration): after a deliberate change such as a new heating curve. The next 28 days become the new reference; until then "Efficiency dropped" is unknown.
-- **Data faults** (meter stands still, source unreachable, outdoor temperature unusable) are reported as a [repair issue](#troubleshooting), not as a sensor.
+- **Data faults** (meter stands still, source unreachable, outdoor temperature unusable, flow and return swapped) are reported as a [repair issue](#troubleshooting), not as a sensor.
 - **Diary:** At midnight Wärmewacht adds an entry for the previous day (outdoor temperature, starts, run time per mode, short runs, defrosts, spread, flow temperature, energy), for up to 3 years. It is kept in the history file and written once a day. Later checks will evaluate it.
 
 ### Diagnostics
@@ -279,6 +280,7 @@ Both need the outdoor temperature plus heat and electricity heating, and the rec
 | Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
 | Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
+| Flow temperature at 0 °C | °C | The heating curve as a figure: least-squares line of the flow over the outdoor temperature, read off at 0 °C. Per day only hours with heating heat (at least 0.3 kWh) and no hot water count, at least 2 per day; it needs 14 days spanning 6 K. Attributes `slope` (K flow per K outdoor), `r_squared`, `days`, `spread`, `reasons`, `previous_season` and `previous_slope` (the same for the previous season). Shows whether a changed heating curve works. A little below the set value, because pauses within the hour count. |
 | Degree days season | K·d | Degree days G20/15 after VDI 3807 from the start of the season to yesterday: per day 20 °C minus the daily mean, only on days below 15 °C. As a meter: a statistics card shows the degree days per month. Attributes `days_counted`, `days_missing` (fewer than 20 hourly values), `days_without_heating`. |
 | Heat per degree day season | kWh/K·d | Heating heat divided by the degree days, over heating days only (at least 1 kWh of heating heat per day), from 10 K·d. Cool days without heating in summer and autumn would otherwise push it down a lot. Without heating heat it is unknown. Attribute `degree_days_heating` of the degree days sensor: the degree days of these heating days. Attribute `previous_season`: the same value of the whole previous season. A measure of the heat demand of the house, corrected for the weather. It scatters by about 18 % from month to month, so it is a season value only. |
 
@@ -631,6 +633,7 @@ Wärmewacht reports problems under *Settings → Repairs*. This happens at the e
 - **Meter stands still:** The compressor ran, but a meter of the current mode did not rise: 1 hour for meters with decimals, 6 hours for whole kWh or daily values. Usually the source no longer sends values, the entity is disabled or the wrong meter is mapped.
 - **Source unreachable:** A mapped entity has been `unavailable` for more than 60 minutes. Check the source (EMS-ESP, MQTT, cloud).
 - **Outdoor temperature unusable:** It has not changed for 48 hours or was outside −35 to +45 °C for hours yesterday. The performance curve, heat load and health check depend on it.
+- **Flow and return swapped?** Yesterday the flow was on average more than 1 K colder than the return while heating, after at least one hour of heating. Usually the entities or the sensors are swapped; a flow sensor behind a mixing valve can also cause it. The notice disappears after a day with a normal spread.
 
 The issues disappear on their own once the problem is solved.
 

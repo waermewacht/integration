@@ -187,6 +187,7 @@ Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen 
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
 | Starts heute, Starts gestern | – | beobachtete Kompressorstarts |
+| Starts Saison | – | Starts seit Saisonbeginn aus dem Zähler der Wärmepumpe und seiner Langzeitstatistik. Reicht die Statistik nicht so weit zurück, zählt er ab ihrem ersten Wert. Attribute `since` und `per_day`. Zur Einordnung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feldtest liegen unter 5.500 Starts im Jahr, etwa 15 am Tag. Braucht den Startzähler und die Außentemperatur (wird mit der täglichen Analyse bestimmt). |
 | Starts gesamt | – | Zähler der Wärmepumpe, wenn zugeordnet (Attribut `source: heat_pump`), sonst beobachtete Starts seit der Einrichtung (`since_setup`) |
 | Laufzeit heute | min | Kompressor-Laufzeit |
 | Laufzeit pro Start heute, 7 Tage, Monat | min | mittlere Dauer der Läufe, die im Zeitraum endeten |
@@ -231,7 +232,7 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 - **Attribute:** Effizienz: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` und `classes` (je Klasse Tage und AZ beider Saisons). Heizstab: `aux_kwh_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` und `days` (je milder Tag). Die Listen werden nicht aufgezeichnet.
 - **Gründe für *unbekannt*:** `not_analysed_yet` (nach dem Start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`.
 - **Effizienzvergleich neu starten** (Schaltfläche, Konfiguration): nach einer gewollten Änderung, etwa einer neuen Heizkurve. Die nächsten 28 Tage werden die neue Vergleichsbasis, bis dahin ist „Effizienz gesunken“ unbekannt.
-- **Datenfehler** (Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar) meldet Wärmewacht als [Reparaturhinweis](#fehlerbehebung), nicht als Sensor.
+- **Datenfehler** (Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar, Vor- und Rücklauf vertauscht) meldet Wärmewacht als [Reparaturhinweis](#fehlerbehebung), nicht als Sensor.
 - **Tagebuch:** Wärmewacht legt um Mitternacht einen Eintrag für den Vortag an (Außentemperatur, Starts, Laufzeit je Betriebsart, Kurzläufe, Abtauungen, Spreizung, Vorlauf, Energie), bis zu 3 Jahre. Es steht in der Verlaufsdatei und wird nur einmal am Tag geschrieben. Spätere Prüfungen werten es aus.
 
 ### Diagnose
@@ -279,6 +280,7 @@ Beide brauchen die Außentemperatur sowie Wärme und Strom Heizen, dazu den Reco
 | AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen. |
 | Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
 | Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
+| Vorlauf bei 0 °C | °C | Die Heizkurve als Kennwert: Ausgleichsgerade des Vorlaufs über der Außentemperatur, abgelesen bei 0 °C. Je Tag zählen nur Stunden mit Heizwärme (ab 0,3 kWh) und ohne Warmwasser, mindestens 2 je Tag; nötig sind 14 Tage über 6 K Spanne. Attribute `slope` (K Vorlauf je K Außentemperatur), `r_squared`, `days`, `spread`, `reasons`, `previous_season` und `previous_slope` (dasselbe für die Vorsaison). Zeigt, ob eine geänderte Heizkurve wirkt. Etwas unter dem eingestellten Wert, weil Pausen in der Stunde mitzählen. |
 | Gradtage Saison | K·d | Gradtagzahl G20/15 nach VDI 3807 seit Saisonbeginn bis gestern: je Tag 20 °C minus Tagesmittel, nur an Tagen unter 15 °C. Als Zähler: Eine Statistik-Karte zeigt damit die Gradtage je Monat. Attribute `days_counted`, `days_missing` (unter 20 Stundenwerten), `days_without_heating`. |
 | Wärme je Gradtag Saison | kWh/K·d | Wärme fürs Heizen geteilt durch die Gradtage, nur über Heiztage (ab 1 kWh Heizwärme am Tag), erst ab 10 K·d. Kühle Tage ohne Heizbetrieb im Sommer und Herbst würden den Wert sonst stark drücken. Ohne Heizwärme ist er unbekannt. Attribut `degree_days_heating` am Gradtage-Sensor: die Gradtage dieser Heiztage. Attribut `previous_season`: derselbe Wert der ganzen Vorsaison. Ein Maß für den Wärmebedarf des Hauses, bereinigt ums Wetter. Er schwankt von Monat zu Monat um etwa 18 %, deshalb nur als Saisonwert. |
 
@@ -631,6 +633,7 @@ Wärmewacht meldet Probleme unter *Einstellungen → Reparaturen*. Das geschieht
 - **Zähler steht still:** Der Kompressor lief, aber ein Zähler der laufenden Betriebsart stieg nicht: 1 Stunde bei Zählern mit Nachkommastellen, 6 Stunden bei ganzen kWh oder Tageswerten. Meist liefert die Quelle keine Werte mehr, die Entität ist deaktiviert oder der falsche Zähler zugeordnet.
 - **Quelle nicht erreichbar:** Eine zugeordnete Entität ist seit mehr als 60 Minuten `unavailable`. Quelle prüfen (EMS-ESP, MQTT, Cloud).
 - **Außentemperatur unbrauchbar:** Sie hat sich 48 Stunden nicht verändert oder lag gestern Stunden außerhalb von −35 bis +45 °C. Davon hängen Kennlinie, Heizlast und der Gesundheits-Check ab.
+- **Vor- und Rücklauf vertauscht?** Gestern war der Vorlauf beim Heizen im Mittel mehr als 1 K kälter als der Rücklauf, nach mindestens einer Stunde Heizbetrieb. Meist sind die Entitäten oder die Fühler vertauscht; ein Vorlauffühler hinter einem Mischer kann es auch sein. Der Hinweis verschwindet nach einem Tag mit normaler Spreizung.
 
 Die Meldungen verschwinden von selbst, wenn das Problem behoben ist.
 

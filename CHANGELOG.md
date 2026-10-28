@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Vorlauf bei 0 °C:** die Heizkurve als Kennwert, aus Stunden mit Heizwärme und ohne Warmwasser, mit dem Wert der Vorsaison. Zeigt, ob eine geänderte Heizkurve wirkt.
+- **Starts Saison** aus dem Startzähler der Wärmepumpe und seiner Statistik, mit Starts je Tag.
+- **Reparaturhinweis „Vor- und Rücklauf vertauscht?“**, wenn die Spreizung beim Heizen einen Tag lang im Mittel unter −1 K liegt.
+- **Vorlagen ohne Wärme- und Stromleistung:** Wärmewacht hat sie nie ausgewertet, und beim Neu-Konfigurieren gingen sie verloren.
 - **Laufzeit heute** in Minuten statt Stunden, wie alle anderen Dauern. Home Assistant zeigte sonst „2h, 47 Min.“ neben „166 Min.“; Stunden würde es bei kurzen Dauern als „0h, 25 Min.“ zeigen.
 - **Kosten-Sensoren** nennen im Attribut `period_start`, ab wann Monat bzw. Saison zählen.
 - **Weniger Schreibvorgänge:** Stromkosten in 10-Cent-Schritten, Ersparnis ggü. Gaskessel in ganzen Euro (wie angezeigt), Laufzeit heute in 5-Minuten-Schritten. Gemessen am 27./28.10.: 78 Zustände pro Stunde für 98 Entitäten, ein Viertel davon aus Kosten und Ersparnis.

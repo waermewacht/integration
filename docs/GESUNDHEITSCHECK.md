@@ -1,6 +1,6 @@
 # Wärmewacht – Gesundheits-Check
 
-Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
+Stand: 2026-10-27. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Seit 0.1.0b9: 4.5 als „Vorlauf bei 0 °C“ (aus der Langzeitstatistik statt dem Tagebuch, Stunden mit Heizwärme ohne Warmwasser; 0 °C statt −3 °C, weil dort meist ohne Hochrechnung gemessen), 4.6 als „Starts Saison“ mit Starts je Tag, 4.10 d (`flow_return_swapped`, Urteil um Mitternacht, gespeichert). Der Rest ist Entwurf. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
 
 Jede Schwelle hat eine Quelle oder ist als **eigene Annahme** markiert. Eigene Annahmen werden nach dem ersten Winter an echten Daten überprüft (Anlage des Inhabers, `CLAUDE.local.md`) und hier nachgetragen.
 
