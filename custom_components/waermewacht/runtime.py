@@ -167,6 +167,9 @@ EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
 HOURLY_LOOKBACK = timedelta(hours=48)
 HOURLY_CATCH_UP = timedelta(days=10)
 HOURLY_STALE = timedelta(hours=30)
+# Statistic rows above MAX_POWER_KW times this in one hour are glitches.
+HOURLY_MARGIN = 1.5
+DAY = timedelta(days=1)
 # Flow and return swapped (docs/GESUNDHEITSCHECK.md 4.10 d): the daily mean
 # spread while heating below this, after at least an hour of heating.
 SWAPPED_SPREAD_K = -1.0
@@ -354,6 +357,8 @@ class HeatPumpRuntime:
         )
         self._statistic_ids = self._source_statistic_ids()
         self.booked_until: datetime | None = None  # hourly: next hour to book
+        # Hourly: end of the backfill, the boundary of the history import.
+        self.backfill_until: datetime | None = None
         self._booking = False
         self._mapping_ok = True
         self.tracker = RunTracker()
@@ -470,7 +475,10 @@ class HeatPumpRuntime:
 
     async def _async_backfill(self, now: datetime) -> None:
         hourly: HourlyChanges = {}
-        if "recorder" in self.hass.config.components:
+        # Previous-day values: Home Assistant's statistics of the source book
+        # a day in the hour after midnight, a higher next day only as the
+        # difference: no look back.
+        if "recorder" in self.hass.config.components and not self.template.previous_day:
             try:
                 hourly = await self._async_source_hours(EARLIEST, now)
             except Exception:  # never block the setup
@@ -478,9 +486,16 @@ class HeatPumpRuntime:
         until = now
         if self.hourly:
             # Hours the source has not written completely yet are booked by
-            # the tick, into the period they belong to.
-            _, until = bookable_hours(hourly, EARLIEST, _hour(now))
-            self.booked_until = until if until > EARLIEST else _hour(now)
+            # the tick, into the period they belong to; which series to wait
+            # for is judged from the last 48 hours, as the tick does.
+            window = _hour(now) - HOURLY_LOOKBACK
+            recent = {
+                s: {h: v for h, v in values.items() if h >= window}
+                for s, values in hourly.items()
+            }
+            _, until = bookable_hours(recent, window, _hour(now))
+            self.booked_until = until
+            self.backfill_until = until
         self.marks.initialize(
             now,
             lambda start: energy_between(
@@ -550,10 +565,15 @@ class HeatPumpRuntime:
             return
         if "recorder" not in self.hass.config.components:
             return
+        if self.template.previous_day:
+            # No usable source statistics (see _async_backfill).
+            self.history_imported = self.history_adjusted = True
+            self._dirty = True
+            return
         # One attempt, also on failure: never run twice into the same rows.
         self.history_imported = True
         self._dirty = True
-        before = self.since.replace(minute=0, second=0, microsecond=0)
+        before = self._history_end()
         ids = self._own_ids()
         try:
             recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
@@ -586,6 +606,14 @@ class HeatPumpRuntime:
             )
         _LOGGER.debug("Imported the statistics before %s for %s", before, ids)
 
+    def _history_end(self) -> datetime:
+        """End of the hours written before the setup: the setup hour, or for
+        hourly statistics the end of the backfill (later hours are booked)."""
+        assert self.since is not None
+        if self.hourly and self.backfill_until is not None:
+            return self.backfill_until
+        return _hour(self.since)
+
     def _own_ids(self) -> dict[str, str]:
         registry = er.async_get(self.hass)
         return {
@@ -611,7 +639,7 @@ class HeatPumpRuntime:
         try:
             if self.since is None:
                 return
-            before = self.since.replace(minute=0, second=0, microsecond=0)
+            before = self._history_end()
             ids = self._own_ids()
             hours = by_hour(
                 await self._async_source_hours(EARLIEST, before),
@@ -1011,8 +1039,10 @@ class HeatPumpRuntime:
                 "spread": self.spread.as_dict(),
                 "flow": self.flow.as_dict(),
                 "flow_rate": self.flow_rate.as_dict(),
+                # Late sources (hourly statistics, previous-day values)
+                # have not booked the day yet at midnight.
                 "energy": None
-                if energy is None
+                if energy is None or self.hourly or self.template.previous_day
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
                 # Normal hot water charges, for a comparison with last year.
                 "charges": {
@@ -1036,6 +1066,14 @@ class HeatPumpRuntime:
         value = round(self.spread.value, 1)
         self._swapped = value if value < SWAPPED_SPREAD_K else None
         self._dirty = True
+
+    def _verdict_entities(self) -> dict[str, str | None]:
+        return {
+            "activity": self.entities.get(Signal.ACTIVITY),
+            "flow": self.entities.get(Signal.FLOW_TEMP),
+            "return": self.entities.get(Signal.RETURN_TEMP),
+            "rate": self.entities.get(Signal.FLOW_RATE),
+        }
 
     def _judge_flow(self) -> None:
         """At midnight: did yesterday's flow fit heat and spread?"""
@@ -1124,7 +1162,7 @@ class HeatPumpRuntime:
             entry = registry.async_get(entity_id)
             if entry is None or entry.platform != self.template.platform:
                 continue  # chosen by hand: not the template's to judge
-            if now_mapped.get(entity_id) is not signal:
+            if now_mapped.get(entity_id) not in (None, signal):
                 _LOGGER.warning(
                     "%s no longer looks like %s; not booking until reconfigured",
                     entity_id,
@@ -1140,16 +1178,11 @@ class HeatPumpRuntime:
         try:
             end = _hour(now)
             start = max(self.booked_until or end, end - HOURLY_CATCH_UP)
-            hourly = await self._async_source_hours(start - HOURLY_LOOKBACK, end)
-            plausible: dict[Signal, dict[datetime, float]] = {}
-            for signal, values in hourly.items():
-                plausible[signal] = {}
-                for hour, kwh in values.items():
-                    # A sum started anew, or more than the heat pump can do.
-                    if kwh < 0 or kwh > MAX_POWER_KW * 1.5:
-                        self._count(f"hour_rejected:{signal}")
-                        continue
-                    plausible[signal][hour] = kwh
+            if not self._mapping_still_fits():
+                # The cloud reordered its series since the start: stop.
+                self._mapping_ok = False
+                return
+            plausible = await self._async_source_hours(start - HOURLY_LOOKBACK, end)
             hours, next_start = bookable_hours(plausible, start, end)
             booked = by_hour(
                 plausible, self.heat_modes, self.template.heat_includes_electricity
@@ -1189,8 +1222,17 @@ class HeatPumpRuntime:
             for entity_id in older:
                 merged.update(rows.get(entity_id, {}))
             merged.update(rows.get(primary, {}))
-            if merged:
-                result[signal] = merged
+            # A sum started anew (meter replaced; mypyllant after a week
+            # without a fetch) or more than a heat pump can do in an hour.
+            plausible = {
+                hour: kwh
+                for hour, kwh in merged.items()
+                if 0 <= kwh <= MAX_POWER_KW * HOURLY_MARGIN
+            }
+            if len(plausible) < len(merged):
+                self._count(f"hour_rejected:{signal}")
+            if plausible:
+                result[signal] = plausible
         return result
 
     # Report for any period.
@@ -1270,6 +1312,11 @@ class HeatPumpRuntime:
         (standby estimated per hour), own energy sensors after it."""
         switch = self._switch()
         hours: dict[datetime, Totals] = {}
+        if self.template.previous_day:
+            # The own sensors book a day's total just after the next
+            # midnight: a day later, back onto its day.
+            own = await self._async_own_hours(max(start, switch) + DAY, end + DAY)
+            return {hour - DAY: totals for hour, totals in own.items()}
         if start < switch:
             source = await self._async_source_hours(start, min(end, switch))
             hours.update(
@@ -1288,9 +1335,11 @@ class HeatPumpRuntime:
         now (season start month changed, or a period new in this version)."""
         start = period_start(period, now, self.tz, self.marks.season_month)
         energy = Totals()
+        # Hourly statistics: hours from booked_until on are booked by the tick.
+        end = self.booked_until if self.hourly and self.booked_until else now
         if start is not None and "recorder" in self.hass.config.components:
             try:
-                for totals in (await self._async_hours(start, now)).values():
+                for totals in (await self._async_hours(start, end)).values():
                     energy = energy + totals
             except Exception:  # keep running; the period then starts now
                 _LOGGER.exception(
@@ -1557,6 +1606,11 @@ class HeatPumpRuntime:
                 continue
             heat_at = self._heat_at.get(mode)
             running = heat_at is not None and heat_at >= at - SAME_FETCH
+            if self.template.previous_day and not running:
+                # The same day total twice brings no state change: the heat
+                # counter itself says whether the day had heat.
+                counter = self.counters.get(HEAT_SIGNALS[mode])
+                running = bool(counter and (counter.last_value or 0) > 0)
             self._add(Kind.ELEC if running else Kind.STANDBY, mode, kwh, at)
             self._dirty = True
         self._pending = waiting
@@ -1870,6 +1924,8 @@ class HeatPumpRuntime:
             "hot": self._hot,
             "swapped": self._swapped,
             "activity_foreign": self._activity_foreign,
+            "verdict_entities": self._verdict_entities(),
+            "backfill_until": _iso(self.backfill_until),
             "booked_until": _iso(self.booked_until),
             "flow_rate": self.flow_rate.as_dict(),
             "flow_verdict": self._flow_verdict,
@@ -1919,6 +1975,19 @@ class HeatPumpRuntime:
         self.flow_rate = Mean.from_dict(data.get("flow_rate"))
         self._flow_verdict = data.get("flow_verdict")
         self._zero_flow.seconds = float(data.get("zero_flow_seconds", 0.0))
+        backfill = data.get("backfill_until")
+        self.backfill_until = datetime.fromisoformat(backfill) if backfill else None
+        # Verdicts made for other entities (reconfigured since) are dropped.
+        before = data.get("verdict_entities")
+        if before is not None:
+            now_ids = self._verdict_entities()
+            if before.get("activity") != now_ids["activity"]:
+                self._activity_foreign = False
+            if any(before.get(k) != now_ids[k] for k in ("flow", "return")):
+                self._swapped = None
+            if any(before.get(k) != now_ids[k] for k in ("flow", "return", "rate")):
+                self._flow_verdict = None
+                self._zero_flow.seconds = 0.0
         booked = data.get("booked_until")
         self.booked_until = datetime.fromisoformat(booked) if booked else None
 

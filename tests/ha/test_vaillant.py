@@ -131,6 +131,9 @@ async def test_hours_from_the_source_statistics(
             CONF_ENTITIES: {
                 "heat_heating": SERIES["heat"][2],
                 "elec_heating": SERIES["elec"][2],
+                # Chosen by hand, not mapped by the template (a series of
+                # environmental yield, without statistics): no reason to stop.
+                "aux_dhw": SERIES["env"][2],
             },
         },
     )
@@ -162,3 +165,18 @@ async def test_hours_from_the_source_statistics(
         "sensor", DOMAIN, f"{entry.entry_id}_starts_today"
     )
     assert found is None
+
+    # mypyllant starts its sum anew after a week without a fetch: the first
+    # row has a huge negative change. It is passed over, nothing is booked.
+    write_hours(hass, "heat", [3000.0] * 4 + [-40_000_000.0, 3000.0], FIRST)
+    write_hours(hass, "elec", [1000.0] * 4 + [-12_000_000.0, 1000.0], FIRST)
+    await async_wait_recording_done(hass)
+    freezer.move_to(datetime(2026, 1, 15, 9, 2, 0, tzinfo=UTC))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    await hass.async_block_till_done()
+    assert runtime.booked_until == FIRST + timedelta(hours=6)
+    assert value(hass, entry, "heat_heating") == pytest.approx(7.0)
+    assert value(hass, entry, "electricity_heating") == pytest.approx(2.0)
+    assert value(hass, entry, "standby") == 0
