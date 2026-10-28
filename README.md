@@ -151,6 +151,8 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 
 *Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt.
 
+Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
+
 ## Entitäten
 
 Alle Entitäten hängen an einem eigenen Gerät je Wärmepumpe. Welche entstehen, hängt von den zugeordneten Signalen und Einstellungen ab.

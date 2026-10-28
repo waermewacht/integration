@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, STATE_UNAVAILABLE, Platform
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN
+from .adopt import own_match, signals_to_adopt
+from .const import CONF_ENTITIES, CONF_KNOWN_SIGNALS, CONF_TEMPLATE, DOMAIN
+from .profiles import RegistryEntry, find
 from .runtime import HeatPumpRuntime
 from .services import async_setup_services
+from .templates import TEMPLATES
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
 ISSUES = (
@@ -42,6 +50,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> bool:
     """Set up one heat pump."""
+    _adopt_new_signals(hass, entry)
     runtime = HeatPumpRuntime(hass, entry)
     await runtime.async_start()
     entry.runtime_data = runtime
@@ -62,6 +71,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
         hass, runtime.async_import_history(), "waermewacht_import_history"
     )
     return True
+
+
+def _adopt_new_signals(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> None:
+    """Take over signals the template learned since the entry was set up
+    (adopt.py); before the runtime starts, so no reload is needed."""
+    template = TEMPLATES.get(entry.data.get(CONF_TEMPLATE) or "")
+    if template is None:
+        return
+    configured: dict[str, str] = dict(entry.data.get(CONF_ENTITIES) or {})
+    known = entry.data.get(CONF_KNOWN_SIGNALS)
+    current = sorted(s.value for s in template.signals)
+    todo = signals_to_adopt(template.signals, known, configured)
+    added: dict[str, str] = {}
+    if todo:
+        registry = er.async_get(hass)
+        entries = [
+            RegistryEntry(
+                e.entity_id,
+                e.platform,
+                e.unique_id,
+                e.original_name,
+                usable=e.disabled_by is None
+                and (state := hass.states.get(e.entity_id)) is not None
+                and state.state != STATE_UNAVAILABLE,
+            )
+            for e in registry.entities.values()
+            if e.platform == template.platform
+        ]
+        match = own_match(find(template, entries), configured)
+        if match is not None:
+            added = {s.value: match.entities[s] for s in todo if s in match.entities}
+    if not added and known == current:
+        return
+    if added:
+        _LOGGER.info("Taking over new signals of %s: %s", template.label, added)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_ENTITIES: {**configured, **added},
+            CONF_KNOWN_SIGNALS: current,
+        },
+    )
 
 
 async def _async_update_listener(

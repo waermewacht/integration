@@ -37,6 +37,7 @@ from .const import (
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
     CONF_HISTORY,
+    CONF_KNOWN_SIGNALS,
     CONF_MIN_ELECTRICITY,
     CONF_MIN_POWER,
     CONF_NAME,
@@ -343,7 +344,12 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             entry = self._get_reconfigure_entry()
             # The update listener reloads the entry.
             return self.async_update_and_abort(
-                entry, data={**entry.data, CONF_ENTITIES: entities}
+                entry,
+                data={
+                    **entry.data,
+                    CONF_ENTITIES: entities,
+                    CONF_KNOWN_SIGNALS: _known(entry.data.get(CONF_TEMPLATE)),
+                },
             )
         unique_id = self._unique_id or next(
             entities[s.value]
@@ -363,8 +369,15 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     for entity, aliases in self._history.items()
                     if entity in entities.values()
                 },
+                CONF_KNOWN_SIGNALS: _known(self._template),
             },
         )
+
+
+def _known(template_key: str | None) -> list[str]:
+    """Signals the template offers now: a later version adopts only newer ones."""
+    template = TEMPLATES.get(template_key or "")
+    return sorted(s.value for s in template.signals) if template else []
 
 
 # Optional settings in sections of the options form; an empty field is unset.

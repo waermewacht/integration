@@ -196,3 +196,30 @@ async def test_options(hass: HomeAssistant) -> None:
     assert "gas_base_price" not in entry.options
     assert entry.options["design_outdoor_temp"] == -12.0
     assert "costs" not in entry.options
+
+
+async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:
+    """An entry from before the hot water temperature existed gets it."""
+    add_ems_esp(hass)
+    registry = er.async_get(hass)
+    found = registry.async_get_or_create(
+        "sensor", "mqtt", "boiler_dhw_curtemp", suggested_object_id="boiler_dhw_curtemp"
+    )
+    hass.states.async_set(found.entity_id, "47.5", {"unit_of_measurement": "°C"})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": "sensor.boiler_nrgheat",
+                "elec_heating": "sensor.boiler_meterheat",
+                "compressor": "binary_sensor.boiler_hpcompon",
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.data[CONF_ENTITIES]["dhw_temp"] == found.entity_id
+    # Known from now on: removing it by hand keeps it removed.
+    assert "dhw_temp" in entry.data["template_signals"]

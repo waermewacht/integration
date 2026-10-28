@@ -151,6 +151,8 @@ Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUN
 
 *Wärmewacht → ⋮ → Reconfigure* shows the entity form again with the current mapping. The figures booked so far are kept. A newly added meter counts from that moment.
 
+If a template learns a new signal in an update (e.g. the hot water temperature), Wärmewacht adds it at start when it belongs to the same heat pump and the entry has none. What you deliberately remove under *Reconfigure* stays removed.
+
 ## Entities
 
 All entities belong to a separate device per heat pump. Which ones are created depends on the mapped signals and the settings.

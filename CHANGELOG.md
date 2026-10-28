@@ -31,7 +31,7 @@
 
 **Beim Update beachten:**
 
-- Neue Felder kommen bei bestehenden Einträgen nicht automatisch dazu. Lambda und iDM: „Strom Abtauen“ (und bei Lambda „Strom Stillstand“) einmal unter *Neu konfigurieren* auswählen.
+- **Neue Felder der Vorlagen** übernimmt Wärmewacht jetzt selbst: Findet die Vorlage für dieselbe Wärmepumpe ein Signal, das es beim Einrichten noch nicht gab (etwa die Warmwasser-Temperatur oder „Strom Abtauen“ bei Lambda und iDM), wird es beim Start eingetragen. Ein Feld, das du später unter *Neu konfigurieren* entfernst, bleibt entfernt.
 - „Laufzeit heute“ wechselt von Stunden auf Minuten; der bisherige Verlauf zeigt bis zum Update Stunden.
 
 ## 0.1.0b8 – 2026-10-27
