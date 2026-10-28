@@ -17,6 +17,10 @@
 
 Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines Home Assistant.
 
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/arbeitszahlen.png" alt="Dashboard mit Arbeitszahlen je Betriebsart für heute, Monat und Saison, Kosten und Takten" width="720">
+
+<sub>Echte Werte einer Bosch Compress 5800i AW (EMS-ESP) im Oktober. „Heizen+WW“ ist die Arbeitszahl mit Stillstand-Strom und liegt deshalb unter beiden Einzelwerten.</sub>
+
 ## Was Wärmewacht kann
 
 - **Arbeitszahlen** für Heizen, Warmwasser und Heizen + Warmwasser, dazu die **Leistungszahl Kühlen (EER)**, jeweils für heute, gestern, Monat, Saison und gesamt.
@@ -96,6 +100,13 @@ Wärmewacht wird über HACS als benutzerdefiniertes Repository installiert. Jede
 
 1. **Name und Quelle:** Der Name (Vorgabe „Wärmepumpe“) wird Gerätename und Präfix der Entity-IDs. Als Quelle stehen die gefundenen Wärmepumpen zur Wahl (EMS-ESP, bei mehreren mit ihrem MQTT-Präfix; Bosch HomeCom mit der Gateway-Nummer) oder *Manuell*.
 2. **Entitäten:** Mit einer Vorlage ist das Formular ausgefüllt; jedes Feld lässt sich ändern. Manuell wählst du selbst.
+
+<table>
+  <tr>
+    <td valign="top"><img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/einrichtung_1.png" alt="Schritt 1: Name und Quelle, die Vorlagen haben zwei Wärmepumpen gefunden" width="360"></td>
+    <td valign="top"><img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/einrichtung_2.png" alt="Schritt 2: von der EMS-ESP-Vorlage ausgefüllte Zähler für Heizen, Warmwasser und Kühlen" width="360"></td>
+  </tr>
+</table>
 
 | Abschnitt | Feld | EMS-ESP (Standardformat) |
 | --- | --- | --- |
@@ -254,6 +265,8 @@ Eine Ladung ist ein zusammenhängender Zeitraum mit der Betriebsart Warmwasser. 
 ### Gesundheits-Check
 
 Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kosten oder auf einen Defekt hindeuten. Er sagt, **was** auffällt und **woran** das zu sehen ist, nicht **warum**. Reichen die Daten nicht, ist ein Sensor *unbekannt* und nennt im Attribut `reason` den Grund, nie „aus“ mangels Daten. Hergeleitet und belegt in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md).
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/gesundheit.png" alt="Problem-Sensoren des Gesundheits-Checks: Effizienz gesunken, Heizstab bei milder Witterung, Heizstab bei Warmwasserladungen, Auffälliges Takten" width="400">
 
 | Binärsensor (Problem) | An, wenn | Braucht |
 | --- | --- | --- |
@@ -511,6 +524,8 @@ entities:
 ```
 
 ### AZ-Kennlinie und Energiesignatur
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="AZ-Kennlinie Heizen über der Außentemperatur, Energiesignatur mit Heizlast-Gerade und Kennwerte wie Heizlast, Heizgrenze und Gradtage" width="720">
 
 Beide Diagramme brauchen die HACS-Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die Grenzen der y-Achse (`min`, `max`) passt du an deine Anlage an.
 

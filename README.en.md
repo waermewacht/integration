@@ -17,6 +17,10 @@
 
 The user interface is available in German and English and follows the language of your Home Assistant.
 
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/arbeitszahlen.png" alt="Dashboard with performance factors per mode for today, month and season, costs and cycling" width="720">
+
+<sub>Real figures of a Bosch Compress 5800i AW (EMS-ESP) in October, German UI. "Heizen+WW" (heating + hot water) is the factor including standby electricity and is therefore below both single values.</sub>
+
 ## Features
 
 - **Performance factors** for heating, hot water and heating + hot water, plus the **energy efficiency ratio for cooling (EER)**, each for today, yesterday, month, season and total.
@@ -96,6 +100,13 @@ Wärmewacht is installed through HACS as a custom repository. Every version is a
 
 1. **Name and source:** The name (default "Wärmepumpe") becomes the device name and the prefix of the entity IDs. As source you choose one of the heat pumps found (EMS-ESP, with the MQTT prefix if there are several; Bosch HomeCom with the gateway number) or *Manual*.
 2. **Entities:** With a template the form is filled in; every field can be changed. With *Manual* you pick them yourself.
+
+<table>
+  <tr>
+    <td valign="top"><img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/einrichtung_1.png" alt="Step 1: name and source, the templates found two heat pumps" width="360"></td>
+    <td valign="top"><img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/einrichtung_2.png" alt="Step 2: meters for heating, hot water and cooling filled in by the EMS-ESP template" width="360"></td>
+  </tr>
+</table>
 
 | Section | Field | EMS-ESP (standard format) |
 | --- | --- | --- |
@@ -254,6 +265,8 @@ A charge is one continuous period of the activity hot water. A defrost in betwee
 ### Health check
 
 Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hint at a fault. It says **what** stands out and **how** that shows, not **why**. If the data are not enough, a sensor is *unknown* and gives the reason in the attribute `reason`, never "off" for lack of data. Derived and referenced in [docs/GESUNDHEITSCHECK.md](docs/GESUNDHEITSCHECK.md) (German).
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/gesundheit.png" alt="Problem sensors of the health check: efficiency dropped, backup heater in mild weather, backup heater in hot water charges, conspicuous cycling" width="400">
 
 | Binary sensor (problem) | On if | Needs |
 | --- | --- | --- |
@@ -511,6 +524,8 @@ entities:
 ```
 
 ### Performance curve and energy signature
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="Heating performance curve over the outdoor temperature, energy signature with the heat load line and figures such as heat load, heating limit and degree days" width="720">
 
 Both charts need the HACS card [apexcharts-card](https://github.com/RomRider/apexcharts-card). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. Adjust the limits of the y axis (`min`, `max`) to your installation.
 
