@@ -1,8 +1,8 @@
 # Wärmewacht – Projektkontext für Claude
 
-Home-Assistant-Custom-Integration (HACS), Domain `waermewacht`, Anzeigename „Wärmewacht“. Wertet aus vorhandenen Entitäten Effizienz und Betriebsverhalten einer Wärmepumpe aus: Arbeitszahlen je Modus und Zeitraum, Takte, Abtauungen, Warmwasser je Ladung, Kosten und Gasvergleich, AZ-Kennlinie, Heizlast, Gradtage und ein Gesundheits-Check (`docs/GESUNDHEITSCHECK.md`). Vorlagen für EMS-ESP und Bosch HomeCom (erprobt) sowie als Beta für Luxtronik, Stiebel ISG, HeishaMon, Lambda, iDM, Viessmann ViCare, Mitsubishi Ecodan (MELCloud, F1p) und Vaillant (mypyllant). **Nur lesen, nie steuern.** Schwesterprojekt von Streckenwacht (`../streckenwacht`), Eilwacht (`../eilwacht`), Einspeisewacht (`../einspeisewacht`) und Tarifwacht (`../tarifwacht`) – deren Muster übernehmen, wo es passt.
+Home-Assistant-Custom-Integration (HACS), Domain `waermewacht`, Anzeigename „Wärmewacht“. Wertet aus vorhandenen Entitäten Effizienz und Betriebsverhalten einer Wärmepumpe aus: Arbeitszahlen je Modus und Zeitraum, Takte, Abtauungen, Warmwasser je Ladung, Kosten und Gasvergleich, AZ-Kennlinie, Heizlast, Gradtage und ein Gesundheits-Check (`docs/GESUNDHEITSCHECK.md`). Vorlagen für EMS-ESP und Bosch HomeCom (erprobt) sowie als Beta für Luxtronik, Stiebel ISG, HeishaMon, Lambda, iDM, Viessmann ViCare, Mitsubishi Ecodan (MELCloud, F1p, ESPHome), Vaillant (mypyllant) und Waterkotte. **Nur lesen, nie steuern.** Schwesterprojekt von Streckenwacht (`../streckenwacht`), Eilwacht (`../eilwacht`), Einspeisewacht (`../einspeisewacht`) und Tarifwacht (`../tarifwacht`) – deren Muster übernehmen, wo es passt.
 
-Stand: Betas 0.1.0b1–b8 seit 2026-10-27, das erste Release ohne Beta wird 0.1.1 (nicht 0.1.0, siehe Release Schritt 1). Arbeitsstand in `NOTES.md`.
+Stand: Betas 0.1.0b1–b8 ab 2026-10-27, **0.1.1 am 2026-10-28** als erstes Release ohne Beta (nicht 0.1.0, weil HACS 0.1.0bN davor einordnet). Arbeitsstand in `NOTES.md`.
 
 ## Dokumentation
 
@@ -34,7 +34,7 @@ Stand: Betas 0.1.0b1–b8 seit 2026-10-27, das erste Release ohne Beta wird 0.1.
 
 1. **Formate nie raten.** Die Dateien in `tests/fixtures/` sind die Wahrheit über Entitäten, Attribute und Zustandswerte der Quellen (Herkunft in `tests/fixtures/_index.json`). Neue Hersteller nur mit Fixture; nur aus Quellcode abgeleitete Vorlagen stehen im README als „experimentell“.
 2. **Fachwerte nie aus dem Gedächtnis.** Kennwerte, Emissionsfaktoren, Normwerte nur mit Quelle in `docs/ENTWICKLUNG.md`.
-3. **Keine personenbezogenen Daten ins Repo:** keine Zählerstände, Verläufe, Arbeitszahlen oder Anlagendaten des Inhabers – auch nicht als Testwerte. Fixtures haben echtes Format und erfundene Werte. Rohdaten nur in `raw/`.
+3. **Keine personenbezogenen Daten ins Repo:** keine Zählerstände, Verläufe, Arbeitszahlen oder Anlagendaten des Inhabers – auch nicht als Testwerte. Fixtures haben echtes Format und erfundene Werte. Rohdaten nur in `raw/`. **Einzige Ausnahme** (Freigabe des Inhabers 2026-10-28): die README-Screenshots in `assets/screenshots/` zeigen echte Werte seiner Anlage (Arbeitszahlen, Kosten, Heizlast) und nennen das Modell; Seriennummern und Gerätenummern bleiben unkenntlich.
 4. Entwickelt wird gegen eine produktive Home-Assistant-Instanz. Logik (Läufe, Buchung, Arbeitszahl) erst als reines Python ohne HA-Importe testen. Ein Fehler (Quelle `unavailable`, Zähler springt) darf nie die Integration oder HA blockieren und nie still falsch buchen.
 5. Code, Kommentare, Entity-IDs auf Englisch; UI-Texte über `strings.json` + `translations/de.json` und `en.json`. Doku auf Deutsch.
 6. Tests gegen Fixtures. HA-Tests (`tests/ha/`, `pytest-homeassistant-custom-component`) nur in GitHub Actions.
