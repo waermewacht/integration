@@ -131,6 +131,9 @@
       "starts_total": {
         "default": "mdi:counter"
       },
+      "starts_season": {
+        "default": "mdi:counter"
+      },
       "runtime_today": {
         "default": "mdi:timer-outline"
       },

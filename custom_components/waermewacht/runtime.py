@@ -145,6 +145,10 @@ MODE_OF: dict[Signal, Mode] = {
 CRITICAL_RUNS_PER_DAY = 3
 # Start of the statistics query for "everything".
 EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
+# Flow and return swapped (docs/GESUNDHEITSCHECK.md 4.10 d): the daily mean
+# spread while heating below this, after at least an hour of heating.
+SWAPPED_SPREAD_K = -1.0
+SWAPPED_MIN_SECONDS = 3600.0
 # Below the disinfection temperature by this much, the next rise counts
 # as a new disinfection.
 DISINFECTION_RELEASE_K = 5.0
@@ -245,6 +249,9 @@ class HeatPumpRuntime:
         self._unavailable_since: dict[str, datetime] = {}
         self._last_tick: datetime | None = None
         self.outdoor = Mean()  # outdoor temperature today, for the diary
+        # Daily verdict on the spread (None: not enough heating yet); kept,
+        # because the repair issue is rebuilt from it after a restart.
+        self._swapped: float | None = None
         self.diary: list[dict[str, Any]] = []
         # Hot water charges (charges.py): finished ones in the history file,
         # the running one in the live file; disinfection from the storage
@@ -266,6 +273,9 @@ class HeatPumpRuntime:
         # Degree days G20/15 of the current season up to yesterday, and the
         # heat per degree day of the previous season for comparison.
         self.degree_days: DegreeDays | None = None
+        # Counter of starts at the start of the season (or the earliest
+        # value in the statistics), for "Starts season".
+        self.starts_baseline: tuple[int, datetime] | None = None
         self.degree_days_previous: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
@@ -638,6 +648,7 @@ class HeatPumpRuntime:
                 *last_season, self.tz, previous.astimezone(self.tz).date(), first
             )
             self.analysed_at = now
+            self.starts_baseline = await self._async_starts_baseline(current, now)
             self._health_findings(now, hours, outdoor, current, previous)
             await self._async_check_outdoor(now)
         except Exception:  # keep running; the sensors stay as they were
@@ -707,6 +718,40 @@ class HeatPumpRuntime:
         self.findings["aux_mild_weather"] = aux_mild_weather(
             days, mild_from=self.aux_mild_from, threshold_kwh=AUX_KWH
         )
+
+    async def _async_starts_baseline(
+        self, season: datetime, now: datetime
+    ) -> tuple[int, datetime] | None:
+        """Start counter at the start of the season from the statistics: the
+        last hour before it, else the earliest hour after it."""
+        entity_id = self.entities.get(Signal.STARTS_TOTAL)
+        if entity_id is None:
+            return None
+
+        async def rows(start: datetime, end: datetime) -> list[dict[str, Any]]:
+            found = await get_instance(self.hass).async_add_executor_job(
+                statistics_during_period,
+                self.hass,
+                start,
+                end,
+                {entity_id},
+                "hour",
+                None,
+                {"state"},
+            )
+            return [r for r in found.get(entity_id, []) if r.get("state") is not None]
+
+        before = await rows(season - timedelta(days=2), season)
+        if before:
+            return int(before[-1]["state"]), season
+        after = await rows(season, now)
+        if not after:
+            return None
+        first = after[0]
+        start = first["start"]
+        if not isinstance(start, datetime):
+            start = dt_util.utc_from_timestamp(start)
+        return int(first["state"]), start
 
     async def _async_check_outdoor(self, now: datetime) -> None:
         """Repair issue when the outdoor temperature stands still or is
@@ -850,6 +895,14 @@ class HeatPumpRuntime:
             }
         )
         del self.diary[:-DIARY_DAYS]
+
+    def _judge_spread(self) -> None:
+        """At midnight: was yesterday's spread while heating negative?"""
+        if self.spread.seconds < SWAPPED_MIN_SECONDS or self.spread.value is None:
+            return  # too little heating: keep the last verdict
+        value = round(self.spread.value, 1)
+        self._swapped = value if value < SWAPPED_SPREAD_K else None
+        self._dirty = True
 
     def _analysis_due(self, now: datetime) -> bool:
         if (
@@ -1311,6 +1364,7 @@ class HeatPumpRuntime:
         if self.marks.rollover(now, self.totals):
             if day_changed:
                 self._write_diary(now)
+                self._judge_spread()
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
             prune_charges(self.charges, now - timedelta(days=HISTORY_DAYS))
@@ -1340,6 +1394,16 @@ class HeatPumpRuntime:
                 wrong_unit.append(entity_id)
         self._set_issue("missing_entity", missing)
         self._set_issue("energy_unit", wrong_unit)
+        swapped = self._swapped is not None and all(
+            s in self.entities for s in (Signal.FLOW_TEMP, Signal.RETURN_TEMP)
+        )
+        self._set_issue(
+            "flow_return_swapped",
+            [self.entities[Signal.FLOW_TEMP], self.entities[Signal.RETURN_TEMP]]
+            if swapped
+            else [],
+            spread=f"{abs(self._swapped or 0.0):.1f}" if swapped else "",
+        )
 
     def _set_issue(self, key: str, entity_ids: list[str], **placeholders: str) -> None:
         issue_id = f"{self.entry.entry_id}_{key}"
@@ -1469,6 +1533,7 @@ class HeatPumpRuntime:
             "charge": self.charge_tracker.as_dict(),
             "last_disinfection": _iso(self.last_disinfection),
             "hot": self._hot,
+            "swapped": self._swapped,
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1509,6 +1574,7 @@ class HeatPumpRuntime:
         last = data.get("last_disinfection")
         self.last_disinfection = datetime.fromisoformat(last) if last else None
         self._hot = data.get("hot", False)
+        self._swapped = data.get("swapped")
 
     def history_dict(self) -> dict[str, Any]:
         return {

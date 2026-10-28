@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.components.recorder import Recorder
 from homeassistant.components.recorder.models import (
     StatisticData,
@@ -14,7 +15,11 @@ from homeassistant.components.recorder.models import (
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
@@ -125,3 +130,68 @@ async def test_needs_an_outdoor_temperature(hass: HomeAssistant) -> None:
             blocking=True,
             return_response=True,
         )
+
+
+STARTS = "sensor.boiler_totalcompstarts"
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_starts_season_from_the_statistics(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """The counter's statistics reach back to 12 January only: the season
+    count starts there and says so."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    import_series(hass, OUTDOOR, mean=True)
+    async_import_statistics(
+        hass,
+        StatisticMetaData(
+            mean_type=StatisticMeanType.NONE,
+            has_sum=True,
+            name=None,
+            source="recorder",
+            statistic_id=STARTS,
+            unit_class=None,
+            unit_of_measurement=None,
+        ),
+        [
+            StatisticData(
+                start=FIRST_HOUR + timedelta(hours=i), state=2000 + i, sum=float(i)
+            )
+            for i in range(HOURS)
+        ],
+    )
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    hass.states.async_set(STARTS, "2090", {"state_class": "total_increasing"})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+                "starts_total": STARTS,
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    await hass.async_block_till_done()
+
+    found = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_starts_season"
+    )
+    state = hass.states.get(found)
+    assert state.state == "90"
+    assert state.attributes["since"] == FIRST_HOUR.isoformat()

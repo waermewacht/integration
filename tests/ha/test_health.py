@@ -227,3 +227,30 @@ async def test_diagnostics_list_the_source_device_masked(hass: HomeAssistant) ->
         e for e in found["entities"] if e["unique_id"].startswith("boiler_gateway_")
     )
     assert masked["state"] == masked["unique_id"].removeprefix("boiler_gateway_")
+
+
+@pytest.mark.freeze_time(START)
+async def test_flow_and_return_swapped(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    hass.states.async_set(FLOW, "24.0", TEMPERATURE)
+    hass.states.async_set(RETURN, "28.0", TEMPERATURE)
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 11)
+    await tick(hass, freezer, 120)
+    assert issue(hass, entry, "flow_return_swapped") is None  # judged at midnight
+    # 09:11 to just after midnight.
+    await tick(hass, freezer, 14 * 60 + 50)
+    await tick(hass, freezer, 1)
+    found = issue(hass, entry, "flow_return_swapped")
+    assert found is not None
+    assert found.translation_placeholders["spread"] == "4.0"
+    assert found.translation_placeholders["entities"] == f"{FLOW}, {RETURN}"
+
+    # A day with a normal spread clears it.
+    hass.states.async_set(FLOW, "30.0", TEMPERATURE)
+    await tick(hass, freezer, 24 * 60)
+    await tick(hass, freezer, 1)
+    assert issue(hass, entry, "flow_return_swapped") is None

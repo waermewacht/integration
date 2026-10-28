@@ -297,6 +297,9 @@
       "starts_total": {
         "name": "Starts total"
       },
+      "starts_season": {
+        "name": "Starts season"
+      },
       "runtime_today": {
         "name": "Run time today"
       },
@@ -366,6 +369,10 @@
     "energy_unit": {
       "title": "Wärmewacht: unusable unit",
       "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."
+    },
+    "flow_return_swapped": {
+      "title": "Wärmewacht: flow and return swapped?",
+      "description": "While heating yesterday, the flow of {name} was {spread} K colder than the return on average: {entities}. A heat pump warms the water, so the flow must be warmer. Usually the two entities are swapped in Wärmewacht (Devices & services → Wärmewacht → Reconfigure) or the sensors at the heat pump. A flow sensor behind a mixing valve can also cause this. Spread and flow temperature are wrong until then. The notice disappears after a day with a normal spread."
     },
     "counter_stuck": {
       "title": "Wärmewacht: meter stands still",

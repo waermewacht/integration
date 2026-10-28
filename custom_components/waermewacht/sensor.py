@@ -172,6 +172,26 @@ def _starts_total_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
 
 
 HAS_COMPRESSOR = _has(Signal.COMPRESSOR)
+
+
+def _starts_season(runtime: HeatPumpRuntime) -> int | None:
+    total, _ = runtime.starts_total()
+    if total is None or runtime.starts_baseline is None:
+        return None
+    return max(total - runtime.starts_baseline[0], 0)
+
+
+def _starts_season_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    if runtime.starts_baseline is None or (count := _starts_season(runtime)) is None:
+        return {}
+    since = runtime.starts_baseline[1]
+    days = (dt_util.utcnow() - since).total_seconds() / 86400
+    return {
+        "since": since.isoformat(),
+        "per_day": round(count / days, 1) if days >= 1 else None,
+    }
+
+
 CYCLING = [
     HeatPumpSensorDescription(
         key="starts_today",
@@ -191,6 +211,14 @@ CYCLING = [
             Signal.COMPRESSOR in r.entities or Signal.STARTS_TOTAL in r.entities
         ),
         attributes=_starts_total_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="starts_season",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value=_starts_season,
+        # The baseline comes with the daily analysis (outdoor temperature).
+        needs=_has(Signal.STARTS_TOTAL, Signal.OUTDOOR_TEMP),
+        attributes=_starts_season_attributes,
     ),
     HeatPumpSensorDescription(
         key="runtime_today",

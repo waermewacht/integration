@@ -297,6 +297,9 @@
       "starts_total": {
         "name": "Starts gesamt"
       },
+      "starts_season": {
+        "name": "Starts Saison"
+      },
       "runtime_today": {
         "name": "Laufzeit heute"
       },
@@ -366,6 +369,10 @@
     "energy_unit": {
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
+    },
+    "flow_return_swapped": {
+      "title": "Wärmewacht: Vor- und Rücklauf vertauscht?",
+      "description": "Beim Heizen war gestern der Vorlauf von {name} im Mittel {spread} K kälter als der Rücklauf: {entities}. Eine Wärmepumpe erwärmt das Wasser, der Vorlauf muss also wärmer sein. Meist sind die beiden Entitäten in Wärmewacht vertauscht (Geräte & Dienste → Wärmewacht → Neu konfigurieren) oder die Fühler an der Wärmepumpe. Auch ein Vorlauffühler hinter einem Mischer kann das bewirken. Spreizung und Vorlauftemperatur stimmen bis dahin nicht. Der Hinweis verschwindet nach einem Tag mit normaler Spreizung."
     },
     "counter_stuck": {
       "title": "Wärmewacht: Zähler steht still",

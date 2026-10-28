@@ -78,6 +78,7 @@ SENSORS = {
     "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
     "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
     "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
+    "starts_season": ("Starts season", "Starts Saison", "mdi:counter"),
     "runtime_today": ("Run time today", "Laufzeit heute", "mdi:timer-outline"),
     "run_minutes_today": (
         "Run time per start today",
@@ -574,6 +575,20 @@ def build(lang: int) -> dict:
                     (
                         "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}.",
                         "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}.",
+                    )
+                ),
+            },
+            "flow_return_swapped": {
+                "title": t(
+                    (
+                        "Wärmewacht: flow and return swapped?",
+                        "Wärmewacht: Vor- und Rücklauf vertauscht?",
+                    )
+                ),
+                "description": t(
+                    (
+                        "While heating yesterday, the flow of {name} was {spread} K colder than the return on average: {entities}. A heat pump warms the water, so the flow must be warmer. Usually the two entities are swapped in Wärmewacht (Devices & services → Wärmewacht → Reconfigure) or the sensors at the heat pump. A flow sensor behind a mixing valve can also cause this. Spread and flow temperature are wrong until then. The notice disappears after a day with a normal spread.",
+                        "Beim Heizen war gestern der Vorlauf von {name} im Mittel {spread} K kälter als der Rücklauf: {entities}. Eine Wärmepumpe erwärmt das Wasser, der Vorlauf muss also wärmer sein. Meist sind die beiden Entitäten in Wärmewacht vertauscht (Geräte & Dienste → Wärmewacht → Neu konfigurieren) oder die Fühler an der Wärmepumpe. Auch ein Vorlauffühler hinter einem Mischer kann das bewirken. Spreizung und Vorlauftemperatur stimmen bis dahin nicht. Der Hinweis verschwindet nach einem Tag mit normaler Spreizung.",
                     )
                 ),
             },

@@ -21,6 +21,7 @@ ISSUES = (
     "source_unavailable",
     "outdoor_temp_stuck",
     "outdoor_temp_implausible",
+    "flow_return_swapped",
 )
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
