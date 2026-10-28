@@ -304,7 +304,7 @@ MONTHS_DE = [
 ]
 
 
-def build(lang: int) -> dict:
+def _build(lang: int) -> dict:
     t = lambda pair: pair[lang]  # noqa: E731
     sections = {}
     for key, (names, fields, desc) in SECTIONS.items():
@@ -326,8 +326,8 @@ def build(lang: int) -> dict:
                     "title": t(("Set up a heat pump", "Wärmepumpe einrichten")),
                     "description": t(
                         (
-                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
-                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
+                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
+                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
                         )
                     ),
                     "data": {
@@ -890,6 +890,24 @@ def build(lang: int) -> dict:
             },
         },
     }
+
+
+DISABLED_HINT = (
+    "Disabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+    "Deaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
+)
+
+
+def build(lang: int) -> dict:
+    data = _build(lang)
+    steps = data["config"]["step"]
+    # The first step again, with the hint on disabled entities (config_flow).
+    user = steps["user"]
+    steps["user_disabled"] = {
+        **user,
+        "description": user["description"] + "\n\n" + DISABLED_HINT[lang],
+    }
+    return data
 
 
 def icons() -> dict:

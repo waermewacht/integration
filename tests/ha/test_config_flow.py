@@ -48,7 +48,9 @@ async def test_ems_esp_is_found_and_prefilled(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": SOURCE_USER}
     )
     assert result["type"] is FlowResultType.FORM
-    assert result["description_placeholders"] == {"found": "1", "disabled": "–"}
+    # Nothing disabled: the step without the hint.
+    assert result["step_id"] == "user"
+    assert result["description_placeholders"] == {"found": "1"}
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "WP", "source": "ems_esp:"}
     )
@@ -103,11 +105,17 @@ async def test_homecom_points_to_disabled_entities(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
+    assert result["step_id"] == "user_disabled"
     assert result["description_placeholders"] == {
         "found": "0",
         "disabled": "sensor.boschcom_k40_101234567_energy_compressor_ch, "
         "sensor.boschcom_k40_101234567_heat_produced_ch",
     }
+    # The step with the hint goes on like the plain one.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    assert result["step_id"] == "entities"
 
 
 async def test_homecom_is_found_and_prefilled(hass: HomeAssistant) -> None:

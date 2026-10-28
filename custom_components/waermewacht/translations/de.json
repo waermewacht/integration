@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Wärmepumpe einrichten",
-        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
+        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
         "data": {
           "name": "Name",
           "source": "Quelle"
@@ -75,6 +75,18 @@
             },
             "description": "Nur, wenn die Wärmepumpe keine einzelne Betriebsart-Entität hat. Ein Merker „an“ gewinnt in dieser Reihenfolge: Abtauen, Warmwasser, Kühlen, Heizen. Die eingestellte Betriebsart macht aus Heizen Kühlen, solange sie kühlt."
           }
+        }
+      },
+      "user_disabled": {
+        "title": "Wärmepumpe einrichten",
+        "description": "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\nDeaktivierte Entitäten, die eine Vorlage nutzen würde: {disabled}. In den Entitäts-Einstellungen aktivieren, warten, bis sie einen Wert melden, dann diese Einrichtung neu starten.",
+        "data": {
+          "name": "Name",
+          "source": "Quelle"
+        },
+        "data_description": {
+          "name": "Präfix der Entity-IDs.",
+          "source": "Eine gefundene Wärmepumpe füllt die Entitäten aus; manuell: selbst auswählen."
         }
       }
     },

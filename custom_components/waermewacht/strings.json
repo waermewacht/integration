@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up a heat pump",
-        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
         "data": {
           "name": "Name",
           "source": "Source"
@@ -75,6 +75,18 @@
             },
             "description": "Only if the heat pump has no single activity entity. An 'on' flag wins in this order: defrost, hot water, cooling, heating. The set mode turns heating into cooling while it cools."
           }
+        }
+      },
+      "user_disabled": {
+        "title": "Set up a heat pump",
+        "description": "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\nDisabled entities a template would use: {disabled}. Enable them in the entity settings, wait until they report a value, then start this setup again.",
+        "data": {
+          "name": "Name",
+          "source": "Source"
+        },
+        "data_description": {
+          "name": "Prefix of the entity ids.",
+          "source": "A found heat pump fills in the entities; manual: pick them yourself."
         }
       }
     },

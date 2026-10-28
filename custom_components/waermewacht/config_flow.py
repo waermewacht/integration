@@ -321,14 +321,21 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
+        placeholders = {"found": str(len(matches))}
+        # The hint on disabled entities only when there are some.
+        if disabled := disabled_entities(self.hass):
+            placeholders["disabled"] = ", ".join(disabled)
         return self.async_show_form(
-            step_id="user",
+            step_id="user_disabled" if disabled else "user",
             data_schema=schema,
-            description_placeholders={
-                "found": str(len(matches)),
-                "disabled": ", ".join(disabled_entities(self.hass)) or "–",
-            },
+            description_placeholders=placeholders,
         )
+
+    async def async_step_user_disabled(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """The first step, shown with the hint on disabled entities."""
+        return await self.async_step_user(user_input)
 
     async def async_step_entities(
         self, user_input: dict[str, Any] | None = None

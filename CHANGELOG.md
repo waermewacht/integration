@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Leistung je Heizlast** wird wie die Arbeitszahlen als Zahl angezeigt (Dezimalkomma statt „1.56“) und bekommt Langzeitstatistik.
+- **Einrichtung:** Der Hinweis auf deaktivierte Entitäten erscheint nur noch, wenn eine Vorlage welche nutzen würde (bisher stand dort „…: –.“).
 
 ## 0.1.1 – 2026-10-28
 
