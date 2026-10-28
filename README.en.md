@@ -506,11 +506,13 @@ The entity IDs depend on the name of the entry (here the default "Wärmepumpe") 
 
 ### Statistics card: heat and electricity per month
 
-The [report](#report) gives a performance factor per month. A statistics card shows heat and electricity per month:
+The [report](#report) gives a performance factor per month. A statistics card shows heat and electricity per month, standby as a bar of its own. The months before the setup come from the long-term statistics of the meters:
+
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/monatsdiagramm.png" alt="Bar chart of heat and electricity per month for heating and hot water, plus standby (German UI)" width="480">
 
 ```yaml
 type: statistics-graph
-title: Heating per month
+title: Heat and electricity per month
 chart_type: bar
 period: month
 stat_types:
@@ -518,9 +520,15 @@ stat_types:
 days_to_show: 365
 entities:
   - entity: sensor.warmepumpe_heat_heating
-    name: Heat
+    name: Heat heating
+  - entity: sensor.warmepumpe_heat_hot_water
+    name: Heat hot water
   - entity: sensor.warmepumpe_electricity_heating
-    name: Electricity
+    name: Electricity heating
+  - entity: sensor.warmepumpe_electricity_hot_water
+    name: Electricity hot water
+  - entity: sensor.warmepumpe_standby_electricity
+    name: Standby
 ```
 
 ### Performance curve and energy signature
