@@ -25,9 +25,9 @@ statistics first, so heat and electricity of a mode share one source.
 
 Navigator 10 is not covered: its web statistics carry heat only, and the
 integration's own `energy_electrical_total` (trapezoidal sum of 4122) is a
-total over all modes. Defrost heat and electricity are a category of their
-own and are left out (no signal for them): the ratio of heating comes out
-slightly high.
+total over all modes. Defrosts are a category of their own: their
+electricity goes to the mode running (mostly heating); their heat is left
+out, as its sign is not documented.
 """
 
 from __future__ import annotations
@@ -88,6 +88,7 @@ IDM = IdmTemplate(
         Signal.ELEC_HEATING: ((_S, "web_stat_elcons_total_heating"),),
         Signal.ELEC_DHW: ((_S, "web_stat_elcons_total_hotwater"),),
         Signal.ELEC_COOLING: ((_S, "web_stat_elcons_total_cooling"),),
+        Signal.ELEC_DEFROST: ((_S, "web_stat_elcons_total_defrost"),),
         # No backup heater electricity: `energy_electric_heater` is its heat,
         # and whether the heat statistics include it is not documented.
         # Compressor 1 via Modbus (1100); some Navigator 2.0 report 0xFFFF

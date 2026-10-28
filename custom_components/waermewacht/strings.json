@@ -48,7 +48,9 @@
               "compressor": "Compressor running (on/off or speed)",
               "activity": "Activity",
               "starts_total": "Compressor starts total",
-              "aux_total": "Backup heater total (only without per mode)"
+              "aux_total": "Backup heater total (only without per mode)",
+              "elec_defrost": "Electricity defrost",
+              "elec_standby": "Electricity standby"
             },
             "description": "For starts, short runs, defrosts and standby."
           },

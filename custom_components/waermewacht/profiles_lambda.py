@@ -22,9 +22,9 @@ DEFROST defrost, everything else "stby") into restored lifetime sensors
 "<mode>_energy_total" (electricity, total_increasing) and
 "<mode>_thermal_energy_total" (heat, state class total) in kWh that never
 step back (`set_energy_value`). Those are the counters used here. Defrost
-and standby have counters of their own that no signal takes yet: the
-electricity of defrosts is missing in heating, and Wärmewacht's standby only
-sees what Lambda booked to a mode.
+and standby have counters of their own: their electricity is taken (defrost
+to the mode running, standby as standby); the defrost heat is left out, as
+whether it counts heat taken from or given to the water is not documented.
 """
 
 from __future__ import annotations
@@ -122,6 +122,8 @@ LAMBDA = LambdaTemplate(
         Signal.ELEC_HEATING: ((_S, "heating_energy_total"),),
         Signal.ELEC_DHW: ((_S, "hot_water_energy_total"),),
         Signal.ELEC_COOLING: ((_S, "cooling_energy_total"),),
+        Signal.ELEC_DEFROST: ((_S, "defrost_energy_total"),),
+        Signal.ELEC_STANDBY: ((_S, "stby_energy_total"),),
         # No backup heater energy (only the relay state of the 2nd stage).
         # Compressor unit rating in % (register 1010), 0 while it stands.
         Signal.COMPRESSOR: ((_S, "compressor_unit_rating"),),

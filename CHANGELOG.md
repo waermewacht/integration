@@ -2,6 +2,9 @@
 
 ## Unveröffentlicht
 
+- **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus. Neue Felder „Strom Abtauen“ und „Strom Stillstand“ im Abschnitt Betrieb.
+- **Abtauungen je Außentemperatur-Klasse** gegen die Vorsaison (Abtauungen je Laufstunde) als Attribut `classes` an „Abtauungen heute“, aus dem Tagebuch.
+- **Diagnose-Datei:** Buchungsart der Vorlage, Zeitpunkt der letzten Zählerwerte, Stand der Stundenbuchung, letzte Tagebuch-Einträge. Die Entity-IDs der Zuordnung sind jetzt ebenfalls maskiert.
 - **Gesundheits-Check erweitert:** Sensoren „Spreizung 7 Tage“ und „Leistung je Heizlast“ (neue Einstellungen Heizleistung bei A−7/W35 und kleinste Heizleistung), Anstieg des Stillstands und Abtauungen der letzten 7 Tage als Attribute, Reparaturhinweise „Durchfluss unplausibel“ und „Durchfluss 0 beim Heizen“.
 - **Weitere Hersteller (beta):**
   - **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.

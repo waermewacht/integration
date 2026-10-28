@@ -43,6 +43,8 @@ def test_template_finds_every_signal() -> None:
         Signal.ELEC_HEATING: hp + "heating_energy_total",
         Signal.ELEC_DHW: hp + "hot_water_energy_total",
         Signal.ELEC_COOLING: hp + "cooling_energy_total",
+        Signal.ELEC_DEFROST: hp + "defrost_energy_total",
+        Signal.ELEC_STANDBY: hp + "stby_energy_total",
         Signal.COMPRESSOR: hp + "compressor_unit_rating",
         Signal.ACTIVITY: hp + "operating_state",
         Signal.STARTS_TOTAL: hp + "compressor_start_cycling_total",

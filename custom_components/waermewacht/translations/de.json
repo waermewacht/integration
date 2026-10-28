@@ -48,7 +48,9 @@
               "compressor": "Kompressor läuft (an/aus oder Drehzahl)",
               "activity": "Betriebsart (Aktivität)",
               "starts_total": "Kompressorstarts gesamt",
-              "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)"
+              "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)",
+              "elec_defrost": "Strom Abtauen",
+              "elec_standby": "Strom Stillstand"
             },
             "description": "Für Starts, Kurzläufe, Abtauungen und Stillstand."
           },

@@ -70,6 +70,7 @@ def test_template_finds_every_signal() -> None:
         Signal.ELEC_HEATING: "sensor.idm_elektrische_energie_heizen_gesamt_web_2_0",
         Signal.ELEC_DHW: "sensor.idm_elektrische_energie_warmwasser_gesamt_web_2_0",
         Signal.ELEC_COOLING: "sensor.idm_elektrische_energie_kuhlen_gesamt_web_2_0",
+        Signal.ELEC_DEFROST: "sensor.idm_elektrische_energie_abtauen_gesamt_web_2_0",
         Signal.COMPRESSOR: "binary_sensor.idm_verdichter_1",  # Modbus before web
         Signal.ACTIVITY: "sensor.idm_warmepumpen_betriebsart",
         Signal.STARTS_TOTAL: "sensor.idm_schaltzyklen_stufe_1_web",

@@ -45,6 +45,10 @@ class Signal(StrEnum):
     AUX_HEATING = "aux_heating"
     AUX_DHW = "aux_dhw"
     AUX_TOTAL = "aux_total"
+    # Electricity a source books apart (Lambda, iDM): defrosts belong to the
+    # mode running (mostly heating), standby is standby.
+    ELEC_DEFROST = "elec_defrost"
+    ELEC_STANDBY = "elec_standby"
     # Operation.
     COMPRESSOR = "compressor"
     ACTIVITY = "activity"
@@ -84,7 +88,7 @@ AUX_SIGNALS: dict[Mode, Signal] = {
 }
 ENERGY_SIGNALS: frozenset[Signal] = frozenset(
     {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
-    | {Signal.AUX_TOTAL}
+    | {Signal.AUX_TOTAL, Signal.ELEC_DEFROST, Signal.ELEC_STANDBY}
 )
 
 # Signals that make up the activity, besides the activity entity itself.

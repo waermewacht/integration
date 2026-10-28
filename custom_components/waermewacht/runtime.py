@@ -112,6 +112,8 @@ from .health_extra import (
     OversizeFigure,
     SpreadFigure,
     ZeroFlow,
+    compare_defrost_classes,
+    defrost_classes,
     defrost_figures,
     flow_plausibility,
     oversizing,
@@ -286,6 +288,8 @@ class HeatPumpRuntime:
         self.spread_7d: SpreadFigure | None = None
         self.oversize: OversizeFigure | None = None
         self.defrost_week: DefrostFigures | None = None
+        # Defrosts per run hour per outdoor class, against the previous season.
+        self.defrost_classes: list[dict[str, Any]] = []
         # Flow rate while the compressor heats (l/h), today; the daily verdict
         # on its plausibility (evidence while implausible) and the heating
         # time with a flow of 0.
@@ -768,6 +772,15 @@ class HeatPumpRuntime:
             self.findings["standby_rise"] = standby_rise(self.diary, today, self.tz)
             self.defrost_week = defrost_figures(
                 self.defrosts, outdoor, now - timedelta(days=7), now
+            )
+            first = current.astimezone(self.tz).date()
+            self.defrost_classes = compare_defrost_classes(
+                defrost_classes(self.diary, first, today - timedelta(days=1)),
+                defrost_classes(
+                    self.diary,
+                    previous.astimezone(self.tz).date(),
+                    first - timedelta(days=1),
+                ),
             )
             await self._async_check_outdoor(now)
         except Exception:  # keep running; the sensors stay as they were
@@ -1495,6 +1508,12 @@ class HeatPumpRuntime:
         if signal is Signal.AUX_TOTAL:
             mode = self.tracker.mode or Mode.HEATING
             kind = Kind.AUX
+        elif signal is Signal.ELEC_DEFROST:
+            # A defrost serves the mode that ran (Lambda, iDM count it apart).
+            mode = self.tracker.mode or Mode.HEATING
+            kind = Kind.ELEC
+        elif signal is Signal.ELEC_STANDBY:
+            mode, kind = Mode.HEATING, Kind.STANDBY
         else:
             mode = MODE_OF[signal]
             if signal in HEAT_SIGNALS.values():

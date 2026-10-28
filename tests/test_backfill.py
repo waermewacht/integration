@@ -57,3 +57,17 @@ def test_electricity_without_heat_counter_is_running() -> None:
     t = hour_totals({Signal.ELEC_HEATING: 1.2}, heat_modes=())
     assert t.get(Kind.ELEC, Mode.HEATING) == pytest.approx(1.2)
     assert t.get(Kind.STANDBY, Mode.HEATING) == 0
+
+
+def test_defrost_and_standby_counted_apart() -> None:
+    """Lambda/iDM: defrost electricity to the mode that ran, standby apart."""
+    t = hour_totals(
+        {
+            Signal.HEAT_HEATING: 3.0,
+            Signal.ELEC_HEATING: 0.9,
+            Signal.ELEC_DEFROST: 0.1,
+            Signal.ELEC_STANDBY: 0.02,
+        }
+    )
+    assert t.get(Kind.ELEC, Mode.HEATING) == pytest.approx(1.0)
+    assert t.get(Kind.STANDBY, Mode.HEATING) == pytest.approx(0.02)

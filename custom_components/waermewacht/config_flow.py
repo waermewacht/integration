@@ -70,6 +70,8 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.ACTIVITY,
         Signal.STARTS_TOTAL,
         Signal.AUX_TOTAL,
+        Signal.ELEC_DEFROST,
+        Signal.ELEC_STANDBY,
     ),
     # Activity from several entities (activity.py), collapsed when unused.
     "activity_parts": (

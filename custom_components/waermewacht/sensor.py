@@ -275,6 +275,7 @@ CYCLING = [
             "minutes": _minutes(r.cycles("today").defrost_seconds),
             "yesterday": r.cycles("yesterday").defrosts,
             **({} if r.defrost_week is None else r.defrost_week.as_attributes()),
+            "classes": r.defrost_classes,
         },
     ),
 ]
@@ -706,6 +707,7 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
             "current",
             "previous",
             "weeks",
+            "classes",
         }
     )
 

@@ -217,6 +217,8 @@ FIELDS = {
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
     "dhw_temp": ("Hot water temperature", "Warmwasser-Temperatur"),
+    "elec_defrost": ("Electricity defrost", "Strom Abtauen"),
+    "elec_standby": ("Electricity standby", "Strom Stillstand"),
     "defrost_flag": ("Defrost running (on/off)", "Abtauen läuft (an/aus)"),
     "dhw_flag": ("Hot water running (on/off)", "Warmwasser läuft (an/aus)"),
     "cooling_flag": ("Cooling running (on/off)", "Kühlen läuft (an/aus)"),
@@ -240,7 +242,14 @@ SECTIONS = {
     "cooling": (("Cooling", "Kühlen"), ("heat_cooling", "elec_cooling"), None),
     "operation": (
         ("Operation", "Betrieb"),
-        ("compressor", "activity", "starts_total", "aux_total"),
+        (
+            "compressor",
+            "activity",
+            "starts_total",
+            "aux_total",
+            "elec_defrost",
+            "elec_standby",
+        ),
         (
             "For starts, short runs, defrosts and standby.",
             "Für Starts, Kurzläufe, Abtauungen und Stillstand.",
