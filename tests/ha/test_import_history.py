@@ -93,7 +93,8 @@ async def test_hours_before_setup_are_imported(
     )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
+    # The import is a background task: wait for it, then for the recorder.
+    await hass.async_block_till_done(wait_background_tasks=True)
     await async_wait_recording_done(hass)
 
     # The sums end at 0, where the sensor's own recorded sum starts.
@@ -109,7 +110,7 @@ async def test_hours_before_setup_are_imported(
     # takes the change of the earliest row against 0.
     freezer.tick(timedelta(minutes=16))
     async_fire_time_changed(hass)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     await async_wait_recording_done(hass)
     assert await sums(hass, entity_id(hass, entry, "heat_heating")) == [1.0, 3.0, 6.0]
     assert await sums(hass, entity_id(hass, entry, "electricity_heating")) == [
@@ -121,9 +122,9 @@ async def test_hours_before_setup_are_imported(
 
     # Once only: a reload neither imports nor shifts again.
     assert await hass.config_entries.async_reload(entry.entry_id)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     freezer.tick(timedelta(minutes=16))
     async_fire_time_changed(hass)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     await async_wait_recording_done(hass)
     assert await sums(hass, entity_id(hass, entry, "heat_heating")) == [1.0, 3.0, 6.0]
