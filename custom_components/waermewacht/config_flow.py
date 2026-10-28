@@ -55,7 +55,7 @@ from .const import (
 from .counter import UNIT_FACTORS
 from .health import DROP_PERCENT, MILD_FROM
 from .model import AUX_SIGNALS, ELEC_SIGNALS, ENERGY_SIGNALS, HEAT_SIGNALS, Signal
-from .profiles import Match, RegistryEntry, find
+from .profiles import Match, RegistryEntry, drop_foreign_activity, find
 from .templates import TEMPLATES
 
 # Form sections and the signals in them.
@@ -168,7 +168,9 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         HEAT_SIGNALS[m].value in entities and ELEC_SIGNALS[m].value in entities
         for m in HEAT_SIGNALS
     )
-    if not complete:
+    # Without a complete mode: cycling (and electricity) only, which needs
+    # the compressor.
+    if not complete and Signal.COMPRESSOR.value not in entities:
         return "no_mode"
     if Signal.AUX_TOTAL.value in entities and any(
         s.value in entities for s in AUX_SIGNALS.values()
@@ -196,7 +198,15 @@ def detect(hass: HomeAssistant) -> list[Match]:
         and (state := hass.states.get(e.entity_id)) is not None
         and state.state != STATE_UNAVAILABLE
     ]
-    return [m for template in TEMPLATES.values() for m in find(template, entries)]
+
+    def state_of(entity_id: str) -> str | None:
+        return state.state if (state := hass.states.get(entity_id)) else None
+
+    return [
+        drop_foreign_activity(m, state_of)
+        for template in TEMPLATES.values()
+        for m in find(template, entries)
+    ]
 
 
 def disabled_entities(hass: HomeAssistant) -> list[str]:
@@ -327,7 +337,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 entry, data={**entry.data, CONF_ENTITIES: entities}
             )
         unique_id = self._unique_id or next(
-            entities[s.value] for s in HEAT_SIGNALS.values() if s.value in entities
+            entities[s.value]
+            for s in (*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), Signal.COMPRESSOR)
+            if s.value in entities
         )
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()

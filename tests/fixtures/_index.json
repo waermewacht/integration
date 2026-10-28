@@ -38,5 +38,15 @@
     "source": "Derived from the source code of Xerolux/idm-heatpump-hass 0.23.2-b4 (commit 385f8cc, 2026-10-26) and idm-heatpump-api 2.14.5b2: iDM Navigator 2.0 with Modbus TCP and web interface (PIN). Not read from a real installation.",
     "real": "unique id format '<entry_id>_<key>' and keys, platform idm_heatpump, units and state classes as the integration sets them, enum labels of hp_operating_mode.",
     "made_up": "entry id, entity ids (slugified German names, device 'IDM'), every state value; the field 'source' (modbus/web/web statistics) is a test aid."
+  },
+  "vicare_vitocal250a.json": {
+    "source": "Derived from the source code of Home Assistant core vicare (dev 8f785c4, 2026-10-28; entity.py, sensor.py, binary_sensor.py, strings.json, tests/components/vicare/snapshots) and PyViCare 2.63.0 test data (tests/response/Vitocal250A.json); an E3 heat pump, not read from a real installation.",
+    "real": "unique id format '<gateway>_<device>-<key>[-<component>]' (platform vicare), keys incl. those with spaces, entity domains, units, device and state classes, entities disabled by default, the compressor phase vocabulary of E3 controllers (setPhase enum, '-' replaced by '_').",
+    "made_up": "gateway and device serials, the model name in the entity ids, every state value; subset of the entities."
+  },
+  "vicare_vitocal333g.json": {
+    "source": "As vicare_vitocal250a.json, with PyViCare test data Vitocal333G(-with-Vitovent300F).json and the HA snapshot of Vitocal222G_Vitovent300W: a Vitotronic heat pump without energy features.",
+    "real": "as vicare_vitocal250a.json; the Vitotronic phase vocabulary (setPhase enum of Vitocal 300-G/333-G), the DHW charging binary sensor.",
+    "made_up": "serials, the model name 'Vitocal_333G' in the entity ids, every state value; subset of the entities."
   }
 }

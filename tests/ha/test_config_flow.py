@@ -153,6 +153,23 @@ async def test_manual_needs_one_complete_mode(hass: HomeAssistant) -> None:
     assert result["errors"] == {"base": "no_mode"}
 
 
+async def test_manual_compressor_only_is_cycling(hass: HomeAssistant) -> None:
+    """Without heat counters (ViCare): cycling and electricity only."""
+    hass.states.async_set("binary_sensor.compressor", "off")
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**EMPTY_SECTIONS, "operation": {"compressor": "binary_sensor.compressor"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == "binary_sensor.compressor"
+
+
 async def test_options(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
     entry.add_to_hass(hass)

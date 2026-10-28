@@ -104,3 +104,11 @@ def test_degree_days_per_month() -> None:
     # A mild month below the minimum degree days: no heat per degree day.
     assert months["2026-02"]["degree_days"] == 0.0
     assert months["2026-02"]["kwh_per_degree_day"] is None
+
+
+def test_electricity_only_modes() -> None:
+    totals = Totals({"elec_heating": 4.0, "elec_dhw": 1.5})
+    rows = figures(totals, 0.5, [], electricity_modes=[Mode.HEATING, Mode.DHW])
+    assert rows["heating"] == {"heat_kwh": None, "electricity_kwh": 4.0, "ratio": None}
+    assert rows["dhw"]["electricity_kwh"] == 1.5
+    assert "heating_dhw" not in rows

@@ -7,11 +7,11 @@ Sources of every name and value: docs/ENTWICKLUNG.md, section 4.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
-from .model import Activity, Signal
+from .model import ACTIVITY_PARTS, Activity, Signal
 
 
 class RegistryEntry(NamedTuple):
@@ -36,7 +36,11 @@ class Template:
     signals: dict[Signal, tuple[tuple[str, str], ...]]
     # Keys that must be present to call a device a heat pump of this template.
     required: tuple[Signal, ...]
-    activity_values: dict[str, Activity] = field(default_factory=dict)
+    # None: the source itself does not know (ViCare "null").
+    activity_values: dict[str, Activity | None] = field(default_factory=dict)
+    # Values showing that the activity entity carries no activity on this
+    # device (ViCare E3 compressor phase: ready / not_ready).
+    activity_foreign: frozenset[str] = frozenset()
     # Keys naming the same counter in another id format (both may exist; the
     # older one often has the longer statistics, used for the backfill).
     aliases: dict[str, tuple[str, ...]] = field(default_factory=dict)
@@ -44,6 +48,8 @@ class Template:
     # up to two hours late: they start anew at midnight, and standby is told
     # from the heat of the same fetch instead of the compressor state.
     day_values: bool = False
+    # Time zone in which the day values start anew; None: local time.
+    day_timezone: str | None = None
     # Built from the integration's source code, not yet confirmed on a real
     # installation: shown as "(beta)" in the setup.
     experimental: bool = False
@@ -66,7 +72,13 @@ class Template:
         """Map an activity state; None while unknown, OTHER if not recognized."""
         if state is None or state in ("unknown", "unavailable", ""):
             return None
-        return self.activity_values.get(state.strip().casefold(), Activity.OTHER)
+        key = state.strip().casefold()
+        if key in self.activity_foreign:
+            return None
+        return self.activity_values.get(key, Activity.OTHER)
+
+    def is_foreign_activity(self, state: str | None) -> bool:
+        return (state or "").strip().casefold() in self.activity_foreign
 
 
 def parse_compressor(state: str | None) -> bool | None:
@@ -95,6 +107,20 @@ class Match:
     @property
     def missing(self) -> list[Signal]:
         return [s for s in self.template.signals if s not in self.entities]
+
+
+def drop_foreign_activity(match: Match, state_of: Callable[[str], str | None]) -> Match:
+    """Without the activity (and its parts) when its entity shows a value
+    that carries no activity on this device."""
+    entity_id = match.entities.get(Signal.ACTIVITY)
+    if entity_id is None or not match.template.is_foreign_activity(state_of(entity_id)):
+        return match
+    keep = {
+        s: e
+        for s, e in match.entities.items()
+        if s is not Signal.ACTIVITY and s not in ACTIVITY_PARTS
+    }
+    return replace(match, entities=keep)
 
 
 def _words(values: dict[Activity, tuple[str, ...]]) -> dict[str, Activity]:

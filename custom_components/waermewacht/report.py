@@ -29,9 +29,13 @@ def _round(value: float | None, digits: int) -> float | None:
 
 
 def figures(
-    totals: Totals, min_electricity: float, modes: Iterable[Mode]
+    totals: Totals,
+    min_electricity: float,
+    modes: Iterable[Mode],
+    electricity_modes: Iterable[Mode] = (),
 ) -> dict[str, dict[str, Any]]:
-    """Heat, electricity and ratio per scope whose modes are all configured."""
+    """Heat, electricity and ratio per scope whose modes are all configured;
+    `electricity_modes` without a heat counter get their electricity only."""
     configured = set(modes)
     result: dict[str, dict[str, Any]] = {}
     for scope, scope_modes in SCOPES.items():
@@ -49,6 +53,14 @@ def figures(
                 mode_ratio(totals, scope_modes[0], min_electricity), 2
             )
         result[scope] = row
+    for mode in electricity_modes:
+        if mode in configured or mode.value in result:
+            continue
+        result[mode.value] = {
+            "heat_kwh": None,
+            "electricity_kwh": round(totals.electricity(mode), 3),
+            "ratio": None,
+        }
     return result
 
 

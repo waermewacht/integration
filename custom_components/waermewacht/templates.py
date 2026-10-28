@@ -13,8 +13,18 @@ from .profiles_idm import IDM
 from .profiles_lambda import LAMBDA
 from .profiles_luxtronik import LUXTRONIK
 from .profiles_stiebel import STIEBEL_ISG
+from .profiles_viessmann import VICARE
 
 TEMPLATES: dict[str, Template] = {
     t.key: t
-    for t in (EMS_ESP, BOSCH_HOMECOM, LUXTRONIK, STIEBEL_ISG, HEISHAMON, LAMBDA, IDM)
+    for t in (
+        EMS_ESP,
+        BOSCH_HOMECOM,
+        LUXTRONIK,
+        STIEBEL_ISG,
+        HEISHAMON,
+        LAMBDA,
+        IDM,
+        VICARE,
+    )
 }

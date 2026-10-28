@@ -76,7 +76,7 @@
       }
     },
     "error": {
-      "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen.",
+      "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen).",
       "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
       "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides."
     },
@@ -372,6 +372,10 @@
     "energy_unit": {
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
+    },
+    "activity_foreign": {
+      "title": "Wärmewacht: Betriebsart-Entität ohne Betriebsart",
+      "description": "{entities} von {name} meldet Werte, die bei diesem Gerät keine Betriebsart tragen (bei ViCare-E3-Reglern „ready“ / „not_ready“). Abtauungen und die Betriebsart der Läufe bleiben leer. Entferne die Entität unter Geräte & Dienste → Wärmewacht → Neu konfigurieren."
     },
     "flow_return_swapped": {
       "title": "Wärmewacht: Vor- und Rücklauf vertauscht?",

@@ -50,3 +50,10 @@ def test_energy_between() -> None:
     assert t.get(Kind.STANDBY, Mode.HEATING) == 0
     everything = energy_between(hourly, None, hour(3))
     assert everything.get(Kind.STANDBY, Mode.HEATING) == pytest.approx(0.02)
+
+
+def test_electricity_without_heat_counter_is_running() -> None:
+    """ViCare: no heat counter, so no standby can be told."""
+    t = hour_totals({Signal.ELEC_HEATING: 1.2}, heat_modes=())
+    assert t.get(Kind.ELEC, Mode.HEATING) == pytest.approx(1.2)
+    assert t.get(Kind.STANDBY, Mode.HEATING) == 0

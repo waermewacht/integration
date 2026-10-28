@@ -49,6 +49,10 @@ def combine(
     signals with an entity (ACTIVITY among them if there is one).
     """
     fallback = Signal.ACTIVITY in configured
+    # A defrost reported by the activity entity beats a hot water flag
+    # (ViCare Vitotronic: defrost in the phase, charging as a flag).
+    if fallback and activity is Activity.DEFROST:
+        return Activity.DEFROST
     flags = [(s, a) for s, a in FLAGS if s in configured]
     for signal, flag_activity in flags:
         state = (states.get(signal) or "").strip().casefold()

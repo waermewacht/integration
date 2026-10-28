@@ -237,6 +237,11 @@ class HeatPumpRuntime:
         self._activity_configured = {
             s for s in (Signal.ACTIVITY, *ACTIVITY_PARTS) if s in self.entities
         }
+        # Modes with a heat counter; without one (ViCare) there are no ratios
+        # and no standby can be told, the electricity counts as running.
+        self.heat_modes = frozenset(m for m in Mode if HEAT_SIGNALS[m] in self.entities)
+        # The activity entity showed a value that carries no activity here.
+        self._activity_foreign = False
         # Health check: daily findings (memory only), their state across
         # restarts, and the minute checks of the repair issues.
         self.findings: dict[str, Finding] = {
@@ -285,7 +290,10 @@ class HeatPumpRuntime:
         self._analysis_day: date | None = None
         self._analysing = False
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
-        day_tz = self.tz if self.template.day_values else None
+        day_tz = None
+        if self.template.day_values:
+            zone = self.template.day_timezone
+            day_tz = dt_util.get_time_zone(zone) if zone else self.tz
         self.counters = {
             s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz)
             for s in ENERGY_SIGNALS
@@ -408,7 +416,9 @@ class HeatPumpRuntime:
                 hourly = await self._async_source_hours(EARLIEST, now)
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics for the backfill failed")
-        self.marks.initialize(now, lambda start: energy_between(hourly, start, now))
+        self.marks.initialize(
+            now, lambda start: energy_between(hourly, start, now, self.heat_modes)
+        )
 
     async def _async_backfill_runs(self, now: datetime) -> bool:
         """Runs and defrosts of the recorded history (about 10 days)."""
@@ -476,7 +486,9 @@ class HeatPumpRuntime:
         try:
             recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
             rows = statistics_rows(
-                by_hour(await self._async_source_hours(EARLIEST, before))
+                by_hour(
+                    await self._async_source_hours(EARLIEST, before), self.heat_modes
+                )
             )
         except Exception:  # never block the setup
             _LOGGER.exception("Reading the statistics for the history import failed")
@@ -527,7 +539,9 @@ class HeatPumpRuntime:
                 return
             before = self.since.replace(minute=0, second=0, microsecond=0)
             ids = self._own_ids()
-            hours = by_hour(await self._async_source_hours(EARLIEST, before))
+            hours = by_hour(
+                await self._async_source_hours(EARLIEST, before), self.heat_modes
+            )
             rows, totals = statistics_rows(hours), own_totals(hours)
             first = await get_instance(self.hass).async_add_executor_job(
                 partial(
@@ -997,6 +1011,11 @@ class HeatPumpRuntime:
     # Report for any period.
 
     @property
+    def elec_modes(self) -> list[Mode]:
+        """Modes with an electricity counter."""
+        return [m for m in Mode if ELEC_SIGNALS[m] in self.entities]
+
+    @property
     def modes(self) -> list[Mode]:
         """Modes with a heat and an electricity counter."""
         return [
@@ -1017,7 +1036,10 @@ class HeatPumpRuntime:
         for totals in hours.values():
             total = total + totals
         months = [
-            {"month": month, **figures(totals, self.min_electricity, self.modes)}
+            {
+                "month": month,
+                **figures(totals, self.min_electricity, self.modes, self.elec_modes),
+            }
             for month, totals in by_month(hours, self.tz).items()
         ]
         degrees: dict[str, Any] = {}
@@ -1043,7 +1065,7 @@ class HeatPumpRuntime:
             "estimated_until": dt_util.as_local(min(switch, end)).isoformat()
             if start < switch
             else None,
-            **figures(total, self.min_electricity, self.modes),
+            **figures(total, self.min_electricity, self.modes, self.elec_modes),
             **degrees,
             "months": months,
         }
@@ -1062,7 +1084,7 @@ class HeatPumpRuntime:
         hours: dict[datetime, Totals] = {}
         if start < switch:
             source = await self._async_source_hours(start, min(end, switch))
-            hours.update(by_hour(source))
+            hours.update(by_hour(source, self.heat_modes))
         if end > switch:
             own = await self._async_own_hours(max(start, switch), end)
             for hour, totals in own.items():
@@ -1122,6 +1144,19 @@ class HeatPumpRuntime:
     def has_activity(self) -> bool:
         """Whether an activity is known (entity or flags)."""
         return bool(self._activity_configured)
+
+    @property
+    def standby_separable(self) -> bool:
+        """Whether standby can be told apart for a metered mode: from its
+        heat, or from the compressor with live counters."""
+        return any(
+            ELEC_SIGNALS[m] in self.entities
+            and (
+                m in self.heat_modes
+                or (not self.template.day_values and Signal.COMPRESSOR in self.entities)
+            )
+            for m in Mode
+        )
 
     @property
     def has_charges(self) -> bool:
@@ -1201,7 +1236,13 @@ class HeatPumpRuntime:
                 self.hass.async_create_task(self.async_save())
                 self._notify()
         elif signal in self._activity_configured:
-            if (
+            if signal is Signal.ACTIVITY and self.template.is_foreign_activity(
+                state.state
+            ):
+                if not self._activity_foreign:
+                    self._activity_foreign = self._dirty = True
+                self._count("activity:foreign")
+            elif (
                 signal is Signal.ACTIVITY
                 and self.template.parse_activity(state.state) is Activity.OTHER
             ):
@@ -1287,6 +1328,11 @@ class HeatPumpRuntime:
         for mode, kwh, at in self._pending:
             if not final and now - at < PENDING_DELAY:
                 waiting.append((mode, kwh, at))
+                continue
+            if mode not in self.heat_modes:
+                # No heat to tell standby from: running electricity.
+                self.totals.add(Kind.ELEC, mode, kwh)
+                self._dirty = True
                 continue
             heat_at = self._heat_at.get(mode)
             running = heat_at is not None and heat_at >= at - SAME_FETCH
@@ -1418,6 +1464,11 @@ class HeatPumpRuntime:
                 wrong_unit.append(entity_id)
         self._set_issue("missing_entity", missing)
         self._set_issue("energy_unit", wrong_unit)
+        activity = self.entities.get(Signal.ACTIVITY)
+        self._set_issue(
+            "activity_foreign",
+            [activity] if activity and self._activity_foreign else [],
+        )
         swapped = self._swapped is not None and all(
             s in self.entities for s in (Signal.FLOW_TEMP, Signal.RETURN_TEMP)
         )
@@ -1558,6 +1609,7 @@ class HeatPumpRuntime:
             "last_disinfection": _iso(self.last_disinfection),
             "hot": self._hot,
             "swapped": self._swapped,
+            "activity_foreign": self._activity_foreign,
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1599,6 +1651,7 @@ class HeatPumpRuntime:
         self.last_disinfection = datetime.fromisoformat(last) if last else None
         self._hot = data.get("hot", False)
         self._swapped = data.get("swapped")
+        self._activity_foreign = data.get("activity_foreign", False)
 
     def history_dict(self) -> dict[str, Any]:
         return {

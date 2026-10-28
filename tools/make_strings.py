@@ -336,8 +336,8 @@ def build(lang: int) -> dict:
             "error": {
                 "no_mode": t(
                     (
-                        "Choose a heat and an electricity meter for at least one mode.",
-                        "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen.",
+                        "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
+                        "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen).",
                     )
                 ),
                 "energy_unit": t(
@@ -580,6 +580,20 @@ def build(lang: int) -> dict:
                     (
                         "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}.",
                         "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}.",
+                    )
+                ),
+            },
+            "activity_foreign": {
+                "title": t(
+                    (
+                        "Wärmewacht: activity entity without an activity",
+                        "Wärmewacht: Betriebsart-Entität ohne Betriebsart",
+                    )
+                ),
+                "description": t(
+                    (
+                        "{entities} of {name} reports values that carry no activity on this device (for ViCare E3 controllers 'ready' / 'not_ready'). Defrosts and the mode of runs stay empty. Remove the entity under Devices & services → Wärmewacht → Reconfigure.",
+                        "{entities} von {name} meldet Werte, die bei diesem Gerät keine Betriebsart tragen (bei ViCare-E3-Reglern „ready“ / „not_ready“). Abtauungen und die Betriebsart der Läufe bleiben leer. Entferne die Entität unter Geräte & Dienste → Wärmewacht → Neu konfigurieren.",
                     )
                 ),
             },

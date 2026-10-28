@@ -159,7 +159,7 @@ ENERGY = [
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=1,
         value=lambda r: round(r.totals.standby(), 1),
-        needs=lambda r: any(s in r.entities for s in ELEC_SIGNALS.values()),
+        needs=lambda r: r.standby_separable,
     ),
 ]
 
@@ -381,6 +381,11 @@ def _heating_or_dhw(runtime: HeatPumpRuntime) -> bool:
 
 
 HAS_PRICE: Needs = lambda r: r.electricity_price is not None and _heating_or_dhw(r)  # noqa: E731
+# Electricity costs need no heat (ViCare: electricity and cycling only).
+HAS_ELEC_PRICE: Needs = lambda r: (  # noqa: E731
+    r.electricity_price is not None
+    and any(s in r.entities for s in ELEC_SIGNALS.values())
+)
 EURO = "EUR"
 COSTS = [
     *(
@@ -390,7 +395,7 @@ COSTS = [
             native_unit_of_measurement=EURO,
             suggested_display_precision=2,
             value=_cost(period),
-            needs=HAS_PRICE,
+            needs=HAS_ELEC_PRICE,
             attributes=_period_attributes(period),
         )
         for period in (Period.MONTH, Period.SEASON)

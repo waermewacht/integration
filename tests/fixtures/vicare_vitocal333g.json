@@ -1,0 +1,24 @@
+{
+  "prefix": "0000777788889999_0000121234345656",
+  "gateway": "0000777788889999",
+  "device_serial": "0000121234345656",
+  "model": "Vitocal_333G",
+  "phase_options": ["preparing", "heating", "pause", "cooling", "preparing_defrost", "defrost", "passive_defrost", "off"],
+  "entities": [
+    {"entity_id": "binary_sensor.vitocal_333g_compressor", "unique_id": "0000777788889999_0000121234345656-compressor_active-0", "state": "off", "attributes": {"device_class": "running"}, "disabled_by_default": false},
+    {"entity_id": "binary_sensor.vitocal_333g_dhw_charging", "unique_id": "0000777788889999_0000121234345656-charging_active", "state": "off", "attributes": {"device_class": "running"}, "disabled_by_default": false},
+    {"entity_id": "binary_sensor.vitocal_333g_circulation_pump", "unique_id": "0000777788889999_0000121234345656-circulationpump_active-0", "state": "on", "attributes": {"device_class": "running"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_compressor_phase", "unique_id": "0000777788889999_0000121234345656-compressor_phase-0", "state": "pause", "attributes": {}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_compressor_starts", "unique_id": "0000777788889999_0000121234345656-compressor_starts-0", "state": "4180", "attributes": {"state_class": "total_increasing"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_compressor_hours", "unique_id": "0000777788889999_0000121234345656-compressor_hours-0", "state": "2011.6", "attributes": {"unit_of_measurement": "h", "state_class": "total_increasing"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_compressor_hours_load_class_1", "unique_id": "0000777788889999_0000121234345656-compressor_hours_loadclass1-0", "state": "88", "attributes": {"unit_of_measurement": "h", "state_class": "total_increasing"}, "disabled_by_default": true},
+    {"entity_id": "sensor.vitocal_333g_compressor_power", "unique_id": "0000777788889999_0000121234345656-compressor_power-0", "state": "8.0", "attributes": {"unit_of_measurement": "kW", "device_class": "power"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_outside_temperature", "unique_id": "0000777788889999_0000121234345656-outside_temperature", "state": "-1.7", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_return_temperature", "unique_id": "0000777788889999_0000121234345656-return_temperature", "state": "31.0", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_secondary_circuit_supply_temperature", "unique_id": "0000777788889999_0000121234345656-secondary_circuit_supply_temperature", "state": "35.6", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_primary_circuit_supply_temperature", "unique_id": "0000777788889999_0000121234345656-primary_circuit_supply_temperature", "state": "7.9", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_primary_circuit_return_temperature", "unique_id": "0000777788889999_0000121234345656-primary_circuit_return_temperature", "state": "5.2", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_supply_temperature", "unique_id": "0000777788889999_0000121234345656-supply_temperature-0", "state": "34.9", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false},
+    {"entity_id": "sensor.vitocal_333g_dhw_storage_temperature", "unique_id": "0000777788889999_0000121234345656-dhw_storage_temperature", "state": "46.3", "attributes": {"unit_of_measurement": "°C", "device_class": "temperature", "state_class": "measurement"}, "disabled_by_default": false}
+  ]
+}

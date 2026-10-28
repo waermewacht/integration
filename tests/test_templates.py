@@ -19,6 +19,8 @@ FIXTURES = {
     "heishamon_wh_mdc07j3e5.json": "heishamon",
     "lambda_eu08l.json": "lambda",
     "idm_navigator20.json": "idm",
+    "vicare_vitocal250a.json": "vicare",
+    "vicare_vitocal333g.json": "vicare",
 }
 
 
