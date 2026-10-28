@@ -26,7 +26,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 
 from custom_components.waermewacht.const import DOMAIN
 
-from .conftest import ELEC_HEATING, ENERGY, HEAT_HEATING, TEMPERATURE, entry_data
+from .conftest import ELEC_HEATING, ENERGY, FLOW, HEAT_HEATING, TEMPERATURE, entry_data
 
 OUTDOOR = "sensor.boiler_outdoortemp"
 # Three full local days (Berlin, winter time) ending yesterday.
@@ -144,6 +144,7 @@ async def test_starts_season_from_the_statistics(
     import_series(hass, HEAT_HEATING, mean=False)
     import_series(hass, ELEC_HEATING, mean=False)
     import_series(hass, OUTDOOR, mean=True)
+    import_series(hass, FLOW, mean=True)
     async_import_statistics(
         hass,
         StatisticMetaData(
@@ -168,6 +169,7 @@ async def test_starts_season_from_the_statistics(
     hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
     hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
     hass.states.async_set(STARTS, "2090", {"state_class": "total_increasing"})
+    hass.states.async_set(FLOW, "30.0", TEMPERATURE)
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="WP",
@@ -177,6 +179,7 @@ async def test_starts_season_from_the_statistics(
                 "elec_heating": ELEC_HEATING,
                 "outdoor_temp": OUTDOOR,
                 "starts_total": STARTS,
+                "flow_temp": FLOW,
             }
         ),
     )
@@ -195,3 +198,12 @@ async def test_starts_season_from_the_statistics(
     state = hass.states.get(found)
     assert state.state == "90"
     assert state.attributes["since"] == FIRST_HOUR.isoformat()
+
+    # Three days are too few for the heating curve: unknown, with reasons.
+    flow = hass.states.get(
+        er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_flow_at_zero"
+        )
+    )
+    assert flow.state == "unknown"
+    assert "too_few_days" in flow.attributes["reasons"]

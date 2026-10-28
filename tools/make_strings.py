@@ -126,6 +126,11 @@ SENSORS = {
         "Vorlauftemperatur heute",
         "mdi:thermometer-water",
     ),
+    "flow_at_zero": (
+        "Flow temperature at 0 °C",
+        "Vorlauf bei 0 °C",
+        "mdi:chart-line-variant",
+    ),
     "degree_days_season": (
         "Degree days season",
         "Gradtage Saison",

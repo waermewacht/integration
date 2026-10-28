@@ -333,6 +333,9 @@
       "flow_temp_today": {
         "name": "Vorlauftemperatur heute"
       },
+      "flow_at_zero": {
+        "name": "Vorlauf bei 0 °C"
+      },
       "degree_days_season": {
         "name": "Gradtage Saison"
       },

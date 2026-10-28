@@ -56,9 +56,6 @@ HEISHAMON = Template(
         Signal.FLOW_TEMP: ((_S, "TOP6"),),  # Main_Outlet_Temp
         Signal.RETURN_TEMP: ((_S, "TOP5"),),  # Main_Inlet_Temp
         Signal.FLOW_RATE: ((_S, "TOP1"),),  # Pump_Flow in L/min
-        # Sums over the modes, made by the integration.
-        Signal.HEAT_POWER: ((_S, "heishamon_w_production"),),
-        Signal.ELEC_POWER: ((_S, "heishamon_w_consumption"),),
         # See ACTIVITY_PARTS below: the defrost switch and the set mode.
         Signal.DEFROST_FLAG: (("switch", "SET12"), ("binary_sensor", "SET12")),
         Signal.COOLING_MODE: (("select", "SET9"),),

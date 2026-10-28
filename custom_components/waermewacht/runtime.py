@@ -106,6 +106,7 @@ from .health import (
     window_days,
 )
 from .heat_load import HeatLoad, heat_load
+from .heating_curve import FlowCurve, flow_curve
 from .model import (
     ACTIVITY_PARTS,
     AUX_SIGNALS,
@@ -276,6 +277,9 @@ class HeatPumpRuntime:
         # Counter of starts at the start of the season (or the earliest
         # value in the statistics), for "Starts season".
         self.starts_baseline: tuple[int, datetime] | None = None
+        # Flow temperature over outdoor temperature (heating_curve.py), the
+        # current and the previous season.
+        self.flow_curves: dict[str, FlowCurve] = {}
         self.degree_days_previous: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
@@ -567,7 +571,13 @@ class HeatPumpRuntime:
         self, start: datetime, end: datetime
     ) -> dict[datetime, float]:
         """Hourly mean outdoor temperature from the long-term statistics."""
-        entity_id = self.entities.get(Signal.OUTDOOR_TEMP)
+        return await self._async_mean_hours(Signal.OUTDOOR_TEMP, start, end)
+
+    async def _async_mean_hours(
+        self, signal: Signal, start: datetime, end: datetime
+    ) -> dict[datetime, float]:
+        """Hourly means of a temperature from the long-term statistics."""
+        entity_id = self.entities.get(signal)
         if entity_id is None or start >= end:
             return {}
         rows = await get_instance(self.hass).async_add_executor_job(
@@ -649,6 +659,20 @@ class HeatPumpRuntime:
             )
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
+            flow = await self._async_mean_hours(Signal.FLOW_TEMP, previous, now)
+            if flow:
+                self.flow_curves = {
+                    name: flow_curve(
+                        span[0],
+                        {h: v for h, v in flow.items() if start <= h < end},
+                        span[1],
+                        self.tz,
+                    )
+                    for name, span, start, end in (
+                        ("current", this_season, current, now),
+                        ("previous", last_season, previous, current),
+                    )
+                }
             self._health_findings(now, hours, outdoor, current, previous)
             await self._async_check_outdoor(now)
         except Exception:  # keep running; the sensors stay as they were

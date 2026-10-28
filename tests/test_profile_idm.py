@@ -76,11 +76,8 @@ def test_template_finds_every_signal() -> None:
         Signal.OUTDOOR_TEMP: "sensor.idm_aussentemperatur",
         Signal.FLOW_TEMP: "sensor.idm_warmepumpe_vorlauf",
         Signal.RETURN_TEMP: "sensor.idm_warmepumpe_rucklauf",
-        Signal.HEAT_POWER: "sensor.idm_thermische_momentanleistung",
     }
-    # Navigator 2.0 with Modbus: 4122 does not exist, the web power is
-    # suppressed as a Modbus duplicate.
-    assert match.missing == [Signal.ELEC_POWER]
+    assert match.missing == []
 
 
 def test_energy_entities_have_usable_units() -> None:

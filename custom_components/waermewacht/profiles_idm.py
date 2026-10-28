@@ -109,12 +109,6 @@ IDM = IdmTemplate(
             (_S, "hp_return_temp"),
             (_S, "web_return_temperature"),
         ),
-        Signal.HEAT_POWER: ((_S, "current_power"),),
-        # 4122 is Navigator 10 only; the web value exists only without Modbus.
-        Signal.ELEC_POWER: (
-            (_S, "power_consumption_hp"),
-            (_S, "web_current_electrical_power"),
-        ),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=IDM_ACTIVITY,

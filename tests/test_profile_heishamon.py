@@ -55,8 +55,6 @@ def test_template_finds_every_signal() -> None:
         Signal.FLOW_TEMP: main + "main_outlet_temp",
         Signal.RETURN_TEMP: main + "main_inlet_temp",
         Signal.FLOW_RATE: main + "pump_flow",
-        Signal.HEAT_POWER: "sensor.panasonic_heat_pump_production",
-        Signal.ELEC_POWER: "sensor.panasonic_heat_pump_consumption",
         Signal.DEFROST_FLAG: "switch.panasonic_heat_pump_main_defrosting_state",
         Signal.COOLING_MODE: "select.panasonic_heat_pump_main_operating_mode_state",
     }

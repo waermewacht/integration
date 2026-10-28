@@ -62,6 +62,8 @@ class Signal(StrEnum):
     RETURN_TEMP = "return_temp"
     FLOW_RATE = "flow_rate"
     DHW_TEMP = "dhw_temp"  # hot water storage, for charges and disinfection
+    # No longer mapped (never evaluated); kept so entries that stored them
+    # before 0.1.0b9 still load.
     HEAT_POWER = "heat_power"
     ELEC_POWER = "elec_power"
 

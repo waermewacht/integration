@@ -49,8 +49,6 @@ def test_template_finds_every_signal() -> None:
         Signal.OUTDOOR_TEMP: "sensor.eu08l_ambient_temperature",
         Signal.FLOW_TEMP: hp + "flow_line_temperature",  # not hc1_…
         Signal.RETURN_TEMP: hp + "return_line_temperature",
-        Signal.HEAT_POWER: hp + "actual_heating_capacity",
-        Signal.ELEC_POWER: hp + "inverter_power_consumption",
     }
     assert match.missing == []
     # No backup heater energy, flow rate left out (no volume_flow_rate class).

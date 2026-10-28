@@ -333,6 +333,9 @@
       "flow_temp_today": {
         "name": "Flow temperature today"
       },
+      "flow_at_zero": {
+        "name": "Flow temperature at 0 °C"
+      },
       "degree_days_season": {
         "name": "Degree days season"
       },

@@ -104,8 +104,6 @@ LUXTRONIK = SuffixTemplate(
         Signal.RETURN_TEMP: ((_S, "flow_out_temperature"),),
         # Heat meter flow (C0155) in "L/h"; not the heat source (brine) flow.
         Signal.FLOW_RATE: ((_S, "heat_amount_flow_rate"),),
-        Signal.HEAT_POWER: ((_S, "current_heat_output"),),
-        Signal.ELEC_POWER: ((_S, "current_power_consumption"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=LUXTRONIK_ACTIVITY,

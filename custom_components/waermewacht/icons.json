@@ -167,6 +167,9 @@
       "flow_temp_today": {
         "default": "mdi:thermometer-water"
       },
+      "flow_at_zero": {
+        "default": "mdi:chart-line-variant"
+      },
       "degree_days_season": {
         "default": "mdi:thermometer-minus"
       },

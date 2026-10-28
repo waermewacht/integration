@@ -60,7 +60,6 @@ def test_wpmsystem_finds_every_signal() -> None:
         Signal.RETURN_TEMP: ids["return_temperature"],
         Signal.FLOW_RATE: ids["volume_stream"],
         Signal.DHW_TEMP: ids["actual_temperature_water"],
-        Signal.ELEC_POWER: ids["current_power_consumption"],
         Signal.DEFROST_FLAG: ids["b:evaporator_defrost"],
         Signal.DHW_FLAG: ids["b:is_heating_water"],
         Signal.COOLING_FLAG: ids["b:is_cooling"],
@@ -97,7 +96,7 @@ def test_lwz_finds_every_signal() -> None:
         Signal.COOLING_FLAG: ids["b:is_cooling"],
         Signal.HEATING_FLAG: ids["b:is_heating"],
     }
-    assert match.missing == [Signal.ELEC_POWER]
+    assert match.missing == []
 
 
 @pytest.mark.parametrize("name", [WPMSYSTEM, LWZ])

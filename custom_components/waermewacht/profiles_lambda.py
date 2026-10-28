@@ -137,8 +137,6 @@ LAMBDA = LambdaTemplate(
         Signal.RETURN_TEMP: ((_S, "return_line_temperature"),),
         # The heat sink flow ("l/h") has no device class volume_flow_rate, the
         # entity form would not offer it: left out.
-        Signal.HEAT_POWER: ((_S, "actual_heating_capacity"),),  # kW
-        Signal.ELEC_POWER: ((_S, "inverter_power_consumption"),),  # W
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=LAMBDA_ACTIVITY,

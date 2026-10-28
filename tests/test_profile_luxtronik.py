@@ -67,8 +67,6 @@ def test_template_finds_every_signal() -> None:
         Signal.RETURN_TEMP: s + "flow_out_temperature",  # not _target
         Signal.FLOW_RATE: s + "heat_amount_flow_rate",  # not heat_source_
         Signal.DHW_TEMP: s + "dhw_temperature",
-        Signal.HEAT_POWER: s + "current_heat_output",
-        Signal.ELEC_POWER: s + "current_power_consumption",
     }
     assert match.missing == []
     # No backup heater per mode: the total is attributed to the current mode.
@@ -86,13 +84,9 @@ def test_energy_entities_have_usable_units() -> None:
 
 
 def test_enabled_by_default_is_enough() -> None:
-    """Starts and powers are disabled in luxtronik2, the energy is not."""
+    """Starts are disabled in luxtronik2, the energy is not."""
     (match,) = find(LUXTRONIK, lux_entries(with_disabled=False))
-    assert set(match.missing) == {
-        Signal.STARTS_TOTAL,
-        Signal.HEAT_POWER,
-        Signal.ELEC_POWER,
-    }
+    assert set(match.missing) == {Signal.STARTS_TOTAL}
 
 
 @pytest.mark.parametrize(

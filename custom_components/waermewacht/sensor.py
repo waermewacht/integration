@@ -36,6 +36,7 @@ from .costs import CostComparison, compare_with_gas
 from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
 from .heat_load import heat_load_as_dict
+from .heating_curve import flow_curve_as_dict
 from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
 from .periods import RATIO_PERIODS, Period
 from .runtime import HeatPumpRuntime
@@ -489,6 +490,24 @@ def _per_degree_day_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     }
 
 
+def _flow_at_zero(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.flow_curves.get("current")
+    return None if result is None else _round(result.at_zero, 1)
+
+
+def _flow_at_zero_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    if (result := runtime.flow_curves.get("current")) is None:
+        return {}
+    previous = runtime.flow_curves.get("previous")
+    figures = flow_curve_as_dict(result)
+    figures.pop("at_zero")
+    return {
+        **figures,
+        "previous_season": None if previous is None else _round(previous.at_zero, 1),
+        "previous_slope": None if previous is None else _round(previous.slope, 2),
+    }
+
+
 HAS_OUTDOOR: Needs = lambda r: (  # noqa: E731
     Signal.OUTDOOR_TEMP in r.entities and _mode_complete(r, Mode.HEATING)
 )
@@ -499,6 +518,15 @@ ANALYSIS = [
         value=lambda r: r.analysed_at,
         needs=HAS_OUTDOOR,
         attributes=_curve_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="flow_at_zero",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        value=_flow_at_zero,
+        needs=lambda r: HAS_OUTDOOR(r) and Signal.FLOW_TEMP in r.entities,
+        attributes=_flow_at_zero_attributes,
     ),
     HeatPumpSensorDescription(
         key="degree_days_season",
