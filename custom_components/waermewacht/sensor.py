@@ -195,11 +195,12 @@ CYCLING = [
     HeatPumpSensorDescription(
         key="runtime_today",
         # Minutes like every duration here: the frontend shows hours as
-        # "0h, 25 Min." and floors rounded values; minutes stay exact.
+        # "0h, 25 Min." and floors rounded values. Steps of 5 minutes: whole
+        # minutes would write a state every minute while running (SD cards).
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         suggested_display_precision=0,
-        value=lambda r: round(r.cycles("today").runtime_seconds / 60),
+        value=lambda r: 5 * round(r.cycles("today").runtime_seconds / 300),
         needs=HAS_COMPRESSOR,
     ),
     *(
@@ -314,7 +315,8 @@ def _cost(period: Period) -> Value:
         result = _comparison(runtime, period)
         if result is None or result.electricity.cost_eur is None:
             return None
-        return _money(result.electricity.cost_eur + result.electricity_base_cost_eur)
+        # Steps of 10 cents: each cent would be a state write (SD cards).
+        return _money(result.electricity.cost_eur + result.electricity_base_cost_eur, 1)
 
     return value
 
@@ -379,7 +381,10 @@ COSTS = [
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=EURO,
         suggested_display_precision=0,
-        value=lambda r: _money((c := _comparison(r, Period.SEASON)) and c.savings_eur),
+        # Whole euros, as shown; cents would be a state write each.
+        value=lambda r: _money(
+            (c := _comparison(r, Period.SEASON)) and c.savings_eur, 0
+        ),
         needs=lambda r: HAS_PRICE(r) and r.gas_price is not None,
         attributes=_savings_attributes,
     ),

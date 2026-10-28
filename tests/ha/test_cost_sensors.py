@@ -18,7 +18,7 @@ from .conftest import (
     HEAT_DHW,
     entry_data,
 )
-from .test_init import START, set_counters, tick, value
+from .test_init import START, entity_id, set_counters, tick, value
 
 
 async def setup(hass: HomeAssistant, options: dict) -> MockConfigEntry:
@@ -49,12 +49,15 @@ async def test_costs_and_gas_comparison(
     set_counters(hass, 1010.0, 302.5)  # 10 kWh heat for 2.5 kWh electricity
     await tick(hass, freezer, 1)
 
-    # 2.5 kWh x 0.30 €/kWh.
-    assert value(hass, entry, "cost_month") == pytest.approx(0.75)
-    assert value(hass, entry, "cost_season") == pytest.approx(0.75)
+    # 2.5 kWh x 0.30 €/kWh = 0.75 €, in steps of 10 cents (write load).
+    assert value(hass, entry, "cost_month") == pytest.approx(0.8)
+    assert value(hass, entry, "cost_season") == pytest.approx(0.8)
     assert value(hass, entry, "heat_cost_season") == pytest.approx(0.075)
-    # Gas: 10 kWh / 0.87 = 11.49 kWh x 0.10 € = 1.15 €; saving 0.40 €.
-    assert value(hass, entry, "gas_savings_season") == pytest.approx(0.40)
+    # Gas: 10 kWh / 0.87 = 11.49 kWh x 0.10 € = 1.15 €; saving 0.40 €,
+    # shown in whole euros.
+    assert value(hass, entry, "gas_savings_season") == 0
+    season = hass.states.get(entity_id(hass, entry, "cost_season"))
+    assert season.attributes["period_start"].startswith("2025-")
 
 
 @pytest.mark.freeze_time(START)

@@ -121,6 +121,7 @@ async def test_ratio_standby_and_cycling(
     assert value(hass, entry, "ratio_heating_month") == pytest.approx(3.0)
     assert value(hass, entry, "starts_today") == 1
     assert value(hass, entry, "run_minutes_today") == pytest.approx(30, abs=0.1)
+    assert value(hass, entry, "runtime_today") == 30  # minutes, steps of 5
     assert value(hass, entry, "spread_today") == pytest.approx(4.0)
     assert value(hass, entry, "flow_temp_today") == pytest.approx(28.0)
 
