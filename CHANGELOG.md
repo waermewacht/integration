@@ -2,23 +2,37 @@
 
 ## Unveröffentlicht
 
-- **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus. Neue Felder „Strom Abtauen“ und „Strom Stillstand“ im Abschnitt Betrieb.
-- **Abtauungen je Außentemperatur-Klasse** gegen die Vorsaison (Abtauungen je Laufstunde) als Attribut `classes` an „Abtauungen heute“, aus dem Tagebuch.
-- **Diagnose-Datei:** Buchungsart der Vorlage, Zeitpunkt der letzten Zählerwerte, Stand der Stundenbuchung, letzte Tagebuch-Einträge. Die Entity-IDs der Zuordnung sind jetzt ebenfalls maskiert.
-- **Gesundheits-Check erweitert:** Sensoren „Spreizung 7 Tage“ und „Leistung je Heizlast“ (neue Einstellungen Heizleistung bei A−7/W35 und kleinste Heizleistung), Anstieg des Stillstands und Abtauungen der letzten 7 Tage als Attribute, Reparaturhinweise „Durchfluss unplausibel“ und „Durchfluss 0 beim Heizen“.
-- **Weitere Hersteller (beta):**
-  - **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
-  - **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte. MELCloud meldet die Summen des Vortags; Wärmewacht bucht sie in den Vortag (neues Vorlagenfeld `previous_day`).
-  - **Vaillant myVAILLANT** (`mypyllant`): Arbeitszahlen Stunde für Stunde aus der Statistik von mypyllant, ohne Takte. Neue Reparaturhinweise „keine neuen Energiewerte“ und „Energie-Entitäten haben ihre Bedeutung geändert“.
-  - Einrichtung auch nur mit Kompressor (dann Takte und Strom ohne Arbeitszahl). Strom ohne Wärmezähler zählt als Laufstrom.
-- **Vorlauf bei 0 °C:** die Heizkurve als Kennwert, aus Stunden mit Heizwärme und ohne Warmwasser, mit dem Wert der Vorsaison. Zeigt, ob eine geänderte Heizkurve wirkt.
-- **Starts Saison** aus dem Startzähler der Wärmepumpe und seiner Statistik, mit Starts je Tag.
-- **Reparaturhinweis „Vor- und Rücklauf vertauscht?“**, wenn die Spreizung beim Heizen einen Tag lang im Mittel unter −1 K liegt.
-- **Vorlagen ohne Wärme- und Stromleistung:** Wärmewacht hat sie nie ausgewertet, und beim Neu-Konfigurieren gingen sie verloren.
-- **Laufzeit heute** in Minuten statt Stunden, wie alle anderen Dauern. Home Assistant zeigte sonst „2h, 47 Min.“ neben „166 Min.“; Stunden würde es bei kurzen Dauern als „0h, 25 Min.“ zeigen.
+**Neue Hersteller (beta, aus dem Quellcode der Integrationen, noch ohne echte Anlage bestätigt):**
+
+- **Viessmann ViCare** (Core `vicare`): Takte, Laufzeiten, Strom je Betriebsart und Kosten. Keine Arbeitszahl, weil Home Assistant keine Wärme liefert. Abtauen bei Vitotronic-Reglern. Tageswerte in UTC-Tagen.
+- **Mitsubishi Ecodan über MELCloud** (Core `melcloud`): Arbeitszahlen aus den Tageswerten, ohne Takte. MELCloud meldet die Summen des Vortags; Wärmewacht bucht sie in den Vortag.
+- **Vaillant myVAILLANT** (`mypyllant`): Arbeitszahlen Stunde für Stunde aus der Statistik von mypyllant, ohne Takte. Neue Reparaturhinweise „keine neuen Energiewerte“ und „Energie-Entitäten haben ihre Bedeutung geändert“.
+- **Lambda und iDM:** Der Strom beim Abtauen zählt jetzt zur laufenden Betriebsart (meist Heizen), bei Lambda auch der eigene Stillstand-Zähler. Bisher fehlte der Abtau-Strom, die AZ Heizen fiel zu gut aus.
+- Einrichtung auch nur mit Kompressor: dann Takte und Strom ohne Arbeitszahl. Strom ohne Wärmezähler zählt als Laufstrom.
+
+**Gesundheits-Check:**
+
+- **„Effizienz gesunken“** vergleicht auch zusammengefasste Außentemperatur-Klassen (am Saisonanfang üblich) mit der Summe der Klassen der anderen Saison. Statt „mindestens 2 gemeinsame Klassen“ gilt „mindestens 4 K gemeinsamer Bereich“.
+- **Neue Reparaturhinweise:** „Vor- und Rücklauf vertauscht?“ (Spreizung beim Heizen einen Tag lang unter −1 K), „Durchfluss unplausibel“ (Faktor 10 gegen Wärme und Spreizung), „Durchfluss 0 beim Heizen“ (15 Minuten).
+- **Neue Kennwerte:** „Spreizung 7 Tage“ (kalte Tage), „Leistung je Heizlast“ (mit den neuen Einstellungen Heizleistung bei A−7/W35 und kleinste Heizleistung), „Vorlauf bei 0 °C“ (die Heizkurve, mit dem Wert der Vorsaison), „Starts Saison“ mit Starts je Tag.
+- **Neue Attribute:** Anstieg des Stillstands (`rising`), Abtauungen der letzten 7 Tage und je Außentemperatur-Klasse gegen die Vorsaison.
+
+**Warmwasser, Gradtage, Kosten:**
+
+- **Wärme je Gradtag** zählt nur Heiztage (ab 1 kWh Heizwärme am Tag). Kühle Tage ohne Heizbetrieb drückten den Wert bisher auf ein Drittel, wenn die Heizung erst im Oktober anlief. Ohne Heizwärme ist er unbekannt statt 0.
 - **Kosten-Sensoren** nennen im Attribut `period_start`, ab wann Monat bzw. Saison zählen.
-- **Weniger Schreibvorgänge:** Stromkosten in 10-Cent-Schritten, Ersparnis ggü. Gaskessel in ganzen Euro (wie angezeigt), Laufzeit heute in 5-Minuten-Schritten. Gemessen am 27./28.10.: 78 Zustände pro Stunde für 98 Entitäten, ein Viertel davon aus Kosten und Ersparnis.
-- **Wärme je Gradtag** zählt nur Heiztage (ab 1 kWh Heizwärme am Tag). Kühle Tage ohne Heizbetrieb drückten den Wert bisher auf ein Drittel, wenn die Heizung erst im Oktober anlief. Ohne Heizwärme ist er unbekannt statt 0. Die Gradtage selbst bleiben nach VDI 3807.
+
+**Kleineres:**
+
+- **Laufzeit heute** in Minuten statt Stunden, wie alle anderen Dauern.
+- **Weniger Schreibvorgänge:** Stromkosten in 10-Cent-Schritten, Ersparnis ggü. Gaskessel in ganzen Euro (wie angezeigt), Laufzeit heute in 5-Minuten-Schritten. Gemessen vorher: 78 Zustände pro Stunde für 98 Entitäten, ein Viertel aus Kosten und Ersparnis.
+- **Diagnose-Datei:** Buchungsart der Vorlage, Zeitpunkt der letzten Zählerwerte, Stand der Stundenbuchung, letzte Tagebuch-Einträge. Die Entity-IDs der Zuordnung sind jetzt ebenfalls maskiert.
+- **Vorlagen ohne Wärme- und Stromleistung:** Wärmewacht hat sie nie ausgewertet, und beim Neu-Konfigurieren gingen sie verloren.
+
+**Beim Update beachten:**
+
+- Neue Felder kommen bei bestehenden Einträgen nicht automatisch dazu. Lambda und iDM: „Strom Abtauen“ (und bei Lambda „Strom Stillstand“) einmal unter *Neu konfigurieren* auswählen.
+- „Laufzeit heute“ wechselt von Stunden auf Minuten; der bisherige Verlauf zeigt bis zum Update Stunden.
 
 ## 0.1.0b8 – 2026-10-27
 
