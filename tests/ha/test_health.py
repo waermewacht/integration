@@ -254,3 +254,25 @@ async def test_flow_and_return_swapped(
     await tick(hass, freezer, 24 * 60)
     await tick(hass, freezer, 1)
     assert issue(hass, entry, "flow_return_swapped") is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_flow_rate_zero_while_heating(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    flow_rate = "sensor.boiler_pc0flow"
+    hass.states.async_set(flow_rate, "0", {"unit_of_measurement": "L/min"})
+    entry = await setup(hass, flow_rate=flow_rate)
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 11)
+    await tick(hass, freezer, 10)
+    assert issue(hass, entry, "flow_zero") is None  # 15 minutes needed
+    await tick(hass, freezer, 6)
+    found = issue(hass, entry, "flow_zero")
+    assert found is not None
+    assert found.translation_placeholders["entities"] == flow_rate
+    hass.states.async_set(flow_rate, "14.5", {"unit_of_measurement": "L/min"})
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 1)
+    assert issue(hass, entry, "flow_zero") is None

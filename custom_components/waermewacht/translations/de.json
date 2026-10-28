@@ -126,10 +126,14 @@
           "heat_load": {
             "name": "Heizlast (optional)",
             "data": {
-              "design_outdoor_temp": "Normaußentemperatur"
+              "design_outdoor_temp": "Normaußentemperatur",
+              "rated_power_kw": "Heizleistung bei A−7/W35",
+              "min_power_kw": "Kleinste Heizleistung"
             },
             "data_description": {
-              "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin."
+              "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+              "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
+              "min_power_kw": "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           }
         }
@@ -333,6 +337,12 @@
       "flow_temp_today": {
         "name": "Vorlauftemperatur heute"
       },
+      "spread_7d": {
+        "name": "Spreizung 7 Tage"
+      },
+      "oversize_factor": {
+        "name": "Leistung je Heizlast"
+      },
       "flow_at_zero": {
         "name": "Vorlauf bei 0 °C"
       },
@@ -372,6 +382,14 @@
     "energy_unit": {
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
+    },
+    "flow_implausible": {
+      "title": "Wärmewacht: Durchfluss unplausibel",
+      "description": "Beim Heizen zeigte {entities} von {name} gestern im Mittel {measured} l/h; Wärme und Spreizung ergeben etwa {expected} l/h. Meist stimmt die Einheit nicht (etwa l/h als L/min gemeldet) oder es ist der falsche Sensor. Prüfe die Entität oder wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren eine andere. Der Hinweis verschwindet nach einem Tag mit passendem Durchfluss."
+    },
+    "flow_zero": {
+      "title": "Wärmewacht: Durchfluss 0 beim Heizen",
+      "description": "Der Durchfluss von {name} ({entities}) stand {minutes} Minuten auf 0, während der Kompressor heizte. Ohne Durchfluss kann eine Wärmepumpe nicht heizen; meist liefert der Sensor keinen echten Wert. Prüfe die Entität oder entferne sie unter Neu konfigurieren. Der Hinweis verschwindet, sobald wieder Durchfluss kommt."
     },
     "energy_stale": {
       "title": "Wärmewacht: keine neuen Energiewerte",

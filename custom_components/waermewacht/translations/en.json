@@ -126,10 +126,14 @@
           "heat_load": {
             "name": "Heat load (optional)",
             "data": {
-              "design_outdoor_temp": "Design outdoor temperature"
+              "design_outdoor_temp": "Design outdoor temperature",
+              "rated_power_kw": "Rated heating power at A-7/W35",
+              "min_power_kw": "Smallest heating power"
             },
             "data_description": {
-              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only."
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+              "rated_power_kw": "From the data sheet; gives the power per heat load.",
+              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
             }
           }
         }
@@ -333,6 +337,12 @@
       "flow_temp_today": {
         "name": "Flow temperature today"
       },
+      "spread_7d": {
+        "name": "Flow-return spread 7 days"
+      },
+      "oversize_factor": {
+        "name": "Power per heat load"
+      },
       "flow_at_zero": {
         "name": "Flow temperature at 0 °C"
       },
@@ -372,6 +382,14 @@
     "energy_unit": {
       "title": "Wärmewacht: unusable unit",
       "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."
+    },
+    "flow_implausible": {
+      "title": "Wärmewacht: flow rate implausible",
+      "description": "While heating yesterday, {entities} of {name} showed {measured} l/h on average; heat and spread give about {expected} l/h. Usually the unit is wrong (e.g. l/h reported as L/min) or it is the wrong sensor. Check the entity or choose another one under Devices & services → Wärmewacht → Reconfigure. The notice disappears after a day with a fitting flow rate."
+    },
+    "flow_zero": {
+      "title": "Wärmewacht: flow rate 0 while heating",
+      "description": "The flow rate of {name} ({entities}) stood at 0 for {minutes} minutes while the compressor was heating. A heat pump cannot heat without flow; usually the sensor delivers no real value. Check the entity or remove it under Reconfigure. The notice disappears as soon as flow returns."
     },
     "energy_stale": {
       "title": "Wärmewacht: no new energy values",

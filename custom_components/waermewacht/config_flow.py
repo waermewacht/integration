@@ -38,7 +38,9 @@ from .const import (
     CONF_GAS_PRICE,
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
+    CONF_MIN_POWER,
     CONF_NAME,
+    CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_SOURCE,
@@ -371,7 +373,7 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
     ),
-    "heat_load": (CONF_DESIGN_TEMP,),
+    "heat_load": (CONF_DESIGN_TEMP, CONF_RATED_POWER, CONF_MIN_POWER),
 }
 
 
@@ -457,6 +459,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
             CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
             CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
             CONF_DESIGN_TEMP: number(-30, 5, 0.1, "°C"),
+            CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
+            CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
         }
         for name, keys in OPTIONAL_SECTIONS.items():
             schema = schema.extend(

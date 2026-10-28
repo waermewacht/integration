@@ -70,6 +70,8 @@ from .const import (
     CONF_GAS_PRICE,
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
+    CONF_MIN_POWER,
+    CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_STARTS_PER_HOUR,
@@ -104,6 +106,18 @@ from .health import (
     efficiency_drop,
     outdoor_problem,
     window_days,
+)
+from .health_extra import (
+    DefrostFigures,
+    OversizeFigure,
+    SpreadFigure,
+    ZeroFlow,
+    defrost_figures,
+    flow_plausibility,
+    oversizing,
+    spread_figure,
+    standby_rise,
+    to_lph,
 )
 from .heat_load import HeatLoad, heat_load
 from .heating_curve import FlowCurve, flow_curve
@@ -255,6 +269,7 @@ class HeatPumpRuntime:
         # Health check: daily findings (memory only), their state across
         # restarts, and the minute checks of the repair issues.
         self.findings: dict[str, Finding] = {
+            "standby_rise": Finding(None, NOT_ANALYSED),
             "efficiency_drop": Finding(None, NOT_ANALYSED),
             "aux_mild_weather": Finding(None, NOT_ANALYSED),
             "aux_dhw_charges": Finding(None, NOT_ANALYSED),
@@ -265,6 +280,19 @@ class HeatPumpRuntime:
         self._unavailable_since: dict[str, datetime] = {}
         self._last_tick: datetime | None = None
         self.outdoor = Mean()  # outdoor temperature today, for the diary
+        # Figures of the daily analysis (health_extra.py) and the data sheet.
+        self.rated_power: float | None = options.get(CONF_RATED_POWER)
+        self.min_power: float | None = options.get(CONF_MIN_POWER)
+        self.spread_7d: SpreadFigure | None = None
+        self.oversize: OversizeFigure | None = None
+        self.defrost_week: DefrostFigures | None = None
+        # Flow rate while the compressor heats (l/h), today; the daily verdict
+        # on its plausibility (evidence while implausible) and the heating
+        # time with a flow of 0.
+        self.flow_rate = Mean()
+        self._flow_rate_lph: float | None = None
+        self._flow_verdict: dict[str, Any] | None = None
+        self._zero_flow = ZeroFlow()
         # Daily verdict on the spread (None: not enough heating yet); kept,
         # because the repair issue is rebuilt from it after a restart.
         self._swapped: float | None = None
@@ -725,6 +753,15 @@ class HeatPumpRuntime:
                     )
                 }
             self._health_findings(now, hours, outdoor, current, previous)
+            today = now.astimezone(self.tz).date()
+            self.spread_7d = spread_figure(self.diary, today)
+            self.oversize = oversizing(
+                self.heat_load, self.rated_power, min_kw=self.min_power
+            )
+            self.findings["standby_rise"] = standby_rise(self.diary, today, self.tz)
+            self.defrost_week = defrost_figures(
+                self.defrosts, outdoor, now - timedelta(days=7), now
+            )
             await self._async_check_outdoor(now)
         except Exception:  # keep running; the sensors stay as they were
             _LOGGER.exception("Computing performance curve and heat load failed")
@@ -953,6 +990,7 @@ class HeatPumpRuntime:
                 "defrost_seconds": round(stats.defrost_seconds),
                 "spread": self.spread.as_dict(),
                 "flow": self.flow.as_dict(),
+                "flow_rate": self.flow_rate.as_dict(),
                 "energy": None
                 if energy is None
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
@@ -977,6 +1015,18 @@ class HeatPumpRuntime:
             return  # too little heating: keep the last verdict
         value = round(self.spread.value, 1)
         self._swapped = value if value < SWAPPED_SPREAD_K else None
+        self._dirty = True
+
+    def _judge_flow(self) -> None:
+        """At midnight: did yesterday's flow fit heat and spread?"""
+        if Signal.FLOW_RATE not in self.entities:
+            return
+        energy = self.marks.energy(Period.YESTERDAY, self.totals)
+        heat = 0.0 if energy is None else energy.get(Kind.HEAT, Mode.HEATING)
+        found = flow_plausibility(heat, self.spread, self.flow_rate)
+        if found.problem is None:
+            return  # too little heating: keep the last verdict
+        self._flow_verdict = found.evidence if found.problem else None
         self._dirty = True
 
     def _analysis_due(self, now: datetime) -> bool:
@@ -1390,6 +1440,17 @@ class HeatPumpRuntime:
             self._flow_temp = _float(state)
         elif signal is Signal.RETURN_TEMP:
             self._return_temp = _float(state)
+        elif signal is Signal.FLOW_RATE:
+            value = _float(state)
+            try:
+                self._flow_rate_lph = (
+                    None
+                    if value is None
+                    else to_lph(value, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+                )
+            except KeyError:
+                self._flow_rate_lph = None
+                self._count("unit:flow_rate")
         elif signal is Signal.DHW_TEMP:
             self._dhw_temp = _float(state)
             self.charge_tracker.temperature(self._dhw_temp)
@@ -1516,6 +1577,9 @@ class HeatPumpRuntime:
                 self.flow.add(self._flow_temp, seconds)
                 if self._return_temp is not None:
                     self.spread.add(self._flow_temp - self._return_temp, seconds)
+            if self._flow_rate_lph is not None:
+                self.flow_rate.add(self._flow_rate_lph, seconds)
+            self._zero_flow.add(self._flow_rate_lph, seconds)
         self._sample_at = at
 
     def _count(self, key: str) -> None:
@@ -1566,7 +1630,9 @@ class HeatPumpRuntime:
             if day_changed:
                 self._write_diary(now)
                 self._judge_spread()
+                self._judge_flow()
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
+            self.flow_rate = Mean()
             prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
             prune_charges(self.charges, now - timedelta(days=HISTORY_DAYS))
             if self.has_charges:
@@ -1605,6 +1671,19 @@ class HeatPumpRuntime:
         self._set_issue(
             "source_changed",
             [] if self._mapping_ok else energy,
+        )
+        flow = self.entities.get(Signal.FLOW_RATE)
+        verdict = self._flow_verdict or {}
+        self._set_issue(
+            "flow_implausible",
+            [flow] if flow and self._flow_verdict else [],
+            measured=str(verdict.get("measured_lph", "")),
+            expected=str(verdict.get("expected_lph", "")),
+        )
+        self._set_issue(
+            "flow_zero",
+            [flow] if flow and self._zero_flow.problem else [],
+            minutes=str(round(self._zero_flow.seconds / 60)),
         )
         activity = self.entities.get(Signal.ACTIVITY)
         self._set_issue(
@@ -1755,6 +1834,9 @@ class HeatPumpRuntime:
             "swapped": self._swapped,
             "activity_foreign": self._activity_foreign,
             "booked_until": _iso(self.booked_until),
+            "flow_rate": self.flow_rate.as_dict(),
+            "flow_verdict": self._flow_verdict,
+            "zero_flow_seconds": round(self._zero_flow.seconds),
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1797,6 +1879,9 @@ class HeatPumpRuntime:
         self._hot = data.get("hot", False)
         self._swapped = data.get("swapped")
         self._activity_foreign = data.get("activity_foreign", False)
+        self.flow_rate = Mean.from_dict(data.get("flow_rate"))
+        self._flow_verdict = data.get("flow_verdict")
+        self._zero_flow.seconds = float(data.get("zero_flow_seconds", 0.0))
         booked = data.get("booked_until")
         self.booked_until = datetime.fromisoformat(booked) if booked else None
 

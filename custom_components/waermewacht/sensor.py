@@ -143,6 +143,11 @@ def _energy_description(
     )
 
 
+def _standby_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    found = runtime.findings["standby_rise"]
+    return {"rising": found.problem, **found.as_attributes()}
+
+
 ENERGY = [
     *(
         _energy_description(f"heat_{m}", Kind.HEAT, m, _has(HEAT_SIGNALS[m]))
@@ -160,6 +165,7 @@ ENERGY = [
         suggested_display_precision=1,
         value=lambda r: round(r.totals.standby(), 1),
         needs=lambda r: r.standby_separable,
+        attributes=_standby_attributes,
     ),
 ]
 
@@ -268,6 +274,7 @@ CYCLING = [
         attributes=lambda r: {
             "minutes": _minutes(r.cycles("today").defrost_seconds),
             "yesterday": r.cycles("yesterday").defrosts,
+            **({} if r.defrost_week is None else r.defrost_week.as_attributes()),
         },
     ),
 ]
@@ -513,6 +520,16 @@ def _flow_at_zero_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     }
 
 
+def _spread_7d(runtime: HeatPumpRuntime) -> float | None:
+    figure = runtime.spread_7d
+    return None if figure is None else _round(figure.value, 1)
+
+
+def _oversize(runtime: HeatPumpRuntime) -> float | None:
+    figure = runtime.oversize
+    return None if figure is None else _round(figure.factor, 2)
+
+
 HAS_OUTDOOR: Needs = lambda r: (  # noqa: E731
     Signal.OUTDOOR_TEMP in r.entities and _mode_complete(r, Mode.HEATING)
 )
@@ -523,6 +540,26 @@ ANALYSIS = [
         value=lambda r: r.analysed_at,
         needs=HAS_OUTDOOR,
         attributes=_curve_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="spread_7d",
+        native_unit_of_measurement=UnitOfTemperature.KELVIN,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value=_spread_7d,
+        needs=lambda r: (
+            HAS_OUTDOOR(r)
+            and r.has_activity
+            and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
+        ),
+        attributes=lambda r: {} if r.spread_7d is None else r.spread_7d.as_attributes(),
+    ),
+    HeatPumpSensorDescription(
+        key="oversize_factor",
+        suggested_display_precision=2,
+        value=_oversize,
+        needs=lambda r: HAS_OUTDOOR(r) and r.rated_power is not None,
+        attributes=lambda r: {} if r.oversize is None else r.oversize.as_attributes(),
     ),
     HeatPumpSensorDescription(
         key="flow_at_zero",

@@ -126,6 +126,16 @@ SENSORS = {
         "Vorlauftemperatur heute",
         "mdi:thermometer-water",
     ),
+    "spread_7d": (
+        "Flow-return spread 7 days",
+        "Spreizung 7 Tage",
+        "mdi:arrow-expand-vertical",
+    ),
+    "oversize_factor": (
+        "Power per heat load",
+        "Leistung je Heizlast",
+        "mdi:resize",
+    ),
     "flow_at_zero": (
         "Flow temperature at 0 °C",
         "Vorlauf bei 0 °C",
@@ -501,12 +511,33 @@ def build(lang: int) -> dict:
                                         "Normaußentemperatur",
                                     )
                                 ),
+                                "rated_power_kw": t(
+                                    (
+                                        "Rated heating power at A-7/W35",
+                                        "Heizleistung bei A−7/W35",
+                                    )
+                                ),
+                                "min_power_kw": t(
+                                    ("Smallest heating power", "Kleinste Heizleistung")
+                                ),
                             },
                             "data_description": {
                                 "design_outdoor_temp": t(
                                     (
                                         "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
                                         "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+                                    )
+                                ),
+                                "rated_power_kw": t(
+                                    (
+                                        "From the data sheet; gives the power per heat load.",
+                                        "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
+                                    )
+                                ),
+                                "min_power_kw": t(
+                                    (
+                                        "From the data sheet; shows whether cycling in mild weather is to be expected.",
+                                        "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist.",
                                     )
                                 ),
                             },
@@ -580,6 +611,34 @@ def build(lang: int) -> dict:
                     (
                         "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}.",
                         "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}.",
+                    )
+                ),
+            },
+            "flow_implausible": {
+                "title": t(
+                    (
+                        "Wärmewacht: flow rate implausible",
+                        "Wärmewacht: Durchfluss unplausibel",
+                    )
+                ),
+                "description": t(
+                    (
+                        "While heating yesterday, {entities} of {name} showed {measured} l/h on average; heat and spread give about {expected} l/h. Usually the unit is wrong (e.g. l/h reported as L/min) or it is the wrong sensor. Check the entity or choose another one under Devices & services → Wärmewacht → Reconfigure. The notice disappears after a day with a fitting flow rate.",
+                        "Beim Heizen zeigte {entities} von {name} gestern im Mittel {measured} l/h; Wärme und Spreizung ergeben etwa {expected} l/h. Meist stimmt die Einheit nicht (etwa l/h als L/min gemeldet) oder es ist der falsche Sensor. Prüfe die Entität oder wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren eine andere. Der Hinweis verschwindet nach einem Tag mit passendem Durchfluss.",
+                    )
+                ),
+            },
+            "flow_zero": {
+                "title": t(
+                    (
+                        "Wärmewacht: flow rate 0 while heating",
+                        "Wärmewacht: Durchfluss 0 beim Heizen",
+                    )
+                ),
+                "description": t(
+                    (
+                        "The flow rate of {name} ({entities}) stood at 0 for {minutes} minutes while the compressor was heating. A heat pump cannot heat without flow; usually the sensor delivers no real value. Check the entity or remove it under Reconfigure. The notice disappears as soon as flow returns.",
+                        "Der Durchfluss von {name} ({entities}) stand {minutes} Minuten auf 0, während der Kompressor heizte. Ohne Durchfluss kann eine Wärmepumpe nicht heizen; meist liefert der Sensor keinen echten Wert. Prüfe die Entität oder entferne sie unter Neu konfigurieren. Der Hinweis verschwindet, sobald wieder Durchfluss kommt.",
                     )
                 ),
             },

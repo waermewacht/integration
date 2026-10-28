@@ -25,6 +25,8 @@ ISSUES = (
     "activity_foreign",
     "energy_stale",
     "source_changed",
+    "flow_implausible",
+    "flow_zero",
 )
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
