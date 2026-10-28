@@ -183,6 +183,9 @@ async def test_diary_entry_at_midnight(
     assert diary[0]["energy"]["heat_heating"] == pytest.approx(3.0)
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["diary_days"] == 1
+    assert diagnostics["diary_last"][-1]["day"] == "2026-01-15"
+    assert diagnostics["booking"]["day_values"] is False
+    assert "heat_heating" in diagnostics["booking"]["counters"]
 
 
 @pytest.mark.freeze_time(START)

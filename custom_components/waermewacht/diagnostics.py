@@ -24,11 +24,12 @@ from .const import CONF_ENTITIES, CONF_TEMPLATE
 from .periods import Period
 
 
-def _source_entities(hass: HomeAssistant, entity_ids: set[str]) -> dict[str, Any]:
+def _source_entities(
+    hass: HomeAssistant, entity_ids: set[str], mask: Masker
+) -> dict[str, Any]:
     """Devices behind the mapped entities and all their entities, masked."""
     entities = er.async_get(hass)
     devices = dr.async_get(hass)
-    mask = Masker()
     entries = [e for i in sorted(entity_ids) if (e := entities.async_get(i))]
     device_ids = {e.device_id for e in entries if e.device_id}
     chosen = {e.entity_id: e for e in entries}
@@ -77,6 +78,9 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     runtime = entry.runtime_data
     now = dt_util.utcnow()
+    # One masker for the whole download: the same id gets the same fake.
+    mask = Masker()
+    template = runtime.template
     states = {}
     for signal, entity_id in runtime.entities.items():
         state = hass.states.get(entity_id)
@@ -93,9 +97,33 @@ async def async_get_config_entry_diagnostics(
     return {
         "config": {
             "template": entry.data.get(CONF_TEMPLATE),
-            "entities": entry.data.get(CONF_ENTITIES),
+            "entities": {
+                k: mask(v) for k, v in (entry.data.get(CONF_ENTITIES) or {}).items()
+            },
             "options": dict(entry.options),
         },
+        # How the template books (beta sources: confirm the day change etc.).
+        "booking": {
+            "day_values": template.day_values,
+            "day_timezone": template.day_timezone,
+            "previous_day": template.previous_day,
+            "hourly_statistics": runtime.hourly,
+            "booked_until": runtime.booked_until.isoformat()
+            if runtime.booked_until
+            else None,
+            "statistic_ids": {
+                s.value: mask(i) for s, i in runtime._statistic_ids.items()
+            },
+            "heat_modes": sorted(m.value for m in runtime.heat_modes),
+            # When each counter last changed: shows when day values jump.
+            "counters": {s.value: c.as_dict() for s, c in runtime.counters.items()},
+        },
+        "diary_last": runtime.diary[-3:],
+        "flow": {
+            "verdict": runtime._flow_verdict,
+            "zero_flow_seconds": round(runtime._zero_flow.seconds),
+        },
+        "charges_kept": len(runtime.charges),
         "states": states,
         "since": runtime.since.isoformat() if runtime.since else None,
         "events": runtime.events,
@@ -110,7 +138,7 @@ async def async_get_config_entry_diagnostics(
         "today": runtime.cycles("today", now).__dict__,
         "totals": runtime.totals.as_dict(),
         "month": month.as_dict() if month else None,
-        "source": _source_entities(hass, set(runtime.entities.values())),
+        "source": _source_entities(hass, set(runtime.entities.values()), mask),
         "period_starts": {
             p.value: s.isoformat() if s else None
             for p, s in runtime.marks.starts.items()

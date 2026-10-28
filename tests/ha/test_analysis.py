@@ -16,6 +16,7 @@ from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -207,3 +208,80 @@ async def test_starts_season_from_the_statistics(
     )
     assert flow.state == "unknown"
     assert "too_few_days" in flow.attributes["reasons"]
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_spread_standby_and_oversize_from_the_diary(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """The daily analysis turns the diary into the health figures."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    import_series(hass, OUTDOOR, mean=True)
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "30.0", TEMPERATURE)
+    hass.states.async_set("sensor.boiler_hptc0", "25.0", TEMPERATURE)
+    hass.states.async_set("sensor.boiler_hpactivity", "aus")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+                "flow_temp": FLOW,
+                "return_temp": "sensor.boiler_hptc0",
+                "activity": "sensor.boiler_hpactivity",
+            }
+        ),
+        options={"rated_power_kw": 8.0},
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # 37 days of diary: 25 W standby, the last 7 days 45 W; the last 7 days
+    # cold with 12 h of heating at a spread of 5 K.
+    today = NOW.astimezone(dt_util.get_default_time_zone()).date()
+    diary = []
+    for n in range(37, 0, -1):
+        recent = n <= 7
+        watts = 45 if recent else 25
+        diary.append(
+            {
+                "day": (today - timedelta(days=n)).isoformat(),
+                "outdoor": 1.0 if recent else 8.0,
+                "run_seconds": 12 * 3600,
+                "spread": {"weighted": 5.0 * 12 * 3600, "seconds": 12 * 3600}
+                if recent
+                else {"weighted": 0.0, "seconds": 0.0},
+                "energy": {"standby_heating": watts * 12 / 1000},
+            }
+        )
+    entry.runtime_data.diary = diary
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    await hass.async_block_till_done()
+
+    def state(key: str):
+        found = er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_{key}"
+        )
+        assert found, key
+        return hass.states.get(found)
+
+    assert float(state("spread_7d").state) == pytest.approx(5.0)
+    oversize = state("oversize_factor")
+    assert oversize.state == "unknown"  # three days give no heat load
+    assert oversize.attributes["reason"] == "heat_load_insufficient"
+    assert oversize.attributes["rated_kw"] == 8.0
+    # Standby rose from 25 W to 45 W: more than +50 % and +10 W.
+    standby = state("standby")
+    assert standby.attributes["rising"] is True
