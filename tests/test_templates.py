@@ -22,12 +22,13 @@ FIXTURES = {
     "vicare_vitocal250a.json": "vicare",
     "vicare_vitocal333g.json": "vicare",
     "melcloud_ecodan.json": "melcloud",
+    "vaillant_mypyllant_arotherm.json": "mypyllant",
 }
 
 
 def entries(fixture: str, platform: str) -> list[RegistryEntry]:
     return [
-        RegistryEntry(e["entity_id"], platform, e["unique_id"])
+        RegistryEntry(e["entity_id"], platform, e["unique_id"], e.get("original_name"))
         for e in load_fixture(fixture)["entities"]
     ]
 

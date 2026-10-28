@@ -124,6 +124,14 @@ class PeriodMarks:
             changed = True
         return changed
 
+    def book_late(self, hour: datetime, totals: Totals) -> None:
+        """Energy of `hour`, booked after later period boundaries: raise the
+        marks of every period that started after it, so the energy counts in
+        the period of its hour (yesterday via today's mark)."""
+        for period, start in self.starts.items():
+            if start is not None and start > hour and period in self.marks:
+                self.marks[period] = self.marks[period] + totals
+
     def energy(self, period: Period, totals: Totals) -> Totals | None:
         """Energy of the period, or None when it is unknown."""
         if period is Period.YESTERDAY:

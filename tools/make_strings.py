@@ -583,6 +583,34 @@ def build(lang: int) -> dict:
                     )
                 ),
             },
+            "energy_stale": {
+                "title": t(
+                    (
+                        "Wärmewacht: no new energy values",
+                        "Wärmewacht: keine neuen Energiewerte",
+                    )
+                ),
+                "description": t(
+                    (
+                        "For more than 30 hours the source of {name} has written no new hourly energy values ({entities}). With myVAILLANT (mypyllant) the energy is fetched only once at load unless the option 'Seconds between energy data updates' is set: set it to 3600 to 7200 seconds, or update one of its energy sensors with an automation. Wärmewacht catches up on the missing hours as soon as they arrive.",
+                        "Seit mehr als 30 Stunden hat die Quelle von {name} keine neuen Stundenwerte der Energie geschrieben ({entities}). Bei myVAILLANT (mypyllant) wird die Energie nur einmal beim Laden abgerufen, wenn die Option „Seconds between energy data updates“ nicht gesetzt ist: Stelle sie auf 3600 bis 7200 Sekunden oder aktualisiere einen ihrer Energie-Sensoren per Automation. Wärmewacht holt die fehlenden Stunden nach, sobald sie da sind.",
+                    )
+                ),
+            },
+            "source_changed": {
+                "title": t(
+                    (
+                        "Wärmewacht: energy entities changed meaning",
+                        "Wärmewacht: Energie-Entitäten haben ihre Bedeutung geändert",
+                    )
+                ),
+                "description": t(
+                    (
+                        "At least one energy entity of {name} no longer measures what it was chosen for ({entities}); with myVAILLANT this happens when the cloud reorders its energy series, for example after cooling was enabled. Wärmewacht books nothing until the entities are chosen again under Devices & services → Wärmewacht → Reconfigure.",
+                        "Mindestens eine Energie-Entität von {name} misst nicht mehr, wofür sie gewählt wurde ({entities}). Bei myVAILLANT geschieht das, wenn die Cloud ihre Energiereihen neu ordnet, etwa nach dem Freischalten von Kühlen. Wärmewacht bucht nichts, bis die Entitäten unter Geräte & Dienste → Wärmewacht → Neu konfigurieren erneut gewählt sind.",
+                    )
+                ),
+            },
             "activity_foreign": {
                 "title": t(
                     (

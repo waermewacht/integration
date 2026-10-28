@@ -20,6 +20,12 @@ class RegistryEntry(NamedTuple):
     entity_id: str
     platform: str
     unique_id: str
+    # Name the integration gave the entity (registry original_name; not the
+    # user's name). Only templates whose unique ids carry no meaning use it.
+    original_name: str | None = None
+    # Enabled and reporting a state. Unusable entries only help to classify
+    # devices (a disabled sensor still tells what its device is).
+    usable: bool = True
 
 
 @dataclass(frozen=True)
@@ -53,6 +59,32 @@ class Template:
     # Built from the integration's source code, not yet confirmed on a real
     # installation: shown as "(beta)" in the setup.
     experimental: bool = False
+    # Energy is booked hour by hour from the long-term statistics the source
+    # writes itself (statistic_id), not from state changes.
+    hourly_statistics: bool = False
+    # Heat of a mode is electricity plus environmental yield (a calculated
+    # value): an hour is standby when heat does not exceed electricity.
+    heat_includes_electricity: bool = False
+
+    def statistic_id(self, unique_id: str) -> str | None:
+        """Statistic id of the hourly energy of an entity, None if it has none."""
+        return None
+
+    def group(
+        self, entries: Iterable[RegistryEntry]
+    ) -> dict[str, dict[tuple[str, str], str]]:
+        """{prefix: {(entity domain, key): entity_id}} of the usable entries."""
+        by_prefix: dict[str, dict[tuple[str, str], str]] = {}
+        for entry in entries:
+            if entry.platform != self.platform or not entry.usable:
+                continue
+            parts = self.split(entry.unique_id)
+            if parts is None:
+                continue
+            prefix, key = parts
+            domain = entry.entity_id.split(".", 1)[0]
+            by_prefix.setdefault(prefix, {})[(domain, key)] = entry.entity_id
+        return by_prefix
 
     def split(self, unique_id: str) -> tuple[str, str] | None:
         """(prefix, key) of a unique id, None if it is not of this format."""
@@ -293,16 +325,7 @@ BOSCH_HOMECOM = Template(
 
 def find(template: Template, entries: Iterable[RegistryEntry]) -> list[Match]:
     """Heat pumps of `template` among the registry entries, one per prefix."""
-    by_prefix: dict[str, dict[tuple[str, str], str]] = {}
-    for entry in entries:
-        if entry.platform != template.platform:
-            continue
-        parts = template.split(entry.unique_id)
-        if parts is None:
-            continue
-        prefix, key = parts
-        domain = entry.entity_id.split(".", 1)[0]
-        by_prefix.setdefault(prefix, {})[(domain, key)] = entry.entity_id
+    by_prefix = template.group(entries)
 
     matches = []
     for prefix, found in sorted(by_prefix.items()):

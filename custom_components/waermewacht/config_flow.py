@@ -192,11 +192,16 @@ def detect(hass: HomeAssistant) -> list[Match]:
     """Heat pumps the templates find among entities that report a state."""
     registry = er.async_get(hass)
     entries = [
-        RegistryEntry(e.entity_id, e.platform, e.unique_id)
+        RegistryEntry(
+            e.entity_id,
+            e.platform,
+            e.unique_id,
+            e.original_name,
+            usable=e.disabled_by is None
+            and (state := hass.states.get(e.entity_id)) is not None
+            and state.state != STATE_UNAVAILABLE,
+        )
         for e in registry.entities.values()
-        if e.disabled_by is None
-        and (state := hass.states.get(e.entity_id)) is not None
-        and state.state != STATE_UNAVAILABLE
     ]
 
     def state_of(entity_id: str) -> str | None:
@@ -214,7 +219,7 @@ def disabled_entities(hass: HomeAssistant) -> list[str]:
     energy per mode by default)."""
     registry = er.async_get(hass)
     entries = [
-        RegistryEntry(e.entity_id, e.platform, e.unique_id)
+        RegistryEntry(e.entity_id, e.platform, e.unique_id, e.original_name)
         for e in registry.entities.values()
     ]
     disabled = {

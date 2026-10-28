@@ -373,6 +373,14 @@
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."
     },
+    "energy_stale": {
+      "title": "Wärmewacht: keine neuen Energiewerte",
+      "description": "Seit mehr als 30 Stunden hat die Quelle von {name} keine neuen Stundenwerte der Energie geschrieben ({entities}). Bei myVAILLANT (mypyllant) wird die Energie nur einmal beim Laden abgerufen, wenn die Option „Seconds between energy data updates“ nicht gesetzt ist: Stelle sie auf 3600 bis 7200 Sekunden oder aktualisiere einen ihrer Energie-Sensoren per Automation. Wärmewacht holt die fehlenden Stunden nach, sobald sie da sind."
+    },
+    "source_changed": {
+      "title": "Wärmewacht: Energie-Entitäten haben ihre Bedeutung geändert",
+      "description": "Mindestens eine Energie-Entität von {name} misst nicht mehr, wofür sie gewählt wurde ({entities}). Bei myVAILLANT geschieht das, wenn die Cloud ihre Energiereihen neu ordnet, etwa nach dem Freischalten von Kühlen. Wärmewacht bucht nichts, bis die Entitäten unter Geräte & Dienste → Wärmewacht → Neu konfigurieren erneut gewählt sind."
+    },
     "activity_foreign": {
       "title": "Wärmewacht: Betriebsart-Entität ohne Betriebsart",
       "description": "{entities} von {name} meldet Werte, die bei diesem Gerät keine Betriebsart tragen (bei ViCare-E3-Reglern „ready“ / „not_ready“). Abtauungen und die Betriebsart der Läufe bleiben leer. Entferne die Entität unter Geräte & Dienste → Wärmewacht → Neu konfigurieren."

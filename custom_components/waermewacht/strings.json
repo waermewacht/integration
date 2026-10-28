@@ -373,6 +373,14 @@
       "title": "Wärmewacht: unusable unit",
       "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."
     },
+    "energy_stale": {
+      "title": "Wärmewacht: no new energy values",
+      "description": "For more than 30 hours the source of {name} has written no new hourly energy values ({entities}). With myVAILLANT (mypyllant) the energy is fetched only once at load unless the option 'Seconds between energy data updates' is set: set it to 3600 to 7200 seconds, or update one of its energy sensors with an automation. Wärmewacht catches up on the missing hours as soon as they arrive."
+    },
+    "source_changed": {
+      "title": "Wärmewacht: energy entities changed meaning",
+      "description": "At least one energy entity of {name} no longer measures what it was chosen for ({entities}); with myVAILLANT this happens when the cloud reorders its energy series, for example after cooling was enabled. Wärmewacht books nothing until the entities are chosen again under Devices & services → Wärmewacht → Reconfigure."
+    },
     "activity_foreign": {
       "title": "Wärmewacht: activity entity without an activity",
       "description": "{entities} of {name} reports values that carry no activity on this device (for ViCare E3 controllers 'ready' / 'not_ready'). Defrosts and the mode of runs stay empty. Remove the entity under Devices & services → Wärmewacht → Reconfigure."

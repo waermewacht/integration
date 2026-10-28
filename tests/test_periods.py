@@ -141,3 +141,21 @@ def test_year_rolls_over_at_new_year() -> None:
     assert marks.rollover(new_year, heat(40))
     assert not marks.due(new_year)
     assert value(marks, Period.YEAR, heat(43)) == 3
+
+
+def test_book_late_puts_an_hour_into_its_period() -> None:
+    """Hourly statistics (Vaillant): the hour 23-24 of 31 January, booked at
+    00:15 on 1 February, counts for yesterday and January, not for today or
+    February."""
+    marks = PeriodMarks(BERLIN, 7)
+    totals = Totals()
+    marks.rollover(datetime(2026, 1, 31, 12, tzinfo=UTC), totals)
+    marks.rollover(datetime(2026, 2, 1, 0, 15, tzinfo=BERLIN), totals)
+    hour = datetime(2026, 1, 31, 23, tzinfo=BERLIN)
+    late = Totals({"heat_heating": 2.0})
+    totals = totals + late
+    marks.book_late(hour, late)
+    assert marks.energy(Period.TODAY, totals).values.get("heat_heating", 0.0) == 0.0
+    assert marks.energy(Period.MONTH, totals).values.get("heat_heating", 0.0) == 0.0
+    assert marks.energy(Period.YESTERDAY, totals).values["heat_heating"] == 2.0
+    assert marks.energy(Period.SEASON, totals).values["heat_heating"] == 2.0

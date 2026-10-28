@@ -48,7 +48,7 @@ from homeassistant.util import dt as dt_util
 
 from .activity import combine
 from .averages import Mean
-from .backfill import HourlyChanges, by_hour, energy_between
+from .backfill import HourlyChanges, bookable_hours, by_hour, energy_between
 from .charges import (
     DISINFECTION_TEMP_C,
     Charge,
@@ -118,7 +118,7 @@ from .model import (
     Signal,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
-from .profiles import EMS_ESP, Template, parse_compressor
+from .profiles import EMS_ESP, RegistryEntry, Template, find, parse_compressor
 from .report import (
     OWN_KEYS,
     by_month,
@@ -146,6 +146,11 @@ MODE_OF: dict[Signal, Mode] = {
 CRITICAL_RUNS_PER_DAY = 3
 # Start of the statistics query for "everything".
 EARLIEST = datetime(2000, 1, 1, tzinfo=dt_util.UTC)
+# Hourly statistics of the source (Vaillant): look back for the signals to
+# expect, catch up at most this far, warn when nothing new came this long.
+HOURLY_LOOKBACK = timedelta(hours=48)
+HOURLY_CATCH_UP = timedelta(days=10)
+HOURLY_STALE = timedelta(hours=30)
 # Flow and return swapped (docs/GESUNDHEITSCHECK.md 4.10 d): the daily mean
 # spread while heating below this, after at least an hour of heating.
 SWAPPED_SPREAD_K = -1.0
@@ -186,6 +191,11 @@ def _per_kwh(cents: float | None) -> float | None:
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
+
+
+def _hour(moment: datetime) -> datetime:
+    """Start of the hour."""
+    return moment.replace(minute=0, second=0, microsecond=0)
 
 
 def _float(state: State | None) -> float | None:
@@ -294,11 +304,19 @@ class HeatPumpRuntime:
         if self.template.day_values:
             zone = self.template.day_timezone
             day_tz = dt_util.get_time_zone(zone) if zone else self.tz
-        self.counters = {
-            s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz)
-            for s in ENERGY_SIGNALS
-            if s in self.entities
-        }
+        # Energy signals; booked from state changes (counters) or, for
+        # sources that write hourly statistics themselves, hour by hour.
+        self.hourly = self.template.hourly_statistics
+        self._energy = [s for s in ENERGY_SIGNALS if s in self.entities]
+        self.counters = (
+            {}
+            if self.hourly
+            else {s: Counter(max_kw=MAX_POWER_KW, day_tz=day_tz) for s in self._energy}
+        )
+        self._statistic_ids = self._source_statistic_ids()
+        self.booked_until: datetime | None = None  # hourly: next hour to book
+        self._booking = False
+        self._mapping_ok = True
         self.tracker = RunTracker()
         self.totals = Totals()
         # The options form stores the month as text ("7").
@@ -371,6 +389,8 @@ class HeatPumpRuntime:
                 self._restore_history(data)
             self._history_dirty = True
         self.marks.rollover(now, self.totals)
+        if self.hourly:
+            self._mapping_ok = self._mapping_still_fits()
         if self.has_charges:
             self._update_charge_finding(now)
         for entity_id in sorted(self._signal_of):
@@ -416,8 +436,21 @@ class HeatPumpRuntime:
                 hourly = await self._async_source_hours(EARLIEST, now)
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics for the backfill failed")
+        until = now
+        if self.hourly:
+            # Hours the source has not written completely yet are booked by
+            # the tick, into the period they belong to.
+            _, until = bookable_hours(hourly, EARLIEST, _hour(now))
+            self.booked_until = until if until > EARLIEST else _hour(now)
         self.marks.initialize(
-            now, lambda start: energy_between(hourly, start, now, self.heat_modes)
+            now,
+            lambda start: energy_between(
+                hourly,
+                start,
+                until,
+                self.heat_modes,
+                self.template.heat_includes_electricity,
+            ),
         )
 
     async def _async_backfill_runs(self, now: datetime) -> bool:
@@ -487,7 +520,9 @@ class HeatPumpRuntime:
             recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
             rows = statistics_rows(
                 by_hour(
-                    await self._async_source_hours(EARLIEST, before), self.heat_modes
+                    await self._async_source_hours(EARLIEST, before),
+                    self.heat_modes,
+                    self.template.heat_includes_electricity,
                 )
             )
         except Exception:  # never block the setup
@@ -540,7 +575,9 @@ class HeatPumpRuntime:
             before = self.since.replace(minute=0, second=0, microsecond=0)
             ids = self._own_ids()
             hours = by_hour(
-                await self._async_source_hours(EARLIEST, before), self.heat_modes
+                await self._async_source_hours(EARLIEST, before),
+                self.heat_modes,
+                self.template.heat_includes_electricity,
             )
             rows, totals = statistics_rows(hours), own_totals(hours)
             first = await get_instance(self.hass).async_add_executor_job(
@@ -981,6 +1018,84 @@ class HeatPumpRuntime:
                 hourly.setdefault(entity_id, {})[hour] = change
         return hourly
 
+    def _source_statistic_ids(self) -> dict[Signal, str]:
+        """Statistic id of each energy signal: the template's own (hourly
+        statistics of the source), else the entity's."""
+        registry = er.async_get(self.hass)
+        ids = {}
+        for signal in self._energy:
+            entity_id = self.entities[signal]
+            entry = registry.async_get(entity_id)
+            own = (
+                self.template.statistic_id(entry.unique_id)
+                if entry is not None and entry.platform == self.template.platform
+                else None
+            )
+            ids[signal] = own or entity_id
+        return ids
+
+    def _mapping_still_fits(self) -> bool:
+        """Whether every configured energy entity is still the same signal
+        for its template (Vaillant: the position of a series in the cloud's
+        list may change, and with it what an entity measures)."""
+        registry = er.async_get(self.hass)
+        entries = [
+            RegistryEntry(e.entity_id, e.platform, e.unique_id, e.original_name)
+            for e in registry.entities.values()
+            if e.platform == self.template.platform
+        ]
+        now_mapped = {
+            entity_id: signal
+            for match in find(self.template, entries)
+            for signal, entity_id in match.entities.items()
+        }
+        for signal in self._energy:
+            entity_id = self.entities[signal]
+            entry = registry.async_get(entity_id)
+            if entry is None or entry.platform != self.template.platform:
+                continue  # chosen by hand: not the template's to judge
+            if now_mapped.get(entity_id) is not signal:
+                _LOGGER.warning(
+                    "%s no longer looks like %s; not booking until reconfigured",
+                    entity_id,
+                    signal,
+                )
+                return False
+        return True
+
+    async def _async_book_hours(self, now: datetime) -> None:
+        """Book the hours the source wrote completely since the last time,
+        each into the period it belongs to."""
+        self._booking = True
+        try:
+            end = _hour(now)
+            start = max(self.booked_until or end, end - HOURLY_CATCH_UP)
+            hourly = await self._async_source_hours(start - HOURLY_LOOKBACK, end)
+            plausible: dict[Signal, dict[datetime, float]] = {}
+            for signal, values in hourly.items():
+                plausible[signal] = {}
+                for hour, kwh in values.items():
+                    # A sum started anew, or more than the heat pump can do.
+                    if kwh < 0 or kwh > MAX_POWER_KW * 1.5:
+                        self._count(f"hour_rejected:{signal}")
+                        continue
+                    plausible[signal][hour] = kwh
+            hours, next_start = bookable_hours(plausible, start, end)
+            booked = by_hour(
+                plausible, self.heat_modes, self.template.heat_includes_electricity
+            )
+            for hour in hours:
+                self.totals = self.totals + booked[hour]
+                self.marks.book_late(hour, booked[hour])
+            if next_start != start or self.booked_until is None:
+                self.booked_until = next_start
+                self._dirty = True
+                self._notify()
+        except Exception:  # keep running; the next tick tries again
+            _LOGGER.exception("Booking the hourly statistics failed")
+        finally:
+            self._booking = False
+
     async def _async_source_hours(
         self, start: datetime, end: datetime
     ) -> HourlyChanges:
@@ -992,8 +1107,8 @@ class HeatPumpRuntime:
         """
         history: dict[str, list[str]] = self.entry.data.get(CONF_HISTORY, {})
         ids = {
-            s: [self.entities[s], *history.get(self.entities[s], [])]
-            for s in self.counters
+            s: [self._statistic_ids[s], *history.get(self.entities[s], [])]
+            for s in self._energy
         }
         rows = await self.async_hourly(
             {i for group in ids.values() for i in group}, start, end
@@ -1071,7 +1186,10 @@ class HeatPumpRuntime:
         }
 
     def _switch(self) -> datetime:
-        """First full hour of Wärmewacht's own energy sensors."""
+        """First full hour of Wärmewacht's own energy sensors (never for
+        sources with hourly statistics: theirs are exact, ours late)."""
+        if self.hourly:
+            return datetime.max.replace(tzinfo=dt_util.UTC)
         since = self.since or EARLIEST
         return since.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
@@ -1084,7 +1202,11 @@ class HeatPumpRuntime:
         hours: dict[datetime, Totals] = {}
         if start < switch:
             source = await self._async_source_hours(start, min(end, switch))
-            hours.update(by_hour(source, self.heat_modes))
+            hours.update(
+                by_hour(
+                    source, self.heat_modes, self.template.heat_includes_electricity
+                )
+            )
         if end > switch:
             own = await self._async_own_hours(max(start, switch), end)
             for hour, totals in own.items():
@@ -1165,6 +1287,7 @@ class HeatPumpRuntime:
         return (
             self.has_activity
             and not self.template.day_values
+            and not self.hourly
             and HEAT_SIGNALS[Mode.DHW] in self.entities
             and ELEC_SIGNALS[Mode.DHW] in self.entities
         )
@@ -1418,6 +1541,14 @@ class HeatPumpRuntime:
             value := _float(self.hass.states.get(entity_id))
         ) is not None:
             self.outdoor.add(value, 60)
+        if (
+            self.hourly
+            and now.minute % 10 == 2
+            and not self._booking
+            and self._mapping_ok
+            and "recorder" in self.hass.config.components
+        ):
+            self.hass.async_create_task(self._async_book_hours(now))
         if self._analysis_due(now):
             self.hass.async_create_task(self._async_refresh_analysis(now))
         if (
@@ -1464,6 +1595,17 @@ class HeatPumpRuntime:
                 wrong_unit.append(entity_id)
         self._set_issue("missing_entity", missing)
         self._set_issue("energy_unit", wrong_unit)
+        stale = (
+            self.hourly
+            and self.booked_until is not None
+            and dt_util.utcnow() - self.booked_until > HOURLY_STALE
+        )
+        energy = [self.entities[s] for s in self._energy]
+        self._set_issue("energy_stale", energy[:1] if stale else [])
+        self._set_issue(
+            "source_changed",
+            [] if self._mapping_ok else energy,
+        )
         activity = self.entities.get(Signal.ACTIVITY)
         self._set_issue(
             "activity_foreign",
@@ -1511,6 +1653,8 @@ class HeatPumpRuntime:
 
     def resolution(self, *modes: Mode) -> float:
         """Step of the coarsest counter of the modes, in kWh."""
+        if self.hourly:
+            return 0.01  # unrounded hourly statistics
         signals = [s for m in modes for s in (HEAT_SIGNALS[m], ELEC_SIGNALS[m])]
         coarse = any(s in self.entities and s not in self.decimal for s in signals)
         return 1.0 if coarse else 0.01
@@ -1610,6 +1754,7 @@ class HeatPumpRuntime:
             "hot": self._hot,
             "swapped": self._swapped,
             "activity_foreign": self._activity_foreign,
+            "booked_until": _iso(self.booked_until),
         }
 
     def _restore(self, data: dict[str, Any]) -> None:
@@ -1652,6 +1797,8 @@ class HeatPumpRuntime:
         self._hot = data.get("hot", False)
         self._swapped = data.get("swapped")
         self._activity_foreign = data.get("activity_foreign", False)
+        booked = data.get("booked_until")
+        self.booked_until = datetime.fromisoformat(booked) if booked else None
 
     def history_dict(self) -> dict[str, Any]:
         return {

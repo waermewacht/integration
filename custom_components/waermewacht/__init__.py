@@ -23,6 +23,8 @@ ISSUES = (
     "outdoor_temp_implausible",
     "flow_return_swapped",
     "activity_foreign",
+    "energy_stale",
+    "source_changed",
 )
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
