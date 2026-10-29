@@ -177,6 +177,21 @@ def test_week_needs_six_full_days() -> None:
     assert weeks[third].hours == 7 * 24 - 4
 
 
+def test_days_before_the_energy_data_do_not_count() -> None:
+    """The meters were recorded later than the outdoor temperature: the
+    weeks before have outdoor values but no energy and must not enter as
+    0 kW."""
+    hours, outdoor = build(WEEKS)
+    full = heat_load(hours, outdoor, BERLIN, design_temp=-12.0)
+    # Three frosty weeks before: outdoor values only.
+    _, before = build((-1.0, -3.0, -5.0))
+    before = {hour - timedelta(days=21): value for hour, value in before.items()}
+    result = heat_load(hours, {**before, **outdoor}, BERLIN, design_temp=-12.0)
+    assert len(result.weeks) == len(full.weeks)
+    assert all(w.power_kw > 0 for w in result.weeks)
+    assert result.slope_kw_per_k == pytest.approx(full.slope_kw_per_k)
+
+
 def test_day_with_cooling_does_not_count() -> None:
     hours, outdoor = build(WEEKS)
     for hour in day_hours(START + timedelta(days=9))[:1]:

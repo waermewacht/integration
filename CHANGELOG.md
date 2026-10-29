@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Durchfluss** lässt sich jetzt auch wählen, wenn die Entität keine Geräteklasse „Volumenstrom“ hat, aber eine bekannte Einheit (z. B. `L/min` bei P1P2MQTT). Bisher blieb die Auswahl leer (Rückmeldung im simon42-Forum).
+- **Heizlast (Energiesignatur):** Tage ohne Energiedaten zählen nicht mehr. Lagen Außentemperaturen weiter zurück als die Statistik der Zähler (z. B. ein später angelegter Zähler), gingen diese Wochen mit 0 kW ein und verdarben die Gerade.
 - **Intern:** Vorlagen beschreiben das Format ihrer unique_ids als Muster (`id_format`) statt mit eigenem Code; fünf Sonderklassen entfallen. Am Verhalten ändert sich nichts.
 
 ## 0.1.2 – 2026-10-28

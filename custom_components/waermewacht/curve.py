@@ -46,12 +46,15 @@ class DaySample:
 
     `hours` counts the hours with a valid outdoor value; only their energy is
     in `totals`. Each is one real hour, so DST days have at most 23 or 25.
+    `energy_hours` counts those of them with an energy row at all: a day
+    before the meters were recorded has outdoor values but no energy.
     """
 
     day: date
     hours: int
     mean_outdoor: float
     totals: Totals
+    energy_hours: int = 0
 
 
 @dataclass(frozen=True)
@@ -92,6 +95,7 @@ def daily_samples(
     """
     temps: dict[date, list[float]] = {}
     energy: dict[date, Totals] = {}
+    energy_hours: dict[date, int] = {}
     for hour, value in outdoor.items():
         if not valid_outdoor(value):
             continue
@@ -99,12 +103,14 @@ def daily_samples(
         temps.setdefault(day, []).append(value)
         if (totals := hours.get(hour)) is not None:
             energy[day] = energy.get(day, Totals()) + totals
+            energy_hours[day] = energy_hours.get(day, 0) + 1
     return [
         DaySample(
             day=day,
             hours=len(values),
             mean_outdoor=sum(values) / len(values),
             totals=energy.get(day, Totals()),
+            energy_hours=energy_hours.get(day, 0),
         )
         for day, values in sorted(temps.items())
         if len(values) >= min_hours

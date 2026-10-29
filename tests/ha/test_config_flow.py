@@ -8,7 +8,9 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.waermewacht.config_flow import _selector
 from custom_components.waermewacht.const import CONF_ENTITIES, CONF_TEMPLATE, DOMAIN
+from custom_components.waermewacht.model import Signal
 
 from .conftest import ENERGY, entry_data
 
@@ -143,6 +145,16 @@ async def test_homecom_is_found_and_prefilled(hass: HomeAssistant) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_TEMPLATE] == "bosch_homecom"
+
+
+def test_flow_rate_without_device_class_is_offered() -> None:
+    """P1P2MQTT and others give L/min without device class volume_flow_rate."""
+    filters = _selector(Signal.FLOW_RATE).config["filter"]
+    assert {"domain": ["sensor"], "device_class": ["volume_flow_rate"]} in filters
+    units = next(
+        f["unit_of_measurement"] for f in filters if "unit_of_measurement" in f
+    )
+    assert {"L/min", "l/min", "L/h", "m³/h"} <= set(units)
 
 
 async def test_manual_needs_one_complete_mode(hass: HomeAssistant) -> None:

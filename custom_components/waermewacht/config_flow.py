@@ -57,6 +57,7 @@ from .const import (
 )
 from .counter import UNIT_FACTORS
 from .health import DROP_PERCENT, MILD_FROM
+from .health_extra import LPH_FACTORS
 from .model import (
     AUX_SIGNALS,
     ELEC_SIGNALS,
@@ -100,6 +101,10 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
 
 
+# Flow units in Home Assistant's spelling and in lower case.
+FLOW_UNITS = sorted({*LPH_FACTORS, "L/h", "L/min", "L/s", "mL/s"})
+
+
 def _selector(signal: Signal) -> selector.EntitySelector:
     if signal in ENERGY_SIGNALS:
         filters = selector.EntityFilterSelectorConfig(
@@ -133,8 +138,19 @@ def _selector(signal: Signal) -> selector.EntitySelector:
             domain="sensor", device_class="temperature"
         )
     elif signal is Signal.FLOW_RATE:
-        filters = selector.EntityFilterSelectorConfig(
-            domain="sensor", device_class="volume_flow_rate"
+        # Many integrations give a flow in L/min without a device class
+        # (P1P2MQTT): either one, as long as Wärmewacht knows the unit.
+        return selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                filter=[
+                    selector.EntityFilterSelectorConfig(
+                        domain="sensor", device_class="volume_flow_rate"
+                    ),
+                    selector.EntityFilterSelectorConfig(
+                        domain="sensor", unit_of_measurement=FLOW_UNITS
+                    ),
+                ]
+            )
         )
     else:
         filters = selector.EntityFilterSelectorConfig(domain="sensor")

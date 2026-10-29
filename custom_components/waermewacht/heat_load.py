@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, tzinfo
 from typing import Any
 
-from .curve import DaySample, daily_samples
+from .curve import MIN_DAY_HOURS, DaySample, daily_samples
 from .energy import Totals
 from .model import Mode
 
@@ -79,8 +79,14 @@ class HeatLoad:
 
 def full_day(sample: DaySample) -> bool:
     """A day that may enter the signature: enough outdoor values (checked by
-    `daily_samples`) and no cooling on that day."""
-    return sample.totals.heat(Mode.COOLING) <= 0
+    `daily_samples`), as many hours with energy data, and no cooling.
+
+    Without energy data (a meter recorded later than the outdoor temperature)
+    the day would enter with no heat at all: weeks of 0 kW in frost.
+    """
+    return (
+        sample.energy_hours >= MIN_DAY_HOURS and sample.totals.heat(Mode.COOLING) <= 0
+    )
 
 
 def weekly_points(
