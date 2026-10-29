@@ -203,7 +203,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Quelle.** Fraunhofer ISE (WP-QS): AZ Warmwasser im Feld 2,8 (n = 18) zur Einordnung. 60 °C nach DVGW W 551 (`charges.py`). 15 % und 10 % **eigene Annahme**.
 
-**Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Offen: der Vorjahresvergleich der AZ normaler Ladungen; er braucht ein Jahr Tagebuch (normale Ladungen je Tag stehen seit 0.1.0b8 darin).
+**Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch, bei ganzen kWh bis 2 Stunden oder bis zur nächsten Ladung, seit 0.1.6). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Offen: der Vorjahresvergleich der AZ normaler Ladungen; er braucht ein Jahr Tagebuch (normale Ladungen je Tag stehen seit 0.1.0b8 darin).
 
 ### 4.10 Fühler- und Datenfehler
 

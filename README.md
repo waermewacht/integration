@@ -292,7 +292,7 @@ Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts
 
 ### Warmwasser-Ladungen
 
-Eine Ladung ist ein zusammenhängender Zeitraum mit der Betriebsart Warmwasser. Eine Abtauung dazwischen beendet sie nicht. Wärme und Strom der Ladung kommen aus den Warmwasser-Zählern, ohne Stillstand. Was die Zähler bis 5 Minuten nach dem Ende melden, zählt noch dazu. Wärmewacht hält die Ladungen 40 Tage.
+Eine Ladung ist ein zusammenhängender Zeitraum mit der Betriebsart Warmwasser. Eine Abtauung dazwischen beendet sie nicht. Wärme und Strom der Ladung kommen aus den Warmwasser-Zählern, ohne Stillstand. Was die Zähler bis 5 Minuten nach dem Ende melden, zählt noch dazu; bei Zählern in ganzen kWh (Daikin) bis 2 Stunden, längstens bis zur nächsten Ladung. Der Wert der letzten Ladung erscheint dann entsprechend später. Wärmewacht hält die Ladungen 40 Tage.
 
 | Entität | Bedeutung | Braucht |
 | --- | --- | --- |

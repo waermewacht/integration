@@ -51,7 +51,9 @@ from .activity import combine
 from .averages import Mean
 from .backfill import HourlyChanges, bookable_hours, by_hour, energy_between
 from .charges import (
+    COARSE_LATE,
     DISINFECTION_TEMP_C,
+    LATE,
     Charge,
     ChargeTracker,
     DisinfectionSplit,
@@ -1639,7 +1641,13 @@ class HeatPumpRuntime:
                 kind = Kind.AUX
         self._add(kind, mode, kwh, at)
         if mode is Mode.DHW:
+            self._set_charge_late()
             self.charge_tracker.add(kind, kwh, at)
+
+    def _set_charge_late(self) -> None:
+        """How long a charge takes late energy: longer for whole kWh."""
+        coarse = self.resolution(Mode.DHW) >= 1
+        self.charge_tracker.late = COARSE_LATE if coarse else LATE
 
     def _add(self, kind: Kind, mode: Mode, kwh: float, at: datetime) -> None:
         """Book energy that arrived at `at`; a previous-day value goes into
@@ -1745,6 +1753,7 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
+        self._set_charge_late()
         self._finish_charge(self.charge_tracker.tick(now))
         # Before a period boundary, book all waiting electricity in the period
         # its heat went to.

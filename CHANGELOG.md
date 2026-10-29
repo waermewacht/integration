@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Neue Schaltfläche „Rückblick neu berechnen“:** rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln. Für Zähler, die erst über „Neu konfigurieren“ dazukamen (bisher fehlte ihre Vergangenheit), und nach Updates, die den Rückblick verbessern – statt den Eintrag neu anzulegen (Rückmeldung im simon42-Forum).
+- **Warmwasser je Ladung bei Zählern in ganzen kWh** (Daikin über P1P2MQTT): Die Brücke meldet den Strom einer Ladung bis zu einer halben Stunde nach ihrem Ende. Wärmewacht wartete nur 5 Minuten, die Ladung stand ohne Strom da („AZ Warmwasser letzte Ladung“ unbekannt, „Ladungen 30 Tage“ zu hoch). Bei ganzen kWh wartet es jetzt bis zu 2 Stunden oder bis zur nächsten Ladung (Rückmeldung im simon42-Forum).
 - **README:** eedc (Energie Effizienz Data Center) unter „Verwandte Projekte“. Neuer Abschnitt „Recorder schlank halten“: welche Entitäten der Recorder für Wärmewacht aufzeichnen muss, welche er aufzeichnen sollte und welche fehlen dürfen, mit Beispiel für `include` (Rückmeldung im simon42-Forum).
 
 ## 0.1.5 – 2026-10-29

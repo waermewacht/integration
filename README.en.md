@@ -292,7 +292,7 @@ Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `start
 
 ### Hot water charges
 
-A charge is one continuous period of the activity hot water. A defrost in between does not end it. Heat and electricity of the charge come from the hot water meters, without standby. What the meters report up to 5 minutes after the end still counts. Wärmewacht keeps charges for 40 days.
+A charge is one continuous period of the activity hot water. A defrost in between does not end it. Heat and electricity of the charge come from the hot water meters, without standby. What the meters report up to 5 minutes after the end still counts; with meters in whole kWh (Daikin) up to 2 hours, at most until the next charge. The figure of the last charge then appears that much later. Wärmewacht keeps charges for 40 days.
 
 | Entity | Meaning | Needs |
 | --- | --- | --- |

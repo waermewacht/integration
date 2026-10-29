@@ -47,6 +47,11 @@ SECONDS_PER_DAY = 86400.0
 # Energy of hot water up to this long after the end still belongs to the
 # charge (counters report late); a restart longer than this leaves a gap.
 LATE = timedelta(minutes=5)
+# Counters in whole kWh report later still: the Daikin bridge (P1P2MQTT) sent
+# the electricity of a charge 27 minutes after its end. Their energy counts
+# up to this long, unless the next charge starts first (own assumption, as
+# backfill.COARSE_WINDOW).
+COARSE_LATE = timedelta(hours=2)
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -296,6 +301,7 @@ class ChargeTracker:
     def __init__(self) -> None:
         self.open: Charge | None = None  # running
         self.closing: Charge | None = None  # ended, still taking late energy
+        self.late = LATE  # COARSE_LATE for counters in whole kWh
 
     def set_activity(
         self, activity: Activity | None, at: datetime, temp: float | None
@@ -320,7 +326,7 @@ class ChargeTracker:
         """Hot water energy (heat, compressor or backup heater electricity)."""
         charge = self.open
         closing = self.closing
-        if charge is None and closing and closing.end and at <= closing.end + LATE:
+        if charge is None and closing and closing.end and at <= closing.end + self.late:
             charge = closing
         if charge is None:
             return
@@ -341,7 +347,7 @@ class ChargeTracker:
 
     def tick(self, now: datetime) -> Charge | None:
         """The ended charge once its late energy is in."""
-        if self.closing and self.closing.end and now >= self.closing.end + LATE:
+        if self.closing and self.closing.end and now >= self.closing.end + self.late:
             finished, self.closing = self.closing, None
             return finished
         return None

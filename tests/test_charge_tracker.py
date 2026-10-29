@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from custom_components.waermewacht.charges import (
+    COARSE_LATE,
     LATE,
     Charge,
     ChargeTracker,
@@ -106,3 +107,29 @@ def test_backup_heater_in_normal_charges() -> None:
 
     result = aux_dhw_charges(disinfection_split(charges[:9], at(0), at(24 * 60)))
     assert result.problem is None and result.reason == TOO_FEW_CHARGES
+
+
+def test_whole_kwh_electricity_arrives_late() -> None:
+    """Daikin over P1P2MQTT: the kWh of electricity came 27 minutes after the
+    charge ended. With whole kWh the charge waits up to COARSE_LATE, unless
+    the next charge starts first."""
+    tracker = ChargeTracker()
+    tracker.late = COARSE_LATE
+    tracker.set_activity(Activity.DHW, at(0), 41.0)
+    tracker.add(Kind.HEAT, 3.0, at(20))
+    tracker.set_activity(Activity.HEATING, at(30), 45.0)
+    tracker.add(Kind.HEAT, 1.0, at(32))
+    assert tracker.tick(at(40)) is None  # still waiting
+    tracker.add(Kind.ELEC, 1.0, at(57))
+    done = tracker.tick(at(30) + COARSE_LATE)
+    assert done is not None
+    assert (done.heat_kwh, done.electricity_kwh) == (4.0, 1.0)
+
+    # The next charge ends the wait early; its energy is its own.
+    tracker.set_activity(Activity.DHW, at(300), 40.0)
+    tracker.set_activity(Activity.HEATING, at(320), 45.0)
+    done = tracker.set_activity(Activity.DHW, at(340), 44.0)
+    assert done is not None and done.end == at(320)
+    tracker.add(Kind.ELEC, 1.0, at(345))
+    assert done.electricity_kwh == 0
+    assert LATE < COARSE_LATE
