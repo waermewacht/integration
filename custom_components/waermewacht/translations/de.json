@@ -80,7 +80,7 @@
               "flow_rate": "Durchfluss"
             },
             "data_description": {
-              "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe.",
+              "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
               "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
             }
           },

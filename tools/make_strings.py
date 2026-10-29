@@ -281,8 +281,8 @@ FIELD_HELP = {
         "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
     ),
     "outdoor_temp": (
-        "Preferably the heat pump's own outdoor sensor.",
-        "Am besten der Außenfühler der Wärmepumpe.",
+        "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
+        "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
     ),
     "flow_rate": (
         "Flow in the heating circuit (l/h, L/min, m³/h, ...).",

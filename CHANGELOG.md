@@ -2,7 +2,7 @@
 
 ## Unveröffentlicht
 
-- **Einrichtung verständlicher:** Felder heißen klarer („Erzeugte Wärme Heizen“, „Warmwasser-Temperatur (Ist, Speicher)“), und unter den schwierigen Feldern steht eine Erläuterung – vor allem bei „Kompressor läuft“: eine An/aus-Entität oder eine Zahl über 0, kein Status-Text (Rückmeldung im simon42-Forum).
+- **Einrichtung verständlicher:** Felder heißen klarer („Erzeugte Wärme Heizen“, „Warmwasser-Temperatur (Ist, Speicher)“), und unter den schwierigen Feldern steht eine Erläuterung – vor allem bei „Kompressor läuft“: eine An/aus-Entität oder eine Zahl über 0, kein Status-Text. Bei der Außentemperatur ist eine nahe Wetterstation ausdrücklich in Ordnung, wenn der Fühler der Wärmepumpe in der Sonne liegt (Rückmeldungen im simon42-Forum).
 - **Bosch HomeCom mit Betriebsart:** Die Vorlage nimmt den neuen Sensor „Kompressorstatus“ von `bosch_homecom` (ab [PR #217](https://github.com/serbanb11/bosch-homecom-hass/pull/217)) als Betriebsart. Damit gibt es auch mit HomeCom Abtauungen, die Zuordnung der Läufe zu Heizen und Warmwasser, Spreizung und mittleren Vorlauf. Bestehende Einträge übernehmen den Sensor beim nächsten Start von selbst, sobald er da ist.
 
 ## 0.1.4 – 2026-10-29

@@ -80,7 +80,7 @@
               "flow_rate": "Flow rate"
             },
             "data_description": {
-              "outdoor_temp": "Preferably the heat pump's own outdoor sensor.",
+              "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
               "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...)."
             }
           },
