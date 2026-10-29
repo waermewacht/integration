@@ -49,8 +49,8 @@ Left out: no flow rate entity exists; "number_of_starts_heating/dhw/cooling"
 
 from __future__ import annotations
 
-from .model import Activity, Signal
-from .profiles import Template
+from .model import Signal
+from .profiles import POINTT_ACTIVITY, Template
 
 PLATFORM = "buderus_ha"
 _S = "sensor"
@@ -83,14 +83,5 @@ BUDERUS = Template(
         Signal.DHW_TEMP: ((_S, "dhw_actual_temperature"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
-    activity_values={
-        "off": Activity.OFF,
-        "heating": Activity.HEATING,
-        "cooling": Activity.COOLING,
-        "dhw": Activity.DHW,
-        "defrost": Activity.DEFROST,
-        "pool": Activity.OTHER,
-        "pool_heat": Activity.OTHER,
-        "alarm": Activity.OTHER,
-    },
+    activity_values=POINTT_ACTIVITY,
 )

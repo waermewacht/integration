@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from custom_components.waermewacht.adopt import own_match, signals_to_adopt
 from custom_components.waermewacht.model import Signal
-from custom_components.waermewacht.profiles import EMS_ESP, Match
+from custom_components.waermewacht.profiles import BOSCH_HOMECOM, EMS_ESP, Match
 
 CONFIGURED = {"heat_heating": "sensor.boiler_nrgheat", "compressor": "binary_sensor.c"}
 
@@ -41,3 +41,13 @@ def test_own_match_is_the_heat_pump_of_the_entry() -> None:
     )
     assert own_match([other, mine], CONFIGURED) is mine
     assert own_match([other], CONFIGURED) is None
+
+
+def test_homecom_entry_adopts_the_compressor_status() -> None:
+    """An entry set up before bosch_homecom offered the compressor status
+    takes it over once the template finds it."""
+    known = [s.value for s in BOSCH_HOMECOM.signals if s is not Signal.ACTIVITY]
+    configured = {"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"}
+    assert signals_to_adopt(BOSCH_HOMECOM.signals, known, configured) == [
+        Signal.ACTIVITY
+    ]

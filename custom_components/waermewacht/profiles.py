@@ -371,10 +371,26 @@ EMS_ESP = Template(
     },
 )
 
+# Compressor status of the Bosch PointT cloud (/heatSources/compressor/status,
+# K40 gateways), the same words as EMS-ESP's hpactivity. Read by BassXT/buderus
+# and, from bosch_homecom PR #217 (homecom_alt PR #151) on, by bosch_homecom.
+POINTT_ACTIVITY: dict[str, Activity | None] = {
+    "off": Activity.OFF,
+    "heating": Activity.HEATING,
+    "cooling": Activity.COOLING,
+    "dhw": Activity.DHW,
+    "defrost": Activity.DEFROST,
+    "pool": Activity.OTHER,
+    "pool_heat": Activity.OTHER,
+    "alarm": Activity.OTHER,
+}
+
 # Bosch HomeCom (bosch_homecom, checked v1.5.2 and v1.6.0): unique ids
 # "<gateway id>-<key>". The energy per mode is today's sum of the cloud's
-# hourly values (disabled by default in bosch_homecom); there is no activity,
-# so no defrosts and no mode of a run. The pump volume flow is left out: it
+# hourly values (disabled by default in bosch_homecom). The activity
+# ("compressor_status") exists only from bosch_homecom PR #217 on; without
+# it there are no defrosts and no mode of a run, and an existing entry takes
+# it over once it appears (adopt.py). The pump volume flow is left out: it
 # reports "L/min" but delivers l/h. Sources: docs/ENTWICKLUNG.md, section 4.
 BOSCH_HOMECOM = Template(
     key="bosch_homecom",
@@ -394,6 +410,7 @@ BOSCH_HOMECOM = Template(
             (_S, "local_compressor_speed"),
             (_S, "compressor_modulation"),
         ),
+        Signal.ACTIVITY: ((_S, "compressor_status"),),
         Signal.STARTS_TOTAL: ((_S, "compressor_starts"),),
         Signal.OUTDOOR_TEMP: ((_S, "outdoor_temp"),),
         Signal.FLOW_TEMP: ((_S, "supply_temperature"),),
@@ -401,6 +418,7 @@ BOSCH_HOMECOM = Template(
         Signal.DHW_TEMP: ((_S, "dhw1"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
+    activity_values=POINTT_ACTIVITY,
     day_values=True,
 )
 

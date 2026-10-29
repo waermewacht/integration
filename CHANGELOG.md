@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Bosch HomeCom mit Betriebsart:** Die Vorlage nimmt den neuen Sensor „Kompressorstatus“ von `bosch_homecom` (ab [PR #217](https://github.com/serbanb11/bosch-homecom-hass/pull/217)) als Betriebsart. Damit gibt es auch mit HomeCom Abtauungen, die Zuordnung der Läufe zu Heizen und Warmwasser, Spreizung und mittleren Vorlauf. Bestehende Einträge übernehmen den Sensor beim nächsten Start von selbst, sobald er da ist.
+
 ## 0.1.4 – 2026-10-29
 
 - **Neue Vorlage (beta): Daikin Altherma über P1P2MQTT** ([P1P2Serial](https://github.com/Arnold-n/P1P2Serial)): die Zähler der Wärmepumpe je Betriebsart (ganze kWh), Takte und Abtauungen (Rückmeldung im simon42-Forum).

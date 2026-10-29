@@ -111,8 +111,9 @@ def test_homecom_template_finds_every_signal() -> None:
         Signal.RETURN_TEMP: base + "rucklauftemperatur",
         Signal.DHW_TEMP: base + "dhw1_temperatur",
     }
-    # No activity: no defrosts, no mode of a run. Volume flow left out (unit).
-    assert match.missing == []
+    # The fixture (bosch_homecom 1.5.2) has no compressor status yet (from
+    # PR #217 on): no defrosts, no mode of a run. Volume flow left out (unit).
+    assert match.missing == [Signal.ACTIVITY]
     assert Signal.FLOW_RATE not in match.entities
 
 

@@ -76,7 +76,7 @@ Die HomeCom-Vorlage braucht die Energie je Betriebsart („Wärme erzeugt Heizun
 
 - **Tageswerte aus der Cloud:** Die Energie kommt als Summe des Tages, bis zu zwei Stunden verspätet. Wärmewacht bucht sie, wenn sie eintrifft, „heute“ hinkt also nach. Die letzten ein bis zwei Stunden eines Tages liefert die Cloud nie (beobachtet bis 0,5 kWh am Tag).
 - **Stillstand:** Strom eines Abrufs, mit dem keine Wärme derselben Betriebsart kam.
-- **Keine Betriebsart:** keine Abtauungen, keine Spreizung und kein mittlerer Vorlauf.
+- **Betriebsart erst mit dem Kompressorstatus:** Bis `bosch_homecom` den Sensor „Kompressorstatus“ liefert ([PR #217](https://github.com/serbanb11/bosch-homecom-hass/pull/217)), gibt es keine Abtauungen, keine Spreizung und keinen mittleren Vorlauf. Sobald er da ist, übernimmt Wärmewacht ihn beim nächsten Start von selbst.
 - **Kein Durchfluss:** `bosch_homecom` meldet „L/min“, liefert aber l/h.
 
 Läuft bei dir EMS-ESP, nimm EMS-ESP: Zähler auf 0,01 kWh im Minutentakt und die Betriebsart.

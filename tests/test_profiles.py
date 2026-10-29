@@ -198,3 +198,24 @@ def test_ems_esp_long_names_v34() -> None:
     assert by_uid[Signal.AUX_HEATING] == (
         "boiler_aux_elec._heater_energy_consumption_heating"
     )
+
+
+def test_homecom_compressor_status_is_the_activity() -> None:
+    """bosch_homecom from PR #217: "<gateway>-compressor_status", the words of
+    the PointT cloud; before it, the template simply finds no activity."""
+    rows = load_fixture("bosch_homecom_k40.json")["entities"]
+    base = [
+        RegistryEntry(r["entity_id"], "bosch_homecom", r["unique_id"]) for r in rows
+    ]
+    (without,) = find(BOSCH_HOMECOM, base)
+    assert Signal.ACTIVITY not in without.entities
+    status = RegistryEntry(
+        "sensor.boschcom_k40_101234567_compressor_status",
+        "bosch_homecom",
+        "101234567-compressor_status",
+    )
+    (match,) = find(BOSCH_HOMECOM, [*base, status])
+    assert match.entities[Signal.ACTIVITY] == status.entity_id
+    assert BOSCH_HOMECOM.parse_activity("defrost") is Activity.DEFROST
+    assert BOSCH_HOMECOM.parse_activity("dhw") is Activity.DHW
+    assert BOSCH_HOMECOM.parse_activity("pool_heat") is Activity.OTHER
