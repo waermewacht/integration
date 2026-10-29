@@ -211,6 +211,59 @@ async def test_starts_season_from_the_statistics(
 
 
 @pytest.mark.freeze_time(NOW)
+async def test_starts_season_without_statistics(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A start counter without state class (P1P2MQTT) has no statistics: the
+    season count starts at the first value seen and survives a reload."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    import_series(hass, OUTDOOR, mean=True)
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    hass.states.async_set(STARTS, "1806", {})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+                "starts_total": STARTS,
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    found = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_starts_season"
+    )
+    state = hass.states.get(found)
+    assert state.state == "0"
+    since = state.attributes["since"]
+
+    hass.states.async_set(STARTS, "1810", {})
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    state = hass.states.get(found)
+    assert state.state == "4"
+    assert state.attributes["since"] == since
+
+
+@pytest.mark.freeze_time(NOW)
 async def test_spread_standby_and_oversize_from_the_diary(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:

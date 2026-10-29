@@ -89,7 +89,13 @@ from .const import (
 )
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .curve import curve_as_dicts, daily_samples, performance_curve
-from .cycling import CycleStats, cycle_stats, max_starts_per_hour, prune
+from .cycling import (
+    CycleStats,
+    cycle_stats,
+    max_starts_per_hour,
+    prune,
+    season_starts_baseline,
+)
 from .degree_days import DegreeDays, daily_degree_days, degree_days
 from .energy import Kind, Totals
 from .health import (
@@ -330,6 +336,9 @@ class HeatPumpRuntime:
         # Counter of starts at the start of the season (or the earliest
         # value in the statistics), for "Starts season".
         self.starts_baseline: tuple[int, datetime] | None = None
+        # First counter value seen this season, for a counter without
+        # statistics (no state class): entity id, value, time.
+        self._starts_seen: tuple[str, int, datetime] | None = None
         # Flow temperature over outdoor temperature (heating_curve.py), the
         # current and the previous season.
         self.flow_curves: dict[str, FlowCurve] = {}
@@ -780,6 +789,13 @@ class HeatPumpRuntime:
             )
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
+            if (entity_id := self.entities.get(Signal.STARTS_TOTAL)) is not None:
+                seen = self._starts_seen
+                kept = seen[1:] if seen and seen[0] == entity_id else None
+                self.starts_baseline, kept = season_starts_baseline(
+                    self.starts_baseline, kept, self.starts_total()[0], current, now
+                )
+                self._starts_seen = (entity_id, *kept) if kept else None
             flow = await self._async_mean_hours(Signal.FLOW_TEMP, previous, now)
             if flow:
                 self.flow_curves = {
@@ -1928,6 +1944,11 @@ class HeatPumpRuntime:
             "heat_at": {m.value: at.isoformat() for m, at in self._heat_at.items()},
             "efficiency_on": self._efficiency_on,
             "comparison_reset_at": _iso(self.comparison_reset_at),
+            "starts_seen": (
+                [*self._starts_seen[:2], self._starts_seen[2].isoformat()]
+                if self._starts_seen
+                else None
+            ),
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
             "outdoor": self.outdoor.as_dict(),
             "charge": self.charge_tracker.as_dict(),
@@ -1971,6 +1992,8 @@ class HeatPumpRuntime:
             for m, at in data.get("heat_at", {}).items()
         }
         self._efficiency_on = data.get("efficiency_on", False)
+        if seen := data.get("starts_seen"):
+            self._starts_seen = (seen[0], int(seen[1]), datetime.fromisoformat(seen[2]))
         reset = data.get("comparison_reset_at")
         self.comparison_reset_at = datetime.fromisoformat(reset) if reset else None
         self._stuck_seconds = {

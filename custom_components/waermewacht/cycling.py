@@ -106,6 +106,29 @@ def max_starts_per_hour(
     return best
 
 
+type Baseline = tuple[int, datetime]
+
+
+def season_starts_baseline(
+    from_statistics: Baseline | None,
+    seen: Baseline | None,
+    current: int | None,
+    season_start: datetime,
+    now: datetime,
+) -> tuple[Baseline | None, Baseline | None]:
+    """Start counter at the start of the season, and the value to keep.
+
+    From the statistics where the counter has some; else (no state class,
+    P1P2MQTT) the first value seen in this season, kept across restarts.
+    Returns (baseline, seen value to keep).
+    """
+    if from_statistics is not None:
+        return from_statistics, seen
+    if seen is None or seen[1] < season_start:
+        seen = (current, now) if current is not None else None
+    return seen, seen
+
+
 def prune(runs: list[Run], defrosts: list[Defrost], keep_from: datetime) -> None:
     """Drop runs and defrosts that ended before `keep_from` (in place)."""
     runs[:] = [r for r in runs if r.end is None or r.end >= keep_from]

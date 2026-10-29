@@ -10,6 +10,7 @@ from custom_components.waermewacht.cycling import (
     cycle_stats,
     max_starts_per_hour,
     prune,
+    season_starts_baseline,
 )
 from custom_components.waermewacht.runs import Defrost, Run
 
@@ -104,3 +105,31 @@ def test_prune() -> None:
     prune(runs, defrosts, at(50))
     assert [r.start for r in runs] == [at(100)]
     assert [d.start for d in defrosts] == [at(105)]
+
+
+SEASON = datetime(2026, 7, 1, tzinfo=UTC)
+
+
+def test_season_starts_from_the_statistics() -> None:
+    """A counter with statistics: their value, the kept one stays as it is."""
+    stats = (2000, SEASON)
+    assert season_starts_baseline(stats, None, 2090, SEASON, DAY) == (stats, None)
+
+
+def test_season_starts_without_statistics() -> None:
+    """No statistics (P1P2MQTT, no state class): from the first value seen,
+    kept until the next season starts."""
+    first = datetime(2026, 10, 29, 11, 0, tzinfo=UTC)
+    later = first + timedelta(days=3)
+    baseline, seen = season_starts_baseline(None, None, 1806, SEASON, first)
+    assert baseline == seen == (1806, first)
+    assert season_starts_baseline(None, seen, 1812, SEASON, later) == (seen, seen)
+    # Next season: the value then.
+    nxt = datetime(2027, 7, 1, tzinfo=UTC)
+    then = nxt + timedelta(hours=1)
+    assert season_starts_baseline(None, seen, 2500, nxt, then) == (
+        (2500, then),
+        (2500, then),
+    )
+    # No value yet (unavailable): nothing.
+    assert season_starts_baseline(None, None, None, SEASON, first) == (None, None)
