@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Neue Vorlage (beta): Daikin Altherma über P1P2MQTT** ([P1P2Serial](https://github.com/Arnold-n/P1P2Serial)): die Zähler der Wärmepumpe je Betriebsart (ganze kWh), Takte und Abtauungen (Rückmeldung im simon42-Forum).
+- **Neue Vorlage (beta): Buderus/Bosch über MX300, MX400, K30** ([BassXT/buderus](https://github.com/BassXT/buderus), Bosch-Cloud): Arbeitszahlen je Betriebsart aus Lebenszeit-Zählern, Takte und Abtauungen (Rückmeldung im simon42-Forum).
 - **EMS-ESP mit langen Namen:** Die Vorlage erkennt jetzt auch das EMS-ESP-Format „Single instance, long names (v3.4)“, bei dem die Entitäten englische Langnamen tragen (`sensor.boiler_energy_heating` statt `sensor.boiler_nrgheat`). Bisher wurde die Wärmepumpe dann nicht gefunden (Rückmeldung im simon42-Forum).
 
 ## 0.1.3 – 2026-10-29

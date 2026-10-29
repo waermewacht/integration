@@ -28,6 +28,8 @@ FIXTURES = {
     "vicare_vitocal200a.json": "vicare",
     "waterkotte_ecotouch.json": "waterkotte",
     "esphome_ecodan.json": "esphome_ecodan",
+    "buderus_mx300.json": "buderus",
+    "p1p2mqtt_altherma3.json": "p1p2mqtt",
 }
 
 
@@ -40,11 +42,12 @@ def entries(fixture: str, platform: str) -> list[RegistryEntry]:
 
 def test_keys_and_platforms_are_unique() -> None:
     assert all(key == t.key for key, t in TEMPLATES.items())
-    # Only EMS-ESP and the F1p bridge share a platform (both MQTT); their
-    # keys keep them apart (test_each_fixture_found_by_its_template_only).
-    platforms = [t.platform for t in TEMPLATES.values() if t.key != "f1p"]
+    # EMS-ESP, the F1p bridge and P1P2MQTT share the platform (all MQTT);
+    # their keys keep them apart (test_each_fixture_found_by_its_template_only).
+    mqtt = ("f1p", "p1p2mqtt")
+    platforms = [t.platform for t in TEMPLATES.values() if t.key not in mqtt]
     assert len(platforms) == len(set(platforms))
-    assert TEMPLATES["f1p"].platform == TEMPLATES["ems_esp"].platform == "mqtt"
+    assert {TEMPLATES[k].platform for k in (*mqtt, "ems_esp")} == {"mqtt"}
 
 
 def test_only_the_bosch_templates_are_confirmed() -> None:

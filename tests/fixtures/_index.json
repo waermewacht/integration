@@ -83,5 +83,15 @@
     "source": "Derived on 2026-10-29 from ems_esp_cs6800i.json and the EMS-ESP source (emsesp/EMS-ESP32 dev 99f44f5, 2026-10-28): src/core/mqtt.cpp builds the unique id for entity_format 0 ('single instance, long names (v3.4)') from the English full name (src/core/locale_translations.h), spaces to '_', '+' to '2', lower case, DHW1 values of the boiler as 'boiler_dhw_<name>'; tags from src/devices/boiler.cpp. Not read from a real installation.",
     "real": "the unique id rule and the English names of the entities in the fixture, domains, units, device and state classes (as in ems_esp_cs6800i.json).",
     "made_up": "entity ids (Home Assistant's slug of the default entity id, approximated), every state value (taken over from ems_esp_cs6800i.json), the subset of entities."
+  },
+  "buderus_mx300.json": {
+    "source": "Derived from the source code of BassXT/buderus v0.2.0 (domain buderus_ha, commit 9d3eb02, 2026-08-27) on 2026-10-29 (sensor.py, coordinator.py, emon.py, const.py, config_flow.py, translations/de.json), PR #15 and issue #8; not read from a real installation.",
+    "real": "unique id format '<gateway id>_<key>' (platform buderus_ha) and the suffixes _number/_select/_switch, keys, units, device and state classes, enum options and their slug states, resource paths (attribute resource_id), that no entity is disabled by default; entity ids from the German names under the device 'Buderus Gateway <id>'.",
+    "made_up": "the gateway id, every state value, the subset of entities."
+  },
+  "p1p2mqtt_altherma3.json": {
+    "source": "Derived from the source code of Arnold-n/P1P2Serial main c355262 (2026-09-13, P1P2MQTT-bridge v0.9.58rc34: P1P2MQTT-bridge.ino, P1P2_HomeAssistant.h, P1P2_NetworkParams.h, P1P2_ParameterConversion.h E_SERIES) on 2026-10-29; not read from a real installation.",
+    "real": "unique id format '<deviceName>_<bridgeName>_<cat><src>_<name>_<src>' with default names (platform mqtt), entity names, device sub-names giving 'bridge0_<sub>_<name>' entity ids, units, device and state classes (kWh total_increasing, flow L/min without device class, starts without unit), binary sensors on/off.",
+    "made_up": "every state value, the selection of entities."
   }
 }
