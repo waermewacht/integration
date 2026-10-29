@@ -48,7 +48,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 ## Voraussetzungen
 
 - Home Assistant 2026.4 oder neuer.
-- Der Recorder (in Home Assistant standardmäßig an) für Rückblick, Bericht, AZ-Kennlinie und Heizlast.
+- Der Recorder (in Home Assistant standardmäßig an) für Rückblick, Bericht, AZ-Kennlinie und Heizlast. Welche Entitäten er aufzeichnen muss: [Recorder schlank halten](#recorder-schlank-halten).
 - Mindestens eine Betriebsart mit einem **Wärmezähler** und einem **Stromzähler des Kompressors**: fortlaufende Energiesensoren in Wh, kWh oder MWh. Ohne Wärmezähler genügt der Kompressorstatus; dann gibt es Takte und Strom, aber keine Arbeitszahlen.
 
 | Quelle | Status |
@@ -91,6 +91,40 @@ Läuft bei dir EMS-ESP, nimm EMS-ESP: Zähler auf 0,01 kWh im Minutentakt und di
 - **Daikin Altherma (P1P2MQTT):** Die Zähler der Wärmepumpe selbst (Wärme und Strom je Betriebsart, Heizstab) in ganzen kWh. Sie kommen nur, wenn in der Brücke die Zählerabfrage („Counter_Request_Function“) eingeschaltet ist. Betriebsart aus den Flags Abtauen, Warmwasser, Kühlen und Heizen. Die Warmwasser-Entitäten gibt es nur mit den passenden Feldeinstellungen am Regler.
 - **Waterkotte:** Die Zähler sind Jahressummen, Wärme je Betriebsart, Kompressorstrom aber nur gesamt. Wärmewacht ordnet den Strom der laufenden Betriebsart zu, im Rückblick nach dem Anteil an der Wärme. Aktiviere „Kühlen“ (`state_cooling`), sonst zählt Kühlbetrieb als Heizen. Es gibt keinen Startzähler (Wärmewacht zählt selbst) und kein Abtausignal.
 - **Vaillant (myVAILLANT):** Wärmewacht bucht Stunde für Stunde aus der Statistik, die mypyllant selbst schreibt. Stelle in mypyllant die Option „Seconds between energy data updates“ auf 3600 bis 7200 Sekunden, sonst ruft es die Energie nur beim Start ab. Die Zahlen hinken dadurch ein bis drei Stunden nach. Es gibt kein Kompressorsignal und kein Abtauen, also keine Takte. Stillstand ist eine Stunde ohne Umweltwärme.
+
+### Recorder schlank halten
+
+Wer in der `recorder`-Konfiguration Entitäten ausschließt (`exclude`) oder nur ausgewählte aufnimmt (`include`): Eine nicht aufgezeichnete Entität bekommt auch **keine Langzeitstatistik**. Wärmewacht liest fast nur diese Statistik, eine Zeile je Stunde.
+
+- **Müssen aufgezeichnet werden:**
+  - die Energie-Sensoren von Wärmewacht (Wärme und Strom je Betriebsart, Strom Stillstand) für Bericht, AZ-Kennlinie, Heizlast, Gradtage und Gesundheits-Check;
+  - die Außentemperatur für dieselben Auswertungen und die Prüfung des Fühlers;
+  - die Vorlauftemperatur für „Vorlauf bei 0 °C“.
+- **Sollten aufgezeichnet werden:**
+  - die Energiezähler der Wärmepumpe. Wärmewacht braucht sie für die Zeit vor der Einrichtung: Rückblick, „Rückblick neu berechnen“ und Bericht. Ohne sie fehlt bei einem neu angelegten Eintrag der Rückblick;
+  - der Startzähler. Ohne Statistik zählt „Starts Saison“ erst ab dem ersten Wert, den Wärmewacht sieht.
+- **Dürfen fehlen:**
+  - alle übrigen Sensoren von Wärmewacht (Arbeitszahlen, Takte, Kosten, Gesundheit, Diagnose) sowie die Binärsensoren. Wärmewacht speichert seinen Stand selbst. Deren Verlauf in eigenen Diagrammen fehlt dann allerdings;
+  - Kompressorstatus und Betriebsart. Ihren Verlauf liest Wärmewacht nur einmal bei der Einrichtung, um die Takte der letzten 10 Tage nachzutragen.
+
+Beispiel für `include` (Entity-IDs auf der Geräteseite prüfen; das `*` am Ende erfasst auch Endungen wie `_2`):
+
+```yaml
+recorder:
+  include:
+    entity_globs:
+      - sensor.*_warme_heizen*
+      - sensor.*_warme_warmwasser*
+      - sensor.*_strom_heizen*
+      - sensor.*_strom_warmwasser*
+      - sensor.*_strom_stillstand*
+    entities:
+      - sensor.aussentemperatur      # deine Außentemperatur
+      - sensor.vorlauftemperatur     # deine Vorlauftemperatur
+      - sensor.waermemenge_heizen    # deine Zähler, je Betriebsart
+```
+
+Geht es nur um die Größe der Datenbank, genügt oft eine kurze Aufbewahrung (`purge_keep_days`, Standard 10 Tage). Die Langzeitstatistik bleibt davon unberührt.
 
 ## Installation
 
@@ -224,7 +258,7 @@ Attribute:
 | Strom Heizen / Warmwasser / Kühlen | kWh | Strom bei laufendem Kompressor, mit Heizstab und „Strom Abtauen“, ohne Stillstand |
 | Strom Stillstand | kWh | Strom bei stehendem Kompressor, alle Betriebsarten, dazu „Strom Stillstand“ der Quelle. Attribute aus dem Tagebuch (mit der täglichen Analyse, also nur mit Außentemperatur): mittlere Leistung der letzten 7 Tage (`mean_power_w_7d`) gegen den Median der 30 Tage davor (`reference_w`), kleinster und größter Tag (`min_day_w`, `max_day_w`); `rising` ist an ab +50 % **und** +10 W (eigene Annahme) |
 
-Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. „Strom Stillstand“ entsteht, wenn sich der Stillstand abtrennen lässt: mit Wärme- und Stromzähler derselben Betriebsart oder mit Stromzähler und „Kompressor läuft“ (nicht bei Tageswerten aus der Cloud). Bitte nicht deaktivieren: Bericht, AZ-Kennlinie und Heizlast lesen ihre Statistik für die Zeit nach der Einrichtung.
+Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. „Strom Stillstand“ entsteht, wenn sich der Stillstand abtrennen lässt: mit Wärme- und Stromzähler derselben Betriebsart oder mit Stromzähler und „Kompressor läuft“ (nicht bei Tageswerten aus der Cloud). Bitte nicht deaktivieren und nicht aus dem [Recorder](#recorder-schlank-halten) ausschließen: Bericht, AZ-Kennlinie und Heizlast lesen ihre Statistik für die Zeit nach der Einrichtung.
 
 **Statistik vor der Einrichtung:** Einmal nach der Einrichtung (bei älteren Einträgen beim Update) schreibt Wärmewacht die Stunden davor in die Statistik dieser Sensoren. Sie sind aus der Statistik deiner Zähler berechnet, mit stundenweise geschätztem Stillstand. Statistik-Karten zeigen damit auch die Monate vor der Einrichtung. Wärmewacht schreibt nur Stunden vor der ersten Zeile, die Home Assistant selbst aufgezeichnet hat. Etwa 15 Minuten nach dem Start hebt Wärmewacht die Summen ab der ersten importierten Stunde einmalig an. So beginnen sie bei 0, und der erste Balken einer Statistik-Karte ist nicht negativ. Die Änderung je Stunde bleibt dabei gleich. Die Stunde der Einrichtung fehlt bis zum Einrichtungszeitpunkt.
 
@@ -711,7 +745,7 @@ Weiteres:
 
 - **Arbeitszahl bleibt unbekannt:** Im Zeitraum gab es keine Wärme oder weniger Strom als den Mindeststrom. Das ist im Sommer beim Heizen normal.
 - **Keine Takte:** „Kompressor läuft“ ist nicht zugeordnet.
-- **Kennlinie oder Heizlast leer:** Nach einem Neustart etwa 2 Minuten warten. Hat die Außentemperatur keine Langzeitstatistik, bleiben beide leer. Bei der Heizlast nennt das Attribut `reasons`, was fehlt.
+- **Kennlinie oder Heizlast leer:** Nach einem Neustart etwa 2 Minuten warten. Haben die Außentemperatur oder die Energie-Sensoren keine Langzeitstatistik (aus dem [Recorder](#recorder-schlank-halten) ausgeschlossen?), bleiben beide leer. Bei der Heizlast nennt das Attribut `reasons`, was fehlt.
 - **Diagnose:** *Wärmewacht → Eintrag → ⋮ → Diagnosedaten herunterladen*. **Debug-Protokoll:** *Wärmewacht → ⋮ → Debug-Protokoll aktivieren*.
 
 ## Datenschutz

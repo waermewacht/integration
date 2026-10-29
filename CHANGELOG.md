@@ -3,7 +3,7 @@
 ## Unveröffentlicht
 
 - **Neue Schaltfläche „Rückblick neu berechnen“:** rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln. Für Zähler, die erst über „Neu konfigurieren“ dazukamen (bisher fehlte ihre Vergangenheit), und nach Updates, die den Rückblick verbessern – statt den Eintrag neu anzulegen (Rückmeldung im simon42-Forum).
-- **README:** eedc (Energie Effizienz Data Center) unter „Verwandte Projekte“.
+- **README:** eedc (Energie Effizienz Data Center) unter „Verwandte Projekte“. Neuer Abschnitt „Recorder schlank halten“: welche Entitäten der Recorder für Wärmewacht aufzeichnen muss, welche er aufzeichnen sollte und welche fehlen dürfen, mit Beispiel für `include` (Rückmeldung im simon42-Forum).
 
 ## 0.1.5 – 2026-10-29
 

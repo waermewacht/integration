@@ -48,7 +48,7 @@ The user interface is available in German and English and follows the language o
 ## Requirements
 
 - Home Assistant 2026.4 or newer.
-- The recorder (on by default in Home Assistant) for the look back, the report, the performance curve and the heat load.
+- The recorder (on by default in Home Assistant) for the look back, the report, the performance curve and the heat load. Which entities it must record: [Keeping the recorder lean](#keeping-the-recorder-lean).
 - At least one mode with a **heat meter** and a **compressor electricity meter**: cumulative energy sensors in Wh, kWh or MWh. Without heat meters the compressor state is enough; then there is cycling and electricity, but no performance factors.
 
 | Source | Status |
@@ -91,6 +91,40 @@ If you run EMS-ESP, use EMS-ESP: meters in 0.01 kWh every minute, and the activi
 - **Daikin Altherma (P1P2MQTT):** The heat pump's own meters (heat and electricity per mode, backup heater) in whole kWh. They only arrive with the counter request of the bridge switched on ("Counter_Request_Function"). Activity from the flags defrost, hot water, cooling and heating. The hot water entities exist only with the matching field settings of the controller.
 - **Waterkotte:** The meters are yearly sums, heat per mode, but compressor electricity as a total only. Wärmewacht assigns the electricity to the running mode, in the look back by the share of heat. Enable "Cooling" (`state_cooling`), otherwise cooling counts as heating. There is no starts counter (Wärmewacht counts itself) and no defrost signal.
 - **Vaillant (myVAILLANT):** Wärmewacht books hour by hour from the statistics mypyllant writes itself. Set mypyllant's option "Seconds between energy data updates" to 3600 to 7200 seconds, otherwise it fetches the energy only at start. The figures therefore lag one to three hours behind. There is no compressor signal and no defrost, so no cycling. Standby is an hour without environmental yield.
+
+### Keeping the recorder lean
+
+If you exclude entities in the `recorder` configuration (`exclude`) or record only selected ones (`include`): an entity that is not recorded gets **no long-term statistics** either. Wärmewacht reads almost nothing but these statistics, one row per hour.
+
+- **Must be recorded:**
+  - Wärmewacht's energy sensors (heat and electricity per mode, standby electricity) for the report, performance curve, heat load, degree days and health check;
+  - the outdoor temperature for the same analyses and the sensor check;
+  - the flow temperature for "Flow temperature at 0 °C".
+- **Should be recorded:**
+  - the heat pump's energy meters. Wärmewacht needs them for the time before the setup: look back, "Recalculate look-back" and report. Without them a newly created entry has no look back;
+  - the starts counter. Without statistics, "Starts season" counts only from the first value Wärmewacht sees.
+- **May be left out:**
+  - all other Wärmewacht sensors (performance factors, cycling, costs, health, diagnostics) and the binary sensors. Wärmewacht stores its state itself. Their history in your own charts is missing then, though;
+  - compressor state and activity. Wärmewacht reads their history only once at the setup, to add the cycles of the last 10 days.
+
+Example for `include` (check the entity IDs on the device page; the trailing `*` also covers suffixes like `_2`):
+
+```yaml
+recorder:
+  include:
+    entity_globs:
+      - sensor.*_heat_heating*
+      - sensor.*_heat_hot_water*
+      - sensor.*_electricity_heating*
+      - sensor.*_electricity_hot_water*
+      - sensor.*_standby_electricity*
+    entities:
+      - sensor.outdoor_temperature   # your outdoor temperature
+      - sensor.flow_temperature      # your flow temperature
+      - sensor.heat_meter_heating    # your meters, per mode
+```
+
+If it is only about the size of the database, a short retention is often enough (`purge_keep_days`, default 10 days). The long-term statistics are not affected by it.
 
 ## Installation
 
@@ -224,7 +258,7 @@ Attributes:
 | Electricity heating / hot water / cooling | kWh | electricity while the compressor runs, with backup heater and "Electricity defrost", without standby |
 | Standby electricity | kWh | electricity while the compressor stands still, all modes, plus the source's "Electricity standby". Attributes from the diary (with the daily analysis, so only with an outdoor temperature): mean power of the last 7 days (`mean_power_w_7d`) against the median of the 30 days before (`reference_w`), smallest and largest day (`min_day_w`, `max_day_w`); `rising` is on from +50 % **and** +10 W (own assumption) |
 
-All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. "Standby electricity" is created when standby can be told apart: with heat and electricity meters of the same mode, or with an electricity meter and "Compressor running" (not with day values from a cloud). Please do not disable them: the report, the performance curve and the heat load read their statistics for the time after the setup.
+All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. "Standby electricity" is created when standby can be told apart: with heat and electricity meters of the same mode, or with an electricity meter and "Compressor running" (not with day values from a cloud). Please do not disable them or exclude them from the [recorder](#keeping-the-recorder-lean): the report, the performance curve and the heat load read their statistics for the time after the setup.
 
 **Statistics before the setup:** Once after the setup (for older entries on the update), Wärmewacht writes the hours before it into the statistics of these sensors. They are computed from the statistics of your meters, with standby estimated per hour. Statistics cards then show the months before the setup as well. Wärmewacht only writes hours before the first row Home Assistant recorded itself. About 15 minutes after the start, Wärmewacht shifts the sums once, from the first imported hour on. So they start at 0, and the first bar of a statistics card is not negative. The change per hour stays the same. The hour of the setup is missing up to the moment of the setup.
 
@@ -711,7 +745,7 @@ More:
 
 - **Factor stays unknown:** There was no heat in the period or less electricity than the minimum. That is normal for heating in summer.
 - **No cycling:** "Compressor running" is not mapped.
-- **Performance curve or heat load empty:** After a restart wait about 2 minutes. If the outdoor temperature has no long-term statistics, both stay empty. For the heat load, the attribute `reasons` tells what is missing.
+- **Performance curve or heat load empty:** After a restart wait about 2 minutes. If the outdoor temperature or the energy sensors have no long-term statistics (excluded from the [recorder](#keeping-the-recorder-lean)?), both stay empty. For the heat load, the attribute `reasons` tells what is missing.
 - **Diagnostics:** *Wärmewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Wärmewacht → ⋮ → Enable debug logging*.
 
 ## Privacy
