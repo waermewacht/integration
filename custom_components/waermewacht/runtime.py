@@ -37,6 +37,7 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
@@ -966,6 +967,44 @@ class HeatPumpRuntime:
                 [entity_id] if found and found.kind == kind else [],
                 hours=str(found.hours) if found else "",
             )
+
+    async def async_rebuild_history(self) -> None:
+        """Button: the energy before the setup anew from the statistics,
+        with today's entities and rules (meters added under Reconfigure, a
+        corrected rule after an update). What was booked since the setup
+        stays; the imported statistics of the own sensors stay as well."""
+        if "recorder" not in self.hass.config.components:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="no_recorder"
+            )
+        if self.since is None or self.template.previous_day:
+            # Previous-day values: no usable statistics (see _async_backfill).
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="no_look_back"
+            )
+        until = (
+            self.backfill_until if self.hourly and self.backfill_until else self.since
+        )
+        try:
+            hourly = await self._async_source_hours(EARLIEST, until)
+        except Exception as err:
+            _LOGGER.exception("Reading the statistics for the look-back failed")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="look_back_failed"
+            ) from err
+        self.marks.rebuild(
+            self.since,
+            lambda start: energy_between(
+                hourly,
+                start,
+                until,
+                self.heat_modes,
+                self.template.heat_includes_electricity,
+            ),
+        )
+        self._dirty = True
+        await self.async_save()
+        self._notify()
 
     async def async_restart_comparison(self) -> None:
         """Button: compare efficiency anew from now (after a deliberate

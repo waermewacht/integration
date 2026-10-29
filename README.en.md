@@ -179,7 +179,9 @@ Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUN
 
 ### Reconfigure
 
-*Wärmewacht → ⋮ → Reconfigure* shows the entity form again with the current mapping. The figures booked so far are kept. A newly added meter counts from that moment.
+*Wärmewacht → ⋮ → Reconfigure* shows the entity form again with the current mapping. The figures booked so far are kept. A newly added meter counts from that moment; the button **Recalculate look-back** adds the time before the setup.
+
+**Recalculate look-back** (button, configuration) computes the energy before the setup anew from the long-term statistics, with today's entities and rules: after adding a meter or when an update improved the rules of the look-back. What Wärmewacht booked since the setup stays. The time between the setup and adding a meter is still missing, and the imported statistics of the own energy sensors before the setup stay as they were. Not for sources with previous-day values (MELCloud, F1p bridge): their statistics do not suit a look-back.
 
 If a template learns a new signal in an update (e.g. the hot water temperature), Wärmewacht adds it at start when it belongs to the same heat pump and the entry has none. What you deliberately remove under *Reconfigure* stays removed.
 
@@ -735,6 +737,7 @@ Please open an [issue](https://github.com/waermewacht/integration/issues), ideal
 
 - [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance): performance factors from heat and electricity meters, vendor-neutral.
 - [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml): extensive analysis for Daikin Altherma with ESPAltherma. The right choice for Daikin.
+- [eedc – Energie Effizienz Data Center](https://github.com/supernova1963/eedc-homeassistant): add-on analysing the whole household (PV, storage, EV, heat pump) including economics. Complements Wärmewacht, which goes deeper into the heat pump.
 - [heatpumpmonitor.org](https://heatpumpmonitor.org/): public comparison of many installations. Wärmewacht uses the same terms (SEPEMO boundaries, starts) so that figures can be put in context.
 
 ## License

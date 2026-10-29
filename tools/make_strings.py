@@ -191,6 +191,11 @@ BUTTONS = {
         "Effizienzvergleich neu starten",
         "mdi:restart",
     ),
+    "rebuild_history": (
+        "Recalculate look-back",
+        "Rückblick neu berechnen",
+        "mdi:history",
+    ),
 }
 
 FIELDS = {
@@ -671,6 +676,22 @@ def _build(lang: int) -> dict:
                     (
                         "The report needs the recorder (long-term statistics).",
                         "Der Bericht braucht den Recorder (Langzeitstatistik).",
+                    )
+                )
+            },
+            "no_look_back": {
+                "message": t(
+                    (
+                        "This source has no usable statistics for a look-back.",
+                        "Diese Quelle hat keine brauchbare Statistik für einen Rückblick.",
+                    )
+                )
+            },
+            "look_back_failed": {
+                "message": t(
+                    (
+                        "Reading the statistics failed; see the log.",
+                        "Die Statistik ließ sich nicht lesen; Details im Protokoll.",
                     )
                 )
             },

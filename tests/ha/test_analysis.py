@@ -26,6 +26,8 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 )
 
 from custom_components.waermewacht.const import DOMAIN
+from custom_components.waermewacht.energy import Totals
+from custom_components.waermewacht.periods import Period
 
 from .conftest import ELEC_HEATING, ENERGY, FLOW, HEAT_HEATING, TEMPERATURE, entry_data
 
@@ -118,6 +120,30 @@ async def test_curve_and_heat_load(hass: HomeAssistant) -> None:
     assert report["degree_days"]["degree_days"] == pytest.approx(57.0)
     assert report["degree_days"]["kwh_per_degree_day"] == pytest.approx(1.26)
     assert [m["degree_days"]["days_counted"] for m in report["months"]] == [3]
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_rebuild_history_button(hass: HomeAssistant) -> None:
+    """ "Recalculate look-back" brings back the energy before the setup from
+    the statistics (here after the marks were lost)."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    await async_wait_recording_done(hass)
+    entry = await setup(hass, with_outdoor=False)
+    marks = entry.runtime_data.marks
+    before = {p: marks.marks[p].as_dict() for p in (Period.SEASON, Period.TOTAL)}
+    assert before[Period.TOTAL]["heat_heating"] < 0  # energy before the setup
+
+    for period in before:
+        marks.marks[period] = Totals()
+    button = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_rebuild_history"
+    )
+    await hass.services.async_call(
+        "button", "press", {"entity_id": button}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert {p: marks.marks[p].as_dict() for p in before} == before
 
 
 @pytest.mark.freeze_time(NOW)

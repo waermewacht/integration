@@ -1,4 +1,5 @@
-"""Button: restart the efficiency comparison after a deliberate change."""
+"""Buttons: restart the efficiency comparison after a deliberate change;
+recompute the look-back before the setup from the statistics."""
 
 from __future__ import annotations
 
@@ -17,8 +18,12 @@ async def async_setup_entry(
     entry: WaermewachtConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
+    buttons: list[HeatPumpEntity] = []
     if _heating(entry.runtime_data):
-        async_add_entities([RestartComparison(entry)])
+        buttons.append(RestartComparison(entry))
+    if not entry.runtime_data.template.previous_day:
+        buttons.append(RebuildHistory(entry))
+    async_add_entities(buttons)
 
 
 class RestartComparison(HeatPumpEntity, ButtonEntity):
@@ -32,3 +37,16 @@ class RestartComparison(HeatPumpEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self.runtime.async_restart_comparison()
+
+
+class RebuildHistory(HeatPumpEntity, ButtonEntity):
+    """The energy before the setup anew from the statistics: after meters
+    were added under Reconfigure or an update corrected the rules."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, entry: WaermewachtConfigEntry) -> None:
+        super().__init__(entry, "rebuild_history")
+
+    async def async_press(self) -> None:
+        await self.runtime.async_rebuild_history()

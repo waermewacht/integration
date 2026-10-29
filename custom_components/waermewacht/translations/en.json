@@ -223,6 +223,9 @@
     "button": {
       "restart_comparison": {
         "name": "Restart efficiency comparison"
+      },
+      "rebuild_history": {
+        "name": "Recalculate look-back"
       }
     },
     "sensor": {
@@ -408,6 +411,12 @@
     },
     "no_recorder": {
       "message": "The report needs the recorder (long-term statistics)."
+    },
+    "no_look_back": {
+      "message": "This source has no usable statistics for a look-back."
+    },
+    "look_back_failed": {
+      "message": "Reading the statistics failed; see the log."
     }
   },
   "issues": {

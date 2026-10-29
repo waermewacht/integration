@@ -93,6 +93,21 @@ class PeriodMarks:
             self.starts[period] = start
             self.marks[period] = -energy_since(start)
 
+    def rebuild(
+        self, since: datetime, energy_since: Callable[[datetime | None], Totals]
+    ) -> list[Period]:
+        """Recompute the energy before the setup (`since`) of every period
+        that began before it, as `initialize` does: `energy_since(start)` is
+        the energy from `start` until the setup. Periods begun after the
+        setup and the energy booked since stay. Returns the periods changed."""
+        changed = []
+        for period in list(self.marks):
+            start = self.starts.get(period)
+            if period is Period.TOTAL or (start is not None and start < since):
+                self.marks[period] = -energy_since(start)
+                changed.append(period)
+        return changed
+
     def due(self, now: datetime) -> bool:
         """Whether a period boundary has passed since the last rollover."""
         return any(

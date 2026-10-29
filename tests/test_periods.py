@@ -159,3 +159,23 @@ def test_book_late_puts_an_hour_into_its_period() -> None:
     assert marks.energy(Period.MONTH, totals).values.get("heat_heating", 0.0) == 0.0
     assert marks.energy(Period.YESTERDAY, totals).values["heat_heating"] == 2.0
     assert marks.energy(Period.SEASON, totals).values["heat_heating"] == 2.0
+
+
+def test_rebuild_replaces_the_energy_before_the_setup() -> None:
+    """Button "Recalculate look-back": periods begun before the setup get the
+    energy before it anew; later periods and what was booked since stay."""
+    setup = datetime(2026, 10, 28, 16, 35, tzinfo=UTC)
+    marks = PeriodMarks(BERLIN, 7)
+    marks.initialize(setup, lambda start: heat(5.0 if start else 9.0))
+    totals = heat(3.0)  # booked since the setup
+    later = datetime(2026, 11, 2, 9, tzinfo=UTC)
+    marks.rollover(later, totals)  # new day and month after the setup
+    assert value(marks, Period.SEASON, totals) == 8.0
+
+    changed = marks.rebuild(setup, lambda start: heat(20.0 if start else 30.0))
+    assert set(changed) == {Period.SEASON, Period.TOTAL, Period.YEAR}
+    assert value(marks, Period.SEASON, totals) == 23.0
+    assert value(marks, Period.TOTAL, totals) == 33.0
+    # Begun after the setup: unchanged.
+    assert value(marks, Period.MONTH, totals) == 0.0
+    assert value(marks, Period.TODAY, totals) == 0.0

@@ -179,7 +179,9 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 
 ### Neu konfigurieren
 
-*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt.
+*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt; die Zeit vor der Einrichtung holt die Schaltfläche **Rückblick neu berechnen** nach.
+
+**Rückblick neu berechnen** (Schaltfläche, Konfiguration) rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln: nach einem neu eingetragenen Zähler oder wenn ein Update die Regeln des Rückblicks verbessert hat. Was Wärmewacht seit der Einrichtung gebucht hat, bleibt. Die Zeit zwischen Einrichtung und Nachtragen eines Zählers fehlt weiterhin, und die nachgetragene Statistik der eigenen Energie-Sensoren vor der Einrichtung bleibt, wie sie war. Nicht bei Quellen mit Vortageswerten (MELCloud, F1p-Brücke): Deren Statistik taugt nicht für den Rückblick.
 
 Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
 
@@ -735,6 +737,7 @@ Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten 
 
 - [home-assistant-heat-pump-performance](https://github.com/vandecook/home-assistant-heat-pump-performance): Arbeitszahlen aus Wärme- und Stromzähler, herstellerneutral.
 - [daikin_cycle_ml](https://github.com/elRadix/daikin_cycle_ml): umfangreiche Auswertung für Daikin Altherma mit ESPAltherma. Für Daikin die passende Wahl.
+- [eedc – Energie Effizienz Data Center](https://github.com/supernova1963/eedc-homeassistant): Add-on für die Auswertung des ganzen Haushalts (PV, Speicher, E-Auto, Wärmepumpe) mit Wirtschaftlichkeit. Ergänzt sich mit Wärmewacht, das bei der Wärmepumpe tiefer geht.
 - [heatpumpmonitor.org](https://heatpumpmonitor.org/): öffentlicher Vergleich vieler Anlagen. Wärmewacht nutzt dieselben Begriffe (SEPEMO-Bilanzgrenzen, Starts), damit sich Werte einordnen lassen.
 
 ## Lizenz

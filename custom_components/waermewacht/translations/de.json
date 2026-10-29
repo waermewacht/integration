@@ -223,6 +223,9 @@
     "button": {
       "restart_comparison": {
         "name": "Effizienzvergleich neu starten"
+      },
+      "rebuild_history": {
+        "name": "Rückblick neu berechnen"
       }
     },
     "sensor": {
@@ -408,6 +411,12 @@
     },
     "no_recorder": {
       "message": "Der Bericht braucht den Recorder (Langzeitstatistik)."
+    },
+    "no_look_back": {
+      "message": "Diese Quelle hat keine brauchbare Statistik für einen Rückblick."
+    },
+    "look_back_failed": {
+      "message": "Die Statistik ließ sich nicht lesen; Details im Protokoll."
     }
   },
   "issues": {

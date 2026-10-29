@@ -17,6 +17,9 @@
     "button": {
       "restart_comparison": {
         "default": "mdi:restart"
+      },
+      "rebuild_history": {
+        "default": "mdi:history"
       }
     },
     "sensor": {
