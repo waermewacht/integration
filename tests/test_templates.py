@@ -29,6 +29,7 @@ FIXTURES = {
     "waterkotte_ecotouch.json": "waterkotte",
     "esphome_ecodan.json": "esphome_ecodan",
     "buderus_mx300.json": "buderus",
+    "buderus_k40_real.json": "buderus",
     "p1p2mqtt_altherma3.json": "p1p2mqtt",
 }
 

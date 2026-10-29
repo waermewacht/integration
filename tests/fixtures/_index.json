@@ -93,5 +93,10 @@
     "source": "Derived from the source code of Arnold-n/P1P2Serial main c355262 (2026-09-13, P1P2MQTT-bridge v0.9.58rc34: P1P2MQTT-bridge.ino, P1P2_HomeAssistant.h, P1P2_NetworkParams.h, P1P2_ParameterConversion.h E_SERIES) on 2026-10-29; not read from a real installation.",
     "real": "unique id format '<deviceName>_<bridgeName>_<cat><src>_<name>_<src>' with default names (platform mqtt), entity names, device sub-names giving 'bridge0_<sub>_<name>' entity ids, units, device and state classes (kWh total_increasing, flow L/min without device class, starts without unit), binary sensors on/off.",
     "made_up": "every state value, the selection of entities."
+  },
+  "buderus_k40_real.json": {
+    "source": "Wärmewacht diagnostics (section source) of a forum user's installation (Buderus heat pump, gateway K40RF_v1 firmware 15.00.01, buderus_ha 0.2.0, Home Assistant 2026.10.4), sent to the maintainer on 2026-10-29 for building this template.",
+    "real": "every entity of the gateway with entity id, unique id (gateway id already masked by the diagnostics), domain, device and state class, unit, entities the user disabled, the enum states (compressor_status 'off', actual_heat_demand 'ch', heat_cool_mode 'heat', ...); entity ids with the user's area prefix 'hwr_' on the energy sensors.",
+    "made_up": "every number (counters, temperatures, run time), replaced; the device block is reduced to manufacturer, model and versions."
   }
 }

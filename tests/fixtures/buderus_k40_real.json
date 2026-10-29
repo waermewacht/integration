@@ -1,0 +1,639 @@
+{
+  "device": {
+    "manufacturer": "Buderus/Bosch",
+    "model": "k40 7738113982",
+    "sw_version": "15.00.01",
+    "hw_version": "K40RF_v1"
+  },
+  "entities": [
+    {
+      "entity_id": "number.buderus_gateway_100000001_extra_warmwasser_dauer",
+      "unique_id": "100000001_dhw_charge_duration_number",
+      "state": "60.0",
+      "attributes": {
+        "unit_of_measurement": "min"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.buderus_gateway_100000001_extra_warmwasser_solltemperatur",
+      "unique_id": "100000001_dhw_single_charge_setpoint_number",
+      "state": "60.0",
+      "attributes": {
+        "unit_of_measurement": "°C"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.buderus_gateway_100000001_heizkreis_manueller_raumsollwert",
+      "unique_id": "100000001_heating_circuit_manual_room_setpoint_number",
+      "state": "21.0",
+      "attributes": {
+        "unit_of_measurement": "°C"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "select.buderus_gateway_100000001_warmwasser_betriebsart",
+      "unique_id": "100000001_dhw_operation_mode_select",
+      "state": "ownprogram",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_aktuelle_modulation",
+      "unique_id": "100000001_actual_modulation",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_aktuelle_warmeanforderung",
+      "unique_id": "100000001_actual_heat_demand",
+      "state": "ch",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_anzahl_meldungen",
+      "unique_id": "100000001_notification_count",
+      "state": "0",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_anzahl_starts",
+      "unique_id": "100000001_number_of_starts",
+      "state": "1421.0",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_aussentemperatur",
+      "unique_id": "100000001_outdoor_temperature",
+      "state": "9.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_extra_warmwasser",
+      "unique_id": "100000001_dhw_charge",
+      "state": "stop",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_extra_warmwasser_dauer",
+      "unique_id": "100000001_dhw_charge_duration",
+      "state": "60.0",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_extra_warmwasser_solltemperatur",
+      "unique_id": "100000001_dhw_single_charge_setpoint",
+      "state": "60.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_gateway_datenverarbeitungsstatus",
+      "unique_id": "100000001_gateway_data_processing_status",
+      "state": "completed",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_gateway_zeitzone",
+      "unique_id": "100000001_gateway_timezone",
+      "state": "Europe/Berlin",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_gesamtlaufzeit_system",
+      "unique_id": "100000001_total_system_working_time",
+      "state": "5123.5",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizbetrieb",
+      "unique_id": "100000001_central_heating_status",
+      "state": "unknown",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_aktives_schaltprogramm",
+      "unique_id": "100000001_heating_circuit_active_switch_program",
+      "state": "a",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_aktueller_raumsollwert",
+      "unique_id": "100000001_heating_circuit_current_room_setpoint",
+      "state": "21.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_betriebsart",
+      "unique_id": "100000001_heating_circuit_operation_mode",
+      "state": null,
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_gesamtstatus",
+      "unique_id": "100000001_heating_circuit_overall_status",
+      "state": null,
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_heiz_kuhlmodus",
+      "unique_id": "100000001_heating_circuit_heat_cool_mode",
+      "state": "heat",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_heizart",
+      "unique_id": "100000001_heating_circuit_heating_type",
+      "state": "floor",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_manueller_raumsollwert",
+      "unique_id": "100000001_heating_circuit_manual_room_setpoint",
+      "state": "21.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_maximale_vorlauftemperatur",
+      "unique_id": "100000001_heating_circuit_max_flow_temperature",
+      "state": "40.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_raumtemperatur",
+      "unique_id": "100000001_heating_circuit_room_temperature",
+      "state": "unknown",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_regelungsart",
+      "unique_id": "100000001_heating_circuit_control_type",
+      "state": "wdcsimplified",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_sommer_winter_schwelle",
+      "unique_id": "100000001_heating_circuit_summer_winter_threshold",
+      "state": "unknown",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_sommer_winter_umschaltung",
+      "unique_id": "100000001_heating_circuit_summer_winter_switch_mode",
+      "state": "unknown",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_sommer_winterbetrieb",
+      "unique_id": "100000001_heating_circuit_summer_winter_mode",
+      "state": "forced",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizkreis_zeitprogramm_modus",
+      "unique_id": "100000001_heating_circuit_switch_program_mode",
+      "state": "level",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_heizstabstatus",
+      "unique_id": "100000001_electric_heater_status",
+      "state": "off",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_isrc_unterstutzung",
+      "unique_id": "100000001_isrc_support_status",
+      "state": "supported",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_kompressorstatus",
+      "unique_id": "100000001_compressor_status",
+      "state": "off",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_rucklauftemperatur",
+      "unique_id": "100000001_return_temperature",
+      "state": "27.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_saisonoptimierung",
+      "unique_id": "100000001_global_season_optimizer_mode",
+      "state": "heating",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_starts_heizen",
+      "unique_id": "100000001_number_of_starts_heating",
+      "state": "980",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_starts_kuhlen",
+      "unique_id": "100000001_number_of_starts_cooling",
+      "state": "0",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_starts_warmwasser",
+      "unique_id": "100000001_number_of_starts_dhw",
+      "state": "441",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_systembus",
+      "unique_id": "100000001_system_bus",
+      "state": "ems2_0",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_systemland",
+      "unique_id": "100000001_system_country",
+      "state": "unknown",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_systemmarke",
+      "unique_id": "100000001_system_brand",
+      "state": "Buderus",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_thermische_desinfektion",
+      "unique_id": "100000001_dhw_thermal_disinfection_mode",
+      "state": "off",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_vorlauftemperatur",
+      "unique_id": "100000001_actual_supply_temperature",
+      "state": "31.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmeerzeugertyp",
+      "unique_id": "100000001_heat_source_type",
+      "state": "heatpump",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmepumpentyp",
+      "unique_id": "100000001_heat_pump_type",
+      "state": "air_water",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmwasser_betriebsart",
+      "unique_id": "100000001_dhw_operation_mode",
+      "state": "ownprogram",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmwasser_gesamtstatus",
+      "unique_id": "100000001_dhw_overall_status",
+      "state": null,
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmwasser_ist_temperatur",
+      "unique_id": "100000001_dhw_actual_temperature",
+      "state": "47.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmwasser_solltemperatur",
+      "unique_id": "100000001_dhw_current_setpoint",
+      "state": "15.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.buderus_gateway_100000001_warmwasser_temperaturabsenkung_bei_storung",
+      "unique_id": "100000001_dhw_reduce_temperature_on_alarm",
+      "state": "on",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_erzeugte_kuhlenergie",
+      "unique_id": "100000001_emon_cooling_heat_produced",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_erzeugte_warme_gesamt",
+      "unique_id": "100000001_emon_total_heat_produced",
+      "state": "9876.54",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_erzeugte_warme_heizen",
+      "unique_id": "100000001_emon_heating_heat_produced",
+      "state": "6543.21",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_erzeugte_warme_warmwasser",
+      "unique_id": "100000001_emon_dhw_heat_produced",
+      "state": "3333.33",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_elektrischer_zuheizer_gesamt",
+      "unique_id": "100000001_emon_total_electric_heater",
+      "state": "40.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_elektrischer_zuheizer_heizen",
+      "unique_id": "100000001_emon_heating_electric_heater",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_elektrischer_zuheizer_warmwasser",
+      "unique_id": "100000001_emon_dhw_electric_heater",
+      "state": "40.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_gesamt",
+      "unique_id": "100000001_emon_total_electricity",
+      "state": "3214.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_warmepumpe_gesamt",
+      "unique_id": "100000001_emon_total_compressor",
+      "state": "3174.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_warmepumpe_heizen",
+      "unique_id": "100000001_emon_heating_compressor",
+      "state": "2000.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_warmepumpe_kuhlen",
+      "unique_id": "100000001_emon_cooling_compressor",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_stromverbrauch_warmepumpe_warmwasser",
+      "unique_id": "100000001_emon_dhw_compressor",
+      "state": "1174.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hwr_buderus_gateway_100000001_umweltenergie_gesamt",
+      "unique_id": "100000001_emon_total_environmental_energy",
+      "state": "6662.54",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "switch.buderus_gateway_100000001_extra_warmwasser",
+      "unique_id": "100000001_dhw_charge_switch",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "switch.buderus_gateway_100000001_warmwasser_temperaturabsenkung_bei_storung",
+      "unique_id": "100000001_dhw_reduce_temperature_on_alarm_switch",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    }
+  ]
+}

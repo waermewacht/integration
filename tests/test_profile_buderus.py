@@ -188,7 +188,8 @@ def test_templates_do_not_claim_each_other() -> None:
         assert find(template, entries()) == [], key
         assert find(template, entries(template.platform)) == [], key
     # This template on every other fixture, under its platform and ours.
-    names = {p.name for p in FIXTURES.glob("*.json")} - {"_index.json", FIXTURE}
+    own = {FIXTURE, "buderus_k40_real.json"}
+    names = {p.name for p in FIXTURES.glob("*.json")} - {"_index.json", *own}
     assert names
     for name in sorted(names):
         fixture_rows = load_fixture(name)["entities"]
@@ -202,3 +203,32 @@ def test_templates_do_not_claim_each_other() -> None:
             assert find(BUDERUS, found) == [], (name, platform)
     # Same unique ids under a foreign platform do not count.
     assert find(BUDERUS, entries("template")) == []
+
+
+def test_real_installation() -> None:
+    """Registry of a real installation (forum user, K40RF gateway): every
+    signal of the template is found, including activity and starts."""
+    rows = load_fixture("buderus_k40_real.json")["entities"]
+    found = find(
+        BUDERUS,
+        [
+            RegistryEntry(
+                r["entity_id"],
+                PLATFORM,
+                r["unique_id"],
+                usable=r.get("disabled_by") is None,
+            )
+            for r in rows
+        ],
+    )
+    (match,) = found
+    by_entity = {r["entity_id"]: r["unique_id"] for r in rows}
+    keys = {s: by_entity[e].split("_", 1)[1] for s, e in match.entities.items()}
+    assert keys[Signal.HEAT_HEATING] == "emon_heating_heat_produced"
+    assert keys[Signal.ELEC_HEATING] == "emon_heating_compressor"
+    assert keys[Signal.COMPRESSOR] == "actual_modulation"
+    assert keys[Signal.ACTIVITY] == "compressor_status"
+    assert keys[Signal.STARTS_TOTAL] == "number_of_starts"
+    assert keys[Signal.FLOW_TEMP] == "actual_supply_temperature"
+    assert Signal.FLOW_RATE not in keys
+    assert BUDERUS.parse_activity("off") is Activity.OFF
