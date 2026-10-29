@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.4 – 2026-10-29
 
 - **Neue Vorlage (beta): Daikin Altherma über P1P2MQTT** ([P1P2Serial](https://github.com/Arnold-n/P1P2Serial)): die Zähler der Wärmepumpe je Betriebsart (ganze kWh), Takte und Abtauungen (Rückmeldung im simon42-Forum).
 - **Neue Vorlage (beta): Buderus/Bosch über MX300, MX400, K30** ([BassXT/buderus](https://github.com/BassXT/buderus), Bosch-Cloud): Arbeitszahlen je Betriebsart aus Lebenszeit-Zählern, Takte und Abtauungen (Rückmeldung im simon42-Forum).
