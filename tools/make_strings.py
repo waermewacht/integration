@@ -194,10 +194,13 @@ BUTTONS = {
 }
 
 FIELDS = {
-    "heat_heating": ("Heat heating (meter)", "Wärme Heizen (Zähler)"),
+    "heat_heating": ("Heat produced heating (meter)", "Erzeugte Wärme Heizen (Zähler)"),
     "elec_heating": ("Compressor electricity heating", "Strom Kompressor Heizen"),
     "aux_heating": ("Backup heater heating", "Strom Heizstab Heizen"),
-    "heat_dhw": ("Heat hot water (meter)", "Wärme Warmwasser (Zähler)"),
+    "heat_dhw": (
+        "Heat produced hot water (meter)",
+        "Erzeugte Wärme Warmwasser (Zähler)",
+    ),
     "elec_dhw": ("Compressor electricity hot water", "Strom Kompressor Warmwasser"),
     "aux_dhw": ("Backup heater hot water", "Strom Heizstab Warmwasser"),
     "heat_cooling": ("Heat removed cooling (meter)", "Wärme Kühlen (entzogen, Zähler)"),
@@ -220,7 +223,10 @@ FIELDS = {
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
-    "dhw_temp": ("Hot water temperature", "Warmwasser-Temperatur"),
+    "dhw_temp": (
+        "Hot water temperature (actual, tank)",
+        "Warmwasser-Temperatur (Ist, Speicher)",
+    ),
     "elec_defrost": ("Electricity defrost", "Strom Abtauen"),
     "elec_standby": ("Electricity standby", "Strom Stillstand"),
     "defrost_flag": ("Defrost running (on/off)", "Abtauen läuft (an/aus)"),
@@ -232,11 +238,65 @@ FIELDS = {
         "Eingestellte Betriebsart (Kühlen?)",
     ),
 }
+# Help below a field of the setup form (data_description).
+FIELD_HELP = {
+    "elec_heating": (
+        "Electricity of the compressor for heating, without the backup heater.",
+        "Strom des Kompressors fürs Heizen, ohne Heizstab.",
+    ),
+    "aux_heating": (
+        "Electricity of the backup heater for heating, if it is metered apart.",
+        "Strom des Heizstabs fürs Heizen, falls er getrennt gezählt wird.",
+    ),
+    "dhw_temp": (
+        "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections.",
+        "Ist-Temperatur im Warmwasserspeicher, nicht der Sollwert. Ergibt Ladungen und Desinfektionen.",
+    ),
+    "compressor": (
+        'An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as "heating": that belongs under Activity.',
+        "Eine An/aus-Entität oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Modulation in %). Kein Status-Text wie „heating“ – der gehört unter „Betriebsart“.",
+    ),
+    "activity": (
+        'What the heat pump is doing (heating, hot water, defrost, ...), e.g. EMS-ESP "hpactivity". Gives defrosts and the mode of each run; without it runs are counted without a mode.',
+        "Was die Wärmepumpe gerade tut (Heizen, Warmwasser, Abtauen …), z. B. EMS-ESP „hpactivity“. Ergibt Abtauungen und die Betriebsart jedes Laufs; ohne sie werden Läufe ohne Betriebsart gezählt.",
+    ),
+    "starts_total": (
+        "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
+        "Zähler der Kompressorstarts der Wärmepumpe selbst. Ohne ihn zählt Wärmewacht die Starts ab der Einrichtung.",
+    ),
+    "elec_total": (
+        "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",
+        "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+    ),
+    "aux_total": (
+        "Only if the backup heater exists as one meter for all modes; then leave the fields per mode empty.",
+        "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+    ),
+    "elec_defrost": (
+        "Only if the heat pump meters this electricity apart (Lambda, iDM).",
+        "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
+    ),
+    "elec_standby": (
+        "Only if the heat pump meters this electricity apart (Lambda). Otherwise Wärmewacht separates standby itself.",
+        "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
+    ),
+    "outdoor_temp": (
+        "Preferably the heat pump's own outdoor sensor.",
+        "Am besten der Außenfühler der Wärmepumpe.",
+    ),
+    "flow_rate": (
+        "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
+        "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
+    ),
+}
 SECTIONS = {
     "heating": (
         ("Heating", "Heizen"),
         ("heat_heating", "elec_heating", "aux_heating"),
-        ("Cumulative meters in Wh/kWh/MWh.", "Fortlaufende Zähler in Wh/kWh/MWh."),
+        (
+            "The heat the heat pump produced and the electricity its compressor needed for it: cumulative meters in Wh/kWh/MWh, not power.",
+            "Die Wärme, die die Wärmepumpe erzeugt hat, und der Strom, den ihr Kompressor dafür gebraucht hat: fortlaufende Zähler in Wh/kWh/MWh, keine Leistung.",
+        ),
     ),
     "dhw": (
         ("Hot water", "Warmwasser"),
@@ -311,6 +371,8 @@ def _build(lang: int) -> dict:
         section = {"name": t(names), "data": {f: t(FIELDS[f]) for f in fields}}
         if desc:
             section["description"] = t(desc)
+        if help_texts := {f: t(FIELD_HELP[f]) for f in fields if f in FIELD_HELP}:
+            section["data_description"] = help_texts
         sections[key] = section
     sensors = {}
     for scope, (en, de, _) in SCOPES.items():

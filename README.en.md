@@ -114,13 +114,13 @@ Wärmewacht is installed through HACS as a custom repository. Every version is a
 
 | Section | Field | EMS-ESP (standard format) |
 | --- | --- | --- |
-| Heating | Heat heating (meter) | `sensor.boiler_nrgheat` |
+| Heating | Heat produced heating (meter) | `sensor.boiler_nrgheat` |
 | | Compressor electricity heating | `sensor.boiler_meterheat` |
 | | Backup heater heating | `sensor.boiler_auxelecheatnrgconsheating` |
-| Hot water | Heat hot water (meter) | `sensor.boiler_dhw_nrg` |
+| Hot water | Heat produced hot water (meter) | `sensor.boiler_dhw_nrg` |
 | | Compressor electricity hot water | `sensor.boiler_dhw_meter` |
 | | Backup heater hot water | `sensor.boiler_dhw_auxelecheatnrgcons` |
-| | Hot water temperature | `sensor.boiler_dhw_curtemp` |
+| | Hot water temperature (actual, tank) | `sensor.boiler_dhw_curtemp` |
 | Cooling | Heat removed cooling (meter) | `sensor.boiler_nrgcool` |
 | | Compressor electricity cooling | `sensor.boiler_metercool` |
 | Operation | Compressor running (on/off or speed) | `binary_sensor.boiler_hpcompon` |

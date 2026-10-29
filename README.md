@@ -114,13 +114,13 @@ Wärmewacht wird über HACS als benutzerdefiniertes Repository installiert. Jede
 
 | Abschnitt | Feld | EMS-ESP (Standardformat) |
 | --- | --- | --- |
-| Heizen | Wärme Heizen (Zähler) | `sensor.boiler_nrgheat` |
+| Heizen | Erzeugte Wärme Heizen (Zähler) | `sensor.boiler_nrgheat` |
 | | Strom Kompressor Heizen | `sensor.boiler_meterheat` |
 | | Strom Heizstab Heizen | `sensor.boiler_auxelecheatnrgconsheating` |
-| Warmwasser | Wärme Warmwasser (Zähler) | `sensor.boiler_dhw_nrg` |
+| Warmwasser | Erzeugte Wärme Warmwasser (Zähler) | `sensor.boiler_dhw_nrg` |
 | | Strom Kompressor Warmwasser | `sensor.boiler_dhw_meter` |
 | | Strom Heizstab Warmwasser | `sensor.boiler_dhw_auxelecheatnrgcons` |
-| | Warmwasser-Temperatur | `sensor.boiler_dhw_curtemp` |
+| | Warmwasser-Temperatur (Ist, Speicher) | `sensor.boiler_dhw_curtemp` |
 | Kühlen | Wärme Kühlen (entzogen, Zähler) | `sensor.boiler_nrgcool` |
 | | Strom Kompressor Kühlen | `sensor.boiler_metercool` |
 | Betrieb | Kompressor läuft (an/aus oder Drehzahl) | `binary_sensor.boiler_hpcompon` |

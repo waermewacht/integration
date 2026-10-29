@@ -20,19 +20,26 @@
           "heating": {
             "name": "Heizen",
             "data": {
-              "heat_heating": "Wärme Heizen (Zähler)",
+              "heat_heating": "Erzeugte Wärme Heizen (Zähler)",
               "elec_heating": "Strom Kompressor Heizen",
               "aux_heating": "Strom Heizstab Heizen"
             },
-            "description": "Fortlaufende Zähler in Wh/kWh/MWh."
+            "description": "Die Wärme, die die Wärmepumpe erzeugt hat, und der Strom, den ihr Kompressor dafür gebraucht hat: fortlaufende Zähler in Wh/kWh/MWh, keine Leistung.",
+            "data_description": {
+              "elec_heating": "Strom des Kompressors fürs Heizen, ohne Heizstab.",
+              "aux_heating": "Strom des Heizstabs fürs Heizen, falls er getrennt gezählt wird."
+            }
           },
           "dhw": {
             "name": "Warmwasser",
             "data": {
-              "heat_dhw": "Wärme Warmwasser (Zähler)",
+              "heat_dhw": "Erzeugte Wärme Warmwasser (Zähler)",
               "elec_dhw": "Strom Kompressor Warmwasser",
               "aux_dhw": "Strom Heizstab Warmwasser",
-              "dhw_temp": "Warmwasser-Temperatur"
+              "dhw_temp": "Warmwasser-Temperatur (Ist, Speicher)"
+            },
+            "data_description": {
+              "dhw_temp": "Ist-Temperatur im Warmwasserspeicher, nicht der Sollwert. Ergibt Ladungen und Desinfektionen."
             }
           },
           "cooling": {
@@ -53,7 +60,16 @@
               "elec_defrost": "Strom Abtauen",
               "elec_standby": "Strom Stillstand"
             },
-            "description": "Für Starts, Kurzläufe, Abtauungen und Stillstand."
+            "description": "Für Starts, Kurzläufe, Abtauungen und Stillstand.",
+            "data_description": {
+              "compressor": "Eine An/aus-Entität oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Modulation in %). Kein Status-Text wie „heating“ – der gehört unter „Betriebsart“.",
+              "activity": "Was die Wärmepumpe gerade tut (Heizen, Warmwasser, Abtauen …), z. B. EMS-ESP „hpactivity“. Ergibt Abtauungen und die Betriebsart jedes Laufs; ohne sie werden Läufe ohne Betriebsart gezählt.",
+              "starts_total": "Zähler der Kompressorstarts der Wärmepumpe selbst. Ohne ihn zählt Wärmewacht die Starts ab der Einrichtung.",
+              "elec_total": "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+              "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+              "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
+              "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab."
+            }
           },
           "measurements": {
             "name": "Messwerte",
@@ -62,6 +78,10 @@
               "flow_temp": "Vorlauftemperatur",
               "return_temp": "Rücklauftemperatur",
               "flow_rate": "Durchfluss"
+            },
+            "data_description": {
+              "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe.",
+              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
             }
           },
           "activity_parts": {

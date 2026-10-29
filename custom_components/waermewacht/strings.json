@@ -20,19 +20,26 @@
           "heating": {
             "name": "Heating",
             "data": {
-              "heat_heating": "Heat heating (meter)",
+              "heat_heating": "Heat produced heating (meter)",
               "elec_heating": "Compressor electricity heating",
               "aux_heating": "Backup heater heating"
             },
-            "description": "Cumulative meters in Wh/kWh/MWh."
+            "description": "The heat the heat pump produced and the electricity its compressor needed for it: cumulative meters in Wh/kWh/MWh, not power.",
+            "data_description": {
+              "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
+              "aux_heating": "Electricity of the backup heater for heating, if it is metered apart."
+            }
           },
           "dhw": {
             "name": "Hot water",
             "data": {
-              "heat_dhw": "Heat hot water (meter)",
+              "heat_dhw": "Heat produced hot water (meter)",
               "elec_dhw": "Compressor electricity hot water",
               "aux_dhw": "Backup heater hot water",
-              "dhw_temp": "Hot water temperature"
+              "dhw_temp": "Hot water temperature (actual, tank)"
+            },
+            "data_description": {
+              "dhw_temp": "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections."
             }
           },
           "cooling": {
@@ -53,7 +60,16 @@
               "elec_defrost": "Electricity defrost",
               "elec_standby": "Electricity standby"
             },
-            "description": "For starts, short runs, defrosts and standby."
+            "description": "For starts, short runs, defrosts and standby.",
+            "data_description": {
+              "compressor": "An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as \"heating\": that belongs under Activity.",
+              "activity": "What the heat pump is doing (heating, hot water, defrost, ...), e.g. EMS-ESP \"hpactivity\". Gives defrosts and the mode of each run; without it runs are counted without a mode.",
+              "starts_total": "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
+              "elec_total": "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",
+              "aux_total": "Only if the backup heater exists as one meter for all modes; then leave the fields per mode empty.",
+              "elec_defrost": "Only if the heat pump meters this electricity apart (Lambda, iDM).",
+              "elec_standby": "Only if the heat pump meters this electricity apart (Lambda). Otherwise Wärmewacht separates standby itself."
+            }
           },
           "measurements": {
             "name": "Measurements",
@@ -62,6 +78,10 @@
               "flow_temp": "Flow temperature",
               "return_temp": "Return temperature",
               "flow_rate": "Flow rate"
+            },
+            "data_description": {
+              "outdoor_temp": "Preferably the heat pump's own outdoor sensor.",
+              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...)."
             }
           },
           "activity_parts": {
