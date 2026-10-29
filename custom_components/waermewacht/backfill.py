@@ -6,6 +6,12 @@ the same hour (the standby of a Bosch heat pump runs into the heating
 counter). Hours with a run keep their few minutes of standby as running.
 A mode without a heat counter (`heat_modes`, ViCare) cannot tell standby:
 its electricity counts as running.
+
+Counters in whole kWh (Daikin over P1P2MQTT) step rarely, and the heat and
+the electricity of one run step in different hours: a step of electricity
+counts as running when its mode delivered heat within COARSE_WINDOW hours.
+Standby of some 30 W makes such a counter step about once a day; hardly any
+of it is lost that way.
 """
 
 from __future__ import annotations
@@ -22,6 +28,12 @@ type HourlyChanges = Mapping[Signal, Mapping[datetime, float]]
 # Heat above electricity up to this counts as no yield (float noise of a
 # calculated heat value, kWh).
 YIELD_EPSILON = 0.001
+
+# Hours before and after an hour with heat in which electricity of the same
+# mode still counts as running, for counters in whole kWh (own assumption;
+# one real Daikin booked 10 of 23 kWh hot water electricity of a month as
+# standby with the same hour only).
+COARSE_WINDOW = 2
 HOUR = timedelta(hours=1)
 
 
@@ -29,12 +41,15 @@ def hour_totals(
     changes: Mapping[Signal, float],
     heat_modes: Collection[Mode] = tuple(Mode),
     heat_includes_electricity: bool = False,
+    near_heat: Collection[Mode] = (),
 ) -> Totals:
     """Book one hour of changes; `heat_modes`: modes with a heat counter.
 
     Electricity of a mode is standby when the mode delivered no heat; where
     the source calculates heat as electricity plus environmental yield
     (Vaillant), when the heat does not exceed the electricity (no yield).
+    `near_heat`: modes with heat in a neighbouring hour (counters in whole
+    kWh), their electricity is running.
     """
     totals = Totals()
     heat_by_mode: dict[Mode, float] = {}
@@ -48,7 +63,7 @@ def hour_totals(
             if standby:
                 heat = 0.0  # only the electricity "calculated" as heat
         else:
-            standby = heat <= 0
+            standby = heat <= 0 and mode not in near_heat
         heat_by_mode[mode] = heat
         totals.add(Kind.HEAT, mode, heat)
         totals.add(Kind.STANDBY if standby else Kind.ELEC, mode, elec)
@@ -91,14 +106,42 @@ def by_hour(
 ) -> dict[datetime, Totals]:
     """Booked energy of every hour."""
     hours = sorted({h for values in hourly.values() for h in values})
+    near = {} if heat_includes_electricity else near_heat_hours(hourly, heat_modes)
     return {
         hour: hour_totals(
             {signal: values.get(hour, 0.0) for signal, values in hourly.items()},
             heat_modes,
             heat_includes_electricity,
+            [mode for mode, around in near.items() if hour in around],
         )
         for hour in hours
     }
+
+
+def coarse(values: Mapping[datetime, float]) -> bool:
+    """Whether a counter steps in whole kWh: every hourly change integral."""
+    steps = [v for v in values.values() if v]
+    return bool(steps) and all(abs(v - round(v)) < 1e-6 for v in steps)
+
+
+def near_heat_hours(
+    hourly: HourlyChanges, heat_modes: Collection[Mode] = tuple(Mode)
+) -> dict[Mode, set[datetime]]:
+    """Per mode with counters in whole kWh, the hours within COARSE_WINDOW
+    of an hour with heat."""
+    near: dict[Mode, set[datetime]] = {}
+    for mode in heat_modes:
+        heat = hourly.get(HEAT_SIGNALS[mode], {})
+        elec = hourly.get(ELEC_SIGNALS[mode], {})
+        if not (coarse(heat) or coarse(elec)):
+            continue
+        near[mode] = {
+            hour + k * HOUR
+            for hour, kwh in heat.items()
+            if kwh > 0
+            for k in range(-COARSE_WINDOW, COARSE_WINDOW + 1)
+        }
+    return near
 
 
 def bookable_hours(

@@ -246,7 +246,7 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 | `cycling.py` | Starts, Laufzeit, Kurzläufe, Pausen, Abtauungen je Zeitfenster; Starts je Stunde |
 | `energy.py` | Energie je Art (Wärme, Strom Lauf, Stillstand, Heizstab) und Modus; Arbeitszahl-Regeln |
 | `periods.py` | Stände zu Periodenbeginn (Grenzen lokal, gespeichert in UTC), Rückblick als negativer Stand |
-| `backfill.py` | Stunden der Langzeitstatistik → Energie, Stillstand = Strom ohne Wärme in derselben Stunde |
+| `backfill.py` | Stunden der Langzeitstatistik → Energie, Stillstand = Strom ohne Wärme in derselben Stunde; bei Zählern in ganzen kWh (alle Stundenänderungen ganzzahlig, Daikin/P1P2MQTT) ohne Wärme derselben Betriebsart innerhalb ±2 h (`COARSE_WINDOW`, eigene Annahme: an einer echten Daikin landeten sonst 10 von 23 kWh Warmwasser-Strom eines Monats im Stillstand) |
 | `averages.py` | zeitgewichtete Mittel (Spreizung, Vorlauf) |
 | `report.py` | Kennzahlen der Aktion „Bericht“ je Bereich und Monat |
 | `profiles_*.py`, `templates.py` | Vorlagen der weiteren Hersteller (beta) und ihre Sammlung |
