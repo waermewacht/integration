@@ -1,0 +1,838 @@
+{
+  "prefix": "P1P2MQTT_bridge0",
+  "device": {
+    "manufacturer": "Home-CliCK",
+    "model": "P1P2MQTT_bridge",
+    "sw_version": "0.9.58rc23"
+  },
+  "entities": [
+    {
+      "entity_id": "binary_sensor.hc_dhw_dhw",
+      "unique_id": "P1P2MQTT_bridge0_S1_DHW_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_dhw_dhw_demand",
+      "unique_id": "P1P2MQTT_bridge0_S1_DHW_Demand_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_dhw_dhw_related_q",
+      "unique_id": "P1P2MQTT_bridge0_S0_DHW_Related_Q_0",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_dhw_valve_dhw_tank",
+      "unique_id": "P1P2MQTT_bridge0_S1_Valve_DHW_Tank_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_buh",
+      "unique_id": "P1P2MQTT_bridge0_S1_BUH_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_buh_2",
+      "unique_id": "P1P2MQTT_bridge0_S1_BUH_2_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_buh_on",
+      "unique_id": "P1P2MQTT_bridge0_S1_BUH_On_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_circulation_pump",
+      "unique_id": "P1P2MQTT_bridge0_S1_Circulation_Pump_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_climate_cooling",
+      "unique_id": "P1P2MQTT_bridge0_S1_Climate_Cooling_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_climate_hc_auto",
+      "unique_id": "P1P2MQTT_bridge0_S0_Climate_HC_Auto_0",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_climate_heating",
+      "unique_id": "P1P2MQTT_bridge0_S1_Climate_Heating_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_compressor",
+      "unique_id": "P1P2MQTT_bridge0_S1_Compressor_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_compressor2_q",
+      "unique_id": "P1P2MQTT_bridge0_S1_Compressor2_Q_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_defrost_active",
+      "unique_id": "P1P2MQTT_bridge0_S1_Defrost_Active_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_external_thermostat_cooling",
+      "unique_id": "P1P2MQTT_bridge0_S1_External_Thermostat_Cooling_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_external_thermostat_cooling_add",
+      "unique_id": "P1P2MQTT_bridge0_S1_External_Thermostat_Cooling_Add_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_external_thermostat_heating",
+      "unique_id": "P1P2MQTT_bridge0_S1_External_Thermostat_Heating_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_external_thermostat_heating_add",
+      "unique_id": "P1P2MQTT_bridge0_S1_External_Thermostat_Heating_Add_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_gasboiler_active",
+      "unique_id": "P1P2MQTT_bridge0_S1_Gasboiler_Active_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_heating_only",
+      "unique_id": "P1P2MQTT_bridge0_S9_Heating_Only_9",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_preferential_mode",
+      "unique_id": "P1P2MQTT_bridge0_S1_Preferential_Mode_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_shc_tank",
+      "unique_id": "P1P2MQTT_bridge0_S1_SHC_Tank_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_valve_zone_add",
+      "unique_id": "P1P2MQTT_bridge0_S1_Valve_Zone_Add_1",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.hc_mode_valve_zone_main",
+      "unique_id": "P1P2MQTT_bridge0_S1_Valve_Zone_Main_1",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "button.hc_mode_daikin_defrost_request",
+      "unique_id": "P1P2MQTT_bridge0_A9_Daikin_Defrost_Request_9",
+      "state": "unknown",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "climate.hc_dhw_dhw_setpoint",
+      "unique_id": "P1P2MQTT_bridge0_S0_DHW_Setpoint_0",
+      "state": "heat",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.hc_mode_preset_cooling_comfort",
+      "unique_id": "P1P2MQTT_bridge0_C9_Preset_Cooling_Comfort_9",
+      "state": "1605.6",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.hc_mode_preset_cooling_eco",
+      "unique_id": "P1P2MQTT_bridge0_C9_Preset_Cooling_Eco_9",
+      "state": "684.5",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.hc_mode_preset_heating_comfort",
+      "unique_id": "P1P2MQTT_bridge0_C9_Preset_Heating_Comfort_9",
+      "state": "2911.8",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.hc_mode_preset_heating_eco",
+      "unique_id": "P1P2MQTT_bridge0_C9_Preset_Heating_Eco_9",
+      "state": "1386.0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "select.hc_mode_heating_cooling_auto",
+      "unique_id": "P1P2MQTT_bridge0_C9_Heating_Cooling_Auto_9",
+      "state": "Heating",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "select.hc_mode_preset_mode",
+      "unique_id": "P1P2MQTT_bridge0_C9_Preset_Mode_9",
+      "state": "Schedule",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "select.hc_mode_program_wd_abs",
+      "unique_id": "P1P2MQTT_bridge0_S0_Program_WD_Abs_0",
+      "state": "WD+prog",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_dhw_dhw_setpoint",
+      "unique_id": "P1P2MQTT_bridge0_S1_DHW_Setpoint_1",
+      "state": "13.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_dhw_temperature_r5t_dhw_tank",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R5T_DHW_Tank_1",
+      "state": "35.827",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_gasboiler_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Gasboiler_DHW_1",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_gasboiler_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Gasboiler_Heating_1",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_gasboiler_total",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Gasboiler_Total_1",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_q_1_4",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Q_1_4_1",
+      "state": "8823",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_unknown_00",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Unknown_00_1",
+      "state": "1278",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_unknown_01",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Unknown_01_1",
+      "state": "270",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_counter_unknown_02",
+      "unique_id": "P1P2MQTT_bridge0_C1_Counter_Unknown_02_1",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_backup_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Backup_DHW_1",
+      "state": "2551",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_backup_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Backup_Heating_1",
+      "state": "8",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_compressor_cooling",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Compressor_Cooling_1",
+      "state": "3899",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_compressor_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Compressor_DHW_1",
+      "state": "7883",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_compressor_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Compressor_Heating_1",
+      "state": "2196",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_heatpump_external",
+      "unique_id": "P1P2MQTT_bridge0_C9_Electricity_Consumed_Heatpump_External_9",
+      "state": "15.023",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_electricity_consumed_total",
+      "unique_id": "P1P2MQTT_bridge0_C1_Electricity_Consumed_Total_1",
+      "state": "2408",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_energy_produced_compressor_cooling",
+      "unique_id": "P1P2MQTT_bridge0_C1_Energy_Produced_Compressor_Cooling_1",
+      "state": "8291",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_energy_produced_compressor_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Energy_Produced_Compressor_DHW_1",
+      "state": "5329",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_energy_produced_compressor_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Energy_Produced_Compressor_Heating_1",
+      "state": "8121",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_energy_produced_compressor_total",
+      "unique_id": "P1P2MQTT_bridge0_C1_Energy_Produced_Compressor_Total_1",
+      "state": "1075",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_gas_consumed",
+      "unique_id": "P1P2MQTT_bridge0_C9_Gas_Consumed_9",
+      "state": "7.332",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_backup1_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Backup1_DHW_1",
+      "state": "2841",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_backup1_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Backup1_Heating_1",
+      "state": "6",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_backup2_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Backup2_DHW_1",
+      "state": "3980",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_backup2_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Backup2_Heating_1",
+      "state": "4",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_booster",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Booster_1",
+      "state": "10",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_circulation_pump",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Circulation_Pump_1",
+      "state": "1133",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_compressor_cooling",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Compressor_Cooling_1",
+      "state": "943",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_compressor_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Compressor_DHW_1",
+      "state": "2797",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_compressor_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Compressor_Heating_1",
+      "state": "1957",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_drain_pan_heater",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Drain_Pan_Heater_1",
+      "state": "18",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_gasboiler_dhw",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Gasboiler_DHW_1",
+      "state": "6",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_hours_gasboiler_heating",
+      "unique_id": "P1P2MQTT_bridge0_C1_Hours_Gasboiler_Heating_1",
+      "state": "19",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_starts_compressor",
+      "unique_id": "P1P2MQTT_bridge0_C1_Starts_Compressor_1",
+      "state": "415",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_meters_starts_gasboiler",
+      "unique_id": "P1P2MQTT_bridge0_C1_Starts_Gasboiler_1",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_mode_date_time_daikin",
+      "unique_id": "P1P2MQTT_bridge0_M9_Date_Time_Daikin_9",
+      "state": "Mo 2026-01-05 12:00:00",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_mode_errorcode1",
+      "unique_id": "P1P2MQTT_bridge0_M1_ErrorCode1_1",
+      "state": "0x00",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_mode_errorcode2",
+      "unique_id": "P1P2MQTT_bridge0_M1_ErrorCode2_1",
+      "state": "0x00",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_mode_errorsubcode",
+      "unique_id": "P1P2MQTT_bridge0_M1_ErrorSubCode_1",
+      "state": "0x00",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_mode_fan_rpm",
+      "unique_id": "P1P2MQTT_bridge0_M1_Fan_RPM_1",
+      "state": "2620",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_compressor_rpm",
+      "unique_id": "P1P2MQTT_bridge0_M1_Compressor_RPM_1",
+      "state": "63",
+      "attributes": {
+        "unit_of_measurement": "Hz",
+        "device_class": "frequency",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_flow",
+      "unique_id": "P1P2MQTT_bridge0_M1_Flow_1",
+      "state": "13.2",
+      "attributes": {
+        "unit_of_measurement": "L/min",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_outside",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Outside_1",
+      "state": "44.695",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_outside_param15",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Outside_param15_1",
+      "state": "26.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_outside_unit",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Outside_Unit_1",
+      "state": "23.994",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r10t_after_heat_exchanger",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R10T_After_Heat_Exchanger_1",
+      "state": "39.963",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r1t_hp2gas_water",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R1T_HP2Gas_Water_1",
+      "state": "26.974",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r2t_leaving_water",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R2T_Leaving_Water_1",
+      "state": "45.176",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r3t_refrigerant",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R3T_Refrigerant_1",
+      "state": "47.411",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r4t_return_water",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R4T_Return_Water_1",
+      "state": "6.818",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_r9t_return_water",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_R9T_Return_Water_1",
+      "state": "28.155",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_refrigerant_2",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Refrigerant_2_1",
+      "state": "33.599",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_refrigerant_2_param15",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Refrigerant_2_param15_1",
+      "state": "33.4",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_refrigerant_after_heat_exchanger",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Refrigerant_After_Heat_Exchanger_1",
+      "state": "42.627",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_refrigerant_discharge",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Refrigerant_Discharge_1",
+      "state": "24.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_refrigerant_q_param15",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Refrigerant_Q_param15_1",
+      "state": "19.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_room",
+      "unique_id": "P1P2MQTT_bridge0_T1_Temperature_Room_1",
+      "state": "24.707",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_temperature_room_wall",
+      "unique_id": "P1P2MQTT_bridge0_T0_Temperature_Room_Wall_0",
+      "state": "33.856",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.hc_sensors_water_pressure",
+      "unique_id": "P1P2MQTT_bridge0_M1_Water_Pressure_1",
+      "state": "1.9",
+      "attributes": {
+        "unit_of_measurement": "bar",
+        "device_class": "pressure",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "switch.hc_dhw_dhw_boost",
+      "unique_id": "P1P2MQTT_bridge0_S0_DHW_Boost_0",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "switch.hc_mode_altherma_on",
+      "unique_id": "P1P2MQTT_bridge0_S0_Altherma_On_0",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    }
+  ]
+}

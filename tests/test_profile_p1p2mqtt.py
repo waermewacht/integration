@@ -26,6 +26,7 @@ from custom_components.waermewacht.templates import TEMPLATES
 from .conftest import FIXTURES, load_fixture
 
 FIXTURE = "p1p2mqtt_altherma3.json"
+REAL = "p1p2mqtt_altherma3_real.json"
 PREFIX = "P1P2MQTT_bridge0"
 
 
@@ -66,6 +67,43 @@ def test_template_finds_every_signal() -> None:
     assert match.entities == EXPECTED
     assert match.missing == []
     assert match.history == {}
+
+
+def test_real_installation() -> None:
+    """Registry of a real installation (forum user, Altherma 3, older device
+    names "HC_..."): every signal is found, also the flow without device class."""
+    m, s, b = "sensor.hc_meters_", "sensor.hc_sensors_", "binary_sensor.hc_"
+    (match,) = find(P1P2MQTT, entries(REAL))
+    assert match.prefix == PREFIX == load_fixture(REAL)["prefix"]
+    assert match.missing == []
+    assert match.entities == {
+        Signal.HEAT_HEATING: m + "energy_produced_compressor_heating",
+        Signal.HEAT_DHW: m + "energy_produced_compressor_dhw",
+        Signal.HEAT_COOLING: m + "energy_produced_compressor_cooling",
+        Signal.ELEC_HEATING: m + "electricity_consumed_compressor_heating",
+        Signal.ELEC_DHW: m + "electricity_consumed_compressor_dhw",
+        Signal.ELEC_COOLING: m + "electricity_consumed_compressor_cooling",
+        Signal.AUX_HEATING: m + "electricity_consumed_backup_heating",
+        Signal.AUX_DHW: m + "electricity_consumed_backup_dhw",
+        Signal.COMPRESSOR: b + "mode_compressor",
+        Signal.DEFROST_FLAG: b + "mode_defrost_active",
+        Signal.DHW_FLAG: b + "dhw_dhw_demand",  # not the DHW_Boost switch
+        Signal.COOLING_FLAG: b + "mode_climate_cooling",
+        Signal.HEATING_FLAG: b + "mode_climate_heating",
+        Signal.STARTS_TOTAL: m + "starts_compressor",
+        Signal.OUTDOOR_TEMP: s + "temperature_outside",
+        Signal.FLOW_TEMP: s + "temperature_r1t_hp2gas_water",
+        Signal.RETURN_TEMP: s + "temperature_r4t_return_water",
+        Signal.FLOW_RATE: s + "flow",
+        Signal.DHW_TEMP: "sensor.hc_dhw_temperature_r5t_dhw_tank",
+    }
+    attributes = {
+        e["entity_id"]: e["attributes"] for e in load_fixture(REAL)["entities"]
+    }
+    assert attributes[s + "flow"] == {
+        "unit_of_measurement": "L/min",
+        "state_class": "measurement",
+    }
 
 
 def test_lifetime_counters_per_mode() -> None:
@@ -245,7 +283,7 @@ def _fixtures() -> list[str]:
     return sorted(
         p.name
         for p in FIXTURES.glob("*.json")
-        if p.name not in ("_index.json", FIXTURE)
+        if p.name not in ("_index.json", FIXTURE, REAL)
     )
 
 

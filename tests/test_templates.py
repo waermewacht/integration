@@ -31,6 +31,7 @@ FIXTURES = {
     "buderus_mx300.json": "buderus",
     "buderus_k40_real.json": "buderus",
     "p1p2mqtt_altherma3.json": "p1p2mqtt",
+    "p1p2mqtt_altherma3_real.json": "p1p2mqtt",
 }
 
 

@@ -98,5 +98,10 @@
     "source": "Wärmewacht diagnostics (section source) of a forum user's installation (Buderus heat pump, gateway K40RF_v1 firmware 15.00.01, buderus_ha 0.2.0, Home Assistant 2026.10.4), sent to the maintainer on 2026-10-29 for building this template.",
     "real": "every entity of the gateway with entity id, unique id (gateway id already masked by the diagnostics), domain, device and state class, unit, entities the user disabled, the enum states (compressor_status 'off', actual_heat_demand 'ch', heat_cool_mode 'heat', ...); entity ids with the user's area prefix 'hwr_' on the energy sensors.",
     "made_up": "every number (counters, temperatures, run time), replaced; the device block is reduced to manufacturer, model and versions."
+  },
+  "p1p2mqtt_altherma3_real.json": {
+    "source": "Wärmewacht diagnostics (section source) of a forum user's installation (Daikin Altherma 3, P1P2MQTT bridge 0.9.58rc23, Home Assistant 2026.10.4, set up by hand), sent to the maintainer on 2026-10-29; the user agreed to its use as a test case.",
+    "real": "every MQTT entity of the bridge's devices with entity id (older device names 'HC_Sensors', 'HC_Mode', 'HC_DHW', 'HC_Meters' giving 'hc_<sub>_<name>'), unique id (default names P1P2MQTT/bridge0), domain, device and state class, unit, the on/off and text states (Heating, Schedule, WD+prog, 0x00).",
+    "made_up": "every number (counters, temperatures, hours, flow, presets) and the controller's date, replaced; left out: the user's weather service and utility meters on the same devices; the device block is reduced to manufacturer, model and version."
   }
 }
