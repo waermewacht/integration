@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.6 – 2026-10-29
 
 - **Neue Schaltfläche „Rückblick neu berechnen“:** rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln. Für Zähler, die erst über „Neu konfigurieren“ dazukamen (bisher fehlte ihre Vergangenheit), und nach Updates, die den Rückblick verbessern – statt den Eintrag neu anzulegen (Rückmeldung im simon42-Forum).
 - **Warmwasser je Ladung bei Zählern in ganzen kWh** (Daikin über P1P2MQTT): Die Brücke meldet den Strom einer Ladung bis zu einer halben Stunde nach ihrem Ende. Wärmewacht wartete nur 5 Minuten, die Ladung stand ohne Strom da („AZ Warmwasser letzte Ladung“ unbekannt, „Ladungen 30 Tage“ zu hoch). Bei ganzen kWh wartet es jetzt bis zu 2 Stunden oder bis zur nächsten Ladung (Rückmeldung im simon42-Forum).
