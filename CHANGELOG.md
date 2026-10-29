@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.5 – 2026-10-29
 
 - **Arbeitszahl Warmwasser bei Zählern in ganzen kWh** (Daikin über P1P2MQTT): Der Rückblick aus der Statistik buchte einen großen Teil des Warmwasser-Stroms als Stillstand, weil Wärme und Strom eines Laufs in verschiedenen Stunden um eine kWh weiterzählen. Die AZ Warmwasser lag dadurch deutlich zu hoch (an einer Anlage 5,8 statt 3,3). Jetzt zählt Strom solcher Zähler als Lauf, wenn dieselbe Betriebsart bis zu zwei Stunden davor oder danach Wärme geliefert hat. Gilt für Einträge, die neu angelegt werden, und für die Aktion „Bericht“ (Rückmeldung im simon42-Forum).
 - **Starts Saison bei Startzählern ohne Statistik:** Hat der Startzähler der Wärmepumpe keine Langzeitstatistik (P1P2MQTT: keine Zustandsklasse), blieb „Starts Saison“ dauerhaft unbekannt. Jetzt zählt der Sensor ab dem ersten gesehenen Stand der Saison (Attribut `since`), auch über Neustarts (Rückmeldung im simon42-Forum).
