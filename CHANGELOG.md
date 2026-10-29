@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **EMS-ESP mit langen Namen:** Die Vorlage erkennt jetzt auch das EMS-ESP-Format „Single instance, long names (v3.4)“, bei dem die Entitäten englische Langnamen tragen (`sensor.boiler_energy_heating` statt `sensor.boiler_nrgheat`). Bisher wurde die Wärmepumpe dann nicht gefunden (Rückmeldung im simon42-Forum).
+
 ## 0.1.3 – 2026-10-29
 
 - **Durchfluss** lässt sich jetzt auch wählen, wenn die Entität keine Geräteklasse „Volumenstrom“ hat, aber eine bekannte Einheit (z. B. `L/min` bei P1P2MQTT). Bisher blieb die Auswahl leer (Rückmeldung im simon42-Forum).

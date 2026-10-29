@@ -13,6 +13,8 @@ from custom_components.waermewacht.profiles import (
     parse_compressor,
 )
 
+from .conftest import load_fixture
+
 
 def entries(prefix: str, names: dict[str, str]) -> list[RegistryEntry]:
     """Registry entries as EMS-ESP creates them via MQTT discovery."""
@@ -165,3 +167,34 @@ def test_compressor_from_on_off_or_speed(
     state: str | None, running: bool | None
 ) -> None:
     assert parse_compressor(state) is running
+
+
+def test_ems_esp_long_names_v34() -> None:
+    """EMS-ESP format "single instance, long names (v3.4)": unique ids from
+    the English full names (forum report: Buderus not found, English names)."""
+    found = find(
+        EMS_ESP,
+        [
+            RegistryEntry(e["entity_id"], "mqtt", e["unique_id"])
+            for e in load_fixture("ems_esp_long_names.json")["entities"]
+        ],
+    )
+    (match,) = found
+    by_uid = {
+        s: next(
+            e["unique_id"]
+            for e in load_fixture("ems_esp_long_names.json")["entities"]
+            if e["entity_id"] == entity_id
+        )
+        for s, entity_id in match.entities.items()
+    }
+    assert by_uid[Signal.HEAT_HEATING] == "boiler_energy_heating"
+    assert by_uid[Signal.ELEC_HEATING] == "boiler_meter_heating"
+    assert by_uid[Signal.HEAT_DHW] == "boiler_dhw_energy"
+    assert by_uid[Signal.ELEC_DHW] == "boiler_dhw_meter"
+    assert by_uid[Signal.COMPRESSOR] == "boiler_hp_compressor"
+    assert by_uid[Signal.ACTIVITY] == "boiler_compressor_activity"
+    assert by_uid[Signal.FLOW_TEMP] == "boiler_heat_carrier_forward_(tc1)"
+    assert by_uid[Signal.AUX_HEATING] == (
+        "boiler_aux_elec._heater_energy_consumption_heating"
+    )

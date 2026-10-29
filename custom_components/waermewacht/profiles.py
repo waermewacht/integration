@@ -261,38 +261,96 @@ EMS_ESP = Template(
     label="EMS-ESP",
     platform="mqtt",
     # "[<prefix>_]boiler_<key>"; the prefix is the MQTT base of the
-    # "multiple instances" format.
+    # "multiple instances" format. Keys are short names ("nrgheat"); the
+    # format "single instance, long names (v3.4)" uses the English full name
+    # instead (mqtt.cpp, entity_format 0: spaces to "_", lower case, DHW
+    # values "dhw_<name>"), listed after each short name ("energy_heating").
     id_format=r"(?:(?P<prefix>(?!boiler_).+?)_)?boiler_(?P<key>.+)",
     signals={
-        Signal.HEAT_HEATING: ((_S, "nrgheat"), (_S, "nrgsuppheating")),
+        Signal.HEAT_HEATING: (
+            (_S, "nrgheat"),
+            (_S, "energy_heating"),
+            (_S, "nrgsuppheating"),
+            (_S, "total_energy_supplied_heating"),
+        ),
         Signal.HEAT_DHW: (
             (_S, "dhw_nrg"),
+            (_S, "dhw_energy"),
             (_S, "nrgww"),
             (_S, "dhw_nrgsupp"),
+            (_S, "dhw_total_energy_warm_supplied"),
             (_S, "nrgsuppww"),
         ),
-        Signal.HEAT_COOLING: ((_S, "nrgcool"), (_S, "nrgsuppcooling")),
-        Signal.ELEC_HEATING: ((_S, "meterheat"), (_S, "nrgconscompheating")),
+        Signal.HEAT_COOLING: (
+            (_S, "nrgcool"),
+            (_S, "energy_cooling"),
+            (_S, "nrgsuppcooling"),
+            (_S, "total_energy_supplied_cooling"),
+        ),
+        Signal.ELEC_HEATING: (
+            (_S, "meterheat"),
+            (_S, "meter_heating"),
+            (_S, "nrgconscompheating"),
+            (_S, "energy_consumption_compressor_heating"),
+        ),
         Signal.ELEC_DHW: (
             (_S, "dhw_meter"),
             (_S, "wwmeter"),
             (_S, "dhw_nrgconscomp"),
+            (_S, "dhw_energy_consumption_compressor"),
             (_S, "nrgconscompww"),
         ),
-        Signal.ELEC_COOLING: ((_S, "metercool"), (_S, "nrgconscompcooling")),
+        Signal.ELEC_COOLING: (
+            (_S, "metercool"),
+            (_S, "meter_cooling"),
+            (_S, "nrgconscompcooling"),
+            (_S, "energy_consumption_compressor_cooling"),
+        ),
         # The backup heater per mode exists in whole kWh only; the 0.01 kWh
         # total (metereheat) would need an attribution to modes.
-        Signal.AUX_HEATING: ((_S, "auxelecheatnrgconsheating"),),
-        Signal.AUX_DHW: ((_S, "dhw_auxelecheatnrgcons"), (_S, "auxelecheatnrgconsww")),
-        Signal.COMPRESSOR: ((_B, "hpcompon"),),
-        Signal.ACTIVITY: ((_S, "hpactivity"),),
-        Signal.STARTS_TOTAL: ((_S, "totalcompstarts"),),
-        Signal.OUTDOOR_TEMP: ((_S, "outdoortemp"),),
-        Signal.FLOW_TEMP: ((_S, "hptc1"),),
-        Signal.RETURN_TEMP: ((_S, "hptc0"),),
-        Signal.FLOW_RATE: ((_S, "pc0flow"),),
+        Signal.AUX_HEATING: (
+            (_S, "auxelecheatnrgconsheating"),
+            (_S, "aux_elec._heater_energy_consumption_heating"),
+        ),
+        Signal.AUX_DHW: (
+            (_S, "dhw_auxelecheatnrgcons"),
+            (_S, "dhw_aux_elec._heater_energy_consumption"),
+            (_S, "auxelecheatnrgconsww"),
+        ),
+        Signal.COMPRESSOR: (
+            (_B, "hpcompon"),
+            (_B, "hp_compressor"),
+        ),
+        Signal.ACTIVITY: (
+            (_S, "hpactivity"),
+            (_S, "compressor_activity"),
+        ),
+        Signal.STARTS_TOTAL: (
+            (_S, "totalcompstarts"),
+            (_S, "total_compressor_control_starts"),
+        ),
+        Signal.OUTDOOR_TEMP: (
+            (_S, "outdoortemp"),
+            (_S, "outside_temperature"),
+        ),
+        Signal.FLOW_TEMP: (
+            (_S, "hptc1"),
+            (_S, "heat_carrier_forward_(tc1)"),
+        ),
+        Signal.RETURN_TEMP: (
+            (_S, "hptc0"),
+            (_S, "heat_carrier_return_(tc0)"),
+        ),
+        Signal.FLOW_RATE: (
+            (_S, "pc0flow"),
+            (_S, "flow_pc0"),
+        ),
         # Storage temperature, 3.7+ name first.
-        Signal.DHW_TEMP: ((_S, "dhw_curtemp"), (_S, "wwcurtemp")),
+        Signal.DHW_TEMP: (
+            (_S, "dhw_curtemp"),
+            (_S, "dhw_current_intern_temperature"),
+            (_S, "wwcurtemp"),
+        ),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=EMS_ESP_ACTIVITY,

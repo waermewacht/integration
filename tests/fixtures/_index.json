@@ -78,5 +78,10 @@
     "source": "Derived from the source code of gekkekoe/esphome-ecodan-hp main 30eb1b4 (2026-10-28; confs/base.yaml, energy.yaml, request-codes.yaml, ecodan-labels-*.yaml, components/ecodan) with Home Assistant core esphome dev 33ee669 and aioesphomeapi 46.21.0 (build_unique_id); not read from a real installation.",
     "real": "unique id format version 3 '<MAC>/<device id>/<type>/<name>' (platform esphome), English entity names (labels of ecodan-labels-en.yaml) as original_name, entity domains (text sensor -> sensor), units, device and state classes, the operation mode words, the select whose German label equals the operation mode's.",
     "made_up": "MAC, entity ids (device name ecodan-heatpump), every state value, the selection of entities."
+  },
+  "ems_esp_long_names.json": {
+    "source": "Derived on 2026-10-29 from ems_esp_cs6800i.json and the EMS-ESP source (emsesp/EMS-ESP32 dev 99f44f5, 2026-10-28): src/core/mqtt.cpp builds the unique id for entity_format 0 ('single instance, long names (v3.4)') from the English full name (src/core/locale_translations.h), spaces to '_', '+' to '2', lower case, DHW1 values of the boiler as 'boiler_dhw_<name>'; tags from src/devices/boiler.cpp. Not read from a real installation.",
+    "real": "the unique id rule and the English names of the entities in the fixture, domains, units, device and state classes (as in ems_esp_cs6800i.json).",
+    "made_up": "entity ids (Home Assistant's slug of the default entity id, approximated), every state value (taken over from ems_esp_cs6800i.json), the subset of entities."
   }
 }

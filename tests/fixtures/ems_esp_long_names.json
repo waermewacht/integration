@@ -1,0 +1,220 @@
+{
+  "activity_values_seen": [
+    "aus",
+    "Heizen",
+    "Warmwasser",
+    "Abtauen"
+  ],
+  "entities": [
+    {
+      "entity_id": "sensor.boiler_energy_heating",
+      "unique_id": "boiler_energy_heating",
+      "state": "6000.12",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_energy",
+      "unique_id": "boiler_dhw_energy",
+      "state": "4000.34",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_energy_cooling",
+      "unique_id": "boiler_energy_cooling",
+      "state": "2345.21",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_meter_heating",
+      "unique_id": "boiler_meter_heating",
+      "state": "2000.25",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_meter",
+      "unique_id": "boiler_dhw_meter",
+      "state": "1600.1",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_meter_cooling",
+      "unique_id": "boiler_meter_cooling",
+      "state": "710.1",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_total_energy_supplied_heating",
+      "unique_id": "boiler_total_energy_supplied_heating",
+      "state": "6000",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_total_energy_warm_supplied",
+      "unique_id": "boiler_dhw_total_energy_warm_supplied",
+      "state": "4000",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_total_energy_supplied_cooling",
+      "unique_id": "boiler_total_energy_supplied_cooling",
+      "state": "2345",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_energy_consumption_compressor_heating",
+      "unique_id": "boiler_energy_consumption_compressor_heating",
+      "state": "2000",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_energy_consumption_compressor",
+      "unique_id": "boiler_dhw_energy_consumption_compressor",
+      "state": "1600",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_energy_consumption_compressor_cooling",
+      "unique_id": "boiler_energy_consumption_compressor_cooling",
+      "state": "710",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_aux_elec_heater_energy_consumption_heating",
+      "unique_id": "boiler_aux_elec._heater_energy_consumption_heating",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_aux_elec_heater_energy_consumption",
+      "unique_id": "boiler_dhw_aux_elec._heater_energy_consumption",
+      "state": "11",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "binary_sensor.boiler_hp_compressor",
+      "unique_id": "boiler_hp_compressor",
+      "state": "on",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.boiler_compressor_activity",
+      "unique_id": "boiler_compressor_activity",
+      "state": "Heizen",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.boiler_total_compressor_control_starts",
+      "unique_id": "boiler_total_compressor_control_starts",
+      "state": "1500",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_outside_temperature",
+      "unique_id": "boiler_outside_temperature",
+      "state": "5.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_heat_carrier_return_tc0",
+      "unique_id": "boiler_heat_carrier_return_(tc0)",
+      "state": "24.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_heat_carrier_forward_tc1",
+      "unique_id": "boiler_heat_carrier_forward_(tc1)",
+      "state": "28.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_current_intern_temperature",
+      "unique_id": "boiler_dhw_current_intern_temperature",
+      "state": "47.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_flow_pc0",
+      "unique_id": "boiler_flow_pc0",
+      "state": "900",
+      "attributes": {
+        "unit_of_measurement": "L/h",
+        "device_class": "volume_flow_rate",
+        "state_class": "measurement"
+      }
+    }
+  ]
+}

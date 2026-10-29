@@ -12,6 +12,7 @@ from .conftest import load_fixture
 # Fixture -> template key; the platform comes from the template.
 FIXTURES = {
     "ems_esp_cs6800i.json": "ems_esp",
+    "ems_esp_long_names.json": "ems_esp",
     "bosch_homecom_k40.json": "bosch_homecom",
     "luxtronik_lwd70a.json": "luxtronik",
     "stiebel_isg_wpmsystem.json": "stiebel_isg",
