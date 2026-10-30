@@ -108,13 +108,38 @@
           "name": "Präfix der Entity-IDs.",
           "source": "Eine gefundene Wärmepumpe füllt die Entitäten aus; manuell: selbst auswählen."
         }
+      },
+      "gas": {
+        "title": "Gasheizung einrichten",
+        "description": "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen.",
+        "data": {
+          "gas_total": "Gas gesamt (Heizen und Warmwasser)",
+          "gas_heating": "Gas nur Heizen",
+          "gas_dhw": "Gas Warmwasser",
+          "outdoor_temp": "Außentemperatur",
+          "calorific_value": "Brennwert",
+          "z_number": "Zustandszahl"
+        },
+        "data_description": {
+          "gas_total": "Ein Gaszähler (Impuls, AI-on-the-edge) oder der Zähler der Therme, in kWh oder m³, mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
+          "gas_heating": "Nur wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare); dann auch den Warmwasser-Zähler eintragen. „Gas gesamt“ bleibt leer.",
+          "gas_dhw": "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
+          "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+          "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
+          "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
+        }
       }
     },
     "error": {
       "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen).",
       "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
       "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides.",
-      "elec_twice": "Strom Kompressor entweder je Modus oder gesamt, nicht beides."
+      "elec_twice": "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
+      "gas_none": "Wähle einen Gaszähler: gesamt oder nur Heizen.",
+      "gas_twice": "Entweder „Gas gesamt“ oder „Gas nur Heizen“, nicht beides.",
+      "gas_unit": "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
+      "gas_no_statistics": "Ein Gaszähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
+      "gas_calorific_value": "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits eingerichtet.",
@@ -173,13 +198,33 @@
             }
           }
         }
+      },
+      "gas": {
+        "title": "Einstellungen",
+        "data": {
+          "boiler_efficiency": "Nutzungsgrad des Kessels (Hs)",
+          "design_outdoor_temp": "Normaußentemperatur",
+          "gas_price": "Gas-Arbeitspreis",
+          "gas_base_price": "Gas-Grundpreis",
+          "calorific_value": "Brennwert",
+          "z_number": "Zustandszahl"
+        },
+        "data_description": {
+          "boiler_efficiency": "Anteil des Gases, der zu Wärme wird, bezogen auf den Brennwert. 0,87 ist der Feldwert von Brennwertkesseln (Jagnow/Wolff); ältere Kessel liegen darunter. Die Heizlast ändert sich im selben Verhältnis.",
+          "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+          "gas_price": "Brutto, je kWh auf den Brennwert (wie auf der Gasrechnung).",
+          "gas_base_price": "Brutto je Jahr.",
+          "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung.",
+          "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
+        }
       }
     }
   },
   "selector": {
     "source": {
       "options": {
-        "manual": "Manuell"
+        "manual": "Manuell",
+        "gas": "Gasheizung (vor dem Umstieg)"
       }
     },
     "curve_scope": {
@@ -402,6 +447,27 @@
       },
       "last_disinfection": {
         "name": "Letzte thermische Desinfektion"
+      },
+      "gas_heat_load_per_kelvin": {
+        "name": "Heizlast je Kelvin"
+      },
+      "gas_heat_load_design": {
+        "name": "Heizlast bei Normaußentemperatur"
+      },
+      "gas_heating_limit": {
+        "name": "Heizgrenze"
+      },
+      "gas_heat_per_degree_day": {
+        "name": "Wärme je Gradtag"
+      },
+      "gas_dhw_share": {
+        "name": "Warmwasseranteil"
+      },
+      "gas_consumption_year": {
+        "name": "Gas 365 Tage"
+      },
+      "gas_cost_year": {
+        "name": "Gaskosten 365 Tage"
       }
     }
   },
@@ -420,6 +486,9 @@
     },
     "look_back_failed": {
       "message": "Die Statistik ließ sich nicht lesen; Details im Protokoll."
+    },
+    "not_for_gas": {
+      "message": "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast."
     }
   },
   "issues": {
@@ -523,7 +592,7 @@
         },
         "start": {
           "name": "Beginn",
-          "description": "Ohne: die letzte vollständige Saison."
+          "description": "Ohne: die letzte vollständige Saison (Gasheizung: die letzten 365 Tage)."
         },
         "end": {
           "name": "Ende",

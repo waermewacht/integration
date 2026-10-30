@@ -1,5 +1,6 @@
 """Actions: report (ratios of any period, with months), performance curve
-(ratio over outdoor temperature) and heat load (energy signature)."""
+(ratio over outdoor temperature) and heat load (energy signature). A gas
+boiler entry has the heat load only, by default over the last 365 days."""
 
 from __future__ import annotations
 
@@ -20,11 +21,12 @@ from homeassistant.helpers import service
 from homeassistant.helpers.selector import ConfigEntrySelector
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import CONF_KIND, DOMAIN, KIND_GAS
 from .curve import curve_as_dicts, performance_curve
+from .gas import window
 from .heat_load import heat_load, heat_load_as_dict
 from .model import Signal
-from .periods import Period, period_start
+from .periods import Period, local_midnight, period_start
 
 if TYPE_CHECKING:
     from . import WaermewachtConfigEntry
@@ -64,6 +66,13 @@ def _as_utc(moment: datetime) -> datetime:
     return dt_util.as_utc(moment)
 
 
+def _heat_pump_only(entry: WaermewachtConfigEntry) -> None:
+    if entry.data.get(CONF_KIND) == KIND_GAS:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="not_for_gas"
+        )
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the integration's actions."""
@@ -72,6 +81,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         entry: WaermewachtConfigEntry = service.async_get_config_entry(
             hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY]
         )
+        _heat_pump_only(entry)
         runtime = entry.runtime_data
         now = dt_util.utcnow()
         # Default: the current season until now.
@@ -122,7 +132,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_domain=DOMAIN, translation_key="no_recorder"
             )
         now = dt_util.utcnow()
-        current, previous = runtime.seasons(now)
+        if entry.data.get(CONF_KIND) == KIND_GAS:
+            # Default: the last 365 full days (gas.window).
+            first, last = window(now, runtime.tz)
+            current = local_midnight(last, runtime.tz)
+            previous = local_midnight(first, runtime.tz)
+        else:
+            current, previous = runtime.seasons(now)
         # Default: the current season, or the last complete one (heat load).
         start = (
             _as_utc(call.data[ATTR_START])
@@ -143,6 +159,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def curve(call: ServiceCall) -> ServiceResponse:
         entry, start, end = _analysis_window(call, default_previous=False)
+        _heat_pump_only(entry)
         runtime = entry.runtime_data
         hours, outdoor = await runtime.async_analysis_data(start, end)
         rows = performance_curve(

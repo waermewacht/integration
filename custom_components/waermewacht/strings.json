@@ -108,13 +108,38 @@
           "name": "Prefix of the entity ids.",
           "source": "A found heat pump fills in the entities; manual: pick them yourself."
         }
+      },
+      "gas": {
+        "title": "Set up a gas boiler",
+        "description": "Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter.",
+        "data": {
+          "gas_total": "Gas total (heating and hot water)",
+          "gas_heating": "Gas heating only",
+          "gas_dhw": "Gas hot water",
+          "outdoor_temp": "Outdoor temperature",
+          "calorific_value": "Calorific value",
+          "z_number": "Z-number"
+        },
+        "data_description": {
+          "gas_total": "A gas meter (pulse, AI-on-the-edge) or the boiler's counter, in kWh or m³, with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+          "gas_heating": "Only if the boiler counts heating and hot water apart (e.g. Viessmann ViCare); then add the hot water counter as well. Leave \"Gas total\" empty.",
+          "gas_dhw": "Optional: gas for hot water, if counted apart.",
+          "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
+          "calorific_value": "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
+          "z_number": "Only for counters in m³: from the gas bill (Zustandszahl)."
+        }
       }
     },
     "error": {
       "no_mode": "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
       "aux_twice": "Backup heater either per mode or as total, not both.",
-      "elec_twice": "Compressor electricity either per mode or as total, not both."
+      "elec_twice": "Compressor electricity either per mode or as total, not both.",
+      "gas_none": "Choose a gas counter: total, or heating.",
+      "gas_twice": "Either \"Gas total\" or \"Gas heating only\", not both.",
+      "gas_unit": "A gas counter has no unit Wh, kWh, MWh or m³.",
+      "gas_no_statistics": "A gas counter has no long-term statistics (state class total or total_increasing).",
+      "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill."
     },
     "abort": {
       "already_configured": "This heat pump is already set up.",
@@ -173,13 +198,33 @@
             }
           }
         }
+      },
+      "gas": {
+        "title": "Settings",
+        "data": {
+          "boiler_efficiency": "Boiler efficiency (Hs)",
+          "design_outdoor_temp": "Design outdoor temperature",
+          "gas_price": "Gas working price",
+          "gas_base_price": "Gas base price",
+          "calorific_value": "Calorific value",
+          "z_number": "Z-number"
+        },
+        "data_description": {
+          "boiler_efficiency": "Share of the gas that becomes heat, on the gross calorific value. 0.87 is the field value of condensing boilers (Jagnow/Wolff); older boilers are lower. The heat load changes in proportion.",
+          "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+          "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill).",
+          "gas_base_price": "Gross per year.",
+          "calorific_value": "Only for counters in m³: from the gas bill.",
+          "z_number": "Only for counters in m³: from the gas bill."
+        }
       }
     }
   },
   "selector": {
     "source": {
       "options": {
-        "manual": "Manual"
+        "manual": "Manual",
+        "gas": "Gas boiler (before switching)"
       }
     },
     "curve_scope": {
@@ -402,6 +447,27 @@
       },
       "last_disinfection": {
         "name": "Last thermal disinfection"
+      },
+      "gas_heat_load_per_kelvin": {
+        "name": "Heat load per kelvin"
+      },
+      "gas_heat_load_design": {
+        "name": "Heat load at design temperature"
+      },
+      "gas_heating_limit": {
+        "name": "Heating limit"
+      },
+      "gas_heat_per_degree_day": {
+        "name": "Heat per degree day"
+      },
+      "gas_dhw_share": {
+        "name": "Hot water share"
+      },
+      "gas_consumption_year": {
+        "name": "Gas 365 days"
+      },
+      "gas_cost_year": {
+        "name": "Gas cost 365 days"
       }
     }
   },
@@ -420,6 +486,9 @@
     },
     "look_back_failed": {
       "message": "Reading the statistics failed; see the log."
+    },
+    "not_for_gas": {
+      "message": "This action is for heat pumps; a gas boiler has the heat load only."
     }
   },
   "issues": {
@@ -523,7 +592,7 @@
         },
         "start": {
           "name": "Start",
-          "description": "Without: the last complete season."
+          "description": "Without: the last complete season (gas boiler: the last 365 days)."
         },
         "end": {
           "name": "End",

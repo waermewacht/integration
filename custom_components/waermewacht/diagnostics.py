@@ -18,9 +18,10 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
-from . import WaermewachtConfigEntry
+from . import GasConfigEntry, WaermewachtConfigEntry, is_gas
 from .anonymize import Masker
 from .const import CONF_ENTITIES, CONF_TEMPLATE
+from .heat_load import heat_load_as_dict
 from .periods import Period
 
 
@@ -73,9 +74,57 @@ def _source_entities(
     return {"devices": models, "entities": result}
 
 
+def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, Any]:
+    """A gas boiler: mapping, units and the result of the last analysis."""
+    runtime = entry.runtime_data
+    mask = Masker()
+    configured: dict[str, str] = dict(entry.data.get(CONF_ENTITIES) or {})
+    states = {}
+    for key, entity_id in configured.items():
+        state = hass.states.get(entity_id)
+        states[key] = (
+            None
+            if state is None
+            else {
+                "unit": state.attributes.get("unit_of_measurement"),
+                "device_class": state.attributes.get("device_class"),
+                "state_class": state.attributes.get("state_class"),
+            }
+        )
+    analysis = runtime.analysis
+    result: dict[str, Any] | None = None
+    if analysis is not None:
+        load = heat_load_as_dict(analysis.heat_load)
+        load.pop("weeks")
+        result = {
+            "start": analysis.start.isoformat(),
+            "end": analysis.end.isoformat(),
+            "gas_days": analysis.gas_days,
+            "dhw_method": analysis.split.method,
+            "summer_days": analysis.split.summer_days,
+            "dhw_share": analysis.dhw_share,
+            "degree_days_counted": analysis.degree_days.days_counted,
+            "heat_load": load,
+        }
+    return {
+        "config": {
+            "kind": "gas",
+            "entities": {k: mask(v) for k, v in configured.items()},
+            "options": dict(entry.options),
+        },
+        "states": states,
+        "problem": runtime.problem,
+        "analysed_at": runtime.analysed_at.isoformat() if runtime.analysed_at else None,
+        "analysis": result,
+        "source": _source_entities(hass, set(configured.values()), mask),
+    }
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: WaermewachtConfigEntry
 ) -> dict[str, Any]:
+    if is_gas(entry):
+        return _gas_diagnostics(hass, entry)  # type: ignore[arg-type]
     runtime = entry.runtime_data
     now = dt_util.utcnow()
     # One masker for the whole download: the same id gets the same fake.

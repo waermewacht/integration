@@ -13,7 +13,15 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.typing import ConfigType
 
 from .adopt import own_match, signals_to_adopt
-from .const import CONF_ENTITIES, CONF_KNOWN_SIGNALS, CONF_TEMPLATE, DOMAIN
+from .const import (
+    CONF_ENTITIES,
+    CONF_KIND,
+    CONF_KNOWN_SIGNALS,
+    CONF_TEMPLATE,
+    DOMAIN,
+    KIND_GAS,
+)
+from .gas_runtime import GasRuntime
 from .profiles import RegistryEntry, find
 from .runtime import HeatPumpRuntime
 from .services import async_setup_services
@@ -22,6 +30,8 @@ from .templates import TEMPLATES
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
+# A gas boiler has figures only.
+GAS_PLATFORMS: list[Platform] = [Platform.SENSOR]
 ISSUES = (
     "missing_entity",
     "energy_unit",
@@ -38,6 +48,13 @@ ISSUES = (
 )
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
+type GasConfigEntry = ConfigEntry[GasRuntime]
+
+
+def is_gas(entry: ConfigEntry) -> bool:
+    """Whether the entry is a gas boiler (gas.py), not a heat pump."""
+    return entry.data.get(CONF_KIND) == KIND_GAS
+
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -49,7 +66,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> bool:
-    """Set up one heat pump."""
+    """Set up one heat pump or gas boiler."""
+    if is_gas(entry):
+        return await _async_setup_gas(hass, entry)
     _adopt_new_signals(hass, entry)
     runtime = HeatPumpRuntime(hass, entry)
     await runtime.async_start()
@@ -70,6 +89,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     entry.async_create_background_task(
         hass, runtime.async_import_history(), "waermewacht_import_history"
     )
+    return True
+
+
+async def _async_setup_gas(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    runtime = GasRuntime(hass, entry)
+    entry.runtime_data = runtime
+    await runtime.async_start()
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    await hass.config_entries.async_forward_entry_setups(entry, GAS_PLATFORMS)
     return True
 
 
@@ -126,7 +154,8 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: WaermewachtConfigEntry
 ) -> bool:
     """Unload; the runtime writes its state for the next setup."""
-    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    platforms = GAS_PLATFORMS if is_gas(entry) else PLATFORMS
+    unloaded = await hass.config_entries.async_unload_platforms(entry, platforms)
     if unloaded:
         await entry.runtime_data.async_stop()
     return unloaded
@@ -136,6 +165,8 @@ async def async_remove_entry(
     hass: HomeAssistant, entry: WaermewachtConfigEntry
 ) -> None:
     """Delete the stored books and the repair issues of the entry."""
+    if is_gas(entry):
+        return  # nothing stored, no repair issues
     await HeatPumpRuntime(hass, entry).async_remove()
     for key in ISSUES:
         ir.async_delete_issue(hass, DOMAIN, f"{entry.entry_id}_{key}")

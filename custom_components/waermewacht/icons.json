@@ -196,6 +196,27 @@
       },
       "last_disinfection": {
         "default": "mdi:bacteria-outline"
+      },
+      "gas_heat_load_per_kelvin": {
+        "default": "mdi:home-thermometer-outline"
+      },
+      "gas_heat_load_design": {
+        "default": "mdi:home-thermometer"
+      },
+      "gas_heating_limit": {
+        "default": "mdi:thermometer-chevron-up"
+      },
+      "gas_heat_per_degree_day": {
+        "default": "mdi:chart-bell-curve-cumulative"
+      },
+      "gas_dhw_share": {
+        "default": "mdi:water-boiler"
+      },
+      "gas_consumption_year": {
+        "default": "mdi:fire"
+      },
+      "gas_cost_year": {
+        "default": "mdi:cash"
       }
     }
   },

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from custom_components.waermewacht.config_flow import SECTIONS
 from custom_components.waermewacht.const import DOMAIN, VERSION
+from custom_components.waermewacht.gas_sensor import GAS_DESCRIPTIONS
 from custom_components.waermewacht.sensor import DESCRIPTIONS
 
 ROOT = Path(__file__).parent.parent
@@ -61,8 +62,9 @@ def test_translations_complete() -> None:
 def test_every_sensor_translated_and_has_an_icon() -> None:
     strings = load(INTEGRATION / "strings.json")["entity"]
     icons = load(INTEGRATION / "icons.json")["entity"]
-    keys = {d.key for d in DESCRIPTIONS}
-    assert len(keys) == len(DESCRIPTIONS)
+    every = [*DESCRIPTIONS, *GAS_DESCRIPTIONS]
+    keys = {d.key for d in every}
+    assert len(keys) == len(every)
     assert set(strings["sensor"]) == keys
     assert set(icons["sensor"]) == keys
     assert (

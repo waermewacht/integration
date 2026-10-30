@@ -16,6 +16,17 @@ CONF_HISTORY: Final = "history"  # {entity_id: [same counter, other id format]}
 # Signals the template knew at setup/reconfigure (adopt.py).
 CONF_KNOWN_SIGNALS: Final = "template_signals"
 SOURCE_MANUAL: Final = "manual"
+# Gas boiler before the switch (gas.py): an entry of its own kind.
+CONF_KIND: Final = "kind"  # absent: heat pump
+KIND_GAS: Final = "gas"
+SOURCE_GAS: Final = "gas"  # setup choice
+GAS_TOTAL: Final = "gas_total"  # heating and hot water
+GAS_HEATING: Final = "gas_heating"  # heating only
+GAS_DHW: Final = "gas_dhw"
+CONF_BOILER_EFFICIENCY: Final = "boiler_efficiency"  # η on Hs
+CONF_CALORIFIC_VALUE: Final = "calorific_value"  # kWh/m³ (Hs), from the bill
+CONF_Z_NUMBER: Final = "z_number"  # Zustandszahl, from the bill
+VOLUME_UNIT: Final = "m³"  # gas meters; anything else must be energy
 
 # Options.
 CONF_MIN_ELECTRICITY: Final = "min_electricity"

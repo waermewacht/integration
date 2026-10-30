@@ -30,11 +30,12 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
-from . import WaermewachtConfigEntry
+from . import WaermewachtConfigEntry, is_gas
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_with_gas
 from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
+from .gas_sensor import gas_sensors
 from .heat_load import heat_load_as_dict
 from .heating_curve import flow_curve_as_dict
 from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
@@ -687,6 +688,9 @@ async def async_setup_entry(
     entry: WaermewachtConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
+    if is_gas(entry):
+        async_add_entities(gas_sensors(entry))  # type: ignore[arg-type]
+        return
     runtime = entry.runtime_data
     async_add_entities(
         HeatPumpSensor(entry, d) for d in DESCRIPTIONS if d.needs(runtime)

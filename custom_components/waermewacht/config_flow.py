@@ -4,6 +4,11 @@ A template (EMS-ESP, Bosch HomeCom and, marked beta, further makers) finds the h
 and unique id and fills in the entities; everything stays editable. Without
 a template, the user picks the entities. Reconfiguring shows the entity step
 again; the options hold the thresholds. Every change reloads the entry.
+
+"Gas boiler" in the first step leads to an entry of its own kind (gas.py):
+a gas counter (kWh or m³), optionally hot water apart, and the outdoor
+temperature; its options are the boiler efficiency, the conversion of m³
+and the prices.
 """
 
 from __future__ import annotations
@@ -27,6 +32,8 @@ from homeassistant.helpers import selector
 from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_AUX_MILD_FROM,
+    CONF_BOILER_EFFICIENCY,
+    CONF_CALORIFIC_VALUE,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
     CONF_DISINFECTION_TEMP,
@@ -37,6 +44,7 @@ from .const import (
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
     CONF_HISTORY,
+    CONF_KIND,
     CONF_KNOWN_SIGNALS,
     CONF_MIN_ELECTRICITY,
     CONF_MIN_POWER,
@@ -47,14 +55,22 @@ from .const import (
     CONF_SOURCE,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
+    CONF_Z_NUMBER,
     DEFAULT_CRITICAL_RUN_MINUTES,
     DEFAULT_MIN_ELECTRICITY_KWH,
     DEFAULT_SEASON_START_MONTH,
     DEFAULT_SHORT_RUN_MINUTES,
     DEFAULT_STARTS_PER_HOUR,
     DOMAIN,
+    GAS_DHW,
+    GAS_HEATING,
+    GAS_TOTAL,
+    KIND_GAS,
+    SOURCE_GAS,
     SOURCE_MANUAL,
+    VOLUME_UNIT,
 )
+from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
@@ -267,6 +283,104 @@ def disabled_entities(hass: HomeAssistant) -> list[str]:
     )
 
 
+# Gas boiler: counters in an energy unit or in m³, with statistics.
+GAS_UNITS = [*UNIT_FACTORS, VOLUME_UNIT]
+GAS_COUNTERS = (GAS_TOTAL, GAS_HEATING, GAS_DHW)
+STATISTIC_CLASSES = ("total", "total_increasing")
+
+
+def _number(
+    minimum: float, maximum: float, step: float, unit: str
+) -> selector.NumberSelector:
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=minimum,
+            max=maximum,
+            step=step,
+            unit_of_measurement=unit,
+            mode=selector.NumberSelectorMode.BOX,
+        )
+    )
+
+
+def gas_schema(values: dict[str, Any]) -> vol.Schema:
+    """The gas form; `values` prefill it."""
+    counter = selector.EntitySelector(
+        selector.EntitySelectorConfig(
+            filter=[
+                selector.EntityFilterSelectorConfig(
+                    domain="sensor",
+                    device_class=device_class,
+                    unit_of_measurement=GAS_UNITS,
+                )
+                for device_class in ("gas", "energy")
+            ]
+        )
+    )
+    outdoor = selector.EntitySelector(
+        selector.EntitySelectorConfig(
+            filter=selector.EntityFilterSelectorConfig(
+                domain="sensor", device_class="temperature"
+            )
+        )
+    )
+
+    def suggested(key: str) -> dict[str, Any]:
+        return {"suggested_value": values.get(key)}
+
+    return vol.Schema(
+        {
+            **{
+                vol.Optional(key, description=suggested(key)): counter
+                for key in GAS_COUNTERS
+            },
+            vol.Required(
+                Signal.OUTDOOR_TEMP.value,
+                description=suggested(Signal.OUTDOOR_TEMP.value),
+            ): outdoor,
+            vol.Optional(
+                CONF_CALORIFIC_VALUE, description=suggested(CONF_CALORIFIC_VALUE)
+            ): _number(8, 13, 0.001, "kWh/m³"),
+            vol.Optional(CONF_Z_NUMBER, description=suggested(CONF_Z_NUMBER)): _number(
+                0.8, 1.1, 0.0001, ""
+            ),
+        }
+    )
+
+
+def validate_gas(hass: HomeAssistant, values: dict[str, Any]) -> str | None:
+    """Error key, or None if the gas mapping can be used."""
+    if GAS_TOTAL in values and GAS_HEATING in values:
+        return "gas_twice"
+    if GAS_TOTAL not in values and GAS_HEATING not in values:
+        return "gas_none"
+    volume = False
+    for key in GAS_COUNTERS:
+        if (entity_id := values.get(key)) is None:
+            continue
+        if (state := hass.states.get(entity_id)) is None:
+            continue
+        unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        if unit not in GAS_UNITS:
+            return "gas_unit"
+        if state.attributes.get("state_class") not in STATISTIC_CLASSES:
+            return "gas_no_statistics"
+        volume |= unit == VOLUME_UNIT
+    if volume and not (values.get(CONF_CALORIFIC_VALUE) and values.get(CONF_Z_NUMBER)):
+        return "gas_calorific_value"
+    return None
+
+
+def split_gas(values: dict[str, Any]) -> tuple[dict[str, str], dict[str, float]]:
+    """Form values -> entities and options (conversion of m³)."""
+    keys = (*GAS_COUNTERS, Signal.OUTDOOR_TEMP.value)
+    entities = {k: values[k] for k in keys if values.get(k)}
+    options = {
+        k: values[k] for k in (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER) if values.get(k)
+    }
+    return entities, options
+
+
 def _label(match: Match) -> str:
     """Name of a found heat pump in the setup; templates without a real
     installation behind them are marked."""
@@ -305,6 +419,8 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._name = user_input[CONF_NAME]
             source = user_input[CONF_SOURCE]
+            if source == SOURCE_GAS:
+                return await self.async_step_gas()
             if (match := matches.get(source)) is not None:
                 self._template = match.template.key
                 self._unique_id = source
@@ -323,6 +439,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         options.append(
             selector.SelectOptionDict(value=SOURCE_MANUAL, label=SOURCE_MANUAL)
         )
+        options.append(selector.SelectOptionDict(value=SOURCE_GAS, label=SOURCE_GAS))
         schema = vol.Schema(
             {
                 vol.Required(CONF_NAME, default="Wärmepumpe"): str,
@@ -372,7 +489,50 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         entry = self._get_reconfigure_entry()
         self._prefill = dict(entry.data[CONF_ENTITIES])
+        if entry.data.get(CONF_KIND) == KIND_GAS:
+            return await self.async_step_gas()
         return await self.async_step_entities()
+
+    async def async_step_gas(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """A gas boiler: its counters and the outdoor temperature."""
+        errors: dict[str, str] = {}
+        values: dict[str, Any] = dict(self._prefill)
+        if self.source == SOURCE_RECONFIGURE:
+            values.update(self._get_reconfigure_entry().options)
+        if user_input is not None:
+            values = {k: v for k, v in user_input.items() if v not in (None, "")}
+            if (error := validate_gas(self.hass, values)) is None:
+                return await self._async_finish_gas(values)
+            errors["base"] = error
+        return self.async_show_form(
+            step_id="gas", data_schema=gas_schema(values), errors=errors
+        )
+
+    async def _async_finish_gas(self, values: dict[str, Any]) -> ConfigFlowResult:
+        entities, conversion = split_gas(values)
+        if self.source == SOURCE_RECONFIGURE:
+            entry = self._get_reconfigure_entry()
+            options = {
+                k: v
+                for k, v in entry.options.items()
+                if k not in (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER)
+            }
+            return self.async_update_and_abort(
+                entry,
+                data={**entry.data, CONF_ENTITIES: entities},
+                options={**options, **conversion},
+            )
+        main = entities.get(GAS_TOTAL) or entities[GAS_HEATING]
+        await self.async_set_unique_id(f"{KIND_GAS}:{main}")
+        self._abort_if_unique_id_configured()
+        name = self._name if self._name != "Wärmepumpe" else "Gasheizung"
+        return self.async_create_entry(
+            title=name,
+            data={CONF_NAME: name, CONF_KIND: KIND_GAS, CONF_ENTITIES: entities},
+            options=conversion,
+        )
 
     async def _async_finish(self, entities: dict[str, str]) -> ConfigFlowResult:
         if self.source == SOURCE_RECONFIGURE:
@@ -438,6 +598,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        if self.config_entry.data.get(CONF_KIND) == KIND_GAS:
+            return await self.async_step_gas()
         if user_input is not None:
             data = {k: v for k, v in user_input.items() if k not in OPTIONAL_SECTIONS}
             for name in OPTIONAL_SECTIONS:
@@ -535,3 +697,36 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 }
             )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    async def async_step_gas(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """A gas boiler: efficiency, conversion of m³, prices, design temperature."""
+        if user_input is not None:
+            return self.async_create_entry(
+                data={k: v for k, v in user_input.items() if v not in (None, "")}
+            )
+        options = self.config_entry.options
+
+        def suggested(key: str) -> dict[str, Any]:
+            return {"suggested_value": options.get(key)}
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_BOILER_EFFICIENCY,
+                    default=options.get(CONF_BOILER_EFFICIENCY, BOILER_EFFICIENCY_HS),
+                ): _number(0.5, 1.0, 0.01, ""),
+                **{
+                    vol.Optional(key, description=suggested(key)): field
+                    for key, field in (
+                        (CONF_DESIGN_TEMP, _number(-30, 5, 0.1, "°C")),
+                        (CONF_GAS_PRICE, _number(0, 100, 0.01, "ct/kWh")),
+                        (CONF_GAS_BASE_PRICE, _number(0, 2000, 0.01, "€/a")),
+                        (CONF_CALORIFIC_VALUE, _number(8, 13, 0.001, "kWh/m³")),
+                        (CONF_Z_NUMBER, _number(0.8, 1.1, 0.0001, "")),
+                    )
+                },
+            }
+        )
+        return self.async_show_form(step_id="gas", data_schema=schema)
