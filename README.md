@@ -836,6 +836,18 @@ Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten 
 - [eedc – Energie Effizienz Data Center](https://github.com/supernova1963/eedc-homeassistant): Add-on für die Auswertung des ganzen Haushalts (PV, Speicher, E-Auto, Wärmepumpe) mit Wirtschaftlichkeit. Ergänzt sich mit Wärmewacht, das bei der Wärmepumpe tiefer geht.
 - [heatpumpmonitor.org](https://heatpumpmonitor.org/): öffentlicher Vergleich vieler Anlagen. Wärmewacht nutzt dieselben Begriffe (SEPEMO-Bilanzgrenzen, Starts), damit sich Werte einordnen lassen.
 
+## Weitere Wachten
+
+Vom selben Autor und nach demselben Muster gebaut: Einrichtung über die Oberfläche, deutsch und englisch, schonend für SD-Karten.
+
+- **Energie**
+  - [Einspeisewacht](https://github.com/einspeisewacht/integration) – was negative Strompreise bei der PV-Einspeisung kosten (§ 51 EEG)
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers
+- **Alltag**
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken
+
 ## Lizenz
 
 MIT
