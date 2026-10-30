@@ -493,15 +493,25 @@ class HeatPumpRuntime:
 
     @callback
     def spawn(
-        self, job: Coroutine[Any, Any, Any], name: str, *, cancel: bool = True
+        self,
+        job: Coroutine[Any, Any, Any],
+        name: str,
+        *,
+        cancel: bool = True,
+        background: bool = False,
     ) -> None:
         """Run `job` as a task of this runtime (see async_stop); after the
-        stop it does not run at all."""
+        stop it does not run at all. A background task (long, once) is not
+        waited for by Home Assistant's own task tracking."""
         if self._stopped:
             job.close()
             return
-        task = self.entry.async_create_background_task(
-            self.hass, job, f"waermewacht_{name}"
+        task = (
+            self.entry.async_create_background_task(
+                self.hass, job, f"waermewacht_{name}"
+            )
+            if background
+            else self.hass.async_create_task(job, f"waermewacht_{name}")
         )
         self._tasks[task] = cancel
         task.add_done_callback(lambda done: self._tasks.pop(done, None))
