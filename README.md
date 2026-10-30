@@ -31,6 +31,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Gesundheits-Check:** meldet gesunkene Effizienz bei gleichem Wetter und den Heizstab bei milder Witterung oder bei Warmwasserladungen. Reparaturhinweise, wenn ein Zähler stillsteht, eine Quelle ausfällt, die Außentemperatur hängt oder Durchfluss, Vor- und Rücklauf nicht stimmen.
 - **Kosten und Gasvergleich** (optional, mit festen Preisen): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume. Dazu Kennwerte wie Gradtage, Vorlauf bei 0 °C (die Heizkurve), Spreizung an kalten Tagen und Leistung je Heizlast.
+- **Gasheizung vor dem Umstieg:** Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage, als eigener Eintrag ([mehr](#gasheizung-vor-dem-umstieg)).
 - **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
 - **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p-Brücke oder ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus über das Gateway MX300/MX400 (Integration `buderus`) und Daikin Altherma (P1P2MQTT). Andere Wärmepumpen ordnest du von Hand zu.
 - **Schont SD-Karten:** schreibt nur, wenn sich etwas geändert hat, und dann höchstens alle 10 Minuten. Dazu am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
@@ -218,6 +219,47 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 **Rückblick neu berechnen** (Schaltfläche, Konfiguration) rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln: nach einem neu eingetragenen Zähler oder wenn ein Update die Regeln des Rückblicks verbessert hat. Was Wärmewacht seit der Einrichtung gebucht hat, bleibt. Die Zeit zwischen Einrichtung und Nachtragen eines Zählers fehlt weiterhin, und die nachgetragene Statistik der eigenen Energie-Sensoren vor der Einrichtung bleibt, wie sie war. Nicht bei Quellen mit Vortageswerten (MELCloud, F1p-Brücke): Deren Statistik taugt nicht für den Rückblick.
 
 Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
+
+## Gasheizung vor dem Umstieg
+
+Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem die **Heizlast**: Wie viel Leistung braucht das Haus am kältesten Tag? Wärmewacht rechnet sie aus dem Gasverbrauch, mit derselben [Energiesignatur](#kennlinie-und-heizlast) wie bei einer Wärmepumpe. Dazu kommen Heizgrenze, Wärme je Gradtag und der Warmwasseranteil.
+
+**Einrichtung:** *Integration hinzufügen → Wärmewacht*, als Quelle **Gasheizung (vor dem Umstieg)**. Dann:
+
+| Feld | Bedeutung |
+| --- | --- |
+| Gas gesamt | Ein Zähler für Heizen und Warmwasser: Gaszähler (Impuls, AI-on-the-edge) oder der Zähler der Therme, in kWh oder m³ |
+| Gas nur Heizen | statt „Gas gesamt“, wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare) |
+| Gas Warmwasser | optional, wenn Warmwasser getrennt gezählt wird |
+| Außentemperatur | Pflicht, mit Langzeitstatistik; eine nahe Wetterstation genügt |
+| Brennwert, Zustandszahl | nur für Zähler in m³, aus der Gasrechnung (kWh = m³ × Brennwert × Zustandszahl) |
+
+Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_increasing`). Wärmewacht liest nur sie, und zwar die **letzten 365 Tage**: Reicht die Statistik deines Gaszählers schon so weit zurück (etwa aus dem Energie-Dashboard), gibt es die Ergebnisse 2 Minuten nach der Einrichtung. Danach rechnet Wärmewacht täglich um 3 Uhr neu. Es hört keine Zustände ab und speichert nichts.
+
+**Wärme aus Gas:** Gas in kWh auf den Brennwert (wie auf der Rechnung) mal **Nutzungsgrad 0,87**, dem Feldwert von Brennwertkesseln (Jagnow/Wolff, DBU 2004). Ältere Kessel liegen darunter; stell den Wert in den Einstellungen um. Die Heizlast ändert sich im selben Verhältnis.
+
+**Warmwasser** zählt nicht zur Heizlast. Wärmewacht trennt es so:
+
+- mit einem eigenen Warmwasser-Zähler: aus diesem (von „Gas gesamt“ abgezogen);
+- mit „Gas gesamt“ ohne Warmwasser-Zähler aus dem **Sommersockel**: Der Median des Tagesverbrauchs an Tagen mit mindestens 15 °C Tagesmittel (Heizgrenze nach VDI 3807) gilt als Warmwasser und geht von jedem Tag ab. Dafür braucht es mindestens 14 solche Tage in den 365 Tagen. Fehlen sie (Zähler erst seit dem Herbst), zieht Wärmewacht nichts ab, und der Warmwasseranteil bleibt unbekannt (`no_summer_days`). Die normgerechte Heizlast stimmt trotzdem, weil sie nur aus der Steigung kommt; die Heizgrenze liegt dann zu hoch.
+
+| Entität | Einheit | Bedeutung |
+| --- | --- | --- |
+| Heizlast je Kelvin | W/K | Steigung der Energiesignatur. Attribute wie bei der Wärmepumpe, dazu `boiler_efficiency` und `dhw_method` |
+| Heizlast bei Normaußentemperatur | kW | normgerecht, nur mit der Einstellung Normaußentemperatur |
+| Heizgrenze | °C | wo die Gerade 0 erreicht |
+| Wärme je Gradtag | kWh/K·d | Wärme fürs Heizen je Gradtag G20/15, über die Heiztage |
+| Warmwasseranteil | % | Anteil des Gases für Warmwasser. Attribute `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
+| Gas 365 Tage | kWh | Gas der letzten 365 Tage. Attribute `days` (Tage mit Daten), `complete`, `heat_kwh` (Wärme nach Nutzungsgrad) |
+| Gaskosten 365 Tage | € | nur mit Gaspreis in den Einstellungen; mit Grundpreis |
+
+Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` oder die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage.
+
+**Grenzen:**
+
+- Thermen schätzen ihren Gasverbrauch meist aus Brennerlaufzeit und Leistung, statt ihn zu messen. Ein echter Gaszähler ist genauer.
+- Ein Gasherd am selben Zähler zählt als Warmwasser (Sommersockel) oder als Heizen; trennen lässt er sich nicht.
+- Kamin, Kachelofen oder Solarthermie senken den Gasverbrauch an kalten oder sonnigen Tagen. Die Heizlast fällt dann zu niedrig aus.
 
 ## Entitäten
 
@@ -533,7 +575,7 @@ data:
 
 | Feld | Vorgabe | Bedeutung |
 | --- | --- | --- |
-| `start` | Beginn der letzten vollständigen Saison | |
+| `start` | Beginn der letzten vollständigen Saison (Gasheizung: vor 365 Tagen) | |
 | `end` | Ende der letzten vollständigen Saison; mit `start`: jetzt | |
 | `design_outdoor_temp` | Normaußentemperatur aus den Einstellungen | °C, für `measured_kw` und `standard_kw` |
 

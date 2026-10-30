@@ -279,3 +279,35 @@ async def test_gas_counter_without_statistics_is_refused(hass: HomeAssistant) ->
         result["flow_id"], {"gas_heating": GAS, "outdoor_temp": OUTDOOR}
     )
     assert result["errors"] == {"base": "gas_no_statistics"}
+
+
+async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
+    kwh = {**VOLUME, "unit_of_measurement": "kWh", "device_class": "energy"}
+    hass.states.async_set(GAS, "1234.5", kwh)
+    hass.states.async_set("sensor.gas_dhw", "321.0", kwh)
+    hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Gas",
+        data={
+            CONF_NAME: "Gas",
+            CONF_KIND: "gas",
+            CONF_ENTITIES: {"gas_total": GAS, "outdoor_temp": OUTDOOR},
+        },
+        options={CONF_GAS_PRICE: 12.0},
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["step_id"] == "gas"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"gas_heating": GAS, "gas_dhw": "sensor.gas_dhw", "outdoor_temp": OUTDOOR},
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ENTITIES] == {
+        "gas_heating": GAS,
+        "gas_dhw": "sensor.gas_dhw",
+        "outdoor_temp": OUTDOOR,
+    }
+    assert entry.options == {CONF_GAS_PRICE: 12.0}

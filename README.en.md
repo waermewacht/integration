@@ -31,6 +31,7 @@ The user interface is available in German and English and follows the language o
 - **Health check:** reports a dropped efficiency at the same weather and the backup heater on mild days or in hot water charges. Repair issues when a meter stands still, a source fails, the outdoor temperature is stuck or flow rate, flow and return do not add up.
 - **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
+- **Gas boiler before switching:** heat load, heating limit and hot water share from the gas consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
 - **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and Daikin Altherma (P1P2MQTT). Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
@@ -218,6 +219,47 @@ Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUN
 **Recalculate look-back** (button, configuration) computes the energy before the setup anew from the long-term statistics, with today's entities and rules: after adding a meter or when an update improved the rules of the look-back. What Wärmewacht booked since the setup stays. The time between the setup and adding a meter is still missing, and the imported statistics of the own energy sensors before the setup stay as they were. Not for sources with previous-day values (MELCloud, F1p bridge): their statistics do not suit a look-back.
 
 If a template learns a new signal in an update (e.g. the hot water temperature), Wärmewacht adds it at start when it belongs to the same heat pump and the entry has none. What you deliberately remove under *Reconfigure* stays removed.
+
+## Gas boiler before switching
+
+If you still heat with gas and think about a heat pump, the key figure is the **heat load**: how much power does the house need on the coldest day? Wärmewacht computes it from the gas consumption, with the same [energy signature](#performance-curve-and-heat-load) as for a heat pump. Heating limit, heat per degree day and the hot water share come with it.
+
+**Setup:** *Add integration → Wärmewacht*, source **Gas boiler (before switching)**. Then:
+
+| Field | Meaning |
+| --- | --- |
+| Gas total | One counter for heating and hot water: gas meter (pulse, AI-on-the-edge) or the boiler's counter, in kWh or m³ |
+| Gas heating only | instead of "Gas total" if the boiler counts heating and hot water apart (e.g. Viessmann ViCare) |
+| Gas hot water | optional, if hot water is counted apart |
+| Outdoor temperature | required, with long-term statistics; a nearby weather station is fine |
+| Calorific value, Z-number | only for counters in m³, from the gas bill (kWh = m³ × calorific value × Z-number) |
+
+The counters need long-term statistics (state class `total` or `total_increasing`). Wärmewacht reads only those, for the **last 365 days**: if your gas meter's statistics already reach back that far (for example from the energy dashboard), the results appear 2 minutes after the setup. After that Wärmewacht recomputes daily at 3:00. It listens to no states and stores nothing.
+
+**Heat from gas:** gas in kWh on the gross calorific value (as on the bill) times **efficiency 0.87**, the field value of condensing boilers (Jagnow/Wolff, DBU 2004). Older boilers are lower; change it in the settings. The heat load changes in proportion.
+
+**Hot water** does not count towards the heat load. Wärmewacht separates it:
+
+- with a hot water counter of its own: from that one (subtracted from "Gas total");
+- with "Gas total" and no hot water counter from the **summer base**: the median daily gas on days with a mean of at least 15 °C (heating limit of VDI 3807) counts as hot water and is taken off every day. This needs at least 14 such days in the 365. Without them (a meter recorded only since autumn) nothing is subtracted and the hot water share stays unknown (`no_summer_days`). The standard heat load is still right, because it comes from the slope alone; the heating limit is then too high.
+
+| Entity | Unit | Meaning |
+| --- | --- | --- |
+| Heat load per kelvin | W/K | Slope of the energy signature. Attributes as for the heat pump, plus `boiler_efficiency` and `dhw_method` |
+| Heat load at design temperature | kW | standard, only with the design outdoor temperature set |
+| Heating limit | °C | where the line reaches 0 |
+| Heat per degree day | kWh/K·d | heating heat per degree day G20/15, over heating days |
+| Hot water share | % | share of the gas for hot water. Attributes `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
+| Gas 365 days | kWh | gas of the last 365 days. Attributes `days` (days with data), `complete`, `heat_kwh` (heat after efficiency) |
+| Gas cost 365 days | € | only with a gas price in the settings; with base price |
+
+If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` or the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days.
+
+**Limits:**
+
+- Boilers mostly estimate their gas from burner time and power instead of measuring it. A real gas meter is more accurate.
+- A gas cooker on the same meter counts as hot water (summer base) or as heating; it cannot be separated.
+- A fireplace, tiled stove or solar thermal lowers the gas on cold or sunny days. The heat load then comes out too low.
 
 ## Entities
 
@@ -533,7 +575,7 @@ data:
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `start` | start of the last complete season | |
+| `start` | start of the last complete season (gas boiler: 365 days ago) | |
 | `end` | end of the last complete season; with `start`: now | |
 | `design_outdoor_temp` | design outdoor temperature from the settings | °C, for `measured_kw` and `standard_kw` |
 
