@@ -218,6 +218,9 @@
       },
       "aux_dhw_charges": {
         "name": "Heizstab bei Warmwasserladungen"
+      },
+      "dhw_efficiency_drop": {
+        "name": "Warmwasser-Effizienz unter Vorjahr"
       }
     },
     "button": {

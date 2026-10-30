@@ -19,6 +19,11 @@ here, never hidden.
   the electricity of normal charges (without thermal disinfection) in the
   last 30 days; on above 10 % with at least 10 charges. Disinfection may use
   the heater, normal charges should not.
+- Hot water efficiency against last year (4.9): ratio of normal charges in
+  the last 30 full days against the same 30 days a year before, both from
+  the diary (the cold water temperature follows the season); on from a drop
+  of 15 % with at least 10 charges on each side. Rolling window, no
+  hysteresis.
 - Outdoor temperature unusable (4.10 c): an hourly minimum equal to the
   maximum for 48 hours in a row (the sensor stands still), or hourly means
   outside -35 … 45 °C in more than 3 hours of the previous day.
@@ -31,9 +36,9 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from .charges import DisinfectionSplit
+from .charges import MIN_CHARGE_ELECTRICITY_KWH, DisinfectionSplit
 from .curve import OUTDOOR_MAX, OUTDOOR_MIN, DaySample
-from .energy import Kind
+from .energy import Kind, ratio
 from .model import Mode
 
 # 4.1, own assumptions (docs/GESUNDHEITSCHECK.md): the class ratio scatters by
@@ -52,6 +57,7 @@ MIN_MILD_DAYS = 3
 AUX_DHW_PERCENT = 10.0
 MIN_CHARGES = 10
 CHARGE_DAYS = 30
+DHW_DROP_PERCENT = 15.0
 # 4.10 c.
 STUCK_HOURS = 48
 MAX_IMPLAUSIBLE_HOURS = 3
@@ -59,6 +65,7 @@ MAX_IMPLAUSIBLE_HOURS = 3
 NO_OUTDOOR = "no_outdoor_temp"
 NO_AUX = "no_aux_counter"
 NO_PREVIOUS = "no_previous_season"
+NO_PREVIOUS_YEAR = "no_previous_year"
 TOO_FEW_CLASSES = "too_few_classes"
 TOO_FEW_DAYS = "too_few_days"
 TOO_LITTLE_ELECTRICITY = "too_little_electricity"
@@ -240,6 +247,82 @@ def aux_dhw_charges(
     if normal.count < MIN_CHARGES or share is None:
         return Finding(None, TOO_FEW_CHARGES, evidence)
     return Finding(share > threshold, None, evidence)
+
+
+def year_earlier(day: date) -> date:
+    """The same day a year before; 29 February becomes the 28th."""
+    try:
+        return day.replace(year=day.year - 1)
+    except ValueError:
+        return day.replace(year=day.year - 1, day=28)
+
+
+@dataclass(frozen=True)
+class DiaryCharges:
+    """Normal hot water charges of some diary days."""
+
+    count: int = 0
+    heat_kwh: float = 0.0
+    input_kwh: float = 0.0  # compressor and backup heater
+
+
+def diary_charges(
+    diary: Iterable[Mapping[str, Any]], first: date, last: date
+) -> DiaryCharges:
+    """Sum of the normal charges of the diary days first … last."""
+    count, heat, used = 0, 0.0, 0.0
+    lower, upper = first.isoformat(), last.isoformat()
+    for entry in diary:
+        if not lower <= entry.get("day", "") <= upper:
+            continue
+        if not (charges := entry.get("charges")):
+            continue
+        count += charges.get("count", 0)
+        heat += charges.get("heat_kwh", 0.0)
+        used += charges.get("input_kwh", 0.0)
+    return DiaryCharges(count, heat, used)
+
+
+def dhw_efficiency_drop(
+    diary: Iterable[Mapping[str, Any]],
+    today: date,
+    *,
+    length: int = CHARGE_DAYS,
+    threshold: float = DHW_DROP_PERCENT,
+    min_charges: int = MIN_CHARGES,
+    min_electricity: float = MIN_CHARGE_ELECTRICITY_KWH,
+) -> Finding:
+    """Ratio of normal charges in the last `length` full days against the
+    same days a year before."""
+    diary = list(diary)
+    first, last = window_days(today, length)
+    before_first, before_last = year_earlier(first), year_earlier(last)
+    now = diary_charges(diary, first, last)
+    before = diary_charges(diary, before_first, before_last)
+    current = ratio(now.heat_kwh, now.input_kwh, min_electricity)
+    previous = ratio(before.heat_kwh, before.input_kwh, min_electricity)
+    change = (
+        None
+        if current is None or previous is None
+        else 100 * (current - previous) / previous
+    )
+    evidence: dict[str, Any] = {
+        "from": first.isoformat(),
+        "to": last.isoformat(),
+        "charges": now.count,
+        "ratio": None if current is None else round(current, 2),
+        "previous_from": before_first.isoformat(),
+        "previous_to": before_last.isoformat(),
+        "previous_charges": before.count,
+        "previous_ratio": None if previous is None else round(previous, 2),
+        "change_percent": None if change is None else round(change, 1),
+        "threshold_percent": threshold,
+    }
+    if now.count < min_charges or current is None:
+        return Finding(None, TOO_FEW_CHARGES, evidence)
+    if before.count < min_charges or previous is None or change is None:
+        return Finding(None, NO_PREVIOUS_YEAR, evidence)
+    return Finding(change <= -threshold, None, evidence)
 
 
 def window_days(today: date, length: int = WINDOW_DAYS) -> tuple[date, date]:

@@ -70,6 +70,8 @@ async def test_charge_disinfection_and_backup_heater_check(
     last = entity_id(hass, entry, "sensor", "ratio_dhw_last_charge")
     disinfection = entity_id(hass, entry, "sensor", "last_disinfection")
     check = entity_id(hass, entry, "binary_sensor", "aux_dhw_charges")
+    year = entity_id(hass, entry, "binary_sensor", "dhw_efficiency_drop")
+    assert hass.states.get(year).state == "unknown"  # no diary yet
     assert hass.states.get(last).state == "unknown"
     assert hass.states.get(disinfection).state == "unknown"
 

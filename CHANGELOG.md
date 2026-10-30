@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Betriebsart aus Merkern:** Läuft der Kompressor und kein Merker (Abtauen, Warmwasser, Kühlen, Heizen) ist an, zählt der Lauf jetzt als Heizen statt als „aus“. Bisher fielen solche Läufe aus Spreizung, Vorlauf und Laufzeit je Betriebsart heraus. Betrifft Waterkotte, Daikin (P1P2MQTT), Stiebel und manuell zugeordnete Merker.
+- **Neuer Problem-Sensor „Warmwasser-Effizienz unter Vorjahr“:** vergleicht die AZ normaler Warmwasser-Ladungen der letzten 30 Tage mit denselben 30 Tagen des Vorjahres und meldet einen Rückgang ab 15 % (z. B. höhere Speichertemperatur, verkalkter Wärmetauscher). Grundlage ist das Tagebuch, das die Ladungen seit 0.1.0b8 festhält; der Sensor bleibt deshalb bis etwa Ende Oktober 2027 unbekannt (`no_previous_year`). Braucht Ladungen und die Warmwasser-Temperatur.
 - **Waterkotte:** Die Vorlage nimmt die Heizfreigabe (`status_heating`) nicht mehr als Merker „Heizen“. Sie steht auch bei stehendem Kompressor auf „an“; Heizen ergibt sich jetzt aus dem Lauf ohne anderen Merker.
 
 ## 0.1.6 – 2026-10-29

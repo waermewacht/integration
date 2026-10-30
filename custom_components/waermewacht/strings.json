@@ -218,6 +218,9 @@
       },
       "aux_dhw_charges": {
         "name": "Backup heater in hot water charges"
+      },
+      "dhw_efficiency_drop": {
+        "name": "Hot water efficiency below last year"
       }
     },
     "button": {

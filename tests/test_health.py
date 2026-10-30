@@ -10,13 +10,17 @@ from custom_components.waermewacht.curve import DaySample
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.health import (
     NO_PREVIOUS,
+    NO_PREVIOUS_YEAR,
+    TOO_FEW_CHARGES,
     TOO_FEW_CLASSES,
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
     aux_mild_weather,
+    dhw_efficiency_drop,
     efficiency_drop,
     outdoor_problem,
     window_days,
+    year_earlier,
 )
 from custom_components.waermewacht.model import Mode
 
@@ -189,3 +193,79 @@ def test_outdoor_implausible_yesterday() -> None:
     for h in day_hours[13:14]:
         stats[h] = (6.0, 5.0, 7.0)
     assert outdoor_problem(stats, day_hours) is None  # 3 hours are tolerated
+
+
+def charge_days(first: date, days: int, ratio: float, per_day: int = 1) -> list[dict]:
+    """Diary days with `per_day` normal charges of 3 kWh heat each."""
+    return [
+        {
+            "day": (first + timedelta(days=i)).isoformat(),
+            "charges": {
+                "count": per_day,
+                "heat_kwh": 3.0 * per_day,
+                "input_kwh": 3.0 * per_day / ratio,
+                "disinfections": 0,
+            },
+        }
+        for i in range(days)
+    ]
+
+
+TODAY = date(2027, 11, 1)  # window 2.10. - 31.10.2027
+
+
+def test_dhw_ratio_against_the_same_days_last_year() -> None:
+    diary = charge_days(date(2026, 10, 2), 30, 3.0) + charge_days(
+        date(2027, 10, 2), 30, 2.4
+    )
+    result = dhw_efficiency_drop(diary, TODAY)
+    assert result.problem is True
+    assert result.evidence["ratio"] == 2.4
+    assert result.evidence["previous_ratio"] == 3.0
+    assert result.evidence["change_percent"] == -20.0
+    assert result.evidence["charges"] == 30
+    assert result.evidence["previous_from"] == "2026-10-02"
+    assert result.evidence["previous_to"] == "2026-10-31"
+
+
+def test_dhw_small_drop_is_no_problem() -> None:
+    diary = charge_days(date(2026, 10, 2), 30, 3.0) + charge_days(
+        date(2027, 10, 2), 30, 2.7
+    )
+    assert dhw_efficiency_drop(diary, TODAY).problem is False
+
+
+def test_dhw_days_outside_the_windows_do_not_count() -> None:
+    """A bad September last year and a better day today change nothing."""
+    diary = (
+        charge_days(date(2026, 9, 1), 31, 1.0)
+        + charge_days(date(2026, 10, 2), 30, 3.0)
+        + charge_days(date(2027, 10, 2), 30, 3.0)
+        + charge_days(TODAY, 1, 9.0)
+    )
+    result = dhw_efficiency_drop(diary, TODAY)
+    assert result.problem is False
+    assert result.evidence["change_percent"] == 0.0
+
+
+def test_dhw_needs_ten_charges_on_each_side() -> None:
+    only_now = charge_days(date(2027, 10, 2), 30, 2.0)
+    result = dhw_efficiency_drop(only_now, TODAY)
+    assert result.problem is None
+    assert result.reason == NO_PREVIOUS_YEAR
+    assert result.evidence["previous_ratio"] is None
+
+    few_now = charge_days(date(2026, 10, 2), 30, 3.0) + charge_days(
+        date(2027, 10, 22), 9, 2.0
+    )
+    result = dhw_efficiency_drop(few_now, TODAY)
+    assert (result.problem, result.reason) == (None, TOO_FEW_CHARGES)
+
+    # Days without charges (no hot water counter, late source) are skipped.
+    empty = [{"day": "2027-10-10", "charges": None}]
+    assert dhw_efficiency_drop(empty, TODAY).reason == TOO_FEW_CHARGES
+
+
+def test_year_earlier_leap_day() -> None:
+    assert year_earlier(date(2028, 2, 29)) == date(2027, 2, 28)
+    assert year_earlier(date(2027, 3, 1)) == date(2026, 3, 1)

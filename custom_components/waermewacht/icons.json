@@ -12,6 +12,9 @@
       },
       "aux_dhw_charges": {
         "default": "mdi:water-boiler-alert"
+      },
+      "dhw_efficiency_drop": {
+        "default": "mdi:water-thermometer-outline"
       }
     },
     "button": {

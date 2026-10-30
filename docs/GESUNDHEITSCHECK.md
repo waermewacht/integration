@@ -1,6 +1,6 @@
 # Wärmewacht – Gesundheits-Check
 
-Stand: 2026-10-28. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 ohne Vorjahresvergleich (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Für 0.1.1 (noch unveröffentlicht): 4.5 als „Vorlauf bei 0 °C“ (aus der Langzeitstatistik statt dem Tagebuch, Stunden mit Heizwärme ohne Warmwasser; 0 °C statt −3 °C, weil dort meist ohne Hochrechnung gemessen), 4.6 als „Starts Saison“ mit Starts je Tag, 4.10 d (`flow_return_swapped`, Urteil um Mitternacht, gespeichert), dazu 4.3 (nur Attribute), 4.4, 4.7, 4.8 und 4.10 e (Anfang von Abschnitt 4). Der Rest ist Entwurf; die Abschnitte 4 bis 10 beschreiben den Entwurf, wo nicht anders vermerkt. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
+Stand: 2026-10-28. Umgesetzt seit 0.1.0b7: 4.1, 4.2, 4.10 a–c und das Tagesbuch (4.11), dazu die Betriebsart aus mehreren Entitäten. Seit 0.1.0b8: 4.9 (Vorjahresvergleich seit 2026-10-30, unveröffentlicht) (Ladungen, Heizstab bei normalen Ladungen, letzte Desinfektion). Für 0.1.1 (noch unveröffentlicht): 4.5 als „Vorlauf bei 0 °C“ (aus der Langzeitstatistik statt dem Tagebuch, Stunden mit Heizwärme ohne Warmwasser; 0 °C statt −3 °C, weil dort meist ohne Hochrechnung gemessen), 4.6 als „Starts Saison“ mit Starts je Tag, 4.10 d (`flow_return_swapped`, Urteil um Mitternacht, gespeichert), dazu 4.3 (nur Attribute), 4.4, 4.7, 4.8 und 4.10 e (Anfang von Abschnitt 4). Der Rest ist Entwurf; die Abschnitte 4 bis 10 beschreiben den Entwurf, wo nicht anders vermerkt. Ergänzt `docs/ENTWICKLUNG.md`; Fachregeln und Quellen, die dort schon stehen, werden hier nur verwiesen.
 
 Jede Schwelle hat eine Quelle oder ist als **eigene Annahme** markiert. Eigene Annahmen werden nach dem ersten Winter an echten Daten überprüft (Anlage des Inhabers, `CLAUDE.local.md`) und hier nachgetragen.
 
@@ -197,13 +197,13 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Regel (Vorschlag).**
 
-- AZ normaler Ladungen (ohne Legionellenschaltung, `charges.disinfection_split`) der letzten 30 Tage gegen denselben Kalendermonat des Vorjahres (Kaltwassertemperatur schwankt mit der Jahreszeit): Hinweis ab 15 % Rückgang, mindestens 10 Ladungen.
+- AZ normaler Ladungen (ohne Legionellenschaltung, `charges.disinfection_split`) der letzten 30 vollen Tage gegen dieselben 30 Tage des Vorjahres (Kaltwassertemperatur schwankt mit der Jahreszeit; gleitendes Fenster statt Kalendermonat, damit der Vergleich jeden Tag gilt): Hinweis ab 15 % Rückgang, mindestens 10 Ladungen je Seite.
 - Heizstab-Anteil normaler Ladungen > 10 %: Hinweis.
 - Kennwert: Tage seit der letzten Legionellenschaltung (≥ 60 °C nach DVGW W 551, schon in `charges.py`).
 
 **Quelle.** Fraunhofer ISE (WP-QS): AZ Warmwasser im Feld 2,8 (n = 18) zur Einordnung. 60 °C nach DVGW W 551 (`charges.py`). 15 % und 10 % **eigene Annahme**.
 
-**Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch, bei ganzen kWh bis 2 Stunden oder bis zur nächsten Ladung, seit 0.1.6). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Offen: der Vorjahresvergleich der AZ normaler Ladungen; er braucht ein Jahr Tagebuch (normale Ladungen je Tag stehen seit 0.1.0b8 darin).
+**Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch, bei ganzen kWh bis 2 Stunden oder bis zur nächsten Ladung, seit 0.1.6). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Vorjahresvergleich (2026-10-30, `health.dhw_efficiency_drop`): Problem-Sensor `dhw_efficiency_drop`, beide Seiten aus dem Tagebuch (normale Ladungen je Tag seit 0.1.0b8), bewertet in der Tagesanalyse; 29. Februar zählt als 28. Ohne Speichertemperatur kein Sensor (Desinfektion nicht trennbar). Greift frühestens ab Ende Oktober 2027.
 
 ### 4.10 Fühler- und Datenfehler
 
@@ -316,7 +316,8 @@ Gründe für „unbekannt“ (Attribut `reason`):
 | `too_little_electricity` | zu wenig Strom für einen sicheren Vergleich |
 | `not_analysed_yet` | noch nicht gerechnet (2 min nach dem Start, dann täglich gegen 3 Uhr) |
 | `comparison_restarted` | Vergleich neu gestartet (Schaltfläche), die neue Basis sammelt noch 28 Tage |
-| `too_few_charges` | „Heizstab bei Warmwasserladungen“: weniger als 10 normale Ladungen in 30 Tagen |
+| `too_few_charges` | „Heizstab bei Warmwasserladungen“, „Warmwasser-Effizienz unter Vorjahr“: weniger als 10 normale Ladungen in 30 Tagen |
+| `no_previous_year` | „Warmwasser-Effizienz unter Vorjahr“: weniger als 10 normale Ladungen in denselben 30 Tagen des Vorjahres |
 
 ## 8. Einstellungen
 

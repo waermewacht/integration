@@ -112,6 +112,7 @@ from .health import (
     Finding,
     aux_dhw_charges,
     aux_mild_weather,
+    dhw_efficiency_drop,
     efficiency_drop,
     outdoor_problem,
     window_days,
@@ -290,6 +291,7 @@ class HeatPumpRuntime:
             "efficiency_drop": Finding(None, NOT_ANALYSED),
             "aux_mild_weather": Finding(None, NOT_ANALYSED),
             "aux_dhw_charges": Finding(None, NOT_ANALYSED),
+            "dhw_efficiency_drop": Finding(None, NOT_ANALYSED),
         }
         self._efficiency_on = False
         self.comparison_reset_at: datetime | None = None
@@ -833,6 +835,9 @@ class HeatPumpRuntime:
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )
             self.findings["standby_rise"] = standby_rise(self.diary, today, self.tz)
+            self.findings["dhw_efficiency_drop"] = dhw_efficiency_drop(
+                self.diary, today, min_electricity=self.min_electricity
+            )
             self.defrost_week = defrost_figures(
                 self.defrosts, outdoor, now - timedelta(days=7), now
             )
