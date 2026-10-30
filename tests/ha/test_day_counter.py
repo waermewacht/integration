@@ -189,8 +189,8 @@ async def test_repair_issue_goes_after_reconfigure(hass: HomeAssistant) -> None:
     await prepared(hass)
     entry = await setup_day_counter_entry(hass)
     runtime = entry.runtime_data
-    assert runtime._day_counter_check_due(dt_util.utcnow() + timedelta(minutes=3))
-    await runtime._async_check_day_counters()
+    assert runtime._counter_check_due(dt_util.utcnow() + timedelta(minutes=3))
+    await runtime._async_check_counters()
     issue_id = f"{entry.entry_id}_day_counter"
     issue = ir.async_get(hass).async_get_issue(DOMAIN, issue_id)
     assert issue is not None
@@ -203,5 +203,50 @@ async def test_repair_issue_goes_after_reconfigure(hass: HomeAssistant) -> None:
     assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
     assert entry.runtime_data is not runtime  # reloaded
-    await entry.runtime_data._async_check_day_counters()
+    await entry.runtime_data._async_check_counters()
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+def homecom_data(heat: str) -> dict:
+    """A template with day values (Bosch HomeCom)."""
+    return entry_data(
+        template="bosch_homecom",
+        entities={"heat_heating": heat, "elec_heating": HEAT_HEATING},
+    )
+
+
+async def test_lifetime_counter_in_day_values_gives_a_repair_issue(
+    hass: HomeAssistant,
+) -> None:
+    await prepared(hass)
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=homecom_data(HEAT_TOTAL))
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await entry.runtime_data._async_check_counters()
+    registry = ir.async_get(hass)
+    issue = registry.async_get_issue(DOMAIN, f"{entry.entry_id}_lifetime_counter")
+    assert issue is not None
+    # The day counter in the electricity place is right for day values.
+    assert issue.translation_placeholders["entities"] == HEAT_TOTAL
+    assert registry.async_get_issue(DOMAIN, f"{entry.entry_id}_day_counter") is None
+
+
+async def test_lifetime_counter_warning_on_reconfigure(hass: HomeAssistant) -> None:
+    await prepared(hass)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        unique_id="bosch_homecom:k40",
+        data=homecom_data(HEAT_HEATING),
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    mapping = {
+        **EMPTY_SECTIONS,
+        "heating": {"heat_heating": HEAT_TOTAL, "elec_heating": HEAT_HEATING},
+    }
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], mapping)
+    assert result["errors"] == {"base": "lifetime_counter"}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], mapping)
+    assert result["reason"] == "reconfigure_successful"

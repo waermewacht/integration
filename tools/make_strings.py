@@ -478,6 +478,12 @@ def _build(lang: int) -> dict:
                         "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
                     )
                 ),
+                "lifetime_counter": t(
+                    (
+                        "An energy meter rose on several days without starting anew: it looks like a total counter. This source delivers day values (energy today); choose those here. If it is a day counter after all, submit again unchanged.",
+                        "Ein Energiezähler ist an mehreren Tagen gestiegen, ohne neu zu beginnen: Er sieht nach einem Gesamtzähler aus. Diese Quelle liefert Tageswerte (Energie heute); hier diese wählen. Ist es doch ein Tageszähler, unverändert noch einmal absenden.",
+                    )
+                ),
                 "day_counter": t(
                     (
                         "An energy meter fell back at the same time of day on several days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here. If it is a total counter after all, submit again unchanged.",
@@ -777,6 +783,20 @@ def _build(lang: int) -> dict:
                     (
                         "The flow rate of {name} ({entities}) stood at 0 for {minutes} minutes while the compressor was heating. A heat pump cannot heat without flow; usually the sensor delivers no real value. Check the entity or remove it under Reconfigure. The notice disappears as soon as flow returns.",
                         "Der Durchfluss von {name} ({entities}) stand {minutes} Minuten auf 0, während der Kompressor heizte. Ohne Durchfluss kann eine Wärmepumpe nicht heizen; meist liefert der Sensor keinen echten Wert. Prüfe die Entität oder entferne sie unter Neu konfigurieren. Der Hinweis verschwindet, sobald wieder Durchfluss kommt.",
+                    )
+                ),
+            },
+            "lifetime_counter": {
+                "title": t(
+                    (
+                        "Wärmewacht: total counter instead of day values",
+                        "Wärmewacht: Gesamtzähler statt Tageswert",
+                    )
+                ),
+                "description": t(
+                    (
+                        "These energy meters of {name} rose on several of the last days without starting anew, like a total counter: {entities}. This source books day values (energy today); a total counter is counted with its whole value or not at all. Choose the matching day value under Reconfigure. If it is a day counter after all, ignore this notice.",
+                        "Diese Energiezähler von {name} sind an mehreren der letzten Tage gestiegen, ohne neu zu beginnen, wie ein Gesamtzähler: {entities}. Diese Quelle bucht Tageswerte (Energie heute); einen Gesamtzähler zählt Wärmewacht mit seinem ganzen Wert oder gar nicht. Unter Neu konfigurieren den passenden Tageswert wählen. Ist es doch ein Tageszähler, den Hinweis ignorieren.",
                     )
                 ),
             },

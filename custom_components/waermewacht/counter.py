@@ -7,7 +7,7 @@ Einspeisewacht and Tarifwacht, without splitting into quarter hours.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, time, tzinfo
+from datetime import date, datetime, time, tzinfo
 from enum import StrEnum
 from itertools import pairwise
 from typing import Any
@@ -36,6 +36,14 @@ JUMP_TOLERANCE_KWH = 1.0
 # way covers the days of the clock change.
 DAY_COUNTER_MIN_KWH = 0.1
 DAY_COUNTER_HOUR_SLACK = 1
+
+# The other way round, a lifetime counter taken for a day counter (template
+# with day values): it rises on several days and never falls to below half.
+# A day counter falls at every day change after a day with energy. Values of
+# the previous day (MELCloud) change about once a day, also upwards; for them
+# a day counts only with several rising hours (own assumptions).
+LIFETIME_MIN_DAYS = 2
+LIFETIME_RISING_HOURS_PREVIOUS_DAY = 3
 
 
 class CounterEvent(StrEnum):
@@ -70,6 +78,33 @@ def looks_like_day_counter(rows: list[tuple[datetime, float]], tz: tzinfo) -> bo
             ):
                 return True
     return False
+
+
+def looks_like_lifetime_counter(
+    rows: list[tuple[datetime, float]], tz: tzinfo, *, previous_day: bool = False
+) -> bool:
+    """True if hourly counter values (hour start, value at its end) never
+    restart and rise on at least two local days (at least 0.1 kWh a day).
+
+    With `day_tz` such a counter is booked from its whole value at a day
+    change, or never once that value is implausible for one day.
+    """
+    rising_hours: dict[date, int] = {}
+    rise: dict[date, float] = {}
+    for (_, before), (at, after) in pairwise(rows):
+        if before >= DAY_COUNTER_MIN_KWH and after < before * 0.5:
+            return False
+        if after > before:
+            day = at.astimezone(tz).date()
+            rising_hours[day] = rising_hours.get(day, 0) + 1
+            rise[day] = rise.get(day, 0.0) + after - before
+    needed = LIFETIME_RISING_HOURS_PREVIOUS_DAY if previous_day else 1
+    days = [
+        day
+        for day, hours in rising_hours.items()
+        if hours >= needed and rise[day] >= DAY_COUNTER_MIN_KWH
+    ]
+    return len(days) >= LIFETIME_MIN_DAYS
 
 
 def to_kwh(value: float, unit: str | None) -> float:

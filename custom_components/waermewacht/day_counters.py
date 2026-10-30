@@ -1,4 +1,6 @@
-"""Find day counters among the energy entities, from the long-term statistics.
+"""Find counters of the wrong kind among the energy entities, from the
+long-term statistics: day counters where lifetime counters are booked, and
+lifetime counters where a template books day values.
 
 Used by the config flow (a warning, a second submit keeps the counters) and
 once a day by the runtime (repair issue for entries made before the check).
@@ -14,7 +16,7 @@ from homeassistant.components.recorder.statistics import statistics_during_perio
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .counter import looks_like_day_counter
+from .counter import looks_like_day_counter, looks_like_lifetime_counter
 from .profiles import Template
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,18 +24,32 @@ _LOGGER = logging.getLogger(__name__)
 # Hours of statistics the test looks at.
 WINDOW = timedelta(days=4)
 
+# The wrong kind, also the key of the config flow error and the repair issue.
+DAY_COUNTER = "day_counter"
+LIFETIME_COUNTER = "lifetime_counter"
 
-def counts_by_state(template: Template | None) -> bool:
-    """True if the entry books its energy counters as lifetime counters.
 
-    Templates with day values give every counter `day_tz`; templates with
-    hourly statistics book from the statistics, which handle resets.
+def wrong_kind(template: Template | None) -> str | None:
+    """The kind of counter that would be booked wrongly in this entry.
+
+    Templates with hourly statistics book from the statistics, which take
+    either kind; own mappings (no template) book lifetime counters.
     """
-    return template is None or not (template.day_values or template.hourly_statistics)
+    if template is None:
+        return DAY_COUNTER
+    if template.hourly_statistics:
+        return None
+    return LIFETIME_COUNTER if template.day_values else DAY_COUNTER
 
 
-async def async_day_counters(hass: HomeAssistant, entity_ids: list[str]) -> list[str]:
-    """The entities whose statistics restarted like a day counter lately.
+async def async_wrong_counters(
+    hass: HomeAssistant,
+    entity_ids: list[str],
+    kind: str,
+    *,
+    previous_day: bool = False,
+) -> list[str]:
+    """The entities whose statistics of the last days look like `kind`.
 
     A failed query finds nothing: the check must never block a setup.
     """
@@ -52,19 +68,24 @@ async def async_day_counters(hass: HomeAssistant, entity_ids: list[str]) -> list
             {"state"},
         )
     except Exception:
-        _LOGGER.exception("Reading statistics to find day counters failed")
+        _LOGGER.exception("Reading statistics to check the counters failed")
         return []
     tz = dt_util.get_default_time_zone()
+
+    def matches(series: list[tuple[datetime, float]]) -> bool:
+        if kind == LIFETIME_COUNTER:
+            return looks_like_lifetime_counter(series, tz, previous_day=previous_day)
+        return looks_like_day_counter(series, tz)
+
     return [
         entity_id
         for entity_id in entity_ids
-        if looks_like_day_counter(
+        if matches(
             [
                 (_start(r["start"]), r["state"])
                 for r in rows.get(entity_id, [])
                 if r.get("state") is not None
-            ],
-            tz,
+            ]
         )
     ]
 

@@ -101,7 +101,10 @@ class GasRuntime:
     async def async_start(self) -> None:
         @callback
         def _soon(_now: datetime) -> None:
-            self.hass.async_create_task(self.async_refresh())
+            # Bound to the entry: an unload cancels a running analysis.
+            self.entry.async_create_background_task(
+                self.hass, self.async_refresh(), "waermewacht_gas_refresh"
+            )
 
         self._unsubscribe = [
             async_call_later(

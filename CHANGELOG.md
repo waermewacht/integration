@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Gesamtzähler im Platz eines Tageswerts:** Bei Quellen mit Tageswerten (Bosch HomeCom, ViCare, MELCloud und weitere) zählte Wärmewacht einen von Hand eingetauschten Gesamtzähler mit seinem ganzen Wert oder gar nicht, ohne Hinweis. Die Einrichtung warnt jetzt, wenn ein gewählter Zähler an mehreren Tagen steigt, ohne neu zu beginnen (unverändert noch einmal absenden übernimmt ihn), und bestehende Einträge bekommen einmal am Tag geprüft den Reparaturhinweis „Gesamtzähler statt Tageswert“.
+- **Sauberes Entladen:** Beim Neuladen oder Löschen eines Eintrags laufen keine Auswertungen der alten Laufzeit mehr weiter. Bisher konnte eine gerade laufende Prüfung danach noch einen Reparaturhinweis setzen, im schlimmsten Fall für einen schon gelöschten Eintrag. Speichern und das einmalige Verschieben der nachgetragenen Statistik laufen noch zu Ende, bevor der letzte Stand geschrieben wird.
+
 ## 0.2.2 – 2026-10-30
 
 - **Tageszähler werden erkannt:** Wer bei einer eigenen Zuordnung versehentlich einen Tageszähler („Energie heute“) statt des Gesamtzählers wählt, bekam zu wenig Energie gezählt, an Tagen unter 1 kWh gar keine. Erkannt wird ein solcher Zähler an der Statistik der letzten vier Tage: Er fällt an verschiedenen Tagen zur selben Uhrzeit zurück. Die Einrichtung warnt dann; wer sicher einen Gesamtzähler gewählt hat, sendet unverändert noch einmal ab. Beim Neu konfigurieren werden nur neu gewählte Zähler geprüft. Bestehende Einträge bekommen einmal am Tag geprüft einen Reparaturhinweis „Tageszähler statt Gesamtzähler“, auch ohne Außentemperatur. Vorlagen für Quellen mit Tageswerten (Bosch HomeCom, ViCare, MELCloud) sind nicht betroffen.

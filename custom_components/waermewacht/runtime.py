@@ -7,8 +7,9 @@ recorder statistics, stores their state and notifies the entities.
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from datetime import date, datetime, time, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -99,7 +100,7 @@ from .cycling import (
     prune,
     season_starts_baseline,
 )
-from .day_counters import async_day_counters, counts_by_state
+from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days
 from .energy import Kind, Totals
 from .health import (
@@ -351,7 +352,7 @@ class HeatPumpRuntime:
         self.degree_days_previous: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
-        self._day_counter_day: date | None = None  # last check for day counters
+        self._counter_check_day: date | None = None  # last check of counter kinds
         self._analysing = False
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = None
@@ -423,6 +424,9 @@ class HeatPumpRuntime:
         self._history_dirty = False
         self._saved_at: datetime | None = None
         self._listeners: list[CALLBACK_TYPE] = []
+        # Own tasks -> cancel on stop (False: a write, awaited instead).
+        self._tasks: dict[asyncio.Task, bool] = {}
+        self._stopped = False
         self._unsubscribe: list[CALLBACK_TYPE] = []
 
     # Lifecycle.
@@ -471,11 +475,36 @@ class HeatPumpRuntime:
         await self.async_save()
 
     async def async_stop(self) -> None:
+        self._stopped = True
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
+        # No task of this runtime may outlive it: an analysis would set
+        # repair issues of an unloaded (or removed) entry, a late write
+        # would follow the final save. Writes finish, the rest is cancelled.
+        tasks = list(self._tasks.items())
+        for task, cancel in tasks:
+            if cancel:
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*(task for task, _ in tasks), return_exceptions=True)
         self._resolve_pending(dt_util.utcnow(), final=True)
         await self.async_save()
+
+    @callback
+    def spawn(
+        self, job: Coroutine[Any, Any, Any], name: str, *, cancel: bool = True
+    ) -> None:
+        """Run `job` as a task of this runtime (see async_stop); after the
+        stop it does not run at all."""
+        if self._stopped:
+            job.close()
+            return
+        task = self.entry.async_create_background_task(
+            self.hass, job, f"waermewacht_{name}"
+        )
+        self._tasks[task] = cancel
+        task.add_done_callback(lambda done: self._tasks.pop(done, None))
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
@@ -877,26 +906,33 @@ class HeatPumpRuntime:
             self._analysing = False
             self._notify()
 
-    def _day_counter_check_due(self, now: datetime) -> bool:
+    def _counter_check_due(self, now: datetime) -> bool:
         """Shortly after the start, then daily (as the analysis, but also
         without an outdoor temperature)."""
         if (
-            not counts_by_state(self.template)
+            wrong_kind(self.template) is None
             or "recorder" not in self.hass.config.components
         ):
             return False
-        if self._day_counter_day is None:
+        if self._counter_check_day is None:
             return now - self._started_at >= ANALYSIS_DELAY
         local = now.astimezone(self.tz)
-        return local.date() != self._day_counter_day and local.hour >= ANALYSIS_HOUR
+        return local.date() != self._counter_check_day and local.hour >= ANALYSIS_HOUR
 
-    async def _async_check_day_counters(self) -> None:
-        """Repair issue for day counters booked as lifetime counters: they
-        book nothing on days below 1 kWh (entries made before the check)."""
-        found = await async_day_counters(
-            self.hass, [self.entities[s] for s in self._energy]
+    async def _async_check_counters(self) -> None:
+        """Repair issue for counters of the wrong kind (entries made before
+        the check): a day counter booked as lifetime counter books nothing
+        on days below 1 kWh, a lifetime counter booked as day values too
+        much or nothing."""
+        if (kind := wrong_kind(self.template)) is None:
+            return
+        found = await async_wrong_counters(
+            self.hass,
+            [self.entities[s] for s in self._energy],
+            kind,
+            previous_day=self.template.previous_day,
         )
-        self._set_issue("day_counter", found)
+        self._set_issue(kind, found)
 
     def _health_findings(
         self,
@@ -1624,7 +1660,7 @@ class HeatPumpRuntime:
             if run is not None:
                 self.runs.append(run)
                 self._history_dirty = True
-                self.hass.async_create_task(self.async_save())
+                self.spawn(self.async_save(), "save", cancel=False)
                 self._notify()
             if self._activity_needs_compressor:
                 self._apply_activity(at)
@@ -1852,12 +1888,12 @@ class HeatPumpRuntime:
             and self._mapping_ok
             and "recorder" in self.hass.config.components
         ):
-            self.hass.async_create_task(self._async_book_hours(now))
+            self.spawn(self._async_book_hours(now), "book_hours")
         if self._analysis_due(now):
-            self.hass.async_create_task(self._async_refresh_analysis(now))
-        if self._day_counter_check_due(now):
-            self._day_counter_day = now.astimezone(self.tz).date()
-            self.hass.async_create_task(self._async_check_day_counters())
+            self.spawn(self._async_refresh_analysis(now), "analysis")
+        if self._counter_check_due(now):
+            self._counter_check_day = now.astimezone(self.tz).date()
+            self.spawn(self._async_check_counters(), "counter_kinds")
         if (
             self.history_imported
             and not self.history_adjusted
@@ -1865,7 +1901,7 @@ class HeatPumpRuntime:
             and now - self._started_at >= ADJUST_DELAY
             and "recorder" in self.hass.config.components
         ):
-            self.hass.async_create_task(self._async_adjust_history())
+            self.spawn(self._async_adjust_history(), "adjust_history", cancel=False)
         day_changed = self.marks.starts.get(Period.TODAY) != period_start(
             Period.TODAY, now, self.tz, self.marks.season_month
         )
@@ -1881,12 +1917,12 @@ class HeatPumpRuntime:
             if self.has_charges:
                 self._update_charge_finding(now)
             self._dirty = self._history_dirty = True
-            self.hass.async_create_task(self.async_save())
+            self.spawn(self.async_save(), "save", cancel=False)
         elif self._dirty and (
             self._saved_at is None
             or (now - self._saved_at).total_seconds() >= SAVE_INTERVAL_SECONDS
         ):
-            self.hass.async_create_task(self.async_save())
+            self.spawn(self.async_save(), "save", cancel=False)
         self._notify()
 
     # Repair issues: a source entity is gone or reports an unusable unit.
@@ -1945,6 +1981,8 @@ class HeatPumpRuntime:
         )
 
     def _set_issue(self, key: str, entity_ids: list[str], **placeholders: str) -> None:
+        if self._stopped:
+            return  # unloaded or removed: the next runtime decides
         issue_id = f"{self.entry.entry_id}_{key}"
         text = ", ".join(entity_ids)
         # The first call after a (re)load always writes: the registry may

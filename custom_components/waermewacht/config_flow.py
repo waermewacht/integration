@@ -72,7 +72,7 @@ from .const import (
 )
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
-from .day_counters import async_day_counters, counts_by_state
+from .day_counters import async_wrong_counters, wrong_kind
 from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
 from .model import (
@@ -407,9 +407,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._prefill: dict[str, str] = {}
         # Entity -> other entities of the same counter (backfill only).
         self._history: dict[str, list[str]] = {}
-        # Mapping that drew the day counter warning: sent again unchanged,
-        # it is kept (a lifetime counter can restart at 0 now and then).
-        self._day_counter_warned: dict[str, str] | None = None
+        # Mapping that drew the warning on the kind of a counter: sent again
+        # unchanged, it is kept (the check can be wrong, e.g. a lifetime
+        # counter that restarted at 0 twice at the same hour).
+        self._counter_warned: dict[str, str] | None = None
 
     @staticmethod
     @callback
@@ -482,13 +483,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             values = flatten(user_input)
             error = validate(self.hass, values)
-            if (
-                error is None
-                and values != self._day_counter_warned
-                and await self._async_day_counters(values)
-            ):
-                self._day_counter_warned = values
-                error = "day_counter"
+            if error is None and values != self._counter_warned:
+                error = await self._async_counter_kind(values)
+                if error is not None:
+                    self._counter_warned = values
             if error is None:
                 return await self._async_finish(values)
             errors["base"] = error
@@ -496,25 +494,30 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="entities", data_schema=entities_schema(values), errors=errors
         )
 
-    async def _async_day_counters(self, entities: dict[str, str]) -> list[str]:
-        """Day counters among energy entities booked as lifetime counters;
-        on a reconfigure only among the newly chosen ones."""
+    async def _async_counter_kind(self, entities: dict[str, str]) -> str | None:
+        """Warning key if a chosen energy counter is of the wrong kind for
+        the entry (day counter for lifetime, or the other way round); on a
+        reconfigure only among the newly chosen ones."""
         before: dict[str, str] = {}
         key = self._template
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
             key = entry.data.get(CONF_TEMPLATE)
             before = entry.data.get(CONF_ENTITIES, {})
-        if not counts_by_state(TEMPLATES.get(key or "")):
-            return []
-        return await async_day_counters(
+        template = TEMPLATES.get(key or "")
+        if (kind := wrong_kind(template)) is None:
+            return None
+        found = await async_wrong_counters(
             self.hass,
             [
                 entities[s.value]
                 for s in ENERGY_SIGNALS
                 if s.value in entities and entities[s.value] != before.get(s.value)
             ],
+            kind,
+            previous_day=template is not None and template.previous_day,
         )
+        return kind if found else None
 
     def _moved_unique_id(self, entry: ConfigEntry, unique_id: str) -> str | None:
         """The new unique id, unless another entry still carries it."""

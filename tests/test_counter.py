@@ -11,6 +11,7 @@ from custom_components.waermewacht.counter import (
     Counter,
     CounterEvent,
     looks_like_day_counter,
+    looks_like_lifetime_counter,
     to_kwh,
 )
 
@@ -245,3 +246,31 @@ def test_day_counter_without_day_tz_books_nothing_after_a_small_day() -> None:
     counter.update(0.8, at(0))
     counter.update(0.1, at(60))  # next day, still below yesterday
     assert counter.update(0.7, at(120)).delta == 0.0
+
+
+def test_lifetime_counter_in_a_day_value_place() -> None:
+    """Rising on several days without a restart: a total counter."""
+    start = datetime(2026, 1, 12, 0, tzinfo=BERLIN)
+    lifetime = [5000.0 + 0.4 * h for h in range(72)]
+    assert looks_like_lifetime_counter(hourly(start, lifetime), BERLIN)
+    day = [0.4 * (h % 24 + 1) for h in range(72)]  # energy today
+    assert not looks_like_lifetime_counter(hourly(start, day), BERLIN)
+    idle = [909.0] * 72  # cooling in winter: says nothing
+    assert not looks_like_lifetime_counter(hourly(start, idle), BERLIN)
+    one_day = [5000.0] * 48 + [5000.0 + 0.5 * h for h in range(24)]
+    assert not looks_like_lifetime_counter(hourly(start, one_day), BERLIN)
+
+
+def test_previous_day_values_rising_from_day_to_day() -> None:
+    """MELCloud: yesterday's total, changed once a day, here upwards; a total
+    counter rises in many hours."""
+    start = datetime(2026, 1, 12, 0, tzinfo=BERLIN)
+    steps = [20.0] * 24 + [25.0] * 24 + [30.0] * 24 + [35.0] * 24
+    assert looks_like_lifetime_counter(hourly(start, steps), BERLIN)
+    assert not looks_like_lifetime_counter(
+        hourly(start, steps), BERLIN, previous_day=True
+    )
+    lifetime = [5000.0 + 0.4 * h for h in range(72)]
+    assert looks_like_lifetime_counter(
+        hourly(start, lifetime), BERLIN, previous_day=True
+    )
