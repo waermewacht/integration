@@ -232,6 +232,8 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 
 Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
 
+Benennst du eine Quelle um (Entity-ID in den Entitäts-Einstellungen, *Entity-IDs neu erstellen* am Gerät), zieht Wärmewacht die neue ID selbst nach und lädt den Eintrag kurz danach neu. *Neu konfigurieren* ist dafür nicht nötig; Verlauf und Statistik bleiben, weil Home Assistant sie mit umbenennt.
+
 ## Gasheizung vor dem Umstieg
 
 Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem die **Heizlast**: Wie viel Leistung braucht das Haus am kältesten Tag? Wärmewacht rechnet sie aus dem Gasverbrauch, mit derselben [Energiesignatur](#kennlinie-und-heizlast) wie bei einer Wärmepumpe. Dazu kommen Heizgrenze, Wärme je Gradtag und der Warmwasseranteil.
@@ -786,7 +788,7 @@ Im `data_generator` sind `start` und `end` schon vorbelegt. Das Tagesende heißt
 
 Wärmewacht meldet Probleme unter *Einstellungen → Reparaturen*. Das geschieht frühestens 10 Minuten nach dem Start, damit Entitäten nach einem Neustart Zeit haben.
 
-- **Entität fehlt:** Eine zugeordnete Entität gibt es nicht mehr, z. B. nach Umbenennen. Unter *Wärmewacht → ⋮ → Neu konfigurieren* wieder auswählen.
+- **Entität fehlt:** Eine zugeordnete Entität gibt es nicht mehr, z. B. weil sie gelöscht wurde. Unter *Wärmewacht → ⋮ → Neu konfigurieren* wieder auswählen. Eine umbenannte Entität zieht Wärmewacht selbst nach (seit 0.2.2).
 - **Unbrauchbare Einheit:** Ein Energiezähler meldet nicht Wh, kWh oder MWh. Seine Werte werden nicht gezählt, bis die Einheit passt. Einheit in der Quelle prüfen oder unter *Neu konfigurieren* einen anderen Zähler wählen.
 - **Zähler steht still:** Der Kompressor lief, aber ein Zähler der laufenden Betriebsart stieg nicht: 1 Stunde bei Zählern mit Nachkommastellen, 6 Stunden bei ganzen kWh oder Tageswerten. Meist liefert die Quelle keine Werte mehr, die Entität ist deaktiviert oder der falsche Zähler zugeordnet. Quelle prüfen, Entität aktivieren oder unter *Neu konfigurieren* den richtigen Zähler wählen.
 - **Quelle nicht erreichbar:** Eine zugeordnete Entität ist seit mehr als 60 Minuten `unavailable`. Quelle prüfen (EMS-ESP, MQTT, Cloud).

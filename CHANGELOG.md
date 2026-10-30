@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Umbenannte Quellen werden nachgezogen:** Ändert sich die Entity-ID einer Quelle (Entitäts-Einstellungen, „Entity-IDs neu erstellen“ am Gerät), übernimmt Wärmewacht die neue ID selbst und lädt den Eintrag einmal neu, auch wenn viele Quellen kurz nacheinander umbenannt werden. Bisher fehlten die Quellen danach („Entität fehlt“), bis man neu konfiguriert hat. Die Urteile zu Vorlauf/Rücklauf und Betriebsart sowie die Saison-Basis der Starts bleiben dabei erhalten. Eine gelöschte Entität bleibt ein Fall für „Neu konfigurieren“.
 - **README:** Inhaltsverzeichnis oben (deutsch und englisch) und ein Screenshot zur Gasheizung vor dem Umstieg, aufgenommen als Gegenprobe mit den Wärmezählern einer Wärmepumpe.
 
 ## 0.2.1 – 2026-10-30

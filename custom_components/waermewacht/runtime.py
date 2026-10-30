@@ -480,6 +480,23 @@ class HeatPumpRuntime:
         await self._history_store.async_remove()
 
     @callback
+    def follow_rename(self, old: str, new: str) -> None:
+        """A source entity was renamed; the entry reloads shortly.
+
+        Until then statistics are read under the new id, and the books
+        written on unload name it: verdicts and the seen starts are kept
+        instead of being dropped as made for another entity.
+        """
+        for mapping in (self.entities, self._statistic_ids):
+            for signal, entity_id in mapping.items():
+                if entity_id == old:
+                    mapping[signal] = new
+        self._signal_of = {v: k for k, v in self.entities.items()}
+        if self._starts_seen and self._starts_seen[0] == old:
+            self._starts_seen = (new, *self._starts_seen[1:])
+        self._dirty = True
+
+    @callback
     def add_listener(self, listener: CALLBACK_TYPE) -> Callable[[], None]:
         self._listeners.append(listener)
         return lambda: self._listeners.remove(listener)

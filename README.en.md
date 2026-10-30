@@ -232,6 +232,8 @@ Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUN
 
 If a template learns a new signal in an update (e.g. the hot water temperature), Wärmewacht adds it at start when it belongs to the same heat pump and the entry has none. What you deliberately remove under *Reconfigure* stays removed.
 
+If you rename a source (entity ID in the entity settings, *Recreate entity IDs* on the device), Wärmewacht follows the new ID itself and reloads the entry shortly after. No need to *Reconfigure*; history and statistics stay, because Home Assistant renames them as well.
+
 ## Gas boiler before switching
 
 If you still heat with gas and think about a heat pump, the key figure is the **heat load**: how much power does the house need on the coldest day? Wärmewacht computes it from the gas consumption, with the same [energy signature](#performance-curve-and-heat-load) as for a heat pump. Heating limit, heat per degree day and the hot water share come with it.
@@ -786,7 +788,7 @@ series:
 
 Wärmewacht reports problems under *Settings → Repairs*. This happens at the earliest 10 minutes after start, so entities have time after a restart.
 
-- **Entity missing:** A mapped entity no longer exists, e.g. after renaming. Choose it again under *Wärmewacht → ⋮ → Reconfigure*.
+- **Entity missing:** A mapped entity no longer exists, e.g. because it was deleted. Choose it again under *Wärmewacht → ⋮ → Reconfigure*. Wärmewacht follows a renamed entity itself (since 0.2.2).
 - **Unusable unit:** An energy meter does not report Wh, kWh or MWh. Its values are not counted until the unit fits. Check the unit at the source or choose another meter under *Reconfigure*.
 - **Meter stands still:** The compressor ran, but a meter of the current mode did not rise: 1 hour for meters with decimals, 6 hours for whole kWh or daily values. Usually the source no longer sends values, the entity is disabled or the wrong meter is mapped. Check the source, enable the entity or choose the right meter under *Reconfigure*.
 - **Source unreachable:** A mapped entity has been `unavailable` for more than 60 minutes. Check the source (EMS-ESP, MQTT, cloud).
