@@ -295,6 +295,7 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
             CONF_ENTITIES: {"gas_total": GAS, "outdoor_temp": OUTDOOR},
         },
         options={CONF_GAS_PRICE: 12.0},
+        unique_id=f"gas:{GAS}",
     )
     entry.add_to_hass(hass)
     result = await entry.start_reconfigure_flow(hass)
@@ -311,3 +312,12 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
         "outdoor_temp": OUTDOOR,
     }
     assert entry.options == {CONF_GAS_PRICE: 12.0}
+    # The heating counter is the main counter now (same entity here).
+    assert entry.unique_id == f"gas:{GAS}"
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"gas_heating": "sensor.gas_dhw", "outdoor_temp": OUTDOOR}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.unique_id == "gas:sensor.gas_dhw"

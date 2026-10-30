@@ -7,7 +7,12 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.waermewacht.counter import Counter, CounterEvent, to_kwh
+from custom_components.waermewacht.counter import (
+    Counter,
+    CounterEvent,
+    looks_like_day_counter,
+    to_kwh,
+)
 
 T0 = datetime(2026, 1, 15, 6, 0, tzinfo=UTC)
 
@@ -196,3 +201,24 @@ def test_previous_day_value_arrives_just_after_midnight() -> None:
     assert plain.update(51.08, datetime(2026, 1, 15, 0, 21, tzinfo=BERLIN)).event is (
         CounterEvent.JUMP
     )
+
+
+def test_day_counter_is_told_from_its_hourly_values() -> None:
+    """Energy today restarts every midnight; a lifetime counter only dips."""
+    day = [0.2 * h for h in range(1, 25)]
+    assert looks_like_day_counter(day * 3)
+    assert not looks_like_day_counter(day)  # one day: no restart yet
+    # Lifetime heat counter with defrost dips and one replacement.
+    lifetime = [100.0 + h for h in range(48)]
+    lifetime[10] -= 0.3
+    assert not looks_like_day_counter([*lifetime, 0.5, 1.5, 2.5])
+    # Small days (below 0.1 kWh) say nothing.
+    assert not looks_like_day_counter([0.05, 0.0, 0.05, 0.0, 0.05, 0.0])
+
+
+def test_day_counter_without_day_tz_books_nothing_after_a_small_day() -> None:
+    """Why the setup refuses such counters: the step back is a dip."""
+    counter = Counter()
+    counter.update(0.8, at(0))
+    counter.update(0.1, at(60))  # next day, still below yesterday
+    assert counter.update(0.7, at(120)).delta == 0.0

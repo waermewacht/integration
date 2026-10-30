@@ -72,6 +72,7 @@ from .const import (
 )
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
+from .day_counters import async_day_counters, counts_by_state
 from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
 from .model import (
@@ -477,12 +478,36 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         values = self._prefill
         if user_input is not None:
             values = flatten(user_input)
-            if (error := validate(self.hass, values)) is None:
+            error = validate(self.hass, values)
+            if error is None and await self._async_day_counters(values):
+                error = "day_counter"
+            if error is None:
                 return await self._async_finish(values)
             errors["base"] = error
         return self.async_show_form(
             step_id="entities", data_schema=entities_schema(values), errors=errors
         )
+
+    async def _async_day_counters(self, entities: dict[str, str]) -> list[str]:
+        """Day counters among energy entities booked as lifetime counters."""
+        key = (
+            self._get_reconfigure_entry().data.get(CONF_TEMPLATE)
+            if self.source == SOURCE_RECONFIGURE
+            else self._template
+        )
+        if not counts_by_state(TEMPLATES.get(key or "")):
+            return []
+        return await async_day_counters(
+            self.hass,
+            [entities[s.value] for s in ENERGY_SIGNALS if s.value in entities],
+        )
+
+    def _moved_unique_id(self, entry: ConfigEntry, unique_id: str) -> str | None:
+        """The new unique id, unless another entry still carries it."""
+        holder = self.hass.config_entries.async_entry_for_domain_unique_id(
+            DOMAIN, unique_id
+        )
+        return unique_id if holder in (None, entry) else entry.unique_id
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -519,13 +544,14 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 for k, v in entry.options.items()
                 if k not in (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER)
             }
+            # The main counter identifies the boiler, also after a change.
             return self.async_update_and_abort(
                 entry,
+                unique_id=self._moved_unique_id(entry, _gas_unique_id(entities)),
                 data={**entry.data, CONF_ENTITIES: entities},
                 options={**options, **conversion},
             )
-        main = entities.get(GAS_TOTAL) or entities[GAS_HEATING]
-        await self.async_set_unique_id(f"{KIND_GAS}:{main}")
+        await self.async_set_unique_id(_gas_unique_id(entities))
         self._abort_if_unique_id_configured()
         name = self._name if self._name != "Wärmepumpe" else "Gasheizung"
         return self.async_create_entry(
@@ -537,25 +563,24 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_finish(self, entities: dict[str, str]) -> ConfigFlowResult:
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
+            # An own mapping is identified by its first counter, a found
+            # heat pump by its source, which a reconfigure does not change.
+            unique_id = (
+                entry.unique_id
+                if entry.data.get(CONF_TEMPLATE)
+                else self._moved_unique_id(entry, _manual_unique_id(entities))
+            )
             # The update listener reloads the entry.
             return self.async_update_and_abort(
                 entry,
+                unique_id=unique_id,
                 data={
                     **entry.data,
                     CONF_ENTITIES: entities,
                     CONF_KNOWN_SIGNALS: _known(entry.data.get(CONF_TEMPLATE)),
                 },
             )
-        unique_id = self._unique_id or next(
-            entities[s.value]
-            for s in (
-                *HEAT_SIGNALS.values(),
-                *ELEC_SIGNALS.values(),
-                Signal.ELEC_TOTAL,
-                Signal.COMPRESSOR,
-            )
-            if s.value in entities
-        )
+        unique_id = self._unique_id or _manual_unique_id(entities)
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(
@@ -572,6 +597,25 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_KNOWN_SIGNALS: _known(self._template),
             },
         )
+
+
+def _manual_unique_id(entities: dict[str, str]) -> str:
+    """An own mapping is identified by its first counter (or the compressor)."""
+    return next(
+        entities[s.value]
+        for s in (
+            *HEAT_SIGNALS.values(),
+            *ELEC_SIGNALS.values(),
+            Signal.ELEC_TOTAL,
+            Signal.COMPRESSOR,
+        )
+        if s.value in entities
+    )
+
+
+def _gas_unique_id(entities: dict[str, str]) -> str:
+    main = entities.get(GAS_TOTAL) or entities[GAS_HEATING]
+    return f"{KIND_GAS}:{main}"
 
 
 def _known(template_key: str | None) -> list[str]:

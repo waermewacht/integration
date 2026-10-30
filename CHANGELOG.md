@@ -2,6 +2,9 @@
 
 ## Unveröffentlicht
 
+- **Tageszähler werden erkannt:** Wer bei einer eigenen Zuordnung versehentlich einen Tageszähler („Energie heute“) statt des Gesamtzählers wählt, bekam zu wenig Energie gezählt, an Tagen unter 1 kWh gar keine. Die Einrichtung lehnt solche Zähler jetzt ab (erkannt an der Statistik der letzten vier Tage), und bestehende Einträge bekommen einen Reparaturhinweis „Tageszähler statt Gesamtzähler“. Vorlagen für Quellen mit Tageswerten (Bosch HomeCom, ViCare, MELCloud) sind nicht betroffen.
+- **Neu konfigurieren mit anderem Zähler:** Bei einer eigenen Zuordnung und bei der Gasheizung zieht die Kennung des Eintrags jetzt mit, wenn man den ersten Zähler wechselt. Bisher prüfte Wärmewacht beim Anlegen einer weiteren Wärmepumpe noch gegen den alten Zähler.
+- **HACS ohne Länderangabe:** Wärmewacht hat keinen Landesbezug und erscheint jetzt auch bei HACS-Nutzern, die einen anderen Länderfilter als Deutschland gesetzt haben.
 - **Umbenannte Quellen werden nachgezogen:** Ändert sich die Entity-ID einer Quelle (Entitäts-Einstellungen, „Entity-IDs neu erstellen“ am Gerät), übernimmt Wärmewacht die neue ID selbst und lädt den Eintrag einmal neu, auch wenn viele Quellen kurz nacheinander umbenannt werden. Bisher fehlten die Quellen danach („Entität fehlt“), bis man neu konfiguriert hat. Die Urteile zu Vorlauf/Rücklauf und Betriebsart sowie die Saison-Basis der Starts bleiben dabei erhalten. Eine gelöschte Entität bleibt ein Fall für „Neu konfigurieren“.
 - **README:** Inhaltsverzeichnis oben (deutsch und englisch) und ein Screenshot zur Gasheizung vor dem Umstieg, aufgenommen als Gegenprobe mit den Wärmezählern einer Wärmepumpe.
 

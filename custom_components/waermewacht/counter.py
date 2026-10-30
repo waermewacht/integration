@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, time, tzinfo
 from enum import StrEnum
+from itertools import pairwise
 from typing import Any
 
 # Factor to kWh for the units an energy sensor may report.
@@ -28,6 +29,12 @@ RESET_MIN_KWH = 1.0
 POWER_MARGIN = 1.5
 JUMP_TOLERANCE_KWH = 1.0
 
+# A day counter (energy "today") taken for a lifetime counter: it falls by half
+# or more at least twice in a few days (own assumption, as in Speicherwacht).
+# A lifetime counter falls only when it is replaced; its dips are small.
+DAY_COUNTER_MIN_KWH = 0.1
+DAY_COUNTER_DROPS = 2
+
 
 class CounterEvent(StrEnum):
     """What a reading did besides delivering energy."""
@@ -36,6 +43,21 @@ class CounterEvent(StrEnum):
     DIP = "dip"  # step back (noise, defrost): baseline held, nothing booked
     RESET = "reset"  # counter started anew: new baseline
     JUMP = "jump"  # implausibly large increase: new baseline, nothing booked
+
+
+def looks_like_day_counter(values: list[float]) -> bool:
+    """True if hourly counter values restart like a day counter.
+
+    Without `day_tz` such a counter books nothing after its first day once a
+    day stays below 1 kWh (the step back is a dip) and loses the first hour
+    of every other day (the step back is a reset).
+    """
+    drops = sum(
+        1
+        for before, after in pairwise(values)
+        if before >= DAY_COUNTER_MIN_KWH and after < before * 0.5
+    )
+    return drops >= DAY_COUNTER_DROPS
 
 
 def to_kwh(value: float, unit: str | None) -> float:

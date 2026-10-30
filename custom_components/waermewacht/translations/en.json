@@ -135,6 +135,7 @@
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
       "aux_twice": "Backup heater either per mode or as total, not both.",
       "elec_twice": "Compressor electricity either per mode or as total, not both.",
+      "day_counter": "An energy meter fell back several times in the last days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here.",
       "gas_none": "Choose a gas counter: total, or heating.",
       "gas_twice": "Either \"Gas total\" or \"Gas heating only\", not both.",
       "gas_unit": "A gas counter has no unit Wh, kWh, MWh or m³.",
@@ -507,6 +508,10 @@
     "flow_zero": {
       "title": "Wärmewacht: flow rate 0 while heating",
       "description": "The flow rate of {name} ({entities}) stood at 0 for {minutes} minutes while the compressor was heating. A heat pump cannot heat without flow; usually the sensor delivers no real value. Check the entity or remove it under Reconfigure. The notice disappears as soon as flow returns."
+    },
+    "day_counter": {
+      "title": "Wärmewacht: day counter instead of total",
+      "description": "These energy meters of {name} fell back several times in the last days, like a day counter (energy today): {entities}. Wärmewacht counts them as lifetime counters and misses energy, on days below 1 kWh all of it. Choose the matching total counter under Reconfigure."
     },
     "energy_stale": {
       "title": "Wärmewacht: no new energy values",

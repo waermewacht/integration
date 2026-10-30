@@ -135,6 +135,7 @@
       "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
       "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides.",
       "elec_twice": "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
+      "day_counter": "Ein Energiezähler ist in den letzten Tagen mehrmals zurückgefallen: Er sieht nach einem Tageszähler aus (Energie heute). Hier Lebenszeit-Zähler (Gesamtenergie) wählen.",
       "gas_none": "Wähle einen Gaszähler: gesamt oder nur Heizen.",
       "gas_twice": "Entweder „Gas gesamt“ oder „Gas nur Heizen“, nicht beides.",
       "gas_unit": "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
@@ -507,6 +508,10 @@
     "flow_zero": {
       "title": "Wärmewacht: Durchfluss 0 beim Heizen",
       "description": "Der Durchfluss von {name} ({entities}) stand {minutes} Minuten auf 0, während der Kompressor heizte. Ohne Durchfluss kann eine Wärmepumpe nicht heizen; meist liefert der Sensor keinen echten Wert. Prüfe die Entität oder entferne sie unter Neu konfigurieren. Der Hinweis verschwindet, sobald wieder Durchfluss kommt."
+    },
+    "day_counter": {
+      "title": "Wärmewacht: Tageszähler statt Gesamtzähler",
+      "description": "Diese Energiezähler von {name} sind in den letzten Tagen mehrmals zurückgefallen, wie ein Tageszähler (Energie heute): {entities}. Wärmewacht zählt sie als Lebenszeit-Zähler und verpasst Energie, an Tagen unter 1 kWh die ganze. Unter Neu konfigurieren den passenden Gesamtzähler wählen."
     },
     "energy_stale": {
       "title": "Wärmewacht: keine neuen Energiewerte",

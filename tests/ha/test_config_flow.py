@@ -276,3 +276,60 @@ async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:
     assert entry.data[CONF_ENTITIES]["dhw_temp"] == found.entity_id
     # Known from now on: removing it by hand keeps it removed.
     assert "dhw_temp" in entry.data["template_signals"]
+
+
+async def test_reconfigure_own_mapping_moves_the_unique_id(hass: HomeAssistant) -> None:
+    """An own mapping is identified by its first counter, also after a change;
+    not when another entry already carries the new one."""
+    for entity_id in ("sensor.heat", "sensor.heat_new", "sensor.elec"):
+        hass.states.async_set(entity_id, "1.0", ENERGY)
+    entities = {"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"}
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        unique_id="sensor.heat",
+        data=entry_data(**{CONF_TEMPLATE: None, CONF_ENTITIES: entities}),
+    )
+    entry.add_to_hass(hass)
+
+    async def reconfigure(heat: str) -> None:
+        result = await entry.start_reconfigure_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                **EMPTY_SECTIONS,
+                "heating": {"heat_heating": heat, "elec_heating": "sensor.elec"},
+            },
+        )
+        assert result["reason"] == "reconfigure_successful"
+
+    await reconfigure("sensor.heat_new")
+    assert entry.unique_id == "sensor.heat_new"
+    MockConfigEntry(domain=DOMAIN, unique_id="sensor.heat").add_to_hass(hass)
+    await reconfigure("sensor.heat")
+    assert entry.unique_id == "sensor.heat_new"
+
+
+async def test_reconfigure_found_heat_pump_keeps_the_unique_id(
+    hass: HomeAssistant,
+) -> None:
+    """A found heat pump is identified by its source, not by a counter."""
+    for entity_id in ("sensor.heat", "sensor.elec"):
+        hass.states.async_set(entity_id, "1.0", ENERGY)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        unique_id="ems_esp:boiler",
+        data=entry_data(),
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            **EMPTY_SECTIONS,
+            "heating": {"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"},
+        },
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.unique_id == "ems_esp:boiler"

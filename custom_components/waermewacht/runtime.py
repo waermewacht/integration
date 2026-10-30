@@ -99,6 +99,7 @@ from .cycling import (
     prune,
     season_starts_baseline,
 )
+from .day_counters import async_day_counters, counts_by_state
 from .degree_days import DegreeDays, daily_degree_days, degree_days
 from .energy import Kind, Totals
 from .health import (
@@ -788,6 +789,7 @@ class HeatPumpRuntime:
         mixed: a changed heating curve would blur both) and the heat load of
         the last complete season."""
         self._analysing = True
+        await self._async_check_day_counters()
         try:
             current, previous = self.seasons(now)
             hours, outdoor = await self.async_analysis_data(previous, now)
@@ -874,6 +876,20 @@ class HeatPumpRuntime:
             self._analysis_day = now.astimezone(self.tz).date()
             self._analysing = False
             self._notify()
+
+    async def _async_check_day_counters(self) -> None:
+        """Repair issue for day counters booked as lifetime counters: they
+        book nothing on days below 1 kWh (entries made before the check)."""
+        if not counts_by_state(self.template):
+            return
+        try:
+            found = await async_day_counters(
+                self.hass, [self.entities[s] for s in self._energy]
+            )
+        except Exception:  # the analysis goes on without the check
+            _LOGGER.exception("Checking for day counters failed")
+            return
+        self._set_issue("day_counter", found)
 
     def _health_findings(
         self,

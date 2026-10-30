@@ -478,6 +478,12 @@ def _build(lang: int) -> dict:
                         "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
                     )
                 ),
+                "day_counter": t(
+                    (
+                        "An energy meter fell back several times in the last days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here.",
+                        "Ein Energiezähler ist in den letzten Tagen mehrmals zurückgefallen: Er sieht nach einem Tageszähler aus (Energie heute). Hier Lebenszeit-Zähler (Gesamtenergie) wählen.",
+                    )
+                ),
             },
             "abort": {
                 "already_configured": t(
@@ -771,6 +777,20 @@ def _build(lang: int) -> dict:
                     (
                         "The flow rate of {name} ({entities}) stood at 0 for {minutes} minutes while the compressor was heating. A heat pump cannot heat without flow; usually the sensor delivers no real value. Check the entity or remove it under Reconfigure. The notice disappears as soon as flow returns.",
                         "Der Durchfluss von {name} ({entities}) stand {minutes} Minuten auf 0, während der Kompressor heizte. Ohne Durchfluss kann eine Wärmepumpe nicht heizen; meist liefert der Sensor keinen echten Wert. Prüfe die Entität oder entferne sie unter Neu konfigurieren. Der Hinweis verschwindet, sobald wieder Durchfluss kommt.",
+                    )
+                ),
+            },
+            "day_counter": {
+                "title": t(
+                    (
+                        "Wärmewacht: day counter instead of total",
+                        "Wärmewacht: Tageszähler statt Gesamtzähler",
+                    )
+                ),
+                "description": t(
+                    (
+                        "These energy meters of {name} fell back several times in the last days, like a day counter (energy today): {entities}. Wärmewacht counts them as lifetime counters and misses energy, on days below 1 kWh all of it. Choose the matching total counter under Reconfigure.",
+                        "Diese Energiezähler von {name} sind in den letzten Tagen mehrmals zurückgefallen, wie ein Tageszähler (Energie heute): {entities}. Wärmewacht zählt sie als Lebenszeit-Zähler und verpasst Energie, an Tagen unter 1 kWh die ganze. Unter Neu konfigurieren den passenden Gesamtzähler wählen.",
                     )
                 ),
             },

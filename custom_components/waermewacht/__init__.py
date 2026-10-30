@@ -50,6 +50,7 @@ ISSUES = (
     "source_changed",
     "flow_implausible",
     "flow_zero",
+    "day_counter",
 )
 
 type WaermewachtConfigEntry = ConfigEntry[HeatPumpRuntime]
