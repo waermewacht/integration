@@ -236,6 +236,10 @@ If a template learns a new signal in an update (e.g. the hot water temperature),
 
 If you still heat with gas and think about a heat pump, the key figure is the **heat load**: how much power does the house need on the coldest day? Wärmewacht computes it from the gas consumption, with the same [energy signature](#performance-curve-and-heat-load) as for a heat pump. Heating limit, heat per degree day and the hot water share come with it.
 
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/gasheizung.png" alt="Energy signature from the consumption with weekly points and the line, below heat load per kelvin, heat load at −12 °C, heating limit, heat per degree day, hot water share and consumption of the last 365 days" width="720">
+
+<sub>Cross-check on a real installation, German UI: the heat meters of a Bosch Compress 5800i AW (EMS-ESP) are entered as "gas" here, with efficiency 1. The gas boiler calculation arrives at 112 W/K, the heat pump itself at 107 W/K (last 365 days against the last complete season). With a real gas boiler the last tile shows the gas consumption.</sub>
+
 **Setup:** *Add integration → Wärmewacht*, source **Gas boiler (before switching)**. Then:
 
 | Field | Meaning |
@@ -265,7 +269,7 @@ The counters need long-term statistics (state class `total` or `total_increasing
 | Gas 365 days | kWh | gas of the last 365 days. Attributes `days` (days with data), `complete`, `heat_kwh` (heat after efficiency) |
 | Gas cost 365 days | € | only with a gas price in the settings; with base price |
 
-If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` or the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days.
+If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` or the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
 
 **Limits:**
 

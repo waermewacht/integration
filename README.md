@@ -236,6 +236,10 @@ Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Tempe
 
 Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem die **Heizlast**: Wie viel Leistung braucht das Haus am kältesten Tag? Wärmewacht rechnet sie aus dem Gasverbrauch, mit derselben [Energiesignatur](#kennlinie-und-heizlast) wie bei einer Wärmepumpe. Dazu kommen Heizgrenze, Wärme je Gradtag und der Warmwasseranteil.
 
+<img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/gasheizung.png" alt="Energiesignatur aus dem Verbrauch mit Wochenpunkten und Gerade, darunter Heizlast je Kelvin, Heizlast bei −12 °C, Heizgrenze, Wärme je Gradtag, Warmwasseranteil und Verbrauch der letzten 365 Tage" width="720">
+
+<sub>Gegenprobe an einer echten Anlage: Die Wärmezähler einer Bosch Compress 5800i AW (EMS-ESP) sind hier als „Gas“ eingetragen, mit Nutzungsgrad 1. Die Gasheizung-Rechnung kommt auf 112 W/K, die Wärmepumpe selbst auf 107 W/K (letzte 365 Tage gegenüber der letzten vollständigen Saison). Bei einer echten Gasheizung steht unten der Gasverbrauch.</sub>
+
 **Einrichtung:** *Integration hinzufügen → Wärmewacht*, als Quelle **Gasheizung (vor dem Umstieg)**. Dann:
 
 | Feld | Bedeutung |
@@ -265,7 +269,7 @@ Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_
 | Gas 365 Tage | kWh | Gas der letzten 365 Tage. Attribute `days` (Tage mit Daten), `complete`, `heat_kwh` (Wärme nach Nutzungsgrad) |
 | Gaskosten 365 Tage | € | nur mit Gaspreis in den Einstellungen; mit Grundpreis |
 
-Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` oder die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage.
+Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` oder die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
 
 **Grenzen:**
 

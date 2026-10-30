@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **README:** Inhaltsverzeichnis oben (deutsch und englisch) und ein Screenshot zur Gasheizung vor dem Umstieg, aufgenommen als Gegenprobe mit den Wärmezählern einer Wärmepumpe.
+
 ## 0.2.1 – 2026-10-30
 
 - **Heizlast ohne Tage mit ausgeschalteter Heizung:** Die Energiesignatur zählt nur noch Tage mit mindestens 1 kWh Heizwärme, wie die Gradtage. Bisher gingen kühle Wochen ein, in denen gar nicht geheizt wurde (Sommerbetrieb von Hand gehalten, Gasheizung im Herbst noch aus). Diese Punkte bei 0 kW machten die Gerade zu steil; an einer Anlage stieg die Heizlast dadurch um 6 %. Gilt für Wärmepumpe und Gasheizung.
