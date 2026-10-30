@@ -13,6 +13,8 @@
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
 
+**Noch mit Gas?** Wärmewacht rechnet auch die Heizlast deines Hauses aus dem Gasverbrauch, als Grundlage für die Auslegung einer Wärmepumpe: [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg).
+
 > **Orientierung, keine Fachdiagnose.** Die Werte hängen davon ab, was die Zähler deiner Wärmepumpe messen. Siehe [Bilanzgrenze und Grenzen der Aussage](#bilanzgrenze-und-grenzen-der-aussage).
 
 Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines Home Assistant.
@@ -20,6 +22,14 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/arbeitszahlen.png" alt="Dashboard mit Arbeitszahlen je Betriebsart für heute, Monat und Saison, Kosten und Takten" width="720">
 
 <sub>Echte Werte einer Bosch Compress 5800i AW (EMS-ESP) im Oktober. „Heizen+WW“ ist die Arbeitszahl mit Stillstand-Strom und liegt deshalb unter beiden Einzelwerten.</sub>
+
+## Inhalt
+
+- [Was Wärmewacht kann](#was-wärmewacht-kann) · [Was Wärmewacht anders macht](#was-wärmewacht-anders-macht-als-template-sensoren)
+- **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung) · [Einstellungen](#einstellungen) · [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg)
+- **[Entitäten](#entitäten):** [Arbeitszahlen](#arbeitszahlen) · [Energie](#energie) · [Takte](#takte) · [Warmwasser-Ladungen](#warmwasser-ladungen) · [Gesundheits-Check](#gesundheits-check) · [Kosten und Gasvergleich](#kosten-und-gasvergleich) · [Kennlinie und Heizlast](#kennlinie-und-heizlast)
+- **[Aktionen](#aktionen):** [Bericht](#bericht) · [AZ-Kennlinie](#az-kennlinie) · [Heizlast](#heizlast)
+- **Mehr:** [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
 
 ## Was Wärmewacht kann
 

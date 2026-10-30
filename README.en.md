@@ -13,6 +13,8 @@
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
 
+**Still on gas?** Wärmewacht also computes your house's heat load from the gas consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
+
 > **A guide, not an expert diagnosis.** The figures depend on what your heat pump's meters measure. See [System boundary and limits](#system-boundary-and-limits).
 
 The user interface is available in German and English and follows the language of your Home Assistant.
@@ -20,6 +22,14 @@ The user interface is available in German and English and follows the language o
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/arbeitszahlen.png" alt="Dashboard with performance factors per mode for today, month and season, costs and cycling" width="720">
 
 <sub>Real figures of a Bosch Compress 5800i AW (EMS-ESP) in October, German UI. "Heizen+WW" (heating + hot water) is the factor including standby electricity and is therefore below both single values.</sub>
+
+## Contents
+
+- [Features](#features) · [What Wärmewacht does differently](#what-wärmewacht-does-differently-from-template-sensors)
+- **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup) · [Settings](#settings) · [Gas boiler before switching](#gas-boiler-before-switching)
+- **[Entities](#entities):** [Performance factors](#performance-factors) · [Energy](#energy) · [Cycling](#cycling) · [Hot water charges](#hot-water-charges) · [Health check](#health-check) · [Costs and gas comparison](#costs-and-gas-comparison) · [Performance curve and heat load](#performance-curve-and-heat-load)
+- **[Actions](#actions):** [Report](#report) · [Performance curve](#performance-curve) · [Heat load](#heat-load)
+- **More:** [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
 
 ## Features
 
