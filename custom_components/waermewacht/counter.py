@@ -30,10 +30,12 @@ POWER_MARGIN = 1.5
 JUMP_TOLERANCE_KWH = 1.0
 
 # A day counter (energy "today") taken for a lifetime counter: it falls by half
-# or more at least twice in a few days (own assumption, as in Speicherwacht).
-# A lifetime counter falls only when it is replaced; its dips are small.
+# or more at the same local hour on different days (own assumption; the rule of
+# Speicherwacht without the hour). A lifetime counter falls when it is replaced
+# or its device restarts at 0, at any hour; its dips are small. One hour either
+# way covers the days of the clock change.
 DAY_COUNTER_MIN_KWH = 0.1
-DAY_COUNTER_DROPS = 2
+DAY_COUNTER_HOUR_SLACK = 1
 
 
 class CounterEvent(StrEnum):
@@ -45,19 +47,29 @@ class CounterEvent(StrEnum):
     JUMP = "jump"  # implausibly large increase: new baseline, nothing booked
 
 
-def looks_like_day_counter(values: list[float]) -> bool:
-    """True if hourly counter values restart like a day counter.
+def looks_like_day_counter(rows: list[tuple[datetime, float]], tz: tzinfo) -> bool:
+    """True if hourly counter values (hour start, value at its end) restart
+    like a day counter: two falls to below half at the same local hour
+    (± 1 h) on different local days.
 
     Without `day_tz` such a counter books nothing after its first day once a
     day stays below 1 kWh (the step back is a dip) and loses the first hour
     of every other day (the step back is a reset).
     """
-    drops = sum(
-        1
-        for before, after in pairwise(values)
+    falls = [
+        after_at.astimezone(tz)
+        for (_, before), (after_at, after) in pairwise(rows)
         if before >= DAY_COUNTER_MIN_KWH and after < before * 0.5
-    )
-    return drops >= DAY_COUNTER_DROPS
+    ]
+    for i, first in enumerate(falls):
+        for second in falls[i + 1 :]:
+            apart = abs(first.hour - second.hour)
+            if (
+                first.date() != second.date()
+                and min(apart, 24 - apart) <= DAY_COUNTER_HOUR_SLACK
+            ):
+                return True
+    return False
 
 
 def to_kwh(value: float, unit: str | None) -> float:

@@ -407,6 +407,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._prefill: dict[str, str] = {}
         # Entity -> other entities of the same counter (backfill only).
         self._history: dict[str, list[str]] = {}
+        # Mapping that drew the day counter warning: sent again unchanged,
+        # it is kept (a lifetime counter can restart at 0 now and then).
+        self._day_counter_warned: dict[str, str] | None = None
 
     @staticmethod
     @callback
@@ -479,7 +482,12 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             values = flatten(user_input)
             error = validate(self.hass, values)
-            if error is None and await self._async_day_counters(values):
+            if (
+                error is None
+                and values != self._day_counter_warned
+                and await self._async_day_counters(values)
+            ):
+                self._day_counter_warned = values
                 error = "day_counter"
             if error is None:
                 return await self._async_finish(values)
@@ -489,17 +497,23 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_day_counters(self, entities: dict[str, str]) -> list[str]:
-        """Day counters among energy entities booked as lifetime counters."""
-        key = (
-            self._get_reconfigure_entry().data.get(CONF_TEMPLATE)
-            if self.source == SOURCE_RECONFIGURE
-            else self._template
-        )
+        """Day counters among energy entities booked as lifetime counters;
+        on a reconfigure only among the newly chosen ones."""
+        before: dict[str, str] = {}
+        key = self._template
+        if self.source == SOURCE_RECONFIGURE:
+            entry = self._get_reconfigure_entry()
+            key = entry.data.get(CONF_TEMPLATE)
+            before = entry.data.get(CONF_ENTITIES, {})
         if not counts_by_state(TEMPLATES.get(key or "")):
             return []
         return await async_day_counters(
             self.hass,
-            [entities[s.value] for s in ENERGY_SIGNALS if s.value in entities],
+            [
+                entities[s.value]
+                for s in ENERGY_SIGNALS
+                if s.value in entities and entities[s.value] != before.get(s.value)
+            ],
         )
 
     def _moved_unique_id(self, entry: ConfigEntry, unique_id: str) -> str | None:

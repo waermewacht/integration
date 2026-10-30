@@ -351,6 +351,7 @@ class HeatPumpRuntime:
         self.degree_days_previous: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
+        self._day_counter_day: date | None = None  # last check for day counters
         self._analysing = False
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = None
@@ -789,7 +790,6 @@ class HeatPumpRuntime:
         mixed: a changed heating curve would blur both) and the heat load of
         the last complete season."""
         self._analysing = True
-        await self._async_check_day_counters()
         try:
             current, previous = self.seasons(now)
             hours, outdoor = await self.async_analysis_data(previous, now)
@@ -877,18 +877,25 @@ class HeatPumpRuntime:
             self._analysing = False
             self._notify()
 
+    def _day_counter_check_due(self, now: datetime) -> bool:
+        """Shortly after the start, then daily (as the analysis, but also
+        without an outdoor temperature)."""
+        if (
+            not counts_by_state(self.template)
+            or "recorder" not in self.hass.config.components
+        ):
+            return False
+        if self._day_counter_day is None:
+            return now - self._started_at >= ANALYSIS_DELAY
+        local = now.astimezone(self.tz)
+        return local.date() != self._day_counter_day and local.hour >= ANALYSIS_HOUR
+
     async def _async_check_day_counters(self) -> None:
         """Repair issue for day counters booked as lifetime counters: they
         book nothing on days below 1 kWh (entries made before the check)."""
-        if not counts_by_state(self.template):
-            return
-        try:
-            found = await async_day_counters(
-                self.hass, [self.entities[s] for s in self._energy]
-            )
-        except Exception:  # the analysis goes on without the check
-            _LOGGER.exception("Checking for day counters failed")
-            return
+        found = await async_day_counters(
+            self.hass, [self.entities[s] for s in self._energy]
+        )
         self._set_issue("day_counter", found)
 
     def _health_findings(
@@ -1848,6 +1855,9 @@ class HeatPumpRuntime:
             self.hass.async_create_task(self._async_book_hours(now))
         if self._analysis_due(now):
             self.hass.async_create_task(self._async_refresh_analysis(now))
+        if self._day_counter_check_due(now):
+            self._day_counter_day = now.astimezone(self.tz).date()
+            self.hass.async_create_task(self._async_check_day_counters())
         if (
             self.history_imported
             and not self.history_adjusted
@@ -1937,7 +1947,10 @@ class HeatPumpRuntime:
     def _set_issue(self, key: str, entity_ids: list[str], **placeholders: str) -> None:
         issue_id = f"{self.entry.entry_id}_{key}"
         text = ", ".join(entity_ids)
-        if self._issues.get(issue_id, "") == text:
+        # The first call after a (re)load always writes: the registry may
+        # still hold the issue of the previous runtime (fixed under
+        # Reconfigure, which reloads the entry).
+        if self._issues.get(issue_id) == text:
             return
         if entity_ids:
             ir.async_create_issue(
@@ -1956,7 +1969,7 @@ class HeatPumpRuntime:
             self._issues[issue_id] = text
         else:
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
-            self._issues.pop(issue_id, None)
+            self._issues[issue_id] = ""
 
     # Figures for the entities.
 

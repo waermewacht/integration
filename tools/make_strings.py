@@ -480,8 +480,8 @@ def _build(lang: int) -> dict:
                 ),
                 "day_counter": t(
                     (
-                        "An energy meter fell back several times in the last days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here.",
-                        "Ein Energiezähler ist in den letzten Tagen mehrmals zurückgefallen: Er sieht nach einem Tageszähler aus (Energie heute). Hier Lebenszeit-Zähler (Gesamtenergie) wählen.",
+                        "An energy meter fell back at the same time of day on several days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here. If it is a total counter after all, submit again unchanged.",
+                        "Ein Energiezähler ist an mehreren Tagen zur selben Uhrzeit zurückgefallen: Er sieht nach einem Tageszähler aus (Energie heute). Hier Lebenszeit-Zähler (Gesamtenergie) wählen. Ist es doch ein Gesamtzähler, unverändert noch einmal absenden.",
                     )
                 ),
             },
@@ -789,8 +789,8 @@ def _build(lang: int) -> dict:
                 ),
                 "description": t(
                     (
-                        "These energy meters of {name} fell back several times in the last days, like a day counter (energy today): {entities}. Wärmewacht counts them as lifetime counters and misses energy, on days below 1 kWh all of it. Choose the matching total counter under Reconfigure.",
-                        "Diese Energiezähler von {name} sind in den letzten Tagen mehrmals zurückgefallen, wie ein Tageszähler (Energie heute): {entities}. Wärmewacht zählt sie als Lebenszeit-Zähler und verpasst Energie, an Tagen unter 1 kWh die ganze. Unter Neu konfigurieren den passenden Gesamtzähler wählen.",
+                        "These energy meters of {name} fell back at the same time of day on several days, like a day counter (energy today): {entities}. Wärmewacht counts them as lifetime counters and misses energy, on days below 1 kWh all of it. Choose the matching total counter under Reconfigure. If it is a total counter after all, ignore this notice.",
+                        "Diese Energiezähler von {name} sind an mehreren Tagen zur selben Uhrzeit zurückgefallen, wie ein Tageszähler (Energie heute): {entities}. Wärmewacht zählt sie als Lebenszeit-Zähler und verpasst Energie, an Tagen unter 1 kWh die ganze. Unter Neu konfigurieren den passenden Gesamtzähler wählen. Ist es doch ein Gesamtzähler, den Hinweis ignorieren.",
                     )
                 ),
             },
