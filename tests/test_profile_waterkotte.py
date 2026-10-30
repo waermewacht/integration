@@ -74,7 +74,6 @@ EXPECTED = {
     Signal.COMPRESSOR: "binary_sensor.wkh_state_compressor",
     Signal.DHW_FLAG: "binary_sensor.wkh_state_water",
     Signal.COOLING_FLAG: "binary_sensor.wkh_state_cooling",
-    Signal.HEATING_FLAG: "binary_sensor.wkh_status_heating",
     Signal.OUTDOOR_TEMP: "sensor.wkh_temperature_outside",  # not _1h / _24h
     Signal.FLOW_TEMP: "sensor.wkh_temperature_flow",
     Signal.RETURN_TEMP: "sensor.wkh_temperature_return",
@@ -107,6 +106,7 @@ def test_signals_the_source_does_not_have(waterkotte: Template) -> None:
         Signal.AUX_DHW,
         Signal.ACTIVITY,
         Signal.DEFROST_FLAG,
+        Signal.HEATING_FLAG,  # "status_heating" is the release
         Signal.COOLING_MODE,
         Signal.STARTS_TOTAL,
         Signal.FLOW_RATE,
@@ -160,37 +160,33 @@ def test_year_start_is_a_reset() -> None:
 
 
 @pytest.mark.parametrize(
-    ("water", "cooling", "heating", "activity"),
+    ("water", "cooling", "compressor", "activity"),
     [
-        ("off", "off", "on", Activity.HEATING),
-        ("on", "off", "on", Activity.DHW),  # hot water before heating
-        ("off", "on", "on", Activity.COOLING),
-        ("off", "on", "off", Activity.COOLING),
-        ("on", "off", "off", Activity.DHW),
-        ("off", "off", "off", Activity.OFF),  # heating "off" or "disabled"
-        (None, "off", "on", None),  # unknown flag that could still decide
+        ("off", "off", True, Activity.HEATING),  # a run without a flag
+        ("on", "off", True, Activity.DHW),
+        ("off", "on", True, Activity.COOLING),
+        ("on", "off", False, Activity.DHW),
+        ("off", "off", False, Activity.OFF),
+        ("off", "off", None, Activity.OFF),
+        (None, "off", True, None),  # unknown flag that could still decide
     ],
 )
 def test_activity_from_flags(
     waterkotte: Template,
     water: str | None,
     cooling: str | None,
-    heating: str | None,
+    compressor: bool | None,
     activity: Activity | None,
 ) -> None:
     (match,) = find(waterkotte, entries())
-    flags = {
-        Signal.DHW_FLAG: water,
-        Signal.COOLING_FLAG: cooling,
-        Signal.HEATING_FLAG: heating,
-    }
-    assert combine(None, flags, set(match.entities)) is activity
+    flags = {Signal.DHW_FLAG: water, Signal.COOLING_FLAG: cooling}
+    assert combine(None, flags, set(match.entities), compressor) is activity
 
 
 def test_activity_without_cooling_state(waterkotte: Template) -> None:
     (match,) = find(waterkotte, entries(usable_only=True))
-    flags = {Signal.DHW_FLAG: "off", Signal.HEATING_FLAG: "on"}
-    assert combine(None, flags, set(match.entities)) is Activity.HEATING
+    flags = {Signal.DHW_FLAG: "off"}
+    assert combine(None, flags, set(match.entities), True) is Activity.HEATING
 
 
 def test_flag_states_are_on_off() -> None:

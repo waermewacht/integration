@@ -9,9 +9,11 @@ the defrost is a switch).
 Rule: an "on" flag wins, in the order defrost, hot water, cooling, heating
 (a defrost runs while heating is requested; hot water has priority over
 heating). Then the activity entity, where "heating" becomes "cooling" while
-the set mode cools. With flags only, all flags off is OFF. A flag that could
-still decide but is unknown makes the result unknown (None) unless an
-activity entity is there to fall back on.
+the set mode cools. With flags only, all flags off is OFF - unless the
+compressor runs: a run serves some mode, and without a flag that is heating
+(Waterkotte has a heating release, not a heating state; P1P2MQTT may miss a
+hot water flag). A flag that could still decide but is unknown makes the
+result unknown (None) unless an activity entity is there to fall back on.
 """
 
 from __future__ import annotations
@@ -42,11 +44,13 @@ def combine(
     activity: Activity | None,
     states: Mapping[Signal, str | None],
     configured: Collection[Signal],
+    compressor: bool | None = None,
 ) -> Activity | None:
     """Activity from the activity entity (already parsed) and the parts.
 
     `states` holds the raw states of the configured parts; `configured` the
-    signals with an entity (ACTIVITY among them if there is one).
+    signals with an entity (ACTIVITY among them if there is one);
+    `compressor` the last known compressor state.
     """
     fallback = Signal.ACTIVITY in configured
     # A defrost reported by the activity entity beats a hot water flag
@@ -68,4 +72,6 @@ def combine(
         ):
             return Activity.COOLING
         return activity
-    return Activity.OFF if flags else None
+    if not flags:
+        return None
+    return Activity.HEATING if compressor else Activity.OFF

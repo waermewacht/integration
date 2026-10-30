@@ -1,4 +1,5 @@
-"""Waterkotte: compressor electricity as one meter for all modes (ELEC_TOTAL)."""
+"""Waterkotte: compressor electricity as one meter for all modes (ELEC_TOTAL);
+without a heating state a run without a flag is heating."""
 
 from __future__ import annotations
 
@@ -24,7 +25,6 @@ HEAT_DHW = "sensor.wkh_hot_water_energy_production_year"
 ELEC = "sensor.wkh_compressor_electric_consumption_year"
 COMPRESSOR = "binary_sensor.wkh_state_compressor"
 WATER = "binary_sensor.wkh_state_water"
-HEATING = "binary_sensor.wkh_status_heating"
 
 
 @pytest.mark.freeze_time(START)
@@ -37,7 +37,6 @@ async def test_elec_total_follows_the_running_mode(
     hass.states.async_set(ELEC, "2000.0", ENERGY)
     hass.states.async_set(COMPRESSOR, "on")
     hass.states.async_set(WATER, "off")
-    hass.states.async_set(HEATING, "on")
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="WP",
@@ -50,7 +49,6 @@ async def test_elec_total_follows_the_running_mode(
                 "elec_total": ELEC,
                 "compressor": COMPRESSOR,
                 "dhw_flag": WATER,
-                "heating_flag": HEATING,
             },
         },
     )
@@ -59,7 +57,7 @@ async def test_elec_total_follows_the_running_mode(
     await hass.async_block_till_done()
     await tick(hass, freezer, 11)
 
-    # Heating runs.
+    # Heating runs: compressor on, no flag.
     hass.states.async_set(HEAT, "6002.0", ENERGY)
     hass.states.async_set(ELEC, "2000.5", ENERGY)
     await tick(hass, freezer, 30)

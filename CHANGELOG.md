@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Betriebsart aus Merkern:** Läuft der Kompressor und kein Merker (Abtauen, Warmwasser, Kühlen, Heizen) ist an, zählt der Lauf jetzt als Heizen statt als „aus“. Bisher fielen solche Läufe aus Spreizung, Vorlauf und Laufzeit je Betriebsart heraus. Betrifft Waterkotte, Daikin (P1P2MQTT), Stiebel und manuell zugeordnete Merker.
+- **Waterkotte:** Die Vorlage nimmt die Heizfreigabe (`status_heating`) nicht mehr als Merker „Heizen“. Sie steht auch bei stehendem Kompressor auf „an“; Heizen ergibt sich jetzt aus dem Lauf ohne anderen Merker.
+
 ## 0.1.6 – 2026-10-29
 
 - **Neue Schaltfläche „Rückblick neu berechnen“:** rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln. Für Zähler, die erst über „Neu konfigurieren“ dazukamen (bisher fehlte ihre Vergangenheit), und nach Updates, die den Rückblick verbessern – statt den Eintrag neu anzulegen (Rückmeldung im simon42-Forum).

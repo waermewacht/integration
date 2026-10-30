@@ -545,22 +545,35 @@ class HeatPumpRuntime:
             _LOGGER.exception("Reading the state history for the runs failed")
             return False
         events: list[tuple[datetime, str, bool | Activity | None]] = []
-        for state in states.get(compressor, []):
-            if isinstance(state, State):
-                events.append(
-                    (state.last_updated, COMPRESSOR, parse_compressor(state.state))
-                )
-        # The activity at each change of one of its entities.
-        changes = sorted(
+        switches = [
+            (state.last_updated, parse_compressor(state.state))
+            for state in states.get(compressor, [])
+            if isinstance(state, State)
+        ]
+        events.extend((at, COMPRESSOR, on) for at, on in switches)
+        # The activity at each change of one of its entities (with flags
+        # only also at each compressor switch, see activity.combine).
+        changes: list[tuple[datetime, Signal | None, str | None]] = [
             (state.last_updated, parts[entity_id], state.state)
             for entity_id in parts
             for state in states.get(entity_id, [])
             if isinstance(state, State)
-        )
+        ]
+        if self._activity_needs_compressor:
+            # An unknown compressor state keeps the last known one (RunTracker).
+            changes.extend(
+                (at, None, "on" if on else "off")
+                for at, on in switches
+                if on is not None
+            )
         current: dict[Signal, str | None] = {}
-        for at, signal, raw in changes:
-            current[signal] = raw
-            events.append((at, ACTIVITY, self._activity_of(current)))
+        running: bool | None = None
+        for at, signal, raw in sorted(changes, key=lambda c: c[0]):
+            if signal is None:
+                running = raw == "on"
+            else:
+                current[signal] = raw
+            events.append((at, ACTIVITY, self._activity_of(current, running)))
         if not events:
             return False
         self.tracker, self.runs, self.defrosts = replay(events)
@@ -1503,14 +1516,47 @@ class HeatPumpRuntime:
             self._hot = False
             self._dirty = True
 
-    def _activity_of(self, states: dict[Signal, str | None]) -> Activity | None:
+    def _activity_of(
+        self, states: dict[Signal, str | None], compressor: bool | None
+    ) -> Activity | None:
         """Activity from raw states of the activity entity and its parts."""
         base = (
             self.template.parse_activity(states.get(Signal.ACTIVITY))
             if Signal.ACTIVITY in self._activity_configured
             else None
         )
-        return combine(base, states, self._activity_configured)
+        return combine(base, states, self._activity_configured, compressor)
+
+    @property
+    def _activity_needs_compressor(self) -> bool:
+        """Flags only: a run without a flag is heating (activity.combine)."""
+        return Signal.ACTIVITY not in self._activity_configured and bool(
+            self._activity_configured
+        )
+
+    def _apply_activity(
+        self, at: datetime, changed: tuple[Signal, str] | None = None
+    ) -> None:
+        """Work out the activity from the current states and hand it on."""
+        current = {
+            s: st.state
+            for s in self._activity_configured
+            if (st := self.hass.states.get(self.entities[s])) is not None
+        }
+        if changed is not None:
+            current[changed[0]] = changed[1]
+        activity = self._activity_of(current, self.tracker.compressor)
+        if changed is None and activity == self.tracker.activity:
+            return
+        if (defrost := self.tracker.set_activity(activity, at)) is not None:
+            self.defrosts.append(defrost)
+            self._dirty = self._history_dirty = True
+            self._notify()
+        if self.has_charges:
+            self._finish_charge(
+                self.charge_tracker.set_activity(activity, at, self._dhw_temp)
+            )
+            self._dirty = True
 
     def _handle(self, entity_id: str, state: State, at: datetime) -> None:
         signal = self._signal_of.get(entity_id)
@@ -1535,6 +1581,8 @@ class HeatPumpRuntime:
                 self._history_dirty = True
                 self.hass.async_create_task(self.async_save())
                 self._notify()
+            if self._activity_needs_compressor:
+                self._apply_activity(at)
         elif signal in self._activity_configured:
             if signal is Signal.ACTIVITY and self.template.is_foreign_activity(
                 state.state
@@ -1547,22 +1595,7 @@ class HeatPumpRuntime:
                 and self.template.parse_activity(state.state) is Activity.OTHER
             ):
                 self._count(f"activity:{state.state}")
-            current = {
-                s: st.state
-                for s in self._activity_configured
-                if (st := self.hass.states.get(self.entities[s])) is not None
-            }
-            current[signal] = state.state
-            activity = self._activity_of(current)
-            if (defrost := self.tracker.set_activity(activity, at)) is not None:
-                self.defrosts.append(defrost)
-                self._dirty = self._history_dirty = True
-                self._notify()
-            if self.has_charges:
-                self._finish_charge(
-                    self.charge_tracker.set_activity(activity, at, self._dhw_temp)
-                )
-                self._dirty = True
+            self._apply_activity(at, (signal, state.state))
         elif signal is Signal.FLOW_TEMP:
             self._flow_temp = _float(state)
         elif signal is Signal.RETURN_TEMP:

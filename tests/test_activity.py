@@ -41,6 +41,23 @@ def test_all_flags_off_is_off_and_unknown_is_unknown() -> None:
     )
 
 
+def test_flags_only_a_run_without_a_flag_is_heating() -> None:
+    """Waterkotte, P1P2MQTT: the compressor runs, no flag is on."""
+    configured = {Signal.DHW_FLAG, Signal.COOLING_FLAG}
+    off = dict.fromkeys(configured, "off")
+    assert combine(None, off, configured, compressor=True) is Activity.HEATING
+    assert combine(None, off, configured, compressor=False) is Activity.OFF
+    assert combine(None, off, configured, compressor=None) is Activity.OFF
+    on = {**off, Signal.DHW_FLAG: "on"}
+    assert combine(None, on, configured, compressor=True) is Activity.DHW
+    unknown = {**off, Signal.DHW_FLAG: "unavailable"}
+    assert combine(None, unknown, configured, compressor=True) is None
+    # With an activity entity the entity decides, not the compressor.
+    configured_activity = {Signal.ACTIVITY, Signal.DEFROST_FLAG}
+    states = {Signal.DEFROST_FLAG: "off"}
+    assert combine(Activity.OFF, states, configured_activity, True) is Activity.OFF
+
+
 def test_valve_with_defrost_switch_and_set_mode() -> None:
     """HeishaMon: valve as activity, defrost switch, cooling from the set mode."""
     configured = {Signal.ACTIVITY, Signal.DEFROST_FLAG, Signal.COOLING_MODE}

@@ -31,10 +31,11 @@ book the heater twice).
 Activity: no activity entity and no defrost signal (most Waterkotte units
 are brine or water source). Bits of the operating state I51 as binary
 sensors: "state_water" (bit 8, hot water) and "state_cooling" (bit 7,
-disabled by default). Heating is told by the release "status_heating" (I137:
-on, off or "disabled", only "on" counts): while heating is released, a run
-that is neither hot water nor cooling is heating. Pool heating has no
-signal of its own and counts as heating; its heat counter is left out.
+disabled by default). Heating has no state of its own: "status_heating"
+(I137) is the release, on while the compressor stands as well, so it is not
+used. A run that is neither hot water nor cooling is heating (core rule in
+activity.combine). Pool heating has no signal of its own and counts as
+heating; its heat counter is left out.
 No compressor start counter and no flow rate entity exist.
 """
 
@@ -69,7 +70,6 @@ WATERKOTTE = Template(
         Signal.COMPRESSOR: ((_B, "state_compressor"),),
         Signal.DHW_FLAG: ((_B, "state_water"),),
         Signal.COOLING_FLAG: ((_B, "state_cooling"),),
-        Signal.HEATING_FLAG: ((_B, "status_heating"),),
         Signal.OUTDOOR_TEMP: ((_S, "temperature_outside"),),
         Signal.FLOW_TEMP: ((_S, "temperature_flow"),),
         Signal.RETURN_TEMP: ((_S, "temperature_return"),),
