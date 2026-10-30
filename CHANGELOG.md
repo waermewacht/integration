@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.2 – 2026-10-30
 
 - **Tageszähler werden erkannt:** Wer bei einer eigenen Zuordnung versehentlich einen Tageszähler („Energie heute“) statt des Gesamtzählers wählt, bekam zu wenig Energie gezählt, an Tagen unter 1 kWh gar keine. Die Einrichtung lehnt solche Zähler jetzt ab (erkannt an der Statistik der letzten vier Tage), und bestehende Einträge bekommen einen Reparaturhinweis „Tageszähler statt Gesamtzähler“. Vorlagen für Quellen mit Tageswerten (Bosch HomeCom, ViCare, MELCloud) sind nicht betroffen.
 - **Neu konfigurieren mit anderem Zähler:** Bei einer eigenen Zuordnung und bei der Gasheizung zieht die Kennung des Eintrags jetzt mit, wenn man den ersten Zähler wechselt. Bisher prüfte Wärmewacht beim Anlegen einer weiteren Wärmepumpe noch gegen den alten Zähler.
