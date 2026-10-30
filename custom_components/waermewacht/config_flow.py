@@ -13,7 +13,7 @@ and the prices.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import voluptuous as vol
 from homeassistant.config_entries import (
@@ -290,7 +290,7 @@ STATISTIC_CLASSES = ("total", "total_increasing")
 
 
 def _number(
-    minimum: float, maximum: float, step: float, unit: str
+    minimum: float, maximum: float, step: float | Literal["any"], unit: str
 ) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
@@ -342,7 +342,7 @@ def gas_schema(values: dict[str, Any]) -> vol.Schema:
                 CONF_CALORIFIC_VALUE, description=suggested(CONF_CALORIFIC_VALUE)
             ): _number(8, 13, 0.001, "kWh/m³"),
             vol.Optional(CONF_Z_NUMBER, description=suggested(CONF_Z_NUMBER)): _number(
-                0.8, 1.1, 0.0001, ""
+                0.8, 1.1, "any", ""
             ),
         }
     )
@@ -724,7 +724,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                         (CONF_GAS_PRICE, _number(0, 100, 0.01, "ct/kWh")),
                         (CONF_GAS_BASE_PRICE, _number(0, 2000, 0.01, "€/a")),
                         (CONF_CALORIFIC_VALUE, _number(8, 13, 0.001, "kWh/m³")),
-                        (CONF_Z_NUMBER, _number(0.8, 1.1, 0.0001, "")),
+                        (CONF_Z_NUMBER, _number(0.8, 1.1, "any", "")),  # 4 decimals
                     )
                 },
             }

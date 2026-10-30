@@ -166,6 +166,30 @@ SENSORS = {
         "Letzte thermische Desinfektion",
         "mdi:bacteria-outline",
     ),
+    # Gas boiler entry (gas_sensor.py).
+    "gas_heat_load_per_kelvin": (
+        "Heat load per kelvin",
+        "Heizlast je Kelvin",
+        "mdi:home-thermometer-outline",
+    ),
+    "gas_heat_load_design": (
+        "Heat load at design temperature",
+        "Heizlast bei Normaußentemperatur",
+        "mdi:home-thermometer",
+    ),
+    "gas_heating_limit": (
+        "Heating limit",
+        "Heizgrenze",
+        "mdi:thermometer-chevron-up",
+    ),
+    "gas_heat_per_degree_day": (
+        "Heat per degree day",
+        "Wärme je Gradtag",
+        "mdi:chart-bell-curve-cumulative",
+    ),
+    "gas_dhw_share": ("Hot water share", "Warmwasseranteil", "mdi:water-boiler"),
+    "gas_consumption_year": ("Gas 365 days", "Gas 365 Tage", "mdi:fire"),
+    "gas_cost_year": ("Gas cost 365 days", "Gaskosten 365 Tage", "mdi:cash"),
 }
 BINARY = {
     "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave"),
@@ -183,6 +207,11 @@ BINARY = {
         "Backup heater in hot water charges",
         "Heizstab bei Warmwasserladungen",
         "mdi:water-boiler-alert",
+    ),
+    "dhw_efficiency_drop": (
+        "Hot water efficiency below last year",
+        "Warmwasser-Effizienz unter Vorjahr",
+        "mdi:water-thermometer-outline",
     ),
 }
 BUTTONS = {
@@ -981,6 +1010,145 @@ DISABLED_HINT = (
 )
 
 
+# Gas boiler entry (config_flow.async_step_gas, options, actions).
+GAS_STEP = {
+    "title": ("Set up a gas boiler", "Gasheizung einrichten"),
+    "description": (
+        "Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter.",
+        "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen.",
+    ),
+}
+GAS_FIELDS = {
+    "gas_total": (
+        "Gas total (heating and hot water)",
+        "Gas gesamt (Heizen und Warmwasser)",
+    ),
+    "gas_heating": ("Gas heating only", "Gas nur Heizen"),
+    "gas_dhw": ("Gas hot water", "Gas Warmwasser"),
+    "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
+    "calorific_value": ("Calorific value", "Brennwert"),
+    "z_number": ("Z-number", "Zustandszahl"),
+}
+GAS_FIELD_HELP = {
+    "gas_total": (
+        "A gas meter (pulse, AI-on-the-edge) or the boiler's counter, in kWh or m³, with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+        "Ein Gaszähler (Impuls, AI-on-the-edge) oder der Zähler der Therme, in kWh oder m³, mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
+    ),
+    "gas_heating": (
+        'Only if the boiler counts heating and hot water apart (e.g. Viessmann ViCare); then add the hot water counter as well. Leave "Gas total" empty.',
+        "Nur wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare); dann auch den Warmwasser-Zähler eintragen. „Gas gesamt“ bleibt leer.",
+    ),
+    "gas_dhw": (
+        "Optional: gas for hot water, if counted apart.",
+        "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
+    ),
+    "outdoor_temp": (
+        "With long-term statistics (state class measurement). A nearby weather station is fine.",
+        "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+    ),
+    "calorific_value": (
+        "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
+        "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
+    ),
+    "z_number": (
+        "Only for counters in m³: from the gas bill (Zustandszahl).",
+        "Nur für Zähler in m³: aus der Gasrechnung.",
+    ),
+}
+GAS_ERRORS = {
+    "gas_none": (
+        "Choose a gas counter: total, or heating.",
+        "Wähle einen Gaszähler: gesamt oder nur Heizen.",
+    ),
+    "gas_twice": (
+        'Either "Gas total" or "Gas heating only", not both.',
+        "Entweder „Gas gesamt“ oder „Gas nur Heizen“, nicht beides.",
+    ),
+    "gas_unit": (
+        "A gas counter has no unit Wh, kWh, MWh or m³.",
+        "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
+    ),
+    "gas_no_statistics": (
+        "A gas counter has no long-term statistics (state class total or total_increasing).",
+        "Ein Gaszähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
+    ),
+    "gas_calorific_value": (
+        "Counters in m³ need the calorific value and the Z-number from the gas bill.",
+        "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung.",
+    ),
+}
+GAS_OPTIONS = {
+    "boiler_efficiency": (
+        ("Boiler efficiency (Hs)", "Nutzungsgrad des Kessels (Hs)"),
+        (
+            "Share of the gas that becomes heat, on the gross calorific value. 0.87 is the field value of condensing boilers (Jagnow/Wolff); older boilers are lower. The heat load changes in proportion.",
+            "Anteil des Gases, der zu Wärme wird, bezogen auf den Brennwert. 0,87 ist der Feldwert von Brennwertkesseln (Jagnow/Wolff); ältere Kessel liegen darunter. Die Heizlast ändert sich im selben Verhältnis.",
+        ),
+    ),
+    "design_outdoor_temp": (
+        ("Design outdoor temperature", "Normaußentemperatur"),
+        (
+            "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+            "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+        ),
+    ),
+    "gas_price": (
+        ("Gas working price", "Gas-Arbeitspreis"),
+        (
+            "Gross, per kWh on the gross calorific value (as on the gas bill).",
+            "Brutto, je kWh auf den Brennwert (wie auf der Gasrechnung).",
+        ),
+    ),
+    "gas_base_price": (
+        ("Gas base price", "Gas-Grundpreis"),
+        ("Gross per year.", "Brutto je Jahr."),
+    ),
+    "calorific_value": (
+        ("Calorific value", "Brennwert"),
+        (
+            "Only for counters in m³: from the gas bill.",
+            "Nur für Zähler in m³: aus der Gasrechnung.",
+        ),
+    ),
+    "z_number": (
+        ("Z-number", "Zustandszahl"),
+        (
+            "Only for counters in m³: from the gas bill.",
+            "Nur für Zähler in m³: aus der Gasrechnung.",
+        ),
+    ),
+}
+GAS_SOURCE = ("Gas boiler (before switching)", "Gasheizung (vor dem Umstieg)")
+NOT_FOR_GAS = (
+    "This action is for heat pumps; a gas boiler has the heat load only.",
+    "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast.",
+)
+HEAT_LOAD_START = (
+    "Without: the last complete season (gas boiler: the last 365 days).",
+    "Ohne: die letzte vollständige Saison (Gasheizung: die letzten 365 Tage).",
+)
+
+
+def _add_gas(data: dict, lang: int) -> None:
+    """The gas boiler entry's texts (added after the heat pump's)."""
+    data["config"]["step"]["gas"] = {
+        "title": GAS_STEP["title"][lang],
+        "description": GAS_STEP["description"][lang],
+        "data": {k: v[lang] for k, v in GAS_FIELDS.items()},
+        "data_description": {k: v[lang] for k, v in GAS_FIELD_HELP.items()},
+    }
+    data["config"]["error"].update({k: v[lang] for k, v in GAS_ERRORS.items()})
+    data["options"]["step"]["gas"] = {
+        "title": ("Settings", "Einstellungen")[lang],
+        "data": {k: v[0][lang] for k, v in GAS_OPTIONS.items()},
+        "data_description": {k: v[1][lang] for k, v in GAS_OPTIONS.items()},
+    }
+    data["selector"]["source"]["options"]["gas"] = GAS_SOURCE[lang]
+    data["exceptions"]["not_for_gas"] = {"message": NOT_FOR_GAS[lang]}
+    fields = data["services"]["heat_load"]["fields"]
+    fields["start"]["description"] = HEAT_LOAD_START[lang]
+
+
 def build(lang: int) -> dict:
     data = _build(lang)
     steps = data["config"]["step"]
@@ -990,6 +1158,7 @@ def build(lang: int) -> dict:
         **user,
         "description": user["description"] + "\n\n" + DISABLED_HINT[lang],
     }
+    _add_gas(data, lang)
     return data
 
 
