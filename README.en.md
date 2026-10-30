@@ -28,7 +28,7 @@ The user interface is available in German and English and follows the language o
 - **Cycling:** starts, run time, run time per start, short runs, shortest pause, defrosts and a binary sensor **Conspicuous cycling**.
 - **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating (with an activity).
 - **Hot water per charge:** performance factor of the last charge and of the charges of the last 30 days, last thermal disinfection.
-- **Health check:** reports a dropped efficiency at the same weather and the backup heater on mild days or in hot water charges. Repair issues when a meter stands still, a source fails, the outdoor temperature is stuck or flow rate, flow and return do not add up.
+- **Health check:** reports a dropped efficiency at the same weather, a dropped hot water efficiency against last year and the backup heater on mild days or in hot water charges. Repair issues when a meter stands still, a source fails, the outdoor temperature is stuck or flow rate, flow and return do not add up.
 - **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
 - **Gas boiler before switching:** heat load, heating limit and hot water share from the gas consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
@@ -47,6 +47,8 @@ The user interface is available in German and English and follows the language o
 - **Look back from the long-term statistics:** Today, yesterday, month, season and total already include the time before the setup.
 
 ## Requirements
+
+A gas boiler before switching needs only a gas counter and the outdoor temperature, see [Gas boiler before switching](#gas-boiler-before-switching). For a heat pump:
 
 - Home Assistant 2026.4 or newer.
 - The recorder (on by default in Home Assistant) for the look back, the report, the performance curve and the heat load. Which entities it must record: [Keeping the recorder lean](#keeping-the-recorder-lean).

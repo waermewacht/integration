@@ -97,7 +97,7 @@ Name: keine Treffer für „Wärmewacht“/`waermewacht` auf GitHub, PyPI, HACS,
 - Gradtagzahl **G20/15 nach VDI 3807 Blatt 1**: je Tag 20 °C − Tagesmittel, nur an Tagen mit Tagesmittel < 15 °C ([DWD-Beschreibung](https://opendata.dwd.de/climate_environment/CDC/derived_germany/techn/daily/heating_degreedays/hdd_3807/recent/BESCHREIBUNG_derivgermany_techn_daily_heating_degreedays_hdd_3807_recent_de.pdf)). Basiswerte einstellbar. Witterungsbereinigung nur auf den Heizanteil.
 - Heizlast über Energiesignatur (EAV-Verfahren, wie Fraunhofer S. 93–94): Wärmeleistung (Wochen- statt Tagesmittel) über Außentemperatur, lineare Regression, Steigung = Wärmeverlust in W/K. Warmwasser abtrennen, nur kalte Tage (< ~10–12 °C), Tage mit Lücken/Kühlen/Störung ausschließen; normgerecht ohne Gewinne (Gerade auf Heizgrenze 20 °C verschieben, [EAV-Mustergutachten](https://www.energiesparkonto.de/gfx/esk/dokumente/Mustergutachten_EAV_de.pdf)). Erst ab ausreichend Daten (mindestens eine Heizperiode mit Frosttagen) anzeigen.
 
-### Gas-Modus (seit 2026-10-30, unveröffentlicht)
+### Gas-Modus (seit 0.2.0, 2026-10-30)
 
 Gasheizung vor dem Umstieg: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch. Vom Inhaber als kleine Erweiterung gewünscht, ohne die Wärmepumpen-Logik zu verwässern; Recherche zu Quellen und Nachfrage vom 2026-10-29 in `NOTES.md`.
 

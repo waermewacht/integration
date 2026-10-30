@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.0 – 2026-10-30
 
 - **Neu: Gasheizung vor dem Umstieg.** In der Einrichtung gibt es die Quelle „Gasheizung (vor dem Umstieg)“: ein Gaszähler (kWh oder m³) oder der Zähler der Therme, wahlweise mit Warmwasser-Zähler, und die Außentemperatur. Wärmewacht rechnet aus der Langzeitstatistik der letzten 365 Tage die Heizlast (je Kelvin und bei Normaußentemperatur), die Heizgrenze, die Wärme je Gradtag, den Warmwasseranteil sowie Gas und Gaskosten. Ohne eigenen Warmwasser-Zähler schätzt es das Warmwasser aus dem Verbrauch an warmen Tagen (Sommersockel). Ein Gaszähler mit langer Statistik liefert die Werte sofort. Die Aktion „Heizlast“ geht auch für Gas-Einträge.
 - **Betriebsart aus Merkern:** Läuft der Kompressor und kein Merker (Abtauen, Warmwasser, Kühlen, Heizen) ist an, zählt der Lauf jetzt als Heizen statt als „aus“. Bisher fielen solche Läufe aus Spreizung, Vorlauf und Laufzeit je Betriebsart heraus. Betrifft Waterkotte, Daikin (P1P2MQTT), Stiebel und manuell zugeordnete Merker.

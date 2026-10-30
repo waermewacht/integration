@@ -1,7 +1,7 @@
 [project]
 name = "waermewacht"
 # Kept equal to custom_components/waermewacht/manifest.json (checked by tests/test_manifest.py).
-version = "0.1.6"
+version = "0.2.0"
 description = "Home Assistant integration: efficiency and operating behaviour of a heat pump from existing entities."
 readme = "README.md"
 license = "MIT"
