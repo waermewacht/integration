@@ -445,7 +445,7 @@ Jede Klasse hat `lower` und `upper` (°C, untere Grenze eingeschlossen), `days`,
 **Heizlast (Energiesignatur):** Wochenmittel der Heizleistung über dem Wochenmittel der Außentemperatur. Nur die Wärme fürs Heizen zählt, Warmwasser nicht. Durch die Wochen legt Wärmewacht eine Ausgleichsgerade.
 
 - Eine Woche beginnt Montag 0 Uhr. Sie zählt mit mindestens 6 vollen Tagen und einem Mittel unter 12 °C.
-- Ein voller Tag hat mindestens 20 Stundenwerte der Außentemperatur und keine Kühlung. Werte außerhalb von −35 bis 45 °C werden verworfen. Ein Frosttag hat ein Tagesmittel unter 0 °C.
+- Ein voller Tag hat mindestens 20 Stundenwerte der Außentemperatur, keine Kühlung und mindestens 1 kWh Wärme fürs Heizen. Tage mit ausgeschalteter Heizung (Sommerbetrieb von Hand gehalten, Gasheizung im Herbst noch aus) zählen nicht: Sie sagen nichts über das Haus und würden die Gerade zu steil machen. Werte außerhalb von −35 bis 45 °C werden verworfen. Ein Frosttag hat ein Tagesmittel unter 0 °C.
 - Ein Ergebnis gibt es erst mit mindestens 8 Wochen, 10 K Spanne zwischen kältester und wärmster Woche, 5 Frosttagen und einer fallenden Geraden. Sonst bleibt der Wert leer, und `reasons` nennt den Grund.
 - „Gemessen“ (`measured_kw`) ist die Gerade bei Normaußentemperatur, mit inneren und solaren Gewinnen. „Normgerecht“ (`standard_kw`) ist die parallel verschobene Gerade durch 0 bei 20 °C, ohne diese Gewinne. Der Sensor „Heizlast bei Normaußentemperatur“ zeigt den normgerechten Wert.
 

@@ -154,12 +154,22 @@ def test_no_data() -> None:
 
 
 def test_warm_weeks_are_left_out() -> None:
-    hours, outdoor = build((*WEEKS, 12.0, 14.0))
+    # Every day at the week mean: the warm weeks still have heating days.
+    hours, outdoor = build((*WEEKS, 12.0, 14.0), offsets=(0.0,) * 7)
     result = heat_load(hours, outdoor, BERLIN)
     assert len(result.weeks) == 10
     assert result.slope_kw_per_k == pytest.approx(B)
     wider = heat_load(hours, outdoor, BERLIN, max_outdoor=15.0)
     assert len(wider.weeks) == 12
+
+
+def test_week_mean_of_its_heating_days() -> None:
+    """A 12 °C week with a day beyond the heating limit (15 °C): that day
+    drops out, the six others enter at their mean of 11.5 °C, on the line."""
+    hours, outdoor = build((*WEEKS, 12.0))
+    week = heat_load(hours, outdoor, BERLIN).weeks[-1]
+    assert (week.days, week.mean_outdoor) == (6, pytest.approx(11.5))
+    assert week.power_kw == pytest.approx(A + B * 11.5)
 
 
 def test_week_needs_six_full_days() -> None:
@@ -190,6 +200,28 @@ def test_days_before_the_energy_data_do_not_count() -> None:
     assert len(result.weeks) == len(full.weeks)
     assert all(w.power_kw > 0 for w in result.weeks)
     assert result.slope_kw_per_k == pytest.approx(full.slope_kw_per_k)
+
+
+def test_days_without_heating_do_not_count() -> None:
+    """Summer mode held by hand in a cool autumn week: the heating was off,
+    which says nothing about the building."""
+    hours, outdoor = build(WEEKS)
+    full = heat_load(hours, outdoor, BERLIN, design_temp=-12.0)
+    # Two more cool weeks before, all days without heating heat.
+    before, temps = build((9.0, 11.0))
+    shift = timedelta(days=14)
+    for totals in before.values():
+        totals.values.pop(Totals.key(Kind.HEAT, Mode.HEATING))
+    hours = {**{h - shift: t for h, t in before.items()}, **hours}
+    outdoor = {**{h - shift: v for h, v in temps.items()}, **outdoor}
+    result = heat_load(hours, outdoor, BERLIN, design_temp=-12.0)
+    assert len(result.weeks) == len(full.weeks)
+    assert result.slope_kw_per_k == pytest.approx(full.slope_kw_per_k)
+    # One day off in a heating week: the week keeps its six heating days.
+    for hour in day_hours(START + timedelta(days=7)):
+        hours[hour].values.pop(Totals.key(Kind.HEAT, Mode.HEATING))
+    weeks = {w.start: w for w in heat_load(hours, outdoor, BERLIN).weeks}
+    assert weeks[START + timedelta(days=7)].days == 6
 
 
 def test_day_with_cooling_does_not_count() -> None:

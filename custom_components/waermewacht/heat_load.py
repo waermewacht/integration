@@ -4,8 +4,12 @@ Energy signature as in the EAV method (Fraunhofer ISE, WP-QS final report
 p. 93-94): mean heating power per local week (Monday 00:00) over the week's
 mean outdoor temperature, fitted with a least-squares line P = a + b·T. Only
 heat for space heating counts (hot water is separated), only cold weeks
-(mean < 12 °C), and only weeks with at least 6 full days. The slope -b is the
-building's heat loss in kW/K, -a/b the heating limit where P reaches 0.
+(mean < 12 °C), and only weeks with at least 6 full days. A full day is a
+heating day (at least degree_days.MIN_HEATING_DAY_KWH of heating heat): a
+cool day with the heating off (summer mode held by hand, a gas boiler not
+switched on yet in autumn) says nothing about the building and would steepen
+the line. The slope -b is the building's heat loss in kW/K, -a/b the heating
+limit where P reaches 0.
 
 Two readings at the design outdoor temperature (DIN/TS 12831-1, per postcode,
 an option without default):
@@ -29,6 +33,7 @@ from datetime import date, datetime, timedelta, tzinfo
 from typing import Any
 
 from .curve import MIN_DAY_HOURS, DaySample, daily_samples
+from .degree_days import MIN_HEATING_DAY_KWH
 from .energy import Totals
 from .model import Mode
 
@@ -79,13 +84,16 @@ class HeatLoad:
 
 def full_day(sample: DaySample) -> bool:
     """A day that may enter the signature: enough outdoor values (checked by
-    `daily_samples`), as many hours with energy data, and no cooling.
+    `daily_samples`), as many hours with energy data, no cooling, and heating.
 
     Without energy data (a meter recorded later than the outdoor temperature)
-    the day would enter with no heat at all: weeks of 0 kW in frost.
+    the day would enter with no heat at all: weeks of 0 kW in frost. Without
+    heating (switched off by hand) likewise.
     """
     return (
-        sample.energy_hours >= MIN_DAY_HOURS and sample.totals.heat(Mode.COOLING) <= 0
+        sample.energy_hours >= MIN_DAY_HOURS
+        and sample.totals.heat(Mode.COOLING) <= 0
+        and sample.totals.heat(Mode.HEATING) >= MIN_HEATING_DAY_KWH
     )
 
 

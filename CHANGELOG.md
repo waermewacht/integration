@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 – 2026-10-30
+
+- **Heizlast ohne Tage mit ausgeschalteter Heizung:** Die Energiesignatur zählt nur noch Tage mit mindestens 1 kWh Heizwärme, wie die Gradtage. Bisher gingen kühle Wochen ein, in denen gar nicht geheizt wurde (Sommerbetrieb von Hand gehalten, Gasheizung im Herbst noch aus). Diese Punkte bei 0 kW machten die Gerade zu steil; an einer Anlage stieg die Heizlast dadurch um 6 %. Gilt für Wärmepumpe und Gasheizung.
+
 ## 0.2.0 – 2026-10-30
 
 - **Neu: Gasheizung vor dem Umstieg.** In der Einrichtung gibt es die Quelle „Gasheizung (vor dem Umstieg)“: ein Gaszähler (kWh oder m³) oder der Zähler der Therme, wahlweise mit Warmwasser-Zähler, und die Außentemperatur. Wärmewacht rechnet aus der Langzeitstatistik der letzten 365 Tage die Heizlast (je Kelvin und bei Normaußentemperatur), die Heizgrenze, die Wärme je Gradtag, den Warmwasseranteil sowie Gas und Gaskosten. Ohne eigenen Warmwasser-Zähler schätzt es das Warmwasser aus dem Verbrauch an warmen Tagen (Sommersockel). Ein Gaszähler mit langer Statistik liefert die Werte sofort. Die Aktion „Heizlast“ geht auch für Gas-Einträge.

@@ -445,7 +445,7 @@ Each class has `lower` and `upper` (°C, lower bound included), `days`, `mean_ou
 **Heat load (energy signature):** weekly mean heating power over the weekly mean outdoor temperature. Only heat for heating counts, not hot water. Wärmewacht fits a straight line through the weeks.
 
 - A week starts on Monday 00:00. It counts with at least 6 full days and a mean below 12 °C.
-- A full day has at least 20 hourly outdoor values and no cooling. Values outside −35 to 45 °C are discarded. A frost day has a daily mean below 0 °C.
+- A full day has at least 20 hourly outdoor values, no cooling and at least 1 kWh of heating heat. Days with the heating off (summer mode held by hand, a gas boiler not switched on yet in autumn) do not count: they say nothing about the house and would make the line too steep. Values outside −35 to 45 °C are discarded. A frost day has a daily mean below 0 °C.
 - There is a result only with at least 8 weeks, a spread of 10 K between the coldest and the warmest week, 5 frost days and a falling line. Otherwise the value stays empty and `reasons` gives the reason.
 - "Measured" (`measured_kw`) is the line at the design outdoor temperature, with internal and solar gains. "Standard" (`standard_kw`) is the line moved in parallel through 0 at 20 °C, without these gains. The sensor "Heat load at design temperature" shows the standard value.
 
