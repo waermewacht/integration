@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.3 – 2026-10-31
 
 - **Heizstab-Anteil je Betriebsart:** Die Sensoren „Heizstab-Anteil Monat“ und „Saison“ haben jetzt die Attribute `heating` und `dhw` mit dem Anteil innerhalb von Heizen bzw. Warmwasser. Der Gesamtwert wirft beides zusammen; hilft der Heizstab nur beim Warmwasser, sah das bisher nach Heizstab im Heizbetrieb aus (Rückmeldung im simon42-Forum).
 - **Tagebuch: Laufzeit je Betriebsart über Mitternacht:** Ein Lauf über Mitternacht zählte bisher mit seiner ganzen Zeit zu dem Tag, an dem er endete, ein Tag ganz ohne Laufende gar nicht. Bei langen Läufen kam ein Tag so auf mehr als 24 Stunden. Jetzt zählt jeder Lauf anteilig zu den Tagen, die er berührt, wie schon die Laufzeit. Bisher wertet nichts diese Zahlen aus; sie stehen im Tagebuch und in der Diagnose.
