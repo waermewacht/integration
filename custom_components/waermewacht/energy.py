@@ -108,10 +108,20 @@ def combined_ratio(
     return ratio(totals.heat(*SEASONAL_MODES), electricity, min_electricity)
 
 
-def aux_share(totals: Totals, min_electricity: float) -> float | None:
-    """Backup heater share of the electricity for heating and hot water, in %."""
-    electricity = totals.electricity(*SEASONAL_MODES) + totals.standby()
+def aux_share(
+    totals: Totals, min_electricity: float, mode: Mode | None = None
+) -> float | None:
+    """Backup heater share of the electricity for heating and hot water, in %.
+
+    With `mode`, the share within that mode (its electricity and standby).
+    """
+    if mode is None:
+        modes: tuple[Mode, ...] = SEASONAL_MODES
+        electricity = totals.electricity(*modes) + totals.standby()
+    else:
+        modes = (mode,)
+        electricity = totals.electricity(mode) + totals.get(Kind.STANDBY, mode)
     if electricity <= 0 or electricity < min_electricity:
         return None
-    aux = sum(totals.get(Kind.AUX, m) for m in SEASONAL_MODES)
+    aux = sum(totals.get(Kind.AUX, m) for m in modes)
     return 100 * aux / electricity

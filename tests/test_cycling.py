@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from custom_components.waermewacht.cycling import (
+    activity_seconds,
     cycle_stats,
     max_starts_per_hour,
     prune,
@@ -67,6 +68,22 @@ def test_run_over_midnight_splits_runtime() -> None:
     assert result.starts == 0  # started yesterday
     assert result.runtime_seconds == 30 * 60
     assert result.finished_runs == 1  # ended today
+
+
+def test_activity_seconds_split_at_midnight() -> None:
+    """A run over midnight adds only its share inside the day (diary)."""
+    over_midnight = run(-600, 600)  # 20 h, half of it yesterday
+    over_midnight.activity_seconds = {"heating": 19 * 3600, "dhw": 3600}
+    within = run(700, 760)
+    within.activity_seconds = {"dhw": 3600}
+    still_open = run(1380, None)  # 23:00, open at midnight
+    still_open.activity_seconds = {"heating": 3600}
+    result = activity_seconds(
+        [over_midnight, within], still_open, DAY, DAY + timedelta(days=1), at(1500)
+    )
+    assert result["heating"] == pytest.approx(9.5 * 3600 + 3600 / 2)
+    assert result["dhw"] == pytest.approx(1800 + 3600)
+    assert sum(result.values()) <= 24 * 3600
 
 
 def test_uncounted_and_uncertain_runs_are_left_out() -> None:

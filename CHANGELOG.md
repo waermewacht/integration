@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Heizstab-Anteil je Betriebsart:** Die Sensoren „Heizstab-Anteil Monat“ und „Saison“ haben jetzt die Attribute `heating` und `dhw` mit dem Anteil innerhalb von Heizen bzw. Warmwasser. Der Gesamtwert wirft beides zusammen; hilft der Heizstab nur beim Warmwasser, sah das bisher nach Heizstab im Heizbetrieb aus (Rückmeldung im simon42-Forum).
+- **Tagebuch: Laufzeit je Betriebsart über Mitternacht:** Ein Lauf über Mitternacht zählte bisher mit seiner ganzen Zeit zu dem Tag, an dem er endete, ein Tag ganz ohne Laufende gar nicht. Bei langen Läufen kam ein Tag so auf mehr als 24 Stunden. Jetzt zählt jeder Lauf anteilig zu den Tagen, die er berührt, wie schon die Laufzeit. Bisher wertet nichts diese Zahlen aus; sie stehen im Tagebuch und in der Diagnose.
 - **Gesamtzähler im Platz eines Tageswerts:** Bei Quellen mit Tageswerten (Bosch HomeCom, ViCare, MELCloud und weitere) zählte Wärmewacht einen von Hand eingetauschten Gesamtzähler mit seinem ganzen Wert oder gar nicht, ohne Hinweis. Die Einrichtung warnt jetzt, wenn ein gewählter Zähler an mehreren Tagen steigt, ohne neu zu beginnen (unverändert noch einmal absenden übernimmt ihn), und bestehende Einträge bekommen einmal am Tag geprüft den Reparaturhinweis „Gesamtzähler statt Tageswert“.
 - **Sauberes Entladen:** Beim Neuladen oder Löschen eines Eintrags laufen keine Auswertungen der alten Laufzeit mehr weiter. Bisher konnte eine gerade laufende Prüfung danach noch einen Reparaturhinweis setzen, im schlimmsten Fall für einen schon gelöschten Eintrag. Speichern und das einmalige Verschieben der nachgetragenen Statistik laufen noch zu Ende, bevor der letzte Stand geschrieben wird.
 

@@ -292,6 +292,26 @@ def _aux_share(period: Period) -> Value:
     return value
 
 
+def _aux_share_attributes(
+    period: Period,
+) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
+    """Share within heating and within hot water: the total mixes both."""
+
+    def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+        totals = runtime.energy(period)
+        result: dict[str, Any] = {}
+        for mode in SEASONAL_MODES:
+            share = (
+                None
+                if totals is None
+                else aux_share(totals, runtime.min_electricity, mode)
+            )
+            result[mode.value] = None if share is None else round(share, 2)
+        return result
+
+    return attributes
+
+
 HAS_AUX: Needs = lambda r: any(  # noqa: E731
     s in r.entities for s in (*AUX_SIGNALS.values(), Signal.AUX_TOTAL)
 )
@@ -302,6 +322,7 @@ DIAGNOSIS = [
         suggested_display_precision=1,
         value=_aux_share(period),
         needs=HAS_AUX,
+        attributes=_aux_share_attributes(period),
     )
     for period in (Period.MONTH, Period.SEASON)
 ] + [

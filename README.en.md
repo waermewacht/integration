@@ -386,7 +386,7 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 
 | Entity | Unit | Meaning | Needs |
 | --- | --- | --- | --- |
-| Backup heater share month, season | % | backup heater share of the electricity for heating and hot water (with standby) | backup heater meter |
+| Backup heater share month, season | % | backup heater share of the electricity for heating and hot water (with standby). Attributes `heating` and `dhw`: the share within each mode, e.g. when the heater only helps with hot water | backup heater meter |
 | Flow-return spread today | K | flow minus return, time-weighted over the time the compressor was heating | flow, return and activity |
 | Flow temperature today | °C | mean flow temperature, weighted the same way | flow and activity |
 

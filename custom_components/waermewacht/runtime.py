@@ -95,6 +95,7 @@ from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .curve import curve_as_dicts, daily_samples, performance_curve
 from .cycling import (
     CycleStats,
+    activity_seconds,
     cycle_stats,
     max_starts_per_hour,
     prune,
@@ -1177,11 +1178,7 @@ class HeatPumpRuntime:
             return
         stats = self.cycles("yesterday", now)
         start, end = self.window("yesterday", now)
-        seconds: dict[str, float] = {}
-        for run in self.runs:
-            if run.end is not None and start <= run.end < end:
-                for activity, value in run.activity_seconds.items():
-                    seconds[activity] = seconds.get(activity, 0.0) + value
+        seconds = activity_seconds(self.runs, self.tracker.open_run, start, end, now)
         energy = self.marks.energy(Period.YESTERDAY, self.totals)
         split = disinfection_split(
             self.charges,

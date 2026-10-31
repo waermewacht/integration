@@ -386,7 +386,7 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 
 | Entität | Einheit | Bedeutung | Braucht |
 | --- | --- | --- | --- |
-| Heizstab-Anteil Monat, Saison | % | Anteil des Heizstabs am Strom für Heizen und Warmwasser (mit Stillstand) | Heizstab-Zähler |
+| Heizstab-Anteil Monat, Saison | % | Anteil des Heizstabs am Strom für Heizen und Warmwasser (mit Stillstand). Attribute `heating` und `dhw`: Anteil innerhalb jeder Betriebsart, etwa wenn der Heizstab nur beim Warmwasser hilft | Heizstab-Zähler |
 | Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vorlauf, Rücklauf und Betriebsart |
 | Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf und Betriebsart |
 

@@ -63,6 +63,15 @@ def test_aux_share() -> None:
     assert aux_share(Totals(), MIN) is None
 
 
+def test_aux_share_per_mode() -> None:
+    """The total mixes both modes; per mode the heater shows where it ran."""
+    t = totals(elec_heating=87, elec_dhw=68, aux_dhw=29, standby_dhw=1)
+    assert aux_share(t, MIN) == pytest.approx(100 * 29 / 185)
+    assert aux_share(t, MIN, Mode.HEATING) == pytest.approx(0.0)
+    assert aux_share(t, MIN, Mode.DHW) == pytest.approx(100 * 29 / 98)
+    assert aux_share(totals(elec_heating=10), MIN, Mode.DHW) is None
+
+
 def test_arithmetic_and_round_trip() -> None:
     t = Totals()
     t.add(Kind.HEAT, Mode.HEATING, 2.5)

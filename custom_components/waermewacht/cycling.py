@@ -89,6 +89,31 @@ def cycle_stats(
     )
 
 
+def activity_seconds(
+    runs: Sequence[Run],
+    open_run: Run | None,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+) -> dict[str, float]:
+    """Running seconds per activity within the window [start, end).
+
+    A run only keeps its total per activity, so a run reaching into the window
+    (over midnight, or still open) adds its share of the time inside it.
+    """
+    hi = min(end, now)
+    result: dict[str, float] = {}
+    for run in [*runs, *([open_run] if open_run else [])]:
+        duration = run.seconds(now)
+        inside = _overlap(run.start, run.end or now, start, hi)
+        if duration <= 0 or inside <= 0:
+            continue
+        share = min(inside / duration, 1.0)
+        for activity, seconds in run.activity_seconds.items():
+            result[activity] = result.get(activity, 0.0) + seconds * share
+    return result
+
+
 def max_starts_per_hour(
     runs: Sequence[Run], open_run: Run | None, start: datetime, end: datetime
 ) -> int:
