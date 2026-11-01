@@ -52,6 +52,10 @@ SUMMER = [(date(2025, 7, 1) + timedelta(days=n), 20.0) for n in range(20)]
 WINTER = [
     (date(2025, 12, 1) + timedelta(days=n), -6.0 + 2 * (n // 7)) for n in range(63)
 ]
+# The same 9 weeks, only mild (2 … 10 °C): no frost, spread 8 K.
+MILD_WINTER = [
+    (date(2025, 12, 1) + timedelta(days=n), 2.0 + (n // 7)) for n in range(63)
+]
 NOW = datetime(2026, 3, 1, 11, tzinfo=UTC)
 
 
@@ -67,12 +71,14 @@ def gas_kwh(mean: float) -> float:
     return max(0.0, 0.1 * (15.0 - mean)) / ETA + DHW_PER_DAY / 24
 
 
-def import_statistics(hass: HomeAssistant) -> None:
+def import_statistics(
+    hass: HomeAssistant, days: list[tuple[date, float]] | None = None
+) -> None:
     tz = dt_util.get_default_time_zone()
     gas: list[StatisticData] = []
     outdoor: list[StatisticData] = []
     total = 0.0
-    for day, mean in [*SUMMER, *WINTER]:
+    for day, mean in days if days is not None else [*SUMMER, *WINTER]:
         start = datetime.combine(day, datetime.min.time(), tzinfo=tz).astimezone(UTC)
         for hour in range(24):
             at = start + timedelta(hours=hour)
@@ -200,6 +206,29 @@ async def test_gas_boiler_from_statistics(hass: HomeAssistant) -> None:
             blocking=True,
             return_response=True,
         )
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_boiler_mild_weeks_preliminary(hass: HomeAssistant) -> None:
+    """Only mild weeks: the line as preliminary attributes, states unknown."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    import_statistics(hass, [*SUMMER, *MILD_WINTER])
+    await async_wait_recording_done(hass)
+    entry = await setup_gas(hass)
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    per_kelvin = state(hass, entry, "gas_heat_load_per_kelvin")
+    assert per_kelvin.state == "unknown"
+    assert per_kelvin.attributes["reason"] == "spread_too_small"
+    assert per_kelvin.attributes["preliminary"] is True
+    assert per_kelvin.attributes["slope_kw_per_k"] == pytest.approx(-0.1, abs=0.002)
+    assert per_kelvin.attributes["heating_limit"] == pytest.approx(15.0, abs=0.1)
+    assert per_kelvin.attributes["standard_kw"] is None
+    assert state(hass, entry, "gas_heat_load_design").state == "unknown"
+    assert state(hass, entry, "gas_heating_limit").state == "unknown"
 
     assert await hass.config_entries.async_unload(entry.entry_id)
 

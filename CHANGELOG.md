@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Vorläufige Heizlast-Gerade:** Reichen die Wochen für die Energiesignatur, fehlen aber kalte Wochen (zu wenig Spanne oder keine Frosttage), zeigen die Attribute von „Heizlast je Kelvin“ die Gerade jetzt schon als vorläufig (`preliminary: true`): Steigung, Achsenabschnitt, Heizgrenze und R². Bisher war dann alles leer, obwohl die Wochen schon viel sagten. Der Zustand bleibt unbekannt, und die Heizlast bei Normaußentemperatur fehlt weiter, weil sie aus milden Wochen weit hochgerechnet wäre. Gilt für Wärmepumpe und Gasheizung, die Diagramm-Karte zeichnet die vorläufige Gerade schon (Rückmeldung im simon42-Forum: Gaszähler erst seit Ende Januar aufgezeichnet).
+
 ## 0.2.3 – 2026-10-31
 
 - **Heizstab-Anteil je Betriebsart:** Die Sensoren „Heizstab-Anteil Monat“ und „Saison“ haben jetzt die Attribute `heating` und `dhw` mit dem Anteil innerhalb von Heizen bzw. Warmwasser. Der Gesamtwert wirft beides zusammen; hilft der Heizstab nur beim Warmwasser, sah das bisher nach Heizstab im Heizbetrieb aus (Rückmeldung im simon42-Forum).

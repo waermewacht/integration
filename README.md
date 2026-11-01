@@ -453,6 +453,7 @@ Jede Klasse hat `lower` und `upper` (°C, untere Grenze eingeschlossen), `days`,
 - Eine Woche beginnt Montag 0 Uhr. Sie zählt mit mindestens 6 vollen Tagen und einem Mittel unter 12 °C.
 - Ein voller Tag hat mindestens 20 Stundenwerte der Außentemperatur, keine Kühlung und mindestens 1 kWh Wärme fürs Heizen. Tage mit ausgeschalteter Heizung (Sommerbetrieb von Hand gehalten, Gasheizung im Herbst noch aus) zählen nicht: Sie sagen nichts über das Haus und würden die Gerade zu steil machen. Werte außerhalb von −35 bis 45 °C werden verworfen. Ein Frosttag hat ein Tagesmittel unter 0 °C.
 - Ein Ergebnis gibt es erst mit mindestens 8 Wochen, 10 K Spanne zwischen kältester und wärmster Woche, 5 Frosttagen und einer fallenden Geraden. Sonst bleibt der Wert leer, und `reasons` nennt den Grund.
+- **Vorläufig:** Reichen die Wochen, fehlen aber Spanne oder Frosttage (etwa weil die Statistik erst im Spätwinter beginnt), zeigen die Attribute die Gerade schon mit `preliminary: true`: Steigung, Achsenabschnitt, Heizgrenze und R². Der Zustand bleibt unbekannt, und die Heizlast bei Normaußentemperatur fehlt: Sie wäre aus milden Wochen weit hochgerechnet. Die Diagramm-Karte zeichnet die vorläufige Gerade schon.
 - „Gemessen“ (`measured_kw`) ist die Gerade bei Normaußentemperatur, mit inneren und solaren Gewinnen. „Normgerecht“ (`standard_kw`) ist die parallel verschobene Gerade durch 0 bei 20 °C, ohne diese Gewinne. Der Sensor „Heizlast bei Normaußentemperatur“ zeigt den normgerechten Wert.
 
 Attribute von „Heizlast je Kelvin“:
@@ -461,6 +462,7 @@ Attribute von „Heizlast je Kelvin“:
 | --- | --- |
 | `start`, `end` | ausgewerteter Zeitraum (die letzte vollständige Saison) |
 | `sufficient` | `true`, wenn die Daten für ein Ergebnis reichen |
+| `preliminary` | `true`, wenn die Gerade nur vorläufig ist (genug Wochen, aber zu wenig Spanne oder Frosttage) |
 | `reasons` | Gründe, wenn nicht: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
 | `week_count` | gültige Wochen |
 | `spread` | Spanne der Wochenmittel in K |
@@ -472,7 +474,7 @@ Attribute von „Heizlast je Kelvin“:
 | `measured_kw`, `standard_kw` | Heizlast bei Normaußentemperatur, gemessen und normgerecht |
 | `weeks` | gültige Wochen mit `start`, `days`, `hours`, `mean_outdoor`, `power_kw` |
 
-Ohne ausreichende Daten sind die Werte der Geraden `null`. Für andere Zeiträume und Heizen mit Warmwasser gibt es die [Aktionen](#aktionen). Diagramme zeigen die [Dashboard-Beispiele](#dashboard-beispiele).
+Ohne ausreichende Daten sind die Werte der Geraden `null`, außer bei einer vorläufigen Geraden. Für andere Zeiträume und Heizen mit Warmwasser gibt es die [Aktionen](#aktionen). Diagramme zeigen die [Dashboard-Beispiele](#dashboard-beispiele).
 
 ## Aktionen
 

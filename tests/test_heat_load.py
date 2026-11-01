@@ -134,6 +134,7 @@ def test_insufficient_data_names_all_reasons() -> None:
     assert result.spread == pytest.approx(8.0, abs=0.1)
     assert result.frost_days == 1  # 2 °C week, first day -1 °C
     assert result.slope_kw_per_k is None
+    assert not result.preliminary  # too few weeks: no line at all
     assert result.measured_kw is None
     assert result.standard_kw is None
 
@@ -144,6 +145,27 @@ def test_frost_days_alone_missing() -> None:
     result = heat_load(hours, outdoor, BERLIN)
     assert result.reasons == [TOO_FEW_FROST_DAYS]
     assert result.frost_days == 0
+
+
+def test_mild_weeks_give_a_preliminary_line() -> None:
+    """Enough weeks, but only mild ones (data since late winter): the line,
+    but no heat load at the design temperature."""
+    means = (11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0)
+    hours, outdoor = build(means, offsets=(0.0,) * 7)
+    result = heat_load(hours, outdoor, BERLIN, design_temp=-12.0)
+    assert not result.sufficient
+    assert result.preliminary
+    assert result.reasons == [SPREAD_TOO_SMALL, TOO_FEW_FROST_DAYS]
+    assert result.slope_kw_per_k == pytest.approx(B)
+    assert result.intercept_kw == pytest.approx(A)
+    assert result.heating_limit == pytest.approx(15.0)
+    assert result.r_squared == pytest.approx(1.0)
+    assert result.measured_kw is None
+    assert result.standard_kw is None
+    data = heat_load_as_dict(result)
+    assert data["preliminary"] is True
+    assert data["slope_kw_per_k"] == -0.16
+    assert data["standard_kw"] is None
 
 
 def test_no_data() -> None:
@@ -237,6 +259,7 @@ def test_rising_power_is_not_a_signature() -> None:
     result = heat_load(hours, outdoor, BERLIN, design_temp=-12.0)
     assert not result.sufficient
     assert result.reasons == [SLOPE_NOT_NEGATIVE]
+    assert not result.preliminary
     assert result.heating_limit is None
     assert result.measured_kw is None
 
@@ -245,6 +268,7 @@ def test_result_as_dict() -> None:
     hours, outdoor = build(WEEKS)
     data = heat_load_as_dict(heat_load(hours, outdoor, BERLIN, design_temp=-12.0))
     assert data["sufficient"] is True
+    assert data["preliminary"] is False
     assert data["reasons"] == []
     assert data["week_count"] == 10
     assert data["slope_kw_per_k"] == -0.16

@@ -453,6 +453,7 @@ Each class has `lower` and `upper` (°C, lower bound included), `days`, `mean_ou
 - A week starts on Monday 00:00. It counts with at least 6 full days and a mean below 12 °C.
 - A full day has at least 20 hourly outdoor values, no cooling and at least 1 kWh of heating heat. Days with the heating off (summer mode held by hand, a gas boiler not switched on yet in autumn) do not count: they say nothing about the house and would make the line too steep. Values outside −35 to 45 °C are discarded. A frost day has a daily mean below 0 °C.
 - There is a result only with at least 8 weeks, a spread of 10 K between the coldest and the warmest week, 5 frost days and a falling line. Otherwise the value stays empty and `reasons` gives the reason.
+- **Preliminary:** with enough weeks but too small a spread or too few frost days (for example because the statistics only start in late winter), the attributes already show the line with `preliminary: true`: slope, intercept, heating limit and R². The state stays unknown, and the heat load at the design temperature is missing: it would be extrapolated far from mild weeks. The chart card already draws the preliminary line.
 - "Measured" (`measured_kw`) is the line at the design outdoor temperature, with internal and solar gains. "Standard" (`standard_kw`) is the line moved in parallel through 0 at 20 °C, without these gains. The sensor "Heat load at design temperature" shows the standard value.
 
 Attributes of "Heat load per kelvin":
@@ -461,6 +462,7 @@ Attributes of "Heat load per kelvin":
 | --- | --- |
 | `start`, `end` | period evaluated (the last complete season) |
 | `sufficient` | `true` if the data suffice for a result |
+| `preliminary` | `true` if the line is only preliminary (enough weeks, but too small a spread or too few frost days) |
 | `reasons` | reasons if not: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
 | `week_count` | valid weeks |
 | `spread` | spread of the weekly means in K |
@@ -472,7 +474,7 @@ Attributes of "Heat load per kelvin":
 | `measured_kw`, `standard_kw` | heat load at the design outdoor temperature, measured and standard |
 | `weeks` | valid weeks with `start`, `days`, `hours`, `mean_outdoor`, `power_kw` |
 
-Without sufficient data the values of the line are `null`. For other periods and for heating with hot water, use the [actions](#actions). Charts are in the [dashboard examples](#dashboard-examples).
+Without sufficient data the values of the line are `null`, except for a preliminary line. For other periods and for heating with hot water, use the [actions](#actions). Charts are in the [dashboard examples](#dashboard-examples).
 
 ## Actions
 

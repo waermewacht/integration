@@ -23,6 +23,10 @@ an option without default):
 Shown only with enough data (feasibility study, docs/ENTWICKLUNG.md
 "Machbarkeit mit echten Daten"): at least 8 valid weeks, a spread of the weekly means of
 at least 10 K and at least 5 frost days (day mean < 0 °C) in those weeks.
+With 8 weeks but too small a spread or too few frost days (data only from
+mild weeks, e.g. a gas meter recorded since late winter) the line is kept
+as preliminary: slope, intercept, R² and heating limit, but no heat load at
+the design temperature - that is the far extrapolation the rules guard.
 """
 
 from __future__ import annotations
@@ -66,9 +70,11 @@ class WeekPoint:
 
 @dataclass
 class HeatLoad:
-    """Energy signature fit; values are None unless `sufficient`."""
+    """Energy signature fit; values are None unless `sufficient`, except the
+    line itself when `preliminary`."""
 
     sufficient: bool
+    preliminary: bool = False  # line from mild weeks only, no design value
     reasons: list[str] = field(default_factory=list)
     weeks: list[WeekPoint] = field(default_factory=list)
     spread: float | None = None  # K
@@ -180,17 +186,20 @@ def signature(
         frost_days=frost_days,
         design_temp=design_temp,
     )
-    if reasons:
+    if TOO_FEW_WEEKS in reasons:
         return result
     a, b, r2 = fit_line([(w.mean_outdoor, w.power_kw) for w in weeks])
     if b >= 0:
         result.reasons.append(SLOPE_NOT_NEGATIVE)
         return result
-    result.sufficient = True
     result.intercept_kw = a
     result.slope_kw_per_k = b
     result.r_squared = r2
     result.heating_limit = -a / b
+    if reasons:
+        result.preliminary = True
+        return result
+    result.sufficient = True
     if design_temp is not None:
         result.measured_kw = a + b * design_temp
         result.standard_kw = b * (design_temp - INDOOR_REFERENCE)
@@ -225,6 +234,7 @@ def heat_load_as_dict(result: HeatLoad) -> dict[str, Any]:
     """Result as a plain dict for an action response."""
     return {
         "sufficient": result.sufficient,
+        "preliminary": result.preliminary,
         "reasons": list(result.reasons),
         "week_count": len(result.weeks),
         "spread": _round(result.spread, 1),
