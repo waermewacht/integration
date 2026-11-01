@@ -1123,6 +1123,22 @@ class HeatPumpRuntime:
         await self.async_save()
         self._notify()
 
+    def _check_source_gap(self, now: datetime) -> None:
+        """An open run is uncertain when an energy counter, the compressor or
+        an activity signal went missing during it (temperatures do not count:
+        they say nothing about the compressor)."""
+        if (run := self.tracker.open_run) is None or run.uncertain:
+            return
+        core = {*self.counters, Signal.COMPRESSOR, *self._activity_configured}
+        since = [
+            at
+            for entity_id, at in self._unavailable_since.items()
+            if at >= run.start and self._signal_of.get(entity_id) in core
+        ]
+        if since and self.tracker.source_gap(min(since), now):
+            self._count("run:source_gap")
+            self._dirty = True
+
     def _check_stuck(self, now: datetime) -> None:
         """Running time per counter since it last rose; repair issues for
         stuck counters and long unavailable sources."""
@@ -1874,6 +1890,7 @@ class HeatPumpRuntime:
         self._note_mode(now)
         self._sample(now)
         self.tracker.tick(now)
+        self._check_source_gap(now)
         self._set_charge_late()
         self._finish_charge(self.charge_tracker.tick(now))
         # Before a period boundary, book all waiting electricity in the period

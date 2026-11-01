@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Läufe bei teilweisem Quellenausfall:** Fällt während eines Laufs ein Energiezähler oder ein Signal der Betriebsart länger als 5 Minuten aus, gilt der Lauf jetzt als unsicher und zählt nicht mehr für Laufzeit je Start, Kurzläufe und Pausen. Anlass: Bei einem Ausfall der Bosch-Cloud blieb der lokale Kompressorwert 17 Stunden eingefroren, und Wärmewacht sah einen einzigen Lauf statt drei. Ein Ausfall, der schon vor dem Lauf begann, zählt nicht, damit ein länger fehlender Zähler nicht jeden Lauf unsicher macht.
+
 ## 0.2.4 – 2026-11-01
 
 - **Vorläufige Heizlast-Gerade:** Reichen die Wochen für die Energiesignatur, fehlen aber kalte Wochen (zu wenig Spanne oder keine Frosttage), zeigen die Attribute von „Heizlast je Kelvin“ die Gerade jetzt schon als vorläufig (`preliminary: true`): Steigung, Achsenabschnitt, Heizgrenze und R². Bisher war dann alles leer, obwohl die Wochen schon viel sagten. Der Zustand bleibt unbekannt, und die Heizlast bei Normaußentemperatur fehlt weiter, weil sie aus milden Wochen weit hochgerechnet wäre. Gilt für Wärmepumpe und Gasheizung, die Diagramm-Karte zeichnet die vorläufige Gerade schon (Rückmeldung im simon42-Forum: Gaszähler erst seit Ende Januar aufgezeichnet).

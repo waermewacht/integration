@@ -158,6 +158,24 @@ class RunTracker:
         """Bring the activity time of the open run up to `at`."""
         self._accumulate(at)
 
+    def source_gap(self, since: datetime, at: datetime) -> bool:
+        """Mark the open run uncertain when another source of the heat pump
+        has been missing since `since` for longer than the gap tolerance.
+
+        A source can fail while the compressor state keeps its last reading
+        (a cloud integration whose local values freeze): the run then looks
+        longer than it was. Only a gap that began during the run counts, so
+        a meter that has been gone for days does not taint every run.
+        Returns whether the run was marked now.
+        """
+        run = self.open_run
+        if run is None or run.uncertain or since < run.start:
+            return False
+        if (at - since).total_seconds() <= self.gap_tolerance:
+            return False
+        run.uncertain = True
+        return True
+
     def _accumulate(self, at: datetime) -> None:
         if self.activity is None or self.activity_since is None:
             return

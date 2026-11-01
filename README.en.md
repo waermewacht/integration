@@ -339,7 +339,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | Shortest pause today | min | shortest time between the end of a run and the next start |
 | Defrosts today | – | count; attributes `minutes` (duration today), `yesterday` (count yesterday). With the daily analysis (only with an outdoor temperature) for the last 7 days the count (`defrosts_7d`), warm defrosts (`warm_defrosts_7d`, hourly mean of 10 °C or more), mean and longest duration (`mean_minutes_7d`, `longest_minutes_7d`), plus `classes`: defrosts per run hour per 2 K class against the previous season (`factor` = current ÷ previous) |
 
-If the compressor state was missing for more than 5 minutes (Home Assistant or the source down), the affected run counts as uncertain. It is then left out of run time per start, short runs and pauses.
+If the compressor state was missing for more than 5 minutes (Home Assistant or the source down), the affected run counts as uncertain. The same applies when an energy meter or an activity signal was unavailable for more than 5 minutes during the run: some sources then freeze the compressor reading, and the run looks longer than it was. It is then left out of run time per start, short runs and pauses.
 
 ### Conspicuous cycling
 

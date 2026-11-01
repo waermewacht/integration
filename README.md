@@ -339,7 +339,7 @@ Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen 
 | Kürzeste Pause heute | min | kürzeste Zeit zwischen Ende und nächstem Start |
 | Abtauungen heute | – | Anzahl; Attribute `minutes` (Dauer heute), `yesterday` (Anzahl gestern). Mit der täglichen Analyse (nur mit Außentemperatur) für die letzten 7 Tage Anzahl (`defrosts_7d`), warme Abtauungen (`warm_defrosts_7d`, Stundenmittel ab 10 °C), mittlere und längste Dauer (`mean_minutes_7d`, `longest_minutes_7d`), dazu `classes`: Abtauungen je Laufstunde je 2-K-Klasse gegen die Vorsaison (`factor` = laufende ÷ vorige) |
 
-Fehlte der Kompressorstatus länger als 5 Minuten (Home Assistant oder Quelle aus), gilt der betroffene Lauf als unsicher. Er zählt dann nicht für Laufzeit pro Start, Kurzläufe und Pausen.
+Fehlte der Kompressorstatus länger als 5 Minuten (Home Assistant oder Quelle aus), gilt der betroffene Lauf als unsicher. Ebenso, wenn während des Laufs ein Energiezähler oder ein Signal der Betriebsart länger als 5 Minuten nicht verfügbar war: Manche Quellen frieren dann den Kompressorwert ein, und der Lauf wirkt länger, als er war. Er zählt dann nicht für Laufzeit pro Start, Kurzläufe und Pausen.
 
 ### Auffälliges Takten
 

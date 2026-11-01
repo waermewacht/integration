@@ -166,3 +166,24 @@ def test_replay_of_recorded_history() -> None:
     ]
     assert len(defrosts) == 1 and defrosts[0].start == at(80)
     assert tracker.open_run is not None and tracker.open_run.counted
+
+
+def test_source_gap_during_run_makes_it_uncertain() -> None:
+    """A counter missing during a run while the compressor reading froze."""
+    tracker = started(RunTracker())
+    tracker.set_compressor(True, at(10))
+    assert not tracker.source_gap(at(15), at(19))  # 4 minutes: tolerated
+    assert tracker.source_gap(at(15), at(21))
+    assert not tracker.source_gap(at(15), at(30))  # already marked
+    run = tracker.set_compressor(False, at(600))
+    assert run is not None and run.uncertain
+
+
+def test_source_gap_before_the_run_does_not_count() -> None:
+    """A meter gone for days does not taint every run."""
+    tracker = started(RunTracker())
+    tracker.set_compressor(True, at(10))
+    assert not tracker.source_gap(at(-600), at(60))
+    run = tracker.set_compressor(False, at(70))
+    assert run is not None and not run.uncertain
+    assert not RunTracker().source_gap(at(0), at(60))  # no open run
