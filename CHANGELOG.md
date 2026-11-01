@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.4 – 2026-11-01
 
 - **Vorläufige Heizlast-Gerade:** Reichen die Wochen für die Energiesignatur, fehlen aber kalte Wochen (zu wenig Spanne oder keine Frosttage), zeigen die Attribute von „Heizlast je Kelvin“ die Gerade jetzt schon als vorläufig (`preliminary: true`): Steigung, Achsenabschnitt, Heizgrenze und R². Bisher war dann alles leer, obwohl die Wochen schon viel sagten. Der Zustand bleibt unbekannt, und die Heizlast bei Normaußentemperatur fehlt weiter, weil sie aus milden Wochen weit hochgerechnet wäre. Gilt für Wärmepumpe und Gasheizung, die Diagramm-Karte zeichnet die vorläufige Gerade schon (Rückmeldung im simon42-Forum: Gaszähler erst seit Ende Januar aufgezeichnet).
 
