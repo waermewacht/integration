@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, tzinfo
+
 import pytest
 
 from custom_components.waermewacht.activity import combine
@@ -166,7 +168,16 @@ def test_energy_entities_have_usable_units() -> None:
 
 
 def test_day_values_counted_in_utc() -> None:
-    assert VICARE.day_values and VICARE.day_timezone == "UTC"
+    assert VICARE.day_values and VICARE.day_timezone is UTC
+
+
+def test_day_timezones_are_zone_objects() -> None:
+    # A zone name would be looked up from disk when the runtime is built on
+    # the event loop (HACS review, hacs/default#12862).
+    for template in TEMPLATES.values():
+        assert template.day_timezone is None or isinstance(
+            template.day_timezone, tzinfo
+        )
 
 
 def test_defrost_in_the_phase_beats_the_hot_water_flag() -> None:

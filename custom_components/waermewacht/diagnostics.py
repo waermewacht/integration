@@ -167,7 +167,9 @@ async def async_get_config_entry_diagnostics(
         # How the template books (beta sources: confirm the day change etc.).
         "booking": {
             "day_values": template.day_values,
-            "day_timezone": template.day_timezone,
+            "day_timezone": str(template.day_timezone)
+            if template.day_timezone
+            else None,
             "previous_day": template.previous_day,
             "hourly_statistics": runtime.hourly,
             "booked_until": runtime.booked_until.isoformat()

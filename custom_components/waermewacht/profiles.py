@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
+from datetime import tzinfo
 from functools import cached_property
 from typing import NamedTuple
 
@@ -63,8 +64,10 @@ class Template:
     # up to two hours late: they start anew at midnight, and standby is told
     # from the heat of the same fetch instead of the compressor state.
     day_values: bool = False
-    # Time zone in which the day values start anew; None: local time.
-    day_timezone: str | None = None
+    # Time zone in which the day values start anew; None: local time. A fixed
+    # zone object (datetime.UTC), not a name: looking a name up reads the zone
+    # file from disk, which must not happen on the event loop.
+    day_timezone: tzinfo | None = None
     # The day values are the previous day's total (MELCloud): booked into
     # the previous day.
     previous_day: bool = False

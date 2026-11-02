@@ -46,6 +46,7 @@ the wrong day.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import UTC
 
 from .model import ENERGY_SIGNALS, Activity, Signal
 from .profiles import RegistryEntry, Template
@@ -166,5 +167,5 @@ VICARE = ViCareTemplate(
     activity_values=VICARE_ACTIVITY,
     activity_foreign=VICARE_FOREIGN,
     day_values=True,
-    day_timezone="UTC",
+    day_timezone=UTC,
 )

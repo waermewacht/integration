@@ -366,8 +366,7 @@ class HeatPumpRuntime:
         self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = None
         if self.template.day_values:
-            zone = self.template.day_timezone
-            day_tz = dt_util.get_time_zone(zone) if zone else self.tz
+            day_tz = self.template.day_timezone or self.tz
         # Energy signals; booked from state changes (counters) or, for
         # sources that write hourly statistics themselves, hour by hour.
         self.hourly = self.template.hourly_statistics

@@ -141,11 +141,14 @@ If it is only about the size of the database, a short retention is often enough 
 
 ## Installation
 
-Wärmewacht is installed through HACS as a custom repository. Every version is a regular GitHub release.
+**One click:** [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=waermewacht&repository=integration&category=integration) → download, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waermewacht)
 
-1. HACS → ⋮ → *Custom repositories* → `https://github.com/waermewacht/integration`, type *Integration*.
-2. Search for Wärmewacht and download it. Restart Home Assistant.
-3. *Settings → Devices & services → Add integration → Wärmewacht*.
+Or by hand:
+
+1. Search for Wärmewacht in HACS and download it. Restart Home Assistant.
+2. *Settings → Devices & services → Add integration → Wärmewacht*.
+
+If HACS does not find Wärmewacht (inclusion in the default list is pending), first add it under HACS → ⋮ → *Custom repositories* → `https://github.com/waermewacht/integration`, type *Integration*.
 
 ## Setup
 
