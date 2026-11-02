@@ -206,8 +206,9 @@ class GasRuntime:
             {"readings": [[r.at.isoformat(), r.value] for r in self.readings]}
         )
         self._notify()
-        # Bound to the entry: an unload cancels a running analysis.
-        self.entry.async_create_background_task(
+        # A task of the entry (not a background one): the new figures follow
+        # at once, and an unload waits for it.
+        self.entry.async_create_task(
             self.hass, self.async_refresh(), "waermewacht_gas_refresh"
         )
 
@@ -312,7 +313,7 @@ class GasRuntime:
             self._notify()
             if self._again:
                 self._again = False
-                self.entry.async_create_background_task(
+                self.entry.async_create_task(
                     self.hass, self.async_refresh(), "waermewacht_gas_refresh"
                 )
 

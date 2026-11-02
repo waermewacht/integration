@@ -504,10 +504,12 @@ async def test_gas_boiler_with_readings_by_hand(hass: HomeAssistant) -> None:
             {"config_entry": entry.entry_id, "reading": value, "time": at.isoformat()},
             blocking=True,
         )
+    await hass.async_block_till_done()
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
 
     per_kelvin = state(hass, entry, "gas_heat_load_per_kelvin")
+    assert per_kelvin.state != "unknown", per_kelvin.attributes
     assert float(per_kelvin.state) == pytest.approx(100, abs=2)
     assert per_kelvin.attributes["dhw_method"] == "summer_base"
     dhw = state(hass, entry, "gas_dhw_share")
