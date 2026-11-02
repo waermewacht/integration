@@ -849,6 +849,8 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten mit Diagnose-Datei, dem Modell der Wärmepumpe und den Versionen von Home Assistant, Wärmewacht und gegebenenfalls EMS-ESP. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
 
+Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 **Besitzt du eine Wärmepumpe mit Beta-Vorlage?** Besonders bei Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) und Vaillant (myVAILLANT) beruhen einzelne Annahmen nur auf dem Quellcode der Integrationen. Eine Rückmeldung mit Diagnose-Datei nach ein paar Tagen Betrieb hilft, sie zu bestätigen: ob die Zahlen plausibel sind und wann die Tageswerte springen.
 
 **Wärmepumpe ohne Vorlage?** Richte Wärmewacht manuell ein (mindestens Wärme und Strom Heizen und „Kompressor läuft“) und hänge die Diagnose-Datei an ein Issue. Unter `source` stehen dann alle Entitäten der Geräte dahinter, mit Plattform, unique_id, Einheit und Zustand. Daraus lässt sich eine Vorlage bauen.

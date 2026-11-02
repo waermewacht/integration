@@ -849,6 +849,8 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 
 Please open an [issue](https://github.com/waermewacht/integration/issues), ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
 
+Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an English summary at the end).
+
 **Do you own a heat pump with a beta template?** Especially for Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) and Vaillant (myVAILLANT) some assumptions rest on the integrations' source code only. Feedback with a diagnostics file after a few days of operation helps to confirm them: whether the figures are plausible and when the day values jump.
 
 **Heat pump without a template?** Set up Wärmewacht manually (at least heat and electricity for heating and "Compressor running") and attach the diagnostics file to an issue. Under `source` it lists every entity of the devices behind it, with platform, unique_id, unit and state. That is enough to build a template.
