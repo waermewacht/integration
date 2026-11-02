@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.5 – 2026-11-02
 
 - **Kennzahlen als eigene Sensoren:** „Heizstab-Anteil Heizen“ und „Heizstab-Anteil Warmwasser“ (je Monat und Saison), „Heizgrenze“ und „Stillstand-Leistung 7 Tage“. Bisher standen diese Werte nur in Attributen, die Home Assistant erst unter ⋮ → Details zeigt (Rückmeldung im simon42-Forum). Die Attribute bleiben zusätzlich erhalten.
 - **Läufe bei teilweisem Quellenausfall:** Fällt während eines Laufs ein Energiezähler oder ein Signal der Betriebsart länger als 5 Minuten aus, gilt der Lauf jetzt als unsicher und zählt nicht mehr für Laufzeit je Start, Kurzläufe und Pausen. Anlass: Bei einem Ausfall der Bosch-Cloud blieb der lokale Kompressorwert 17 Stunden eingefroren, und Wärmewacht sah einen einzigen Lauf statt drei. Ein Ausfall, der schon vor dem Lauf begann, zählt nicht, damit ein länger fehlender Zähler nicht jeden Lauf unsicher macht.
