@@ -381,6 +381,9 @@
       "heat_load_design": {
         "name": "Heat load at design temperature"
       },
+      "heating_limit": {
+        "name": "Heating limit"
+      },
       "starts_today": {
         "name": "Starts today"
       },
@@ -419,6 +422,21 @@
       },
       "aux_share_season": {
         "name": "Backup heater share season"
+      },
+      "aux_share_heating_month": {
+        "name": "Backup heater share heating month"
+      },
+      "aux_share_heating_season": {
+        "name": "Backup heater share heating season"
+      },
+      "aux_share_dhw_month": {
+        "name": "Backup heater share hot water month"
+      },
+      "aux_share_dhw_season": {
+        "name": "Backup heater share hot water season"
+      },
+      "standby_power_7d": {
+        "name": "Standby power 7 days"
       },
       "spread_today": {
         "name": "Flow-return spread today"

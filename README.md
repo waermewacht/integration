@@ -317,6 +317,7 @@ Attribute:
 | Wärme Heizen / Warmwasser / Kühlen | kWh | Wärme seit der Einrichtung (beim Kühlen: entzogene Wärme) |
 | Strom Heizen / Warmwasser / Kühlen | kWh | Strom bei laufendem Kompressor, mit Heizstab und „Strom Abtauen“, ohne Stillstand |
 | Strom Stillstand | kWh | Strom bei stehendem Kompressor, alle Betriebsarten, dazu „Strom Stillstand“ der Quelle. Attribute aus dem Tagebuch (mit der täglichen Analyse, also nur mit Außentemperatur): mittlere Leistung der letzten 7 Tage (`mean_power_w_7d`) gegen den Median der 30 Tage davor (`reference_w`), kleinster und größter Tag (`min_day_w`, `max_day_w`); `rising` ist an ab +50 % **und** +10 W (eigene Annahme) |
+| Stillstand-Leistung 7 Tage | W | Mittlere Leistung im Stillstand der letzten 7 Tage (dasselbe wie das Attribut `mean_power_w_7d`), aus der täglichen Analyse, also nur mit Außentemperatur |
 
 Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn der passende Zähler zugeordnet ist. „Strom Stillstand“ entsteht, wenn sich der Stillstand abtrennen lässt: mit Wärme- und Stromzähler derselben Betriebsart oder mit Stromzähler und „Kompressor läuft“ (nicht bei Tageswerten aus der Cloud). Bitte nicht deaktivieren und nicht aus dem [Recorder](#recorder-schlank-halten) ausschließen: Bericht, AZ-Kennlinie und Heizlast lesen ihre Statistik für die Zeit nach der Einrichtung.
 
@@ -387,6 +388,7 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 | Entität | Einheit | Bedeutung | Braucht |
 | --- | --- | --- | --- |
 | Heizstab-Anteil Monat, Saison | % | Anteil des Heizstabs am Strom für Heizen und Warmwasser (mit Stillstand). Attribute `heating` und `dhw`: Anteil innerhalb jeder Betriebsart, etwa wenn der Heizstab nur beim Warmwasser hilft | Heizstab-Zähler |
+| Heizstab-Anteil Heizen / Warmwasser Monat, Saison | % | Anteil des Heizstabs innerhalb einer Betriebsart (dieselben Werte wie die Attribute `heating` und `dhw`). Läuft der Heizstab nur fürs Warmwasser, steht Heizen bei 0 % | Heizstab-Zähler und die Betriebsart vollständig |
 | Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vorlauf, Rücklauf und Betriebsart |
 | Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf und Betriebsart |
 
@@ -427,6 +429,7 @@ Alle Sensoren dieses Abschnitts brauchen die Außentemperatur sowie Wärme und S
 | --- | --- | --- |
 | AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen. |
 | Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
+| Heizgrenze | °C | Außentemperatur, ab der das Haus nicht mehr heizt: dort erreicht die Energiesignatur 0 (dasselbe wie das Attribut `heating_limit` von „Heizlast je Kelvin“). |
 | Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
 | Spreizung 7 Tage | K | Spreizung im Heizbetrieb an kalten Tagen (unter 5 °C) der letzten 7 Tage, ab 10 Stunden Heizbetrieb. Braucht dazu Vorlauf, Rücklauf und Betriebsart. Attribute `all_days` (alle Tage), `field_reference` und `field_range` (Feldtest WPsmart: 6,8 K, 3,2–9,8 K). Kein Alarm: Hydraulik und Fühlerort prägen den Wert. |
 | Leistung je Heizlast | – | Heizleistung laut Datenblatt geteilt durch die normgerechte Heizlast. Nur mit der Einstellung Heizleistung. Attribute `measured_factor` (gegen die gemessene Heizlast), `load_at_7c_kw` und mit kleinster Heizleistung `cycling_expected`. Feldmittel 1,5 (Fraunhofer WP-QS). |

@@ -75,6 +75,11 @@ SENSORS = {
         "Heizlast bei Normaußentemperatur",
         "mdi:home-thermometer",
     ),
+    "heating_limit": (
+        "Heating limit",
+        "Heizgrenze",
+        "mdi:thermometer-chevron-up",
+    ),
     "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
     "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
     "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
@@ -115,6 +120,31 @@ SENSORS = {
         "Backup heater share season",
         "Heizstab-Anteil Saison",
         "mdi:heating-coil",
+    ),
+    "aux_share_heating_month": (
+        "Backup heater share heating month",
+        "Heizstab-Anteil Heizen Monat",
+        "mdi:heating-coil",
+    ),
+    "aux_share_heating_season": (
+        "Backup heater share heating season",
+        "Heizstab-Anteil Heizen Saison",
+        "mdi:heating-coil",
+    ),
+    "aux_share_dhw_month": (
+        "Backup heater share hot water month",
+        "Heizstab-Anteil Warmwasser Monat",
+        "mdi:heating-coil",
+    ),
+    "aux_share_dhw_season": (
+        "Backup heater share hot water season",
+        "Heizstab-Anteil Warmwasser Saison",
+        "mdi:heating-coil",
+    ),
+    "standby_power_7d": (
+        "Standby power 7 days",
+        "Stillstand-Leistung 7 Tage",
+        "mdi:power-sleep",
     ),
     "spread_today": (
         "Flow-return spread today",

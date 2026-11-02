@@ -317,6 +317,7 @@ Attributes:
 | Heat heating / hot water, Heat removed cooling | kWh | heat since the setup (cooling: heat removed) |
 | Electricity heating / hot water / cooling | kWh | electricity while the compressor runs, with backup heater and "Electricity defrost", without standby |
 | Standby electricity | kWh | electricity while the compressor stands still, all modes, plus the source's "Electricity standby". Attributes from the diary (with the daily analysis, so only with an outdoor temperature): mean power of the last 7 days (`mean_power_w_7d`) against the median of the 30 days before (`reference_w`), smallest and largest day (`min_day_w`, `max_day_w`); `rising` is on from +50 % **and** +10 W (own assumption) |
+| Standby power 7 days | W | mean standby power of the last 7 days (the same as the attribute `mean_power_w_7d`), from the daily analysis, so only with an outdoor temperature |
 
 All with long-term statistics (`total_increasing`). Each sensor is only created if the matching meter is mapped. "Standby electricity" is created when standby can be told apart: with heat and electricity meters of the same mode, or with an electricity meter and "Compressor running" (not with day values from a cloud). Please do not disable them or exclude them from the [recorder](#keeping-the-recorder-lean): the report, the performance curve and the heat load read their statistics for the time after the setup.
 
@@ -387,6 +388,7 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 | Entity | Unit | Meaning | Needs |
 | --- | --- | --- | --- |
 | Backup heater share month, season | % | backup heater share of the electricity for heating and hot water (with standby). Attributes `heating` and `dhw`: the share within each mode, e.g. when the heater only helps with hot water | backup heater meter |
+| Backup heater share heating / hot water month, season | % | backup heater share within one mode (the same values as the attributes `heating` and `dhw`). If the heater only runs for hot water, heating shows 0 % | backup heater meter and the mode complete |
 | Flow-return spread today | K | flow minus return, time-weighted over the time the compressor was heating | flow, return and activity |
 | Flow temperature today | °C | mean flow temperature, weighted the same way | flow and activity |
 
@@ -427,6 +429,7 @@ All sensors in this section need the outdoor temperature plus heat and electrici
 | --- | --- | --- |
 | Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
 | Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
+| Heating limit | °C | Outdoor temperature from which the house needs no heating: where the energy signature reaches 0 (the same as the attribute `heating_limit` of "Heat load per kelvin"). |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
 | Flow-return spread 7 days | K | Spread while heating on cold days (below 5 °C) of the last 7 days, from 10 hours of heating. Also needs flow, return and activity. Attributes `all_days` (every day), `field_reference` and `field_range` (field test WPsmart: 6.8 K, 3.2–9.8 K). No alarm: hydraulics and sensor positions shape the value. |
 | Power per heat load | – | Rated heating power from the data sheet divided by the standard heat load. Only with the setting rated heating power. Attributes `measured_factor` (against the measured heat load), `load_at_7c_kw` and, with the smallest heating power, `cycling_expected`. Field mean 1.5 (Fraunhofer WP-QS). |

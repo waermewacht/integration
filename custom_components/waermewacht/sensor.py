@@ -170,6 +170,11 @@ ENERGY = [
 ]
 
 
+def _standby_power(runtime: HeatPumpRuntime) -> float | None:
+    """Mean standby power of the last 7 days (W), from the daily analysis."""
+    return runtime.findings["standby_rise"].evidence.get("mean_power_w_7d")
+
+
 def _minutes(seconds: float | None) -> float | None:
     return None if seconds is None else round(seconds / 60, 1)
 
@@ -292,6 +297,17 @@ def _aux_share(period: Period) -> Value:
     return value
 
 
+def _aux_share_mode(period: Period, mode: Mode) -> Value:
+    def value(runtime: HeatPumpRuntime) -> float | None:
+        totals = runtime.energy(period)
+        if totals is None:
+            return None
+        share = aux_share(totals, runtime.min_electricity, mode)
+        return None if share is None else round(share, 2)
+
+    return value
+
+
 def _aux_share_attributes(
     period: Period,
 ) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
@@ -315,35 +331,64 @@ def _aux_share_attributes(
 HAS_AUX: Needs = lambda r: any(  # noqa: E731
     s in r.entities for s in (*AUX_SIGNALS.values(), Signal.AUX_TOTAL)
 )
-DIAGNOSIS = [
-    HeatPumpSensorDescription(
-        key=f"aux_share_{period}",
-        native_unit_of_measurement=PERCENTAGE,
-        suggested_display_precision=1,
-        value=_aux_share(period),
-        needs=HAS_AUX,
-        attributes=_aux_share_attributes(period),
-    )
-    for period in (Period.MONTH, Period.SEASON)
-] + [
-    HeatPumpSensorDescription(
-        key="spread_today",
-        native_unit_of_measurement=UnitOfTemperature.KELVIN,
-        suggested_display_precision=1,
-        value=lambda r: None if r.spread.value is None else round(r.spread.value, 1),
-        needs=lambda r: (
-            r.has_activity and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
+DIAGNOSIS = (
+    [
+        HeatPumpSensorDescription(
+            key=f"aux_share_{period}",
+            native_unit_of_measurement=PERCENTAGE,
+            suggested_display_precision=1,
+            value=_aux_share(period),
+            needs=HAS_AUX,
+            attributes=_aux_share_attributes(period),
+        )
+        for period in (Period.MONTH, Period.SEASON)
+    ]
+    + [
+        # The total mixes both modes; a heater that only helps with hot water
+        # would look like a heater for space heating.
+        HeatPumpSensorDescription(
+            key=f"aux_share_{mode}_{period}",
+            native_unit_of_measurement=PERCENTAGE,
+            suggested_display_precision=1,
+            value=_aux_share_mode(period, mode),
+            needs=lambda r, mode=mode: HAS_AUX(r) and _mode_complete(r, mode),
+        )
+        for mode in SEASONAL_MODES
+        for period in (Period.MONTH, Period.SEASON)
+    ]
+    + [
+        HeatPumpSensorDescription(
+            key="standby_power_7d",
+            device_class=SensorDeviceClass.POWER,
+            state_class=SensorStateClass.MEASUREMENT,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            suggested_display_precision=0,
+            value=_standby_power,
+            needs=lambda r: r.standby_separable and HAS_OUTDOOR(r),
         ),
-    ),
-    HeatPumpSensorDescription(
-        key="flow_temp_today",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        suggested_display_precision=1,
-        value=lambda r: None if r.flow.value is None else round(r.flow.value, 1),
-        needs=lambda r: r.has_activity and _has(Signal.FLOW_TEMP)(r),
-    ),
-]
+    ]
+    + [
+        HeatPumpSensorDescription(
+            key="spread_today",
+            native_unit_of_measurement=UnitOfTemperature.KELVIN,
+            suggested_display_precision=1,
+            value=lambda r: (
+                None if r.spread.value is None else round(r.spread.value, 1)
+            ),
+            needs=lambda r: (
+                r.has_activity and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
+            ),
+        ),
+        HeatPumpSensorDescription(
+            key="flow_temp_today",
+            device_class=SensorDeviceClass.TEMPERATURE,
+            native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+            suggested_display_precision=1,
+            value=lambda r: None if r.flow.value is None else round(r.flow.value, 1),
+            needs=lambda r: r.has_activity and _has(Signal.FLOW_TEMP)(r),
+        ),
+    ]
+)
 
 
 def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | None:
@@ -484,6 +529,13 @@ def _watts_per_kelvin(runtime: HeatPumpRuntime) -> float | None:
     return round(-result.slope_kw_per_k * 1000)
 
 
+def _heating_limit(runtime: HeatPumpRuntime) -> float | None:
+    result = runtime.heat_load
+    if result is None or not result.sufficient or result.heating_limit is None:
+        return None
+    return round(result.heating_limit, 1)
+
+
 def _design_load(runtime: HeatPumpRuntime) -> float | None:
     result = runtime.heat_load
     if result is None or not result.sufficient or result.standard_kw is None:
@@ -617,6 +669,14 @@ ANALYSIS = [
         value=_watts_per_kelvin,
         needs=HAS_OUTDOOR,
         attributes=_heat_load_attributes,
+    ),
+    HeatPumpSensorDescription(
+        key="heating_limit",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        value=_heating_limit,
+        needs=HAS_OUTDOOR,
     ),
     HeatPumpSensorDescription(
         key="heat_load_design",

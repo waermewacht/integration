@@ -381,6 +381,9 @@
       "heat_load_design": {
         "name": "Heizlast bei Normaußentemperatur"
       },
+      "heating_limit": {
+        "name": "Heizgrenze"
+      },
       "starts_today": {
         "name": "Starts heute"
       },
@@ -419,6 +422,21 @@
       },
       "aux_share_season": {
         "name": "Heizstab-Anteil Saison"
+      },
+      "aux_share_heating_month": {
+        "name": "Heizstab-Anteil Heizen Monat"
+      },
+      "aux_share_heating_season": {
+        "name": "Heizstab-Anteil Heizen Saison"
+      },
+      "aux_share_dhw_month": {
+        "name": "Heizstab-Anteil Warmwasser Monat"
+      },
+      "aux_share_dhw_season": {
+        "name": "Heizstab-Anteil Warmwasser Saison"
+      },
+      "standby_power_7d": {
+        "name": "Stillstand-Leistung 7 Tage"
       },
       "spread_today": {
         "name": "Spreizung heute"

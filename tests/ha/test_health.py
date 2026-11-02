@@ -280,3 +280,23 @@ async def test_flow_rate_zero_while_heating(
     await tick(hass, freezer, 1)
     await tick(hass, freezer, 1)
     assert issue(hass, entry, "flow_zero") is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_key_figures_as_own_sensors(hass: HomeAssistant) -> None:
+    """Heater share per mode and heating limit are sensors, not only attributes."""
+    plain = await setup(hass)
+    assert entity_id(hass, plain, "sensor", "aux_share_heating_season") is None
+    assert entity_id(hass, plain, "sensor", "heating_limit") is None
+
+    entry = await setup(hass, outdoor_temp=OUTDOOR, aux_heating=AUX)
+    for key in (
+        "aux_share_heating_month",
+        "aux_share_heating_season",
+        "aux_share_dhw_month",
+        "aux_share_dhw_season",
+        "heating_limit",
+    ):
+        found = entity_id(hass, entry, "sensor", key)
+        assert found, key
+        assert hass.states.get(found) is not None, key
