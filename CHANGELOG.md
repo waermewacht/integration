@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.6 – 2026-11-02
 
 - **ViCare: kein Plattenzugriff beim Start.** Die Vorlage für ViCare nennt ihre Zeitzone für die Tageswerte (UTC) jetzt als festen Wert statt als Namen. Bisher schlug Wärmewacht den Namen beim Einrichten nach; war die Zone noch nicht geladen, las Home Assistant dafür eine Datei und hielt solange alles andere an (Hinweis aus der HACS-Prüfung).
 - **README: Installation über die HACS-Suche** an erster Stelle, das benutzerdefinierte Repository nur noch als Rückfall.
