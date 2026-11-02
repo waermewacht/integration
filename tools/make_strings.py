@@ -218,6 +218,16 @@ SENSORS = {
         "mdi:chart-bell-curve-cumulative",
     ),
     "gas_dhw_share": ("Hot water share", "Warmwasseranteil", "mdi:water-boiler"),
+    "gas_flow_at_zero": (
+        "Flow temperature at 0 °C",
+        "Vorlauf bei 0 °C",
+        "mdi:chart-line-variant",
+    ),
+    "gas_flow_at_design": (
+        "Flow temperature at design temperature",
+        "Vorlauf bei Normaußentemperatur",
+        "mdi:thermometer-high",
+    ),
     "gas_consumption_year": ("Gas 365 days", "Gas 365 Tage", "mdi:fire"),
     "gas_cost_year": ("Gas cost 365 days", "Gaskosten 365 Tage", "mdi:cash"),
 }
@@ -1096,6 +1106,7 @@ GAS_FIELDS = {
     "gas_heating": ("Gas heating only", "Gas nur Heizen"),
     "gas_dhw": ("Gas hot water", "Gas Warmwasser"),
     "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
+    "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "calorific_value": ("Calorific value", "Brennwert"),
     "z_number": ("Z-number", "Zustandszahl"),
 }
@@ -1115,6 +1126,10 @@ GAS_FIELD_HELP = {
     "outdoor_temp": (
         "With long-term statistics (state class measurement). A nearby weather station is fine.",
         "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+    ),
+    "flow_temp": (
+        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+        "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
     ),
     "calorific_value": (
         "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
@@ -1145,6 +1160,10 @@ GAS_ERRORS = {
     "gas_calorific_value": (
         "Counters in m³ need the calorific value and the Z-number from the gas bill.",
         "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung.",
+    ),
+    "gas_flow_no_statistics": (
+        "The flow temperature has no long-term statistics (state class measurement).",
+        "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement).",
     ),
 }
 GAS_OPTIONS = {

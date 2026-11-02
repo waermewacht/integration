@@ -76,6 +76,7 @@ class GasRuntime:
         self.includes_dhw = GAS_TOTAL in configured
         self.gas_entity = configured.get(GAS_TOTAL) or configured[GAS_HEATING]
         self.dhw_entity = configured.get(GAS_DHW)
+        self.flow_entity = configured.get(Signal.FLOW_TEMP.value)
         # Keyed like the heat pump's for the shared actions.
         self.entities: dict[Signal, str] = {
             Signal.OUTDOOR_TEMP: configured[Signal.OUTDOOR_TEMP.value]
@@ -150,6 +151,11 @@ class GasRuntime:
                 return
             gas, dhw = data
             outdoor = await self.async_outdoor_hours(first, last)
+            flow = (
+                await self._async_mean_hours(self.flow_entity, first, last)
+                if self.flow_entity
+                else None
+            )
             self.analysis = analyse(
                 gas,
                 outdoor,
@@ -162,6 +168,7 @@ class GasRuntime:
                 design_temp=self.design_temp,
                 gas_price=self.gas_price,
                 gas_base_price=self.gas_base_price,
+                flow=flow,
             )
             self.problem = None
             self.analysed_at = now
@@ -247,7 +254,14 @@ class GasRuntime:
         self, start: datetime, end: datetime
     ) -> dict[datetime, float]:
         """Hourly mean outdoor temperature from the long-term statistics."""
-        entity_id = self.entities[Signal.OUTDOOR_TEMP]
+        return await self._async_mean_hours(
+            self.entities[Signal.OUTDOOR_TEMP], start, end
+        )
+
+    async def _async_mean_hours(
+        self, entity_id: str, start: datetime, end: datetime
+    ) -> dict[datetime, float]:
+        """Hourly mean of a temperature from the long-term statistics."""
         if start >= end or "recorder" not in self.hass.config.components:
             return {}
         rows = await get_instance(self.hass).async_add_executor_job(
@@ -260,12 +274,12 @@ class GasRuntime:
             {"temperature": UnitOfTemperature.CELSIUS},
             {"mean"},
         )
-        outdoor: dict[datetime, float] = {}
+        means: dict[datetime, float] = {}
         for row in rows.get(entity_id, []):
             if (mean := row.get("mean")) is None:
                 continue
             hour = row["start"]
             if not isinstance(hour, datetime):
                 hour = dt_util.utc_from_timestamp(hour)
-            outdoor[hour] = mean
-        return outdoor
+            means[hour] = mean
+        return means

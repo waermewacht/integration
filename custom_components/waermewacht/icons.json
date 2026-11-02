@@ -230,6 +230,12 @@
       "gas_dhw_share": {
         "default": "mdi:water-boiler"
       },
+      "gas_flow_at_zero": {
+        "default": "mdi:chart-line-variant"
+      },
+      "gas_flow_at_design": {
+        "default": "mdi:thermometer-high"
+      },
       "gas_consumption_year": {
         "default": "mdi:fire"
       },

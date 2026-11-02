@@ -22,6 +22,7 @@ from . import GasConfigEntry, WaermewachtConfigEntry, is_gas
 from .anonymize import Masker
 from .const import CONF_ENTITIES, CONF_TEMPLATE
 from .heat_load import heat_load_as_dict
+from .heating_curve import flow_curve_as_dict
 from .periods import Period
 
 
@@ -105,6 +106,10 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
             "dhw_share": analysis.dhw_share,
             "degree_days_counted": analysis.degree_days.days_counted,
             "heat_load": load,
+            "flow": None
+            if analysis.flow is None
+            else flow_curve_as_dict(analysis.flow),
+            "flow_reason": analysis.flow_reason,
         }
     return {
         "config": {

@@ -342,6 +342,10 @@ def gas_schema(values: dict[str, Any]) -> vol.Schema:
                 description=suggested(Signal.OUTDOOR_TEMP.value),
             ): outdoor,
             vol.Optional(
+                Signal.FLOW_TEMP.value,
+                description=suggested(Signal.FLOW_TEMP.value),
+            ): outdoor,
+            vol.Optional(
                 CONF_CALORIFIC_VALUE, description=suggested(CONF_CALORIFIC_VALUE)
             ): _number(8, 13, 0.001, "kWh/m³"),
             vol.Optional(CONF_Z_NUMBER, description=suggested(CONF_Z_NUMBER)): _number(
@@ -371,12 +375,17 @@ def validate_gas(hass: HomeAssistant, values: dict[str, Any]) -> str | None:
         volume |= unit == VOLUME_UNIT
     if volume and not (values.get(CONF_CALORIFIC_VALUE) and values.get(CONF_Z_NUMBER)):
         return "gas_calorific_value"
+    if (flow := values.get(Signal.FLOW_TEMP.value)) and (
+        (state := hass.states.get(flow)) is not None
+        and state.attributes.get("state_class") != "measurement"
+    ):
+        return "gas_flow_no_statistics"
     return None
 
 
 def split_gas(values: dict[str, Any]) -> tuple[dict[str, str], dict[str, float]]:
     """Form values -> entities and options (conversion of m³)."""
-    keys = (*GAS_COUNTERS, Signal.OUTDOOR_TEMP.value)
+    keys = (*GAS_COUNTERS, Signal.OUTDOOR_TEMP.value, Signal.FLOW_TEMP.value)
     entities = {k: values[k] for k in keys if values.get(k)}
     options = {
         k: values[k] for k in (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER) if values.get(k)

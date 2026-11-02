@@ -25,6 +25,14 @@ Rules:
   water base left in shifts the heating limit, not the standard heat load.
 - The window is the last 365 full local days: a household that measures
   before the switch rarely has whole seasons.
+- Flow temperature (optional entity): the heating curve of heating_curve.py
+  on the heating heat, read at 0 °C and at the design outdoor temperature
+  (the line extended). A hot water charge lifts the boiler's flow well
+  above the heating's, so the hours with hot water must be known: only with a hot
+  water counter or a heating counter without hot water ("heating_only");
+  with the summer base every hour has a share ("flow_needs_dhw_counter").
+  Boilers often run a steeper curve than the house needs, so the figure is
+  an upper bound for the flow a heat pump would need, not a verdict.
 """
 
 from __future__ import annotations
@@ -39,6 +47,7 @@ from .curve import MIN_DAY_HOURS, daily_samples
 from .degree_days import G20_15, DegreeDays, degree_days
 from .energy import Kind, Totals
 from .heat_load import HeatLoad, heat_load
+from .heating_curve import FlowCurve, flow_curve
 from .model import Mode
 from .periods import local_midnight
 
@@ -51,6 +60,7 @@ COUNTER = "counter"
 SUMMER_BASE = "summer_base"
 NO_SUMMER_DAYS = "no_summer_days"
 HEATING_ONLY = "heating_only"
+FLOW_NEEDS_DHW_COUNTER = "flow_needs_dhw_counter"
 
 
 @dataclass
@@ -177,6 +187,21 @@ class GasAnalysis:
     cost_eur: float | None = None
     base_cost_eur: float | None = None
     reasons: list[str] = field(default_factory=list)
+    design_temp: float | None = None
+    # Flow temperature over outdoor temperature; None without a flow entity
+    # or with `flow_reason` (hot water not separable).
+    flow: FlowCurve | None = None
+    flow_reason: str | None = None
+
+    @property
+    def flow_at_design(self) -> float | None:
+        """Flow at the design outdoor temperature, from the line."""
+        curve = self.flow
+        if curve is None or curve.at_zero is None or curve.slope is None:
+            return None
+        if self.design_temp is None:
+            return None
+        return curve.at_zero + curve.slope * self.design_temp
 
     @property
     def dhw_share(self) -> float | None:
@@ -203,11 +228,13 @@ def analyse(
     design_temp: float | None = None,
     gas_price: float | None = None,
     gas_base_price: float | None = None,
+    flow: Mapping[datetime, float] | None = None,
 ) -> GasAnalysis:
     """Heat load, degree days, hot water share and gas of [start, end).
 
-    `gas`, `dhw` and `outdoor` are keyed by UTC hour starts; only hours of
-    the window count. Prices in €/kWh (Hs) and € per year.
+    `gas`, `dhw`, `outdoor` and `flow` (hourly mean flow temperature) are
+    keyed by UTC hour starts; only hours of the window count. Prices in
+    €/kWh (Hs) and € per year.
     """
     first, last = local_midnight(start, tz), local_midnight(end, tz)
 
@@ -233,6 +260,12 @@ def analyse(
             base = base_price_share(gas_base_price, first, last, tz)
             cost += base
     reasons = [] if split.dhw_known or split.method == HEATING_ONLY else [split.method]
+    curve, flow_reason = None, None
+    if flow is not None:
+        if split.method in (COUNTER, HEATING_ONLY):
+            curve = flow_curve(hours, inside(flow), outdoor_in, tz)
+        else:
+            flow_reason = FLOW_NEEDS_DHW_COUNTER
     return GasAnalysis(
         start=start,
         end=end,
@@ -247,4 +280,7 @@ def analyse(
         cost_eur=cost,
         base_cost_eur=base,
         reasons=reasons,
+        design_temp=design_temp,
+        flow=curve,
+        flow_reason=flow_reason,
     )

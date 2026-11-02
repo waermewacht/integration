@@ -117,6 +117,7 @@
           "gas_heating": "Gas nur Heizen",
           "gas_dhw": "Gas Warmwasser",
           "outdoor_temp": "Außentemperatur",
+          "flow_temp": "Vorlauftemperatur",
           "calorific_value": "Brennwert",
           "z_number": "Zustandszahl"
         },
@@ -125,6 +126,7 @@
           "gas_heating": "Nur wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare); dann auch den Warmwasser-Zähler eintragen. „Gas gesamt“ bleibt leer.",
           "gas_dhw": "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+          "flow_temp": "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
           "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
         }
@@ -141,7 +143,8 @@
       "gas_twice": "Entweder „Gas gesamt“ oder „Gas nur Heizen“, nicht beides.",
       "gas_unit": "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
       "gas_no_statistics": "Ein Gaszähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
-      "gas_calorific_value": "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung."
+      "gas_calorific_value": "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung.",
+      "gas_flow_no_statistics": "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement)."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits eingerichtet.",
@@ -482,6 +485,12 @@
       },
       "gas_dhw_share": {
         "name": "Warmwasseranteil"
+      },
+      "gas_flow_at_zero": {
+        "name": "Vorlauf bei 0 °C"
+      },
+      "gas_flow_at_design": {
+        "name": "Vorlauf bei Normaußentemperatur"
       },
       "gas_consumption_year": {
         "name": "Gas 365 Tage"

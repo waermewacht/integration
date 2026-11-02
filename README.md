@@ -250,6 +250,7 @@ Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem d
 | Gas nur Heizen | statt „Gas gesamt“, wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare) |
 | Gas Warmwasser | optional, wenn Warmwasser getrennt gezählt wird |
 | Außentemperatur | Pflicht, mit Langzeitstatistik; eine nahe Wetterstation genügt |
+| Vorlauftemperatur | optional: Vorlauf der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse `measurement`) |
 | Brennwert, Zustandszahl | nur für Zähler in m³, aus der Gasrechnung (kWh = m³ × Brennwert × Zustandszahl) |
 
 Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_increasing`). Wärmewacht liest nur sie, und zwar die **letzten 365 Tage**: Reicht die Statistik deines Gaszählers schon so weit zurück (etwa aus dem Energie-Dashboard), gibt es die Ergebnisse 2 Minuten nach der Einrichtung. Danach rechnet Wärmewacht täglich um 3 Uhr neu. Es hört keine Zustände ab und speichert nichts.
@@ -270,8 +271,12 @@ Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_
 | Warmwasseranteil | % | Anteil des Gases für Warmwasser. Attribute `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
 | Gas 365 Tage | kWh | Gas der letzten 365 Tage. Attribute `days` (Tage mit Daten), `complete`, `heat_kwh` (Wärme nach Nutzungsgrad) |
 | Gaskosten 365 Tage | € | nur mit Gaspreis in den Einstellungen; mit Grundpreis |
+| Vorlauf bei 0 °C | °C | nur mit Vorlauftemperatur: Vorlauf, den die Heizung bei 0 °C Tagesmittel fährt. Attribute `slope` (K Vorlauf je K Außentemperatur), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method` |
+| Vorlauf bei Normaußentemperatur | °C | dazu die Einstellung Normaußentemperatur: die Gerade bis dorthin verlängert, Attribut `design_temp` |
 
-Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` oder die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
+**Vorlauf:** Neben der Heizlast ist die zweite Frage vor dem Umstieg, ob die Heizkörper mit niedrigem Vorlauf auskommen. Wärmewacht legt dafür wie bei der Wärmepumpe ([Vorlauf bei 0 °C](#kennlinie-und-heizlast)) eine Gerade durch die Tage: Stunden mit Heizwärme und ohne Warmwasser, Vorlauf gewichtet mit der Wärme, gegen das Tagesmittel draußen. Es braucht mindestens 14 Tage, die zusammen 6 K auseinanderliegen. Eine Warmwasserladung hebt den Vorlauf der Therme deutlich über den der Heizung, deshalb rechnet Wärmewacht den Vorlauf nur mit einem eigenen Warmwasser-Zähler oder mit „Gas nur Heizen“ ohne Warmwasser (macht die Therme doch Warmwasser, trag den Warmwasser-Zähler ein). Mit dem Sommersockel bleibt er unbekannt (`flow_needs_dhw_counter`). Gasthermen laufen oft mit einer steileren Heizkurve als nötig: Der Wert ist eine **Obergrenze** dessen, was eine Wärmepumpe liefern müsste, kein Urteil. Ob es mit weniger geht, zeigt erst ein Versuch mit abgesenkter Heizkurve an kalten Tagen.
+
+Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
 
 **Grenzen:**
 

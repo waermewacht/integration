@@ -117,6 +117,7 @@
           "gas_heating": "Gas heating only",
           "gas_dhw": "Gas hot water",
           "outdoor_temp": "Outdoor temperature",
+          "flow_temp": "Flow temperature",
           "calorific_value": "Calorific value",
           "z_number": "Z-number"
         },
@@ -125,6 +126,7 @@
           "gas_heating": "Only if the boiler counts heating and hot water apart (e.g. Viessmann ViCare); then add the hot water counter as well. Leave \"Gas total\" empty.",
           "gas_dhw": "Optional: gas for hot water, if counted apart.",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
+          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
           "calorific_value": "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
           "z_number": "Only for counters in m³: from the gas bill (Zustandszahl)."
         }
@@ -141,7 +143,8 @@
       "gas_twice": "Either \"Gas total\" or \"Gas heating only\", not both.",
       "gas_unit": "A gas counter has no unit Wh, kWh, MWh or m³.",
       "gas_no_statistics": "A gas counter has no long-term statistics (state class total or total_increasing).",
-      "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill."
+      "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill.",
+      "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement)."
     },
     "abort": {
       "already_configured": "This heat pump is already set up.",
@@ -482,6 +485,12 @@
       },
       "gas_dhw_share": {
         "name": "Hot water share"
+      },
+      "gas_flow_at_zero": {
+        "name": "Flow temperature at 0 °C"
+      },
+      "gas_flow_at_design": {
+        "name": "Flow temperature at design temperature"
       },
       "gas_consumption_year": {
         "name": "Gas 365 days"

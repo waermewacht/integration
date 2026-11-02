@@ -250,6 +250,7 @@ If you still heat with gas and think about a heat pump, the key figure is the **
 | Gas heating only | instead of "Gas total" if the boiler counts heating and hot water apart (e.g. Viessmann ViCare) |
 | Gas hot water | optional, if hot water is counted apart |
 | Outdoor temperature | required, with long-term statistics; a nearby weather station is fine |
+| Flow temperature | optional: flow of the boiler or of the heating circuit, with long-term statistics (state class `measurement`) |
 | Calorific value, Z-number | only for counters in m³, from the gas bill (kWh = m³ × calorific value × Z-number) |
 
 The counters need long-term statistics (state class `total` or `total_increasing`). Wärmewacht reads only those, for the **last 365 days**: if your gas meter's statistics already reach back that far (for example from the energy dashboard), the results appear 2 minutes after the setup. After that Wärmewacht recomputes daily at 3:00. It listens to no states and stores nothing.
@@ -270,8 +271,12 @@ The counters need long-term statistics (state class `total` or `total_increasing
 | Hot water share | % | share of the gas for hot water. Attributes `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
 | Gas 365 days | kWh | gas of the last 365 days. Attributes `days` (days with data), `complete`, `heat_kwh` (heat after efficiency) |
 | Gas cost 365 days | € | only with a gas price in the settings; with base price |
+| Flow temperature at 0 °C | °C | only with the flow temperature: the flow the heating runs at a daily mean of 0 °C. Attributes `slope` (K flow per K outdoor), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method` |
+| Flow temperature at design temperature | °C | with the design outdoor temperature set as well: the line extended to it, attribute `design_temp` |
 
-If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value` or the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
+**Flow temperature:** Besides the heat load, the second question before switching is whether the radiators manage with a low flow temperature. As for the heat pump ([flow temperature at 0 °C](#performance-curve-and-heat-load)), Wärmewacht fits a line through the days: hours with heating heat and no hot water, the flow weighted with the heat, against the daily outdoor mean. It needs at least 14 days spanning 6 K. A hot water charge lifts the boiler's flow well above that of the heating, so Wärmewacht computes the flow only with a hot water counter of its own or with "Gas heating only" without hot water (if the boiler does make hot water, add the hot water counter). With the summer base it stays unknown (`flow_needs_dhw_counter`). Gas boilers often run a steeper heating curve than needed: the value is an **upper bound** of what a heat pump would have to deliver, not a verdict. Whether less will do only shows in a trial with a lowered heating curve on cold days.
+
+If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
 
 **Limits:**
 

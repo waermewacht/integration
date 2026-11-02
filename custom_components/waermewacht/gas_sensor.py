@@ -21,6 +21,7 @@ from homeassistant.helpers.typing import StateType
 from .entity import HeatPumpEntity
 from .gas import GasAnalysis
 from .heat_load import heat_load_as_dict
+from .heating_curve import flow_curve_as_dict
 
 if TYPE_CHECKING:
     from . import GasConfigEntry
@@ -100,6 +101,25 @@ def _cost_attributes(runtime: GasRuntime, analysis: GasAnalysis) -> dict[str, An
     }
 
 
+def _flow_attributes(runtime: GasRuntime, analysis: GasAnalysis) -> dict[str, Any]:
+    if analysis.flow is None:
+        return {"dhw_method": analysis.split.method}
+    figures = flow_curve_as_dict(analysis.flow)
+    figures.pop("at_zero")
+    days = analysis.flow.days
+    return {
+        **figures,
+        "coldest_day": _round(min(d.mean_outdoor for d in days), 1) if days else None,
+        "dhw_method": analysis.split.method,
+    }
+
+
+def _flow_design_attributes(
+    runtime: GasRuntime, analysis: GasAnalysis
+) -> dict[str, Any]:
+    return {**_flow_attributes(runtime, analysis), "design_temp": runtime.design_temp}
+
+
 GAS_DESCRIPTIONS: list[GasSensorDescription] = [
     GasSensorDescription(
         key="gas_heat_load_per_kelvin",
@@ -146,6 +166,24 @@ GAS_DESCRIPTIONS: list[GasSensorDescription] = [
         suggested_display_precision=0,
         value=lambda a: round(a.gas_kwh, 1),
         attributes=_gas_attributes,
+    ),
+    GasSensorDescription(
+        key="gas_flow_at_zero",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        value=lambda a: None if a.flow is None else _round(a.flow.at_zero, 1),
+        needs=lambda r: r.flow_entity is not None,
+        attributes=_flow_attributes,
+    ),
+    GasSensorDescription(
+        key="gas_flow_at_design",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        value=lambda a: _round(a.flow_at_design, 1),
+        needs=lambda r: r.flow_entity is not None and r.design_temp is not None,
+        attributes=_flow_design_attributes,
     ),
     GasSensorDescription(
         key="gas_cost_year",
@@ -204,6 +242,11 @@ class GasSensor(HeatPumpEntity, SensorEntity):
             return reasons[0] if reasons else None
         if key == "gas_dhw_share" and analysis.dhw_share is None:
             return analysis.split.method
+        if key in ("gas_flow_at_zero", "gas_flow_at_design"):
+            if analysis.flow_reason is not None:
+                return analysis.flow_reason
+            if analysis.flow is not None and analysis.flow.reasons:
+                return analysis.flow.reasons[0]
         return None
 
 

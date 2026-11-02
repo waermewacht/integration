@@ -10,6 +10,7 @@ import pytest
 
 from custom_components.waermewacht.gas import (
     COUNTER,
+    FLOW_NEEDS_DHW_COUNTER,
     HEATING_ONLY,
     NO_SUMMER_DAYS,
     SUMMER_BASE,
@@ -180,3 +181,58 @@ def test_volume_to_kwh() -> None:
 def test_window_is_the_last_365_full_days() -> None:
     now = datetime(2026, 10, 30, 2, 30, tzinfo=UTC)  # 03:30 local
     assert window(now, TZ) == (date(2025, 10, 30), date(2026, 10, 30))
+
+
+def flow_line(outdoor: dict[datetime, float]) -> dict[datetime, float]:
+    """A heating curve: 35 °C flow at 0 °C, 0.8 K more per K colder."""
+    return {hour: 35.0 - 0.8 * mean for hour, mean in outdoor.items()}
+
+
+FLOW = flow_line(OUTDOOR)
+HEATING = {hour: TOTAL[hour] - WATER[hour] for hour in TOTAL}
+
+
+def test_flow_at_zero_and_at_design_temperature() -> None:
+    result = analyse(
+        HEATING,
+        OUTDOOR,
+        TZ,
+        YEAR_START,
+        END,
+        includes_dhw=False,
+        design_temp=-12.0,
+        flow=FLOW,
+    )
+    assert result.flow is not None
+    assert result.flow_reason is None
+    assert result.flow.at_zero == pytest.approx(35.0, abs=0.01)
+    assert result.flow.slope == pytest.approx(-0.8, abs=0.001)
+    assert result.flow_at_design == pytest.approx(44.6, abs=0.01)
+
+
+def test_flow_leaves_out_the_hours_of_hot_water_charges() -> None:
+    """One charge a day lifts the flow to 65 °C; the hot water counter shows
+    the hour, so it does not count."""
+    charge = {
+        hour: DHW_PER_DAY if hour.astimezone(TZ).hour == 6 else 0.0 for hour in TOTAL
+    }
+    total = {hour: HEATING[hour] + charge[hour] for hour in TOTAL}
+    flow = {hour: 65.0 if charge[hour] else value for hour, value in FLOW.items()}
+    result = analyse(
+        total, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True, dhw=charge, flow=flow
+    )
+    assert result.flow is not None
+    assert result.flow.at_zero == pytest.approx(35.0, abs=0.01)
+    # Without a design temperature only the value at 0 °C.
+    assert result.flow_at_design is None
+
+
+def test_flow_needs_the_hot_water_hours() -> None:
+    """With the summer base every hour has a hot water share: no flow."""
+    result = analyse(TOTAL, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True, flow=FLOW)
+    assert result.flow is None
+    assert result.flow_reason == FLOW_NEEDS_DHW_COUNTER
+    # Without a flow entity: nothing, and no reason.
+    plain = analyse(TOTAL, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True)
+    assert plain.flow is None
+    assert plain.flow_reason is None

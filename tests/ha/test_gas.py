@@ -350,3 +350,98 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
     )
     assert result["reason"] == "reconfigure_successful"
     assert entry.unique_id == "gas:sensor.gas_dhw"
+
+
+FLOW = "sensor.boiler_flow"
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_boiler_flow_temperature(hass: HomeAssistant) -> None:
+    """A heating counter and the boiler's flow: the flow at 0 °C and at the
+    design temperature from the heating curve (35 °C - 0.8 K per K)."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    import_statistics(hass)
+    tz = dt_util.get_default_time_zone()
+    rows = []
+    for day, mean in WINTER:
+        start = datetime.combine(day, datetime.min.time(), tzinfo=tz).astimezone(UTC)
+        flow = 35.0 - 0.8 * mean
+        rows.extend(
+            StatisticData(
+                start=start + timedelta(hours=h), mean=flow, min=flow, max=flow
+            )
+            for h in range(24)
+        )
+    async_import_statistics(
+        hass,
+        StatisticMetaData(
+            mean_type=StatisticMeanType.ARITHMETIC,
+            has_sum=False,
+            name=None,
+            source="recorder",
+            statistic_id=FLOW,
+            unit_class="temperature",
+            unit_of_measurement="°C",
+        ),
+        rows,
+    )
+    await async_wait_recording_done(hass)
+    hass.states.async_set(GAS, "1234.5", VOLUME)
+    hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "38.0", {**TEMPERATURE, "state_class": "measurement"})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Gas",
+        data={
+            CONF_NAME: "Gas",
+            CONF_KIND: "gas",
+            CONF_ENTITIES: {
+                "gas_heating": GAS,
+                "outdoor_temp": OUTDOOR,
+                "flow_temp": FLOW,
+            },
+        },
+        options={CONF_CALORIFIC_VALUE: HS, CONF_Z_NUMBER: 1.0, CONF_DESIGN_TEMP: -12.0},
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    at_zero = state(hass, entry, "gas_flow_at_zero")
+    assert float(at_zero.state) == pytest.approx(35.0, abs=0.1)
+    assert at_zero.attributes["reason"] is None
+    assert at_zero.attributes["slope"] == pytest.approx(-0.8, abs=0.01)
+    assert at_zero.attributes["days"] == 63
+    assert at_zero.attributes["coldest_day"] == pytest.approx(-6.0)
+    assert at_zero.attributes["dhw_method"] == "heating_only"
+    design = state(hass, entry, "gas_flow_at_design")
+    assert float(design.state) == pytest.approx(44.6, abs=0.1)
+    assert design.attributes["design_temp"] == -12.0
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_gas_flow_without_statistics_is_refused(hass: HomeAssistant) -> None:
+    hass.states.async_set(GAS, "1234.5", VOLUME)
+    hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "38.0", TEMPERATURE)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Gas", "source": "gas"}
+    )
+    assert result["step_id"] == "gas"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "gas_total": GAS,
+            "outdoor_temp": OUTDOOR,
+            "flow_temp": FLOW,
+            CONF_CALORIFIC_VALUE: HS,
+            CONF_Z_NUMBER: 1.0,
+        },
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "gas_flow_no_statistics"}
