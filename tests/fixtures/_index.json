@@ -103,5 +103,10 @@
     "source": "Wärmewacht diagnostics (section source) of a forum user's installation (Daikin Altherma 3, P1P2MQTT bridge 0.9.58rc23, Home Assistant 2026.10.4, set up by hand), sent to the maintainer on 2026-10-29 for checking this template.",
     "real": "every MQTT entity of the bridge's devices with entity id (older device names 'HC_Sensors', 'HC_Mode', 'HC_DHW', 'HC_Meters' giving 'hc_<sub>_<name>'), unique id (default names P1P2MQTT/bridge0), domain, device and state class, unit, the on/off and text states (Heating, Schedule, WD+prog, 0x00).",
     "made_up": "every number (counters, temperatures, hours, flow, presets) and the controller's date, replaced; left out: the user's weather service and utility meters on the same devices; the device block is reduced to manufacturer, model and version."
+  },
+  "ems_esp_dev23_heater.json": {
+    "source": "Entity registry of the same installation as ems_esp_cs6800i.json after the update to EMS-ESP 3.9.0-dev.23 (proddy's build with emsesp/EMS-ESP32#3325, telegram 0x4AF offsets 28 and 36), Home Assistant 2026.10.4, read on 2026-11-02. Only the two new counters; use together with ems_esp_cs6800i.json.",
+    "real": "entity ids, unique ids (platform mqtt), unit, device and state class of the backup heater per mode in 0.01 kWh ('metereheatheat', DHW tag 'dhw_metereheat').",
+    "made_up": "every state value."
   }
 }

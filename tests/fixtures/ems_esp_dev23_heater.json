@@ -1,0 +1,6 @@
+{
+  "entities": [
+    {"entity_id": "sensor.boiler_metereheatheat", "unique_id": "boiler_metereheatheat", "state": "0.00", "attributes": {"unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"}},
+    {"entity_id": "sensor.boiler_dhw_metereheat", "unique_id": "boiler_dhw_metereheat", "state": "11.37", "attributes": {"unit_of_measurement": "kWh", "device_class": "energy", "state_class": "total_increasing"}}
+  ]
+}

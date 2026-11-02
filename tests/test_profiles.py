@@ -219,3 +219,46 @@ def test_homecom_compressor_status_is_the_activity() -> None:
     assert BOSCH_HOMECOM.parse_activity("defrost") is Activity.DEFROST
     assert BOSCH_HOMECOM.parse_activity("dhw") is Activity.DHW
     assert BOSCH_HOMECOM.parse_activity("pool_heat") is Activity.OTHER
+
+
+def test_ems_esp_backup_heater_in_hundredths() -> None:
+    """From EMS-ESP 3.9.0-dev.23 on (#3325) the backup heater per mode comes
+    in 0.01 kWh; the whole-kWh counters stay for the backfill (aliases)."""
+    rows = [
+        *load_fixture("ems_esp_cs6800i.json")["entities"],
+        *load_fixture("ems_esp_dev23_heater.json")["entities"],
+    ]
+    (match,) = find(
+        EMS_ESP, [RegistryEntry(r["entity_id"], "mqtt", r["unique_id"]) for r in rows]
+    )
+    assert match.entities[Signal.AUX_HEATING] == "sensor.boiler_metereheatheat"
+    assert match.entities[Signal.AUX_DHW] == "sensor.boiler_dhw_metereheat"
+    assert match.history[Signal.AUX_HEATING] == [
+        "sensor.boiler_auxelecheatnrgconsheating"
+    ]
+    assert match.history[Signal.AUX_DHW] == [
+        "sensor.boiler_dhw_auxelecheatnrgcons",
+        "sensor.boiler_auxelecheatnrgconsww",
+    ]
+
+
+def test_ems_esp_backup_heater_in_hundredths_long_names() -> None:
+    """Long names (v3.4) of the new counters by the rule of
+    ems_esp_long_names.json: "meter e-heater heating", DHW "meter e-heater"."""
+    rows = load_fixture("ems_esp_long_names.json")["entities"]
+    base = [RegistryEntry(r["entity_id"], "mqtt", r["unique_id"]) for r in rows]
+    heating = RegistryEntry(
+        "sensor.boiler_meter_e_heater_heating", "mqtt", "boiler_meter_e-heater_heating"
+    )
+    dhw = RegistryEntry(
+        "sensor.boiler_dhw_meter_e_heater", "mqtt", "boiler_dhw_meter_e-heater"
+    )
+    (match,) = find(EMS_ESP, [*base, heating, dhw])
+    assert match.entities[Signal.AUX_HEATING] == heating.entity_id
+    assert match.entities[Signal.AUX_DHW] == dhw.entity_id
+    assert match.history[Signal.AUX_HEATING] == [
+        "sensor.boiler_aux_elec_heater_energy_consumption_heating"
+    ]
+    assert match.history[Signal.AUX_DHW] == [
+        "sensor.boiler_dhw_aux_elec_heater_energy_consumption"
+    ]

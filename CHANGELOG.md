@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Bosch HomeCom: Betriebsart wird jetzt übernommen.** `bosch_homecom` 1.6.1 liefert den Sensor „Kompressorstatus“ und damit Abtauungen, Spreizung und mittleren Vorlauf. Bestehende Einträge haben ihn bisher nicht übernommen: Wärmewacht hatte ihn schon als bekannt abgehakt, als es ihn noch gar nicht gab. Jetzt gilt ein Signal erst als bekannt, wenn es eine Entität dafür gab, und Einträge von 0.2.5 und älter übernehmen den Kompressorstatus beim nächsten Start. Ebenso wird ein Signal nicht mehr abgehakt, wenn die Quelle beim Start von Home Assistant noch nicht bereit war.
+- **EMS-ESP: Heizstab je Betriebsart auf 0,01 kWh.** Ab EMS-ESP 3.9 (bisher Entwicklerversion) gibt es den Heizstab-Strom für Heizen und Warmwasser auch mit Nachkommastellen (`metereheatheat`, `dhw_metereheat`). Die Vorlage nimmt diese Zähler zuerst; bestehende Einträge wechseln beim nächsten Start von selbst, die ganzzahligen Zähler liefern weiter den Rückblick für die Zeit davor. Kleine Mengen (Legionellenschaltung) und die Warmwasser-Werte je Ladung werden damit genauer.
+- **Neuer Zähler, neuer Anfang:** Wechselt die Entität eines Zählers (Neu konfigurieren oder der Wechsel oben), beginnt Wärmewacht beim neuen Zähler mit dessen erstem Wert, statt die Differenz zum letzten Wert des alten Zählers zu buchen.
+
 ## 0.2.5 – 2026-11-02
 
 - **Kennzahlen als eigene Sensoren:** „Heizstab-Anteil Heizen“ und „Heizstab-Anteil Warmwasser“ (je Monat und Saison), „Heizgrenze“ und „Stillstand-Leistung 7 Tage“. Bisher standen diese Werte nur in Attributen, die Home Assistant erst unter ⋮ → Details zeigt (Rückmeldung im simon42-Forum). Die Attribute bleiben zusätzlich erhalten.

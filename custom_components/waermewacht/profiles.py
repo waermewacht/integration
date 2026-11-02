@@ -306,13 +306,20 @@ EMS_ESP = Template(
             (_S, "nrgconscompcooling"),
             (_S, "energy_consumption_compressor_cooling"),
         ),
-        # The backup heater per mode exists in whole kWh only; the 0.01 kWh
-        # total (metereheat) would need an attribution to modes.
+        # The backup heater per mode in 0.01 kWh (telegram 0x4AF offsets 28
+        # and 36, emsesp/EMS-ESP32#3325, from 3.9.0-dev.23 on), else in whole
+        # kWh. The whole-kWh counters are aliases: their statistics reach
+        # further back. "metereheat" in the DHW tag is not in mqtt.cpp's
+        # dhw_old list, so it has no 3.6 name with "ww".
         Signal.AUX_HEATING: (
+            (_S, "metereheatheat"),
+            (_S, "meter_e-heater_heating"),
             (_S, "auxelecheatnrgconsheating"),
             (_S, "aux_elec._heater_energy_consumption_heating"),
         ),
         Signal.AUX_DHW: (
+            (_S, "dhw_metereheat"),
+            (_S, "dhw_meter_e-heater"),
             (_S, "dhw_auxelecheatnrgcons"),
             (_S, "dhw_aux_elec._heater_energy_consumption"),
             (_S, "auxelecheatnrgconsww"),
@@ -368,6 +375,11 @@ EMS_ESP = Template(
         "nrgsuppww": ("dhw_nrgsupp",),
         "nrgconscompww": ("dhw_nrgconscomp",),
         "auxelecheatnrgconsww": ("dhw_auxelecheatnrgcons",),
+        # Backup heater: the same counter in whole kWh (all names of it).
+        "metereheatheat": ("auxelecheatnrgconsheating",),
+        "meter_e-heater_heating": ("aux_elec._heater_energy_consumption_heating",),
+        "dhw_metereheat": ("dhw_auxelecheatnrgcons", "auxelecheatnrgconsww"),
+        "dhw_meter_e-heater": ("dhw_aux_elec._heater_energy_consumption",),
     },
 )
 
@@ -385,13 +397,15 @@ POINTT_ACTIVITY: dict[str, Activity | None] = {
     "alarm": Activity.OTHER,
 }
 
-# Bosch HomeCom (bosch_homecom, checked v1.5.2 and v1.6.0): unique ids
+# Bosch HomeCom (bosch_homecom, checked v1.5.2 to v1.6.1): unique ids
 # "<gateway id>-<key>". The energy per mode is today's sum of the cloud's
 # hourly values (disabled by default in bosch_homecom). The activity
-# ("compressor_status") exists only from bosch_homecom PR #217 on; without
-# it there are no defrosts and no mode of a run, and an existing entry takes
-# it over once it appears (adopt.py). The pump volume flow is left out: it
-# reports "L/min" but delivers l/h. Sources: docs/ENTWICKLUNG.md, section 4.
+# ("compressor_status", cloud only, about a minute late) exists from
+# bosch_homecom 1.6.1 on (PR #217); without it there are no defrosts and no
+# mode of a run, and an existing entry takes it over once it appears
+# (adopt.py). The pump volume flow is left out: up to 1.6.0 it reports
+# "L/min" but delivers l/h (fixed in 1.6.1, PR #212). Sources:
+# docs/ENTWICKLUNG.md, section 4.
 BOSCH_HOMECOM = Template(
     key="bosch_homecom",
     label="Bosch HomeCom",

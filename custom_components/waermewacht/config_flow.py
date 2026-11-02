@@ -13,6 +13,7 @@ and the prices.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any, Literal
 
 import voluptuous as vol
@@ -29,6 +30,7 @@ from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
+from .adopt import known_signals
 from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_AUX_MILD_FROM,
@@ -399,12 +401,16 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     """Set up one heat pump."""
 
     VERSION = 1
+    # 1.2: known signals only once found or configured (adopt.py).
+    MINOR_VERSION = 2
 
     def __init__(self) -> None:
         self._name = ""
         self._template: str | None = None
         self._unique_id: str | None = None
         self._prefill: dict[str, str] = {}
+        # Signals the template found for the heat pump (known once set up).
+        self._found: set[str] = set()
         # Entity -> other entities of the same counter (backfill only).
         self._history: dict[str, list[str]] = {}
         # Mapping that drew the warning on the kind of a counter: sent again
@@ -432,6 +438,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._prefill = {
                     s.value: e for s, e in match.entities.items() if s in FORM_SIGNALS
                 }
+                self._found = {s.value for s in match.entities}
                 self._history = {
                     match.entities[s]: aliases for s, aliases in match.history.items()
                 }
@@ -594,7 +601,11 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 data={
                     **entry.data,
                     CONF_ENTITIES: entities,
-                    CONF_KNOWN_SIGNALS: _known(entry.data.get(CONF_TEMPLATE)),
+                    CONF_KNOWN_SIGNALS: _known(
+                        entry.data.get(CONF_TEMPLATE),
+                        entry.data.get(CONF_KNOWN_SIGNALS),
+                        {*entry.data.get(CONF_ENTITIES, {}), *entities},
+                    ),
                 },
             )
         unique_id = self._unique_id or _manual_unique_id(entities)
@@ -611,7 +622,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     for entity, aliases in self._history.items()
                     if entity in entities.values()
                 },
-                CONF_KNOWN_SIGNALS: _known(self._template),
+                CONF_KNOWN_SIGNALS: _known(
+                    self._template, [], {*self._found, *entities}
+                ),
             },
         )
 
@@ -635,10 +648,13 @@ def _gas_unique_id(entities: dict[str, str]) -> str:
     return f"{KIND_GAS}:{main}"
 
 
-def _known(template_key: str | None) -> list[str]:
-    """Signals the template offers now: a later version adopts only newer ones."""
+def _known(
+    template_key: str | None, known: list[str] | None, offered: Iterable[str]
+) -> list[str]:
+    """Signals the entry had an entity for (adopt.known_signals): one the
+    template did not find stays unknown and is taken over once it appears."""
     template = TEMPLATES.get(template_key or "")
-    return sorted(s.value for s in template.signals) if template else []
+    return known_signals(template.signals, known, offered) if template else []
 
 
 # Optional settings in sections of the options form; an empty field is unset.

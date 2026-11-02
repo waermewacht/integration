@@ -16,9 +16,16 @@ from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.hass_dict import HassKey
 
-from .adopt import own_match, signals_to_adopt
+from .adopt import (
+    forget_offered_early,
+    known_signals,
+    own_match,
+    preferred_entities,
+    signals_to_adopt,
+)
 from .const import (
     CONF_ENTITIES,
+    CONF_HISTORY,
     CONF_KIND,
     CONF_KNOWN_SIGNALS,
     CONF_TEMPLATE,
@@ -26,6 +33,7 @@ from .const import (
     KIND_GAS,
 )
 from .gas_runtime import GasRuntime
+from .model import Signal
 from .profiles import RegistryEntry, find
 from .rename import renamed_data, renamed_unique_id, sources
 from .runtime import HeatPumpRuntime
@@ -164,8 +172,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     """Set up one heat pump or gas boiler."""
     if is_gas(entry):
         return await _async_setup_gas(hass, entry)
-    _adopt_new_signals(hass, entry)
-    runtime = HeatPumpRuntime(hass, entry)
+    moved = _adopt_new_signals(hass, entry)
+    runtime = HeatPumpRuntime(hass, entry, moved)
     await runtime.async_start()
     entry.runtime_data = runtime
 
@@ -194,47 +202,77 @@ async def _async_setup_gas(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-def _adopt_new_signals(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> None:
-    """Take over signals the template learned since the entry was set up
-    (adopt.py); before the runtime starts, so no reload is needed."""
+def _adopt_new_signals(
+    hass: HomeAssistant, entry: WaermewachtConfigEntry
+) -> set[Signal]:
+    """Take over signals the template learned since the entry was set up and
+    move counters to the form the template prefers now (adopt.py); before the
+    runtime starts, so no reload is needed. Returns the moved signals."""
     template = TEMPLATES.get(entry.data.get(CONF_TEMPLATE) or "")
     if template is None:
-        return
+        return set()
     configured: dict[str, str] = dict(entry.data.get(CONF_ENTITIES) or {})
+    history: dict[str, list[str]] = dict(entry.data.get(CONF_HISTORY) or {})
     known = entry.data.get(CONF_KNOWN_SIGNALS)
-    current = sorted(s.value for s in template.signals)
-    todo = signals_to_adopt(template.signals, known, configured)
+    registry = er.async_get(hass)
+    entries = [
+        RegistryEntry(
+            e.entity_id,
+            e.platform,
+            e.unique_id,
+            e.original_name,
+            usable=e.disabled_by is None
+            and (state := hass.states.get(e.entity_id)) is not None
+            and state.state != STATE_UNAVAILABLE,
+        )
+        for e in registry.entities.values()
+        if e.platform == template.platform
+    ]
     added: dict[str, str] = {}
-    if todo:
-        registry = er.async_get(hass)
-        entries = [
-            RegistryEntry(
-                e.entity_id,
-                e.platform,
-                e.unique_id,
-                e.original_name,
-                usable=e.disabled_by is None
-                and (state := hass.states.get(e.entity_id)) is not None
-                and state.state != STATE_UNAVAILABLE,
-            )
-            for e in registry.entities.values()
-            if e.platform == template.platform
-        ]
-        match = own_match(find(template, entries), configured)
-        if match is not None:
-            added = {s.value: match.entities[s] for s in todo if s in match.entities}
-    if not added and known == current:
-        return
+    moved: dict[str, str] = {}
+    if (match := own_match(find(template, entries), configured)) is not None:
+        todo = signals_to_adopt(template.signals, known, configured)
+        added = {s.value: match.entities[s] for s in todo if s in match.entities}
+        moved = preferred_entities(match, configured)
+        for key in moved:
+            history.pop(configured[key], None)
+        for key, entity_id in {**added, **moved}.items():
+            if aliases := match.history.get(Signal(key)):
+                history[entity_id] = aliases
+    entities = {**configured, **added, **moved}
+    # Signals not found (yet) stay unknown: taken over once the source has them.
+    now_known = known_signals(template.signals, known, entities)
+    if not added and not moved and known == now_known:
+        return set()
     if added:
         _LOGGER.info("Taking over new signals of %s: %s", template.label, added)
-    hass.config_entries.async_update_entry(
-        entry,
-        data={
-            **entry.data,
-            CONF_ENTITIES: {**configured, **added},
-            CONF_KNOWN_SIGNALS: current,
-        },
-    )
+    if moved:
+        _LOGGER.info(
+            "Moving to the preferred counters of %s: %s", template.label, moved
+        )
+    data = {**entry.data, CONF_ENTITIES: entities, CONF_KNOWN_SIGNALS: now_known}
+    if history != (entry.data.get(CONF_HISTORY) or {}):
+        data[CONF_HISTORY] = history
+    hass.config_entries.async_update_entry(entry, data=data)
+    return {Signal(key) for key in moved}
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """1.2: forget the known signals a template offered before its source
+    delivered them (adopt.OFFERED_EARLY), so they are taken over."""
+    if entry.version > 1:
+        return False
+    if entry.minor_version < 2:
+        data = dict(entry.data)
+        known = forget_offered_early(
+            data.get(CONF_TEMPLATE),
+            data.get(CONF_KNOWN_SIGNALS),
+            data.get(CONF_ENTITIES) or {},
+        )
+        if known is not None:
+            data[CONF_KNOWN_SIGNALS] = known
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=2)
+    return True
 
 
 async def _async_update_listener(

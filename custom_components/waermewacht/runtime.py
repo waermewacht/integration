@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterable
 from datetime import date, datetime, time, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -245,12 +245,17 @@ def _float(state: State | None) -> float | None:
 class HeatPumpRuntime:
     """Books energy and runs of one heat pump."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry: ConfigEntry, moved: Iterable[Signal] = ()
+    ) -> None:
+        """`moved`: counters whose entity changed since the books were written
+        (adopt.py), for books from before counter_entities was stored."""
         self.hass = hass
         self.entry = entry
         self.entities: dict[Signal, str] = {
             Signal(k): v for k, v in entry.data[CONF_ENTITIES].items() if v
         }
+        self._moved = frozenset(moved)
         self._signal_of = {v: k for k, v in self.entities.items()}
         self.template: Template = TEMPLATES.get(
             entry.data.get(CONF_TEMPLATE) or "", EMS_ESP
@@ -2125,6 +2130,7 @@ class HeatPumpRuntime:
             "history_imported": self.history_imported,
             "history_adjusted": self.history_adjusted,
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
+            "counter_entities": {s.value: self.entities.get(s) for s in self.counters},
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
             "marks": self.marks.as_dict(),
@@ -2166,9 +2172,16 @@ class HeatPumpRuntime:
         self.since = dt_util.parse_datetime(since) if since else None
         self.history_imported = data.get("history_imported", False)
         self.history_adjusted = data.get("history_adjusted", False)
+        # A counter read from another entity now (reconfigured, moved to the
+        # preferred form of the counter): its last reading is no baseline.
+        before = data.get("counter_entities")
         for key, counter in data.get("counters", {}).items():
-            if (signal := Signal(key)) in self.counters:
-                self.counters[signal].restore(counter)
+            signal = Signal(key)
+            if signal not in self.counters or signal in self._moved:
+                continue
+            if before is not None and before.get(key) != self.entities.get(signal):
+                continue
+            self.counters[signal].restore(counter)
         self.tracker.restore(data.get("tracker", {}), saved_at)
         self.totals = Totals.from_dict(data.get("totals"))
         self.marks.restore(data.get("marks", {}))
