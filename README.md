@@ -226,9 +226,9 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 
 ### Neu konfigurieren
 
-*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt; die Zeit vor der Einrichtung holt die Schaltfläche **Rückblick neu berechnen** nach.
+*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt; die Zeit vor der Einrichtung holt Wärmewacht beim Neuladen selbst aus der Langzeitstatistik nach, wie die Schaltfläche **Rückblick neu berechnen**.
 
-**Rückblick neu berechnen** (Schaltfläche, Konfiguration) rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln: nach einem neu eingetragenen Zähler oder wenn ein Update die Regeln des Rückblicks verbessert hat. Was Wärmewacht seit der Einrichtung gebucht hat, bleibt. Die Zeit zwischen Einrichtung und Nachtragen eines Zählers fehlt weiterhin, und die nachgetragene Statistik der eigenen Energie-Sensoren vor der Einrichtung bleibt, wie sie war. Nicht bei Quellen mit Vortageswerten (MELCloud, F1p-Brücke): Deren Statistik taugt nicht für den Rückblick.
+**Rückblick neu berechnen** (Schaltfläche, Konfiguration) rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln: wenn ein Update die Regeln des Rückblicks verbessert hat oder du die Statistik eines Zählers nachträglich importiert hast. Nach einem neu eingetragenen oder gewechselten Zähler tut Wärmewacht das beim nächsten Start selbst. Was Wärmewacht seit der Einrichtung gebucht hat, bleibt. Die Zeit zwischen Einrichtung und Nachtragen eines Zählers fehlt weiterhin, und die nachgetragene Statistik der eigenen Energie-Sensoren vor der Einrichtung bleibt, wie sie war. Nicht bei Quellen mit Vortageswerten (MELCloud, F1p-Brücke): Deren Statistik taugt nicht für den Rückblick.
 
 Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
 

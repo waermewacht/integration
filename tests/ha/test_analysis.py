@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -364,3 +365,34 @@ async def test_spread_standby_and_oversize_from_the_diary(
     # Standby rose from 25 W to 45 W: more than +50 % and +10 W.
     standby = state("standby")
     assert standby.attributes["rising"] is True
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_look_back_again_for_new_meters(hass: HomeAssistant) -> None:
+    """A meter added since the look-back (Reconfigure, a template's preferred
+    counter): the next start looks back again by itself, as the button does;
+    with unchanged meters it does not."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    await async_wait_recording_done(hass)
+    entry = await setup(hass, with_outdoor=False)
+    runtime = entry.runtime_data
+    before = {
+        p: runtime.marks.marks[p].as_dict() for p in (Period.SEASON, Period.TOTAL)
+    }
+    assert runtime._look_back_entities["elec_heating"] == ELEC_HEATING
+
+    # As if the electricity meter had come in under Reconfigure.
+    for period in before:
+        runtime.marks.marks[period] = Totals()
+    del runtime._look_back_entities["elec_heating"]
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    runtime = entry.runtime_data
+    assert {p: runtime.marks.marks[p].as_dict() for p in before} == before
+    assert runtime._look_back_entities["elec_heating"] == ELEC_HEATING
+
+    with patch.object(type(runtime), "async_rebuild_history", autospec=True) as rebuild:
+        assert await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+    rebuild.assert_not_called()

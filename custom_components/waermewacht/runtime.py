@@ -256,6 +256,9 @@ class HeatPumpRuntime:
             Signal(k): v for k, v in entry.data[CONF_ENTITIES].items() if v
         }
         self._moved = frozenset(moved)
+        # Energy meters ({signal: entity}) the look-back before the setup was
+        # computed with; None in books from before it was stored.
+        self._look_back_entities: dict[str, str] | None = None
         self._signal_of = {v: k for k, v in self.entities.items()}
         self.template: Template = TEMPLATES.get(
             entry.data.get(CONF_TEMPLATE) or "", EMS_ESP
@@ -449,9 +452,16 @@ class HeatPumpRuntime:
             if Period.YEAR not in self.marks.marks:
                 # Update from 0.1.0b3: the calendar year (season of cooling).
                 await self._async_rebase(Period.YEAR, now)
+            if self._look_back_entities is None:
+                # Older books: the meters of now (the button covers the rest).
+                self._look_back_entities = self._energy_entities()
+                self._dirty = True
+            elif self._look_back_entities != self._energy_entities():
+                self.spawn(self._async_look_back_new_meters(), "look_back")
         else:
             self.since = now
             await self._async_backfill(now)
+            self._look_back_entities = self._energy_entities()
             self._dirty = True
         if history is not None:
             self._restore_history(history)
@@ -539,6 +549,10 @@ class HeatPumpRuntime:
                 if entity_id == old:
                     mapping[signal] = new
         self._signal_of = {v: k for k, v in self.entities.items()}
+        if self._look_back_entities is not None:
+            self._look_back_entities = {
+                k: new if v == old else v for k, v in self._look_back_entities.items()
+            }
         if self._starts_seen and self._starts_seen[0] == old:
             self._starts_seen = (new, *self._starts_seen[1:])
         self._dirty = True
@@ -1080,6 +1094,31 @@ class HeatPumpRuntime:
                 hours=str(found.hours) if found else "",
             )
 
+    def _energy_entities(self) -> dict[str, str]:
+        return {s.value: self.entities[s] for s in self._energy}
+
+    async def _async_look_back_new_meters(self) -> None:
+        """Energy meters added or changed since the look-back (Reconfigure, a
+        template's preferred counter): the look-back again at once, as the
+        button does. Where none is possible, the meters count as looked at."""
+        stored = self._look_back_entities or {}
+        changed = sorted(
+            v for k, v in self._energy_entities().items() if stored.get(k) != v
+        )
+        try:
+            await self.async_rebuild_history()
+        except ServiceValidationError:  # no recorder, previous-day values
+            self._look_back_entities = self._energy_entities()
+            self._dirty = True
+            return
+        except HomeAssistantError:  # logged; the next start tries again
+            return
+        _LOGGER.info(
+            "%s: look-back before the setup computed again for new meters %s",
+            self.entry.title,
+            changed,
+        )
+
     async def async_rebuild_history(self) -> None:
         """Button: the energy before the setup anew from the statistics,
         with today's entities and rules (meters added under Reconfigure, a
@@ -1114,6 +1153,7 @@ class HeatPumpRuntime:
                 self.template.heat_includes_electricity,
             ),
         )
+        self._look_back_entities = self._energy_entities()
         self._dirty = True
         await self.async_save()
         self._notify()
@@ -2131,6 +2171,7 @@ class HeatPumpRuntime:
             "history_adjusted": self.history_adjusted,
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
             "counter_entities": {s.value: self.entities.get(s) for s in self.counters},
+            "look_back_entities": self._look_back_entities,
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
             "marks": self.marks.as_dict(),
@@ -2218,6 +2259,7 @@ class HeatPumpRuntime:
         self._zero_flow.seconds = float(data.get("zero_flow_seconds", 0.0))
         backfill = data.get("backfill_until")
         self.backfill_until = datetime.fromisoformat(backfill) if backfill else None
+        self._look_back_entities = data.get("look_back_entities")
         # Verdicts made for other entities (reconfigured since) are dropped.
         before = data.get("verdict_entities")
         if before is not None:
