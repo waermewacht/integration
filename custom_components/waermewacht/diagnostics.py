@@ -121,6 +121,14 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
         "problem": runtime.problem,
         "analysed_at": runtime.analysed_at.isoformat() if runtime.analysed_at else None,
         "analysis": result,
+        "readings": {
+            "unit": runtime.manual_unit,
+            "count": len(runtime.readings),
+            "first": runtime.readings[0].at.isoformat() if runtime.readings else None,
+            "last": runtime.readings[-1].at.isoformat() if runtime.readings else None,
+        }
+        if runtime.manual
+        else None,
         "source": _source_entities(hass, set(configured.values()), mask),
     }
 

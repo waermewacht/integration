@@ -111,13 +111,14 @@
       },
       "gas": {
         "title": "Set up a gas boiler",
-        "description": "Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter.",
+        "description": "Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter. No counter in Home Assistant? Choose \"Readings by hand\" and enter the meter reading now and then, weekly is best.",
         "data": {
           "gas_total": "Gas total (heating and hot water)",
           "gas_heating": "Gas heating only",
           "gas_dhw": "Gas hot water",
           "outdoor_temp": "Outdoor temperature",
           "flow_temp": "Flow temperature",
+          "manual_unit": "Readings by hand",
           "calorific_value": "Calorific value",
           "z_number": "Z-number"
         },
@@ -127,6 +128,7 @@
           "gas_dhw": "Optional: gas for hot water, if counted apart.",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
           "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+          "manual_unit": "Instead of a counter: the unit of your gas meter. You enter its reading with the entity \"Enter meter reading\" or the action \"Add gas meter reading\" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.",
           "calorific_value": "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
           "z_number": "Only for counters in m³: from the gas bill (Zustandszahl)."
         }
@@ -139,7 +141,8 @@
       "elec_twice": "Compressor electricity either per mode or as total, not both.",
       "lifetime_counter": "An energy meter rose on several days without starting anew: it looks like a total counter. This source delivers day values (energy today); choose those here. If it is a day counter after all, submit again unchanged.",
       "day_counter": "An energy meter fell back at the same time of day on several days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here. If it is a total counter after all, submit again unchanged.",
-      "gas_none": "Choose a gas counter: total, or heating.",
+      "gas_none": "Choose a gas counter (total, or heating) or readings by hand.",
+      "gas_manual_and_counter": "Readings by hand need no counter and no flow temperature: leave those empty.",
       "gas_twice": "Either \"Gas total\" or \"Gas heating only\", not both.",
       "gas_unit": "A gas counter has no unit Wh, kWh, MWh or m³.",
       "gas_no_statistics": "A gas counter has no long-term statistics (state class total or total_increasing).",
@@ -252,6 +255,12 @@
         "10": "October",
         "11": "November",
         "12": "December"
+      }
+    },
+    "manual_unit": {
+      "options": {
+        "m3": "Meter in m³",
+        "kwh": "Meter in kWh"
       }
     }
   },
@@ -498,6 +507,11 @@
       "gas_cost_year": {
         "name": "Gas cost 365 days"
       }
+    },
+    "number": {
+      "gas_reading": {
+        "name": "Enter meter reading"
+      }
     }
   },
   "exceptions": {
@@ -515,6 +529,24 @@
     },
     "look_back_failed": {
       "message": "Reading the statistics failed; see the log."
+    },
+    "reading_not_rising": {
+      "message": "The reading {value} does not fit: a gas meter only counts up, so it must lie between the readings before and after it."
+    },
+    "reading_negative": {
+      "message": "A meter reading cannot be negative."
+    },
+    "reading_in_future": {
+      "message": "The time of the reading lies in the future."
+    },
+    "reading_not_found": {
+      "message": "There is no reading at this time (to the minute)."
+    },
+    "not_manual_gas": {
+      "message": "This entry is no gas boiler with readings by hand."
+    },
+    "no_calorific_value": {
+      "message": "Readings in m³ need the calorific value and the Z-number (settings of the entry)."
     },
     "not_for_gas": {
       "message": "This action is for heat pumps; a gas boiler has the heat load only."
@@ -638,6 +670,38 @@
         "design_outdoor_temp": {
           "name": "Design outdoor temperature",
           "description": "Without: the one from the settings."
+        }
+      }
+    },
+    "add_gas_reading": {
+      "name": "Add gas meter reading",
+      "description": "Adds a reading of the gas meter, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
+      "fields": {
+        "config_entry": {
+          "name": "Gas boiler",
+          "description": "The Wärmewacht entry with readings by hand."
+        },
+        "reading": {
+          "name": "Reading",
+          "description": "In the unit of the meter (m³ or kWh)."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Without: now. Times without zone are local time."
+        }
+      }
+    },
+    "remove_gas_reading": {
+      "name": "Remove gas meter reading",
+      "description": "Removes the reading at this time (to the minute), e.g. a typo.",
+      "fields": {
+        "config_entry": {
+          "name": "Gas boiler",
+          "description": "The Wärmewacht entry with readings by hand."
+        },
+        "time": {
+          "name": "Time",
+          "description": "The time of the reading, as shown in the attribute last_reading or the history."
         }
       }
     }

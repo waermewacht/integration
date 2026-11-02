@@ -30,15 +30,20 @@ from .periods import Period, local_midnight, period_start
 
 if TYPE_CHECKING:
     from . import WaermewachtConfigEntry
+    from .gas_runtime import GasRuntime
 
 SERVICE_REPORT = "report"
 SERVICE_CURVE = "performance_curve"
 SERVICE_HEAT_LOAD = "heat_load"
+SERVICE_ADD_READING = "add_gas_reading"
+SERVICE_REMOVE_READING = "remove_gas_reading"
 ATTR_CONFIG_ENTRY = "config_entry"
 ATTR_START = "start"
 ATTR_END = "end"
 ATTR_SCOPE = "scope"
 ATTR_DESIGN_TEMP = "design_outdoor_temp"
+ATTR_READING = "reading"
+ATTR_TIME = "time"
 # Scope of the curve as offered -> scope of curve.py.
 CURVE_SCOPES = {"heating": "heating", "heating_dhw": "combined"}
 
@@ -53,6 +58,19 @@ REPORT_SCHEMA = vol.Schema(
 
 CURVE_SCHEMA = REPORT_SCHEMA.extend(
     {vol.Optional(ATTR_SCOPE, default="heating"): vol.In(list(CURVE_SCOPES))}
+)
+ADD_READING_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY): ConfigEntrySelector({"integration": DOMAIN}),
+        vol.Required(ATTR_READING): vol.All(vol.Coerce(float), vol.Range(min=0)),
+        vol.Optional(ATTR_TIME): cv.datetime,
+    }
+)
+REMOVE_READING_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY): ConfigEntrySelector({"integration": DOMAIN}),
+        vol.Required(ATTR_TIME): cv.datetime,
+    }
 )
 HEAT_LOAD_SCHEMA = REPORT_SCHEMA.extend(
     {vol.Optional(ATTR_DESIGN_TEMP): vol.Coerce(float)}
@@ -179,13 +197,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def load(call: ServiceCall) -> ServiceResponse:
         entry, start, end = _analysis_window(call, default_previous=True)
         runtime = entry.runtime_data
-        hours, outdoor = await runtime.async_analysis_data(start, end)
-        result = heat_load(
-            hours,
-            outdoor,
-            runtime.tz,
-            design_temp=call.data.get(ATTR_DESIGN_TEMP, runtime.design_temp),
-        )
+        design = call.data.get(ATTR_DESIGN_TEMP, runtime.design_temp)
+        if getattr(runtime, "manual", False):
+            found = await runtime.async_readings_heat_load(start, end, design)  # type: ignore[attr-defined]
+            if found is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="no_calorific_value"
+                )
+            result = found
+        else:
+            hours, outdoor = await runtime.async_analysis_data(start, end)
+            result = heat_load(hours, outdoor, runtime.tz, design_temp=design)
         return {
             "start": dt_util.as_local(start).isoformat(),
             "end": dt_util.as_local(end).isoformat(),
@@ -205,4 +227,33 @@ def async_setup_services(hass: HomeAssistant) -> None:
         load,
         schema=HEAT_LOAD_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+
+    def _manual_gas(call: ServiceCall) -> GasRuntime:
+        entry = service.async_get_config_entry(
+            hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY]
+        )
+        runtime = entry.runtime_data
+        if entry.data.get(CONF_KIND) != KIND_GAS or not runtime.manual:  # type: ignore[attr-defined]
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="not_manual_gas"
+            )
+        return runtime  # type: ignore[return-value]
+
+    async def add_reading(call: ServiceCall) -> None:
+        at = (
+            _as_utc(call.data[ATTR_TIME])
+            if ATTR_TIME in call.data
+            else dt_util.utcnow()
+        )
+        await _manual_gas(call).async_add_reading(at, call.data[ATTR_READING])
+
+    async def remove_reading(call: ServiceCall) -> None:
+        await _manual_gas(call).async_remove_reading(_as_utc(call.data[ATTR_TIME]))
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_ADD_READING, add_reading, schema=ADD_READING_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REMOVE_READING, remove_reading, schema=REMOVE_READING_SCHEMA
     )

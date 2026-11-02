@@ -142,20 +142,27 @@ def weekly_points(
     return points
 
 
-def fit_line(points: list[tuple[float, float]]) -> tuple[float, float, float]:
+def fit_line(
+    points: list[tuple[float, float]], weights: list[float] | None = None
+) -> tuple[float, float, float]:
     """Least-squares line y = a + b·x; returns (a, b, R²).
 
     Needs at least two distinct x values. R² is 0 when y does not vary.
+    `weights` (one per point, positive) weight the squares, e.g. by the hours
+    behind a point of uneven length; without them all points count alike.
     """
-    n = len(points)
-    mx = sum(x for x, _ in points) / n
-    my = sum(y for _, y in points) / n
-    sxx = sum((x - mx) ** 2 for x, _ in points)
-    sxy = sum((x - mx) * (y - my) for x, y in points)
+    w = weights if weights is not None else [1.0] * len(points)
+    n = sum(w)
+    mx = sum(wi * x for wi, (x, _) in zip(w, points, strict=True)) / n
+    my = sum(wi * y for wi, (_, y) in zip(w, points, strict=True)) / n
+    sxx = sum(wi * (x - mx) ** 2 for wi, (x, _) in zip(w, points, strict=True))
+    sxy = sum(wi * (x - mx) * (y - my) for wi, (x, y) in zip(w, points, strict=True))
     b = sxy / sxx
     a = my - b * mx
-    ss_tot = sum((y - my) ** 2 for _, y in points)
-    ss_res = sum((y - a - b * x) ** 2 for x, y in points)
+    ss_tot = sum(wi * (y - my) ** 2 for wi, (_, y) in zip(w, points, strict=True))
+    ss_res = sum(
+        wi * (y - a - b * x) ** 2 for wi, (x, y) in zip(w, points, strict=True)
+    )
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
     return a, b, r2
 
@@ -168,12 +175,32 @@ def signature(
 ) -> HeatLoad:
     """Heat load from day samples; see `heat_load`."""
     weeks = weekly_points(days, max_outdoor=max_outdoor)
+    return fit_signature(
+        weeks,
+        enough=len(weeks) >= MIN_WEEKS,
+        too_few=TOO_FEW_WEEKS,
+        design_temp=design_temp,
+    )
+
+
+def fit_signature(
+    weeks: list[WeekPoint],
+    *,
+    enough: bool,
+    too_few: str,
+    design_temp: float | None = None,
+    weighted: bool = False,
+) -> HeatLoad:
+    """The line through valid points (weeks, or the periods between manual
+    meter readings); `enough` tells whether there are enough of them, else
+    the reason `too_few`. Spread and frost days as for weeks. `weighted`
+    weights each point with its hours (points of uneven length)."""
     temps = [w.mean_outdoor for w in weeks]
     spread = max(temps) - min(temps) if temps else None
     frost_days = sum(w.frost_days for w in weeks)
     reasons = []
-    if len(weeks) < MIN_WEEKS:
-        reasons.append(TOO_FEW_WEEKS)
+    if not enough:
+        reasons.append(too_few)
     if spread is None or spread < MIN_SPREAD:
         reasons.append(SPREAD_TOO_SMALL)
     if frost_days < MIN_FROST_DAYS:
@@ -186,9 +213,12 @@ def signature(
         frost_days=frost_days,
         design_temp=design_temp,
     )
-    if TOO_FEW_WEEKS in reasons:
+    if too_few in reasons:
         return result
-    a, b, r2 = fit_line([(w.mean_outdoor, w.power_kw) for w in weeks])
+    a, b, r2 = fit_line(
+        [(w.mean_outdoor, w.power_kw) for w in weeks],
+        [float(w.hours) for w in weeks] if weighted else None,
+    )
     if b >= 0:
         result.reasons.append(SLOPE_NOT_NEGATIVE)
         return result

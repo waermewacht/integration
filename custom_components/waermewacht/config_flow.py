@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any, Literal
+from uuid import uuid4
 
 import voluptuous as vol
 from homeassistant.config_entries import (
@@ -48,6 +49,7 @@ from .const import (
     CONF_HISTORY,
     CONF_KIND,
     CONF_KNOWN_SIGNALS,
+    CONF_MANUAL_UNIT,
     CONF_MIN_ELECTRICITY,
     CONF_MIN_POWER,
     CONF_NAME,
@@ -68,6 +70,7 @@ from .const import (
     GAS_HEATING,
     GAS_TOTAL,
     KIND_GAS,
+    MANUAL_UNITS,
     SOURCE_GAS,
     SOURCE_MANUAL,
     VOLUME_UNIT,
@@ -346,6 +349,15 @@ def gas_schema(values: dict[str, Any]) -> vol.Schema:
                 description=suggested(Signal.FLOW_TEMP.value),
             ): outdoor,
             vol.Optional(
+                CONF_MANUAL_UNIT, description=suggested(CONF_MANUAL_UNIT)
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(MANUAL_UNITS),
+                    translation_key=CONF_MANUAL_UNIT,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
                 CONF_CALORIFIC_VALUE, description=suggested(CONF_CALORIFIC_VALUE)
             ): _number(8, 13, 0.001, "kWh/m³"),
             vol.Optional(CONF_Z_NUMBER, description=suggested(CONF_Z_NUMBER)): _number(
@@ -357,6 +369,15 @@ def gas_schema(values: dict[str, Any]) -> vol.Schema:
 
 def validate_gas(hass: HomeAssistant, values: dict[str, Any]) -> str | None:
     """Error key, or None if the gas mapping can be used."""
+    if (unit := values.get(CONF_MANUAL_UNIT)) is not None:
+        # Readings by hand: no counter, no flow (no hourly gas).
+        if any(k in values for k in (*GAS_COUNTERS, Signal.FLOW_TEMP.value)):
+            return "gas_manual_and_counter"
+        if MANUAL_UNITS[unit] == VOLUME_UNIT and not (
+            values.get(CONF_CALORIFIC_VALUE) and values.get(CONF_Z_NUMBER)
+        ):
+            return "gas_calorific_value"
+        return None
     if GAS_TOTAL in values and GAS_HEATING in values:
         return "gas_twice"
     if GAS_TOTAL not in values and GAS_HEATING not in values:
@@ -558,7 +579,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         values: dict[str, Any] = dict(self._prefill)
         if self.source == SOURCE_RECONFIGURE:
-            values.update(self._get_reconfigure_entry().options)
+            entry = self._get_reconfigure_entry()
+            values.update(entry.options)
+            if manual := entry.data.get(CONF_MANUAL_UNIT):
+                values[CONF_MANUAL_UNIT] = manual
         if user_input is not None:
             values = {k: v for k, v in user_input.items() if v not in (None, "")}
             if (error := validate_gas(self.hass, values)) is None:
@@ -570,6 +594,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_finish_gas(self, values: dict[str, Any]) -> ConfigFlowResult:
         entities, conversion = split_gas(values)
+        manual = values.get(CONF_MANUAL_UNIT)
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
             options = {
@@ -577,19 +602,38 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 for k, v in entry.options.items()
                 if k not in (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER)
             }
-            # The main counter identifies the boiler, also after a change.
+            data = {k: v for k, v in entry.data.items() if k != CONF_MANUAL_UNIT}
+            # The main counter identifies the boiler, also after a change;
+            # readings by hand keep their id (and the stored readings).
+            unique_id = (
+                entry.unique_id
+                if manual
+                else self._moved_unique_id(entry, _gas_unique_id(entities))
+            )
             return self.async_update_and_abort(
                 entry,
-                unique_id=self._moved_unique_id(entry, _gas_unique_id(entities)),
-                data={**entry.data, CONF_ENTITIES: entities},
+                unique_id=unique_id,
+                data={
+                    **data,
+                    CONF_ENTITIES: entities,
+                    **({CONF_MANUAL_UNIT: manual} if manual else {}),
+                },
                 options={**options, **conversion},
             )
-        await self.async_set_unique_id(_gas_unique_id(entities))
-        self._abort_if_unique_id_configured()
+        if manual:
+            await self.async_set_unique_id(f"{KIND_GAS}:manual:{uuid4().hex}")
+        else:
+            await self.async_set_unique_id(_gas_unique_id(entities))
+            self._abort_if_unique_id_configured()
         name = self._name if self._name != "Wärmepumpe" else "Gasheizung"
         return self.async_create_entry(
             title=name,
-            data={CONF_NAME: name, CONF_KIND: KIND_GAS, CONF_ENTITIES: entities},
+            data={
+                CONF_NAME: name,
+                CONF_KIND: KIND_GAS,
+                CONF_ENTITIES: entities,
+                **({CONF_MANUAL_UNIT: manual} if manual else {}),
+            },
             options=conversion,
         )
 

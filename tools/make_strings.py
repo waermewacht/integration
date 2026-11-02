@@ -1094,8 +1094,8 @@ DISABLED_HINT = (
 GAS_STEP = {
     "title": ("Set up a gas boiler", "Gasheizung einrichten"),
     "description": (
-        "Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter.",
-        "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen.",
+        'Before switching to a heat pump: heat load, heating limit and hot water share from the gas consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter. No counter in Home Assistant? Choose "Readings by hand" and enter the meter reading now and then, weekly is best.',
+        "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen. Kein Zähler in Home Assistant? Wähle „Ablesung von Hand“ und trag den Zählerstand ab und zu ein, am besten wöchentlich.",
     ),
 }
 GAS_FIELDS = {
@@ -1107,6 +1107,7 @@ GAS_FIELDS = {
     "gas_dhw": ("Gas hot water", "Gas Warmwasser"),
     "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
+    "manual_unit": ("Readings by hand", "Ablesung von Hand"),
     "calorific_value": ("Calorific value", "Brennwert"),
     "z_number": ("Z-number", "Zustandszahl"),
 }
@@ -1131,6 +1132,10 @@ GAS_FIELD_HELP = {
         "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
         "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
     ),
+    "manual_unit": (
+        'Instead of a counter: the unit of your gas meter. You enter its reading with the entity "Enter meter reading" or the action "Add gas meter reading" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.',
+        "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Gas-Zählerstand eintragen“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+    ),
     "calorific_value": (
         "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
         "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
@@ -1142,8 +1147,12 @@ GAS_FIELD_HELP = {
 }
 GAS_ERRORS = {
     "gas_none": (
-        "Choose a gas counter: total, or heating.",
-        "Wähle einen Gaszähler: gesamt oder nur Heizen.",
+        "Choose a gas counter (total, or heating) or readings by hand.",
+        "Wähle einen Gaszähler (gesamt oder nur Heizen) oder die Ablesung von Hand.",
+    ),
+    "gas_manual_and_counter": (
+        "Readings by hand need no counter and no flow temperature: leave those empty.",
+        "Die Ablesung von Hand braucht keinen Zähler und keine Vorlauftemperatur: Lass diese Felder leer.",
     ),
     "gas_twice": (
         'Either "Gas total" or "Gas heating only", not both.',
@@ -1208,6 +1217,85 @@ GAS_OPTIONS = {
     ),
 }
 GAS_SOURCE = ("Gas boiler (before switching)", "Gasheizung (vor dem Umstieg)")
+MANUAL_UNIT_OPTIONS = {
+    "m3": ("Meter in m³", "Zähler in m³"),
+    "kwh": ("Meter in kWh", "Zähler in kWh"),
+}
+GAS_READING = ("Enter meter reading", "Zählerstand eintragen")
+READING_EXCEPTIONS = {
+    "reading_not_rising": (
+        "The reading {value} does not fit: a gas meter only counts up, so it must lie between the readings before and after it.",
+        "Der Zählerstand {value} passt nicht: Ein Gaszähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen.",
+    ),
+    "reading_negative": (
+        "A meter reading cannot be negative.",
+        "Ein Zählerstand kann nicht negativ sein.",
+    ),
+    "reading_in_future": (
+        "The time of the reading lies in the future.",
+        "Der Zeitpunkt der Ablesung liegt in der Zukunft.",
+    ),
+    "reading_not_found": (
+        "There is no reading at this time (to the minute).",
+        "Zu diesem Zeitpunkt (auf die Minute) gibt es keinen Zählerstand.",
+    ),
+    "not_manual_gas": (
+        "This entry is no gas boiler with readings by hand.",
+        "Dieser Eintrag ist keine Gasheizung mit Ablesung von Hand.",
+    ),
+    "no_calorific_value": (
+        "Readings in m³ need the calorific value and the Z-number (settings of the entry).",
+        "Zählerstände in m³ brauchen Brennwert und Zustandszahl (Einstellungen des Eintrags).",
+    ),
+}
+ENTRY_FIELD = {
+    "name": ("Gas boiler", "Gasheizung"),
+    "description": (
+        "The Wärmewacht entry with readings by hand.",
+        "Der Wärmewacht-Eintrag mit Ablesung von Hand.",
+    ),
+}
+READING_SERVICES = {
+    "add_gas_reading": {
+        "name": ("Add gas meter reading", "Gas-Zählerstand eintragen"),
+        "description": (
+            "Adds a reading of the gas meter, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
+            "Trägt einen Stand des Gaszählers ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
+        ),
+        "fields": {
+            "reading": (
+                ("Reading", "Zählerstand"),
+                (
+                    "In the unit of the meter (m³ or kWh).",
+                    "In der Einheit des Zählers (m³ oder kWh).",
+                ),
+            ),
+            "time": (
+                ("Time", "Zeitpunkt"),
+                (
+                    "Without: now. Times without zone are local time.",
+                    "Ohne: jetzt. Zeiten ohne Zone sind Ortszeit.",
+                ),
+            ),
+        },
+    },
+    "remove_gas_reading": {
+        "name": ("Remove gas meter reading", "Gas-Zählerstand löschen"),
+        "description": (
+            "Removes the reading at this time (to the minute), e.g. a typo.",
+            "Löscht den Stand zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
+        ),
+        "fields": {
+            "time": (
+                ("Time", "Zeitpunkt"),
+                (
+                    "The time of the reading, as shown in the attribute last_reading or the history.",
+                    "Zeitpunkt des Stands, wie im Attribut last_reading oder im Verlauf.",
+                ),
+            ),
+        },
+    },
+}
 NOT_FOR_GAS = (
     "This action is for heat pumps; a gas boiler has the heat load only.",
     "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast.",
@@ -1233,6 +1321,28 @@ def _add_gas(data: dict, lang: int) -> None:
         "data_description": {k: v[1][lang] for k, v in GAS_OPTIONS.items()},
     }
     data["selector"]["source"]["options"]["gas"] = GAS_SOURCE[lang]
+    data["selector"]["manual_unit"] = {
+        "options": {k: v[lang] for k, v in MANUAL_UNIT_OPTIONS.items()}
+    }
+    data["entity"]["number"] = {"gas_reading": {"name": GAS_READING[lang]}}
+    data["exceptions"].update(
+        {k: {"message": v[lang]} for k, v in READING_EXCEPTIONS.items()}
+    )
+    for key, service in READING_SERVICES.items():
+        data["services"][key] = {
+            "name": service["name"][lang],
+            "description": service["description"][lang],
+            "fields": {
+                "config_entry": {
+                    "name": ENTRY_FIELD["name"][lang],
+                    "description": ENTRY_FIELD["description"][lang],
+                },
+                **{
+                    field: {"name": name[lang], "description": help_[lang]}
+                    for field, (name, help_) in service["fields"].items()
+                },
+            },
+        }
     data["exceptions"]["not_for_gas"] = {"message": NOT_FOR_GAS[lang]}
     fields = data["services"]["heat_load"]["fields"]
     fields["start"]["description"] = HEAT_LOAD_START[lang]
@@ -1261,12 +1371,15 @@ def icons() -> dict:
         "entity": {
             "binary_sensor": {k: {"default": v[2]} for k, v in BINARY.items()},
             "button": {k: {"default": v[2]} for k, v in BUTTONS.items()},
+            "number": {"gas_reading": {"default": "mdi:counter"}},
             "sensor": sensor,
         },
         "services": {
             "report": {"service": "mdi:file-chart-outline"},
             "performance_curve": {"service": "mdi:chart-bell-curve-cumulative"},
             "heat_load": {"service": "mdi:home-thermometer"},
+            "add_gas_reading": {"service": "mdi:counter"},
+            "remove_gas_reading": {"service": "mdi:delete-outline"},
         },
     }
 

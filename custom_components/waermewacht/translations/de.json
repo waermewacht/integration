@@ -111,13 +111,14 @@
       },
       "gas": {
         "title": "Gasheizung einrichten",
-        "description": "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen.",
+        "description": "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen. Kein Zähler in Home Assistant? Wähle „Ablesung von Hand“ und trag den Zählerstand ab und zu ein, am besten wöchentlich.",
         "data": {
           "gas_total": "Gas gesamt (Heizen und Warmwasser)",
           "gas_heating": "Gas nur Heizen",
           "gas_dhw": "Gas Warmwasser",
           "outdoor_temp": "Außentemperatur",
           "flow_temp": "Vorlauftemperatur",
+          "manual_unit": "Ablesung von Hand",
           "calorific_value": "Brennwert",
           "z_number": "Zustandszahl"
         },
@@ -127,6 +128,7 @@
           "gas_dhw": "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
           "flow_temp": "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+          "manual_unit": "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Gas-Zählerstand eintragen“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
           "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
         }
@@ -139,7 +141,8 @@
       "elec_twice": "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
       "lifetime_counter": "Ein Energiezähler ist an mehreren Tagen gestiegen, ohne neu zu beginnen: Er sieht nach einem Gesamtzähler aus. Diese Quelle liefert Tageswerte (Energie heute); hier diese wählen. Ist es doch ein Tageszähler, unverändert noch einmal absenden.",
       "day_counter": "Ein Energiezähler ist an mehreren Tagen zur selben Uhrzeit zurückgefallen: Er sieht nach einem Tageszähler aus (Energie heute). Hier Lebenszeit-Zähler (Gesamtenergie) wählen. Ist es doch ein Gesamtzähler, unverändert noch einmal absenden.",
-      "gas_none": "Wähle einen Gaszähler: gesamt oder nur Heizen.",
+      "gas_none": "Wähle einen Gaszähler (gesamt oder nur Heizen) oder die Ablesung von Hand.",
+      "gas_manual_and_counter": "Die Ablesung von Hand braucht keinen Zähler und keine Vorlauftemperatur: Lass diese Felder leer.",
       "gas_twice": "Entweder „Gas gesamt“ oder „Gas nur Heizen“, nicht beides.",
       "gas_unit": "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
       "gas_no_statistics": "Ein Gaszähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
@@ -252,6 +255,12 @@
         "10": "Oktober",
         "11": "November",
         "12": "Dezember"
+      }
+    },
+    "manual_unit": {
+      "options": {
+        "m3": "Zähler in m³",
+        "kwh": "Zähler in kWh"
       }
     }
   },
@@ -498,6 +507,11 @@
       "gas_cost_year": {
         "name": "Gaskosten 365 Tage"
       }
+    },
+    "number": {
+      "gas_reading": {
+        "name": "Zählerstand eintragen"
+      }
     }
   },
   "exceptions": {
@@ -515,6 +529,24 @@
     },
     "look_back_failed": {
       "message": "Die Statistik ließ sich nicht lesen; Details im Protokoll."
+    },
+    "reading_not_rising": {
+      "message": "Der Zählerstand {value} passt nicht: Ein Gaszähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen."
+    },
+    "reading_negative": {
+      "message": "Ein Zählerstand kann nicht negativ sein."
+    },
+    "reading_in_future": {
+      "message": "Der Zeitpunkt der Ablesung liegt in der Zukunft."
+    },
+    "reading_not_found": {
+      "message": "Zu diesem Zeitpunkt (auf die Minute) gibt es keinen Zählerstand."
+    },
+    "not_manual_gas": {
+      "message": "Dieser Eintrag ist keine Gasheizung mit Ablesung von Hand."
+    },
+    "no_calorific_value": {
+      "message": "Zählerstände in m³ brauchen Brennwert und Zustandszahl (Einstellungen des Eintrags)."
     },
     "not_for_gas": {
       "message": "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast."
@@ -638,6 +670,38 @@
         "design_outdoor_temp": {
           "name": "Normaußentemperatur",
           "description": "Ohne: die aus den Einstellungen."
+        }
+      }
+    },
+    "add_gas_reading": {
+      "name": "Gas-Zählerstand eintragen",
+      "description": "Trägt einen Stand des Gaszählers ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
+      "fields": {
+        "config_entry": {
+          "name": "Gasheizung",
+          "description": "Der Wärmewacht-Eintrag mit Ablesung von Hand."
+        },
+        "reading": {
+          "name": "Zählerstand",
+          "description": "In der Einheit des Zählers (m³ oder kWh)."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Ohne: jetzt. Zeiten ohne Zone sind Ortszeit."
+        }
+      }
+    },
+    "remove_gas_reading": {
+      "name": "Gas-Zählerstand löschen",
+      "description": "Löscht den Stand zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
+      "fields": {
+        "config_entry": {
+          "name": "Gasheizung",
+          "description": "Der Wärmewacht-Eintrag mit Ablesung von Hand."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Zeitpunkt des Stands, wie im Attribut last_reading oder im Verlauf."
         }
       }
     }

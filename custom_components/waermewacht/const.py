@@ -27,6 +27,10 @@ CONF_BOILER_EFFICIENCY: Final = "boiler_efficiency"  # η on Hs
 CONF_CALORIFIC_VALUE: Final = "calorific_value"  # kWh/m³ (Hs), from the bill
 CONF_Z_NUMBER: Final = "z_number"  # Zustandszahl, from the bill
 VOLUME_UNIT: Final = "m³"  # gas meters; anything else must be energy
+# Gas readings by hand (readings.py): the meter's unit, VOLUME_UNIT or "kWh".
+CONF_MANUAL_UNIT: Final = "manual_unit"
+# Form value -> unit (selector keys must be plain lower case).
+MANUAL_UNITS: Final = {"m3": VOLUME_UNIT, "kwh": "kWh"}
 
 # Options.
 CONF_MIN_ELECTRICITY: Final = "min_electricity"

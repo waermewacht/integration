@@ -44,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
 # A gas boiler has figures only.
-GAS_PLATFORMS: list[Platform] = [Platform.SENSOR]
+GAS_PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SENSOR]
 ISSUES = (
     "missing_entity",
     "energy_unit",
@@ -299,7 +299,9 @@ async def async_remove_entry(
 ) -> None:
     """Delete the stored books and the repair issues of the entry."""
     if is_gas(entry):
-        return  # nothing stored, no repair issues
+        # Only the readings by hand are stored; no repair issues.
+        await GasRuntime(hass, entry).async_remove()
+        return
     await HeatPumpRuntime(hass, entry).async_remove()
     for key in ISSUES:
         ir.async_delete_issue(hass, DOMAIN, f"{entry.entry_id}_{key}")

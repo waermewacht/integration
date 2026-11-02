@@ -53,3 +53,32 @@ heat_load:
           step: 0.1
           unit_of_measurement: "°C"
           mode: box
+add_gas_reading:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    reading:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 99999999
+          step: 0.001
+          mode: box
+    time:
+      selector:
+        datetime:
+remove_gas_reading:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    time:
+      required: true
+      selector:
+        datetime:

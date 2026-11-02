@@ -445,3 +445,119 @@ async def test_gas_flow_without_statistics_is_refused(hass: HomeAssistant) -> No
     )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "gas_flow_no_statistics"}
+
+
+def winter_and_summer_readings() -> list[tuple[datetime, float]]:
+    """Gas meter (kWh) of the test house: summer from 1.7. to 21.7.2025, then
+    weekly through the nine winter weeks from Monday 1.12.2025."""
+    tz = dt_util.get_default_time_zone()
+    days = dict([*SUMMER, *WINTER])
+    total = 1000.0
+    readings = []
+    day = date(2025, 7, 1)
+    end = date(2026, 2, 2)
+    while day <= end:
+        at = datetime.combine(day, datetime.min.time(), tzinfo=tz)
+        if day in (date(2025, 7, 1), date(2025, 7, 21)) or (
+            day >= date(2025, 12, 1) and (day - date(2025, 12, 1)).days % 7 == 0
+        ):
+            readings.append((at, total))
+        if day in days:
+            total += gas_kwh(days[day]) * 24
+        day += timedelta(days=1)
+    return readings
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_boiler_with_readings_by_hand(hass: HomeAssistant) -> None:
+    """No counter: readings by hand through the number entity and the action;
+    each period between two readings is a point of the signature."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    import_statistics(hass)  # the outdoor temperature (and an unused meter)
+    await async_wait_recording_done(hass)
+    hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Gas", "source": "gas"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"outdoor_temp": OUTDOOR, "manual_unit": "kwh", "gas_total": GAS},
+    )
+    assert result["errors"] == {"base": "gas_manual_and_counter"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"outdoor_temp": OUTDOOR, "manual_unit": "kwh"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"]["manual_unit"] == "kwh"
+    assert result["data"][CONF_ENTITIES] == {"outdoor_temp": OUTDOOR}
+    entry = result["result"]
+    await hass.async_block_till_done()
+    entry.runtime_data.design_temp = -12.0
+
+    for at, value in winter_and_summer_readings():
+        await hass.services.async_call(
+            DOMAIN,
+            "add_gas_reading",
+            {"config_entry": entry.entry_id, "reading": value, "time": at.isoformat()},
+            blocking=True,
+        )
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    per_kelvin = state(hass, entry, "gas_heat_load_per_kelvin")
+    assert float(per_kelvin.state) == pytest.approx(100, abs=2)
+    assert per_kelvin.attributes["dhw_method"] == "summer_base"
+    dhw = state(hass, entry, "gas_dhw_share")
+    assert dhw.attributes["summer_base_kwh_per_day"] == pytest.approx(DHW_PER_DAY)
+
+    # The number entity: the last reading; a lower one is refused.
+    number = er.async_get(hass).async_get_entity_id(
+        "number", DOMAIN, f"{entry.entry_id}_gas_reading"
+    )
+    assert number
+    last = winter_and_summer_readings()[-1][1]
+    assert float(hass.states.get(number).state) == pytest.approx(last)
+    assert hass.states.get(number).attributes["readings"] == 12
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {"entity_id": number, "value": last - 1},
+            blocking=True,
+        )
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": number, "value": last + 5}, blocking=True
+    )
+    assert hass.states.get(number).attributes["readings"] == 13
+
+    # The action heat_load works on the readings too.
+    load = await hass.services.async_call(
+        DOMAIN,
+        "heat_load",
+        {"config_entry": entry.entry_id, "design_outdoor_temp": -10.0},
+        blocking=True,
+        return_response=True,
+    )
+    assert load["sufficient"] is True
+    assert load["standard_kw"] == pytest.approx(3.0, abs=0.1)
+
+    # Removing a reading; one that does not exist is an error.
+    first = winter_and_summer_readings()[0][0]
+    await hass.services.async_call(
+        DOMAIN,
+        "remove_gas_reading",
+        {"config_entry": entry.entry_id, "time": first.isoformat()},
+        blocking=True,
+    )
+    assert hass.states.get(number).attributes["readings"] == 12
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            DOMAIN,
+            "remove_gas_reading",
+            {"config_entry": entry.entry_id, "time": first.isoformat()},
+            blocking=True,
+        )
+    assert await hass.config_entries.async_unload(entry.entry_id)

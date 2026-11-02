@@ -251,6 +251,7 @@ Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem d
 | Gas Warmwasser | optional, wenn Warmwasser getrennt gezählt wird |
 | Außentemperatur | Pflicht, mit Langzeitstatistik; eine nahe Wetterstation genügt |
 | Vorlauftemperatur | optional: Vorlauf der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse `measurement`) |
+| Ablesung von Hand | statt eines Zählers: Einheit deines Gaszählers (m³ oder kWh), siehe [Ablesung von Hand](#ablesung-von-hand) |
 | Brennwert, Zustandszahl | nur für Zähler in m³, aus der Gasrechnung (kWh = m³ × Brennwert × Zustandszahl) |
 
 Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_increasing`). Wärmewacht liest nur sie, und zwar die **letzten 365 Tage**: Reicht die Statistik deines Gaszählers schon so weit zurück (etwa aus dem Energie-Dashboard), gibt es die Ergebnisse 2 Minuten nach der Einrichtung. Danach rechnet Wärmewacht täglich um 3 Uhr neu. Es hört keine Zustände ab und speichert nichts.
@@ -274,9 +275,18 @@ Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_
 | Vorlauf bei 0 °C | °C | nur mit Vorlauftemperatur: Vorlauf, den die Heizung bei 0 °C Tagesmittel fährt. Attribute `slope` (K Vorlauf je K Außentemperatur), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method` |
 | Vorlauf bei Normaußentemperatur | °C | dazu die Einstellung Normaußentemperatur: die Gerade bis dorthin verlängert, Attribut `design_temp` |
 
+### Ablesung von Hand
+
+Kein Gaszähler in Home Assistant? Dann wähl bei der Einrichtung statt eines Zählers **Ablesung von Hand** mit der Einheit deines Zählers (m³ braucht Brennwert und Zustandszahl). Den Stand trägst du so ein:
+
+- **Entität „Zählerstand eintragen“** (Zahl): Wert eintippen, er gilt für jetzt. Am einfachsten als Kachel im Dashboard. Der Zustand zeigt den letzten Stand, die Attribute `last_reading` und `readings` (Anzahl).
+- **Aktion „Gas-Zählerstand eintragen“** (`waermewacht.add_gas_reading`, Felder `config_entry`, `reading`, optional `time`): auch für ältere Stände, etwa aus Rechnungen oder Fotos. Ein Stand zur selben Minute ersetzt den alten; „Gas-Zählerstand löschen“ (`remove_gas_reading`) entfernt einen Tippfehler.
+
+Ein Zähler zählt nur aufwärts: Ein Stand, der nicht zwischen den davor und danach passt, wird abgelehnt. Jeder Zeitraum zwischen zwei Ablesungen von **5 bis 35 Tagen** ist ein Punkt der Energiesignatur (statt einer Woche), gewichtet mit seiner Länge. Es braucht mindestens 4 solche Zeiträume mit zusammen 8 Wochen, sonst die üblichen Regeln (Spanne, Frosttage). **Am besten wöchentlich ablesen**, zum Beispiel jeden Sonntag: Monatswerte gehen auch, ihre Mittel liegen aber enger beieinander, die Gerade bleibt dann eher vorläufig. Warmwasser kommt aus Zeiträumen mit mindestens 15 °C im Mittel (zusammen 14 Tage), das Gas der letzten 365 Tage aus den Ständen dazwischen (linear verteilt). Einen Vorlauf gibt es bei der Ablesung von Hand nicht.
+
 **Vorlauf:** Neben der Heizlast ist die zweite Frage vor dem Umstieg, ob die Heizkörper mit niedrigem Vorlauf auskommen. Wärmewacht legt dafür wie bei der Wärmepumpe ([Vorlauf bei 0 °C](#kennlinie-und-heizlast)) eine Gerade durch die Tage: Stunden mit Heizwärme und ohne Warmwasser, Vorlauf gewichtet mit der Wärme, gegen das Tagesmittel draußen. Es braucht mindestens 14 Tage, die zusammen 6 K auseinanderliegen. Eine Warmwasserladung hebt den Vorlauf der Therme deutlich über den der Heizung, deshalb rechnet Wärmewacht den Vorlauf nur mit einem eigenen Warmwasser-Zähler oder mit „Gas nur Heizen“ ohne Warmwasser (macht die Therme doch Warmwasser, trag den Warmwasser-Zähler ein). Mit dem Sommersockel bleibt er unbekannt (`flow_needs_dhw_counter`). Gasthermen laufen oft mit einer steileren Heizkurve als nötig: Der Wert ist eine **Obergrenze** dessen, was eine Wärmepumpe liefern müsste, kein Urteil. Ob es mit weniger geht, zeigt erst ein Versuch mit abgesenkter Heizkurve an kalten Tagen.
 
-Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
+Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, bei der Ablesung von Hand `too_few_periods`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gasheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
 
 **Grenzen:**
 

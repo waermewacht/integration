@@ -92,7 +92,13 @@ def test_action_translated_and_has_an_icon() -> None:
     strings = load(INTEGRATION / "strings.json")
     icons = load(INTEGRATION / "icons.json")
     services = (INTEGRATION / "services.yaml").read_text(encoding="utf-8")
-    actions = {"report", "performance_curve", "heat_load"}
+    actions = {
+        "report",
+        "performance_curve",
+        "heat_load",
+        "add_gas_reading",
+        "remove_gas_reading",
+    }
     assert set(strings["services"]) == set(icons["services"]) == actions
     for action in actions:
         assert f"{action}:\n" in services

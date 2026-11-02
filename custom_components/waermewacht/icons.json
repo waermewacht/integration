@@ -25,6 +25,11 @@
         "default": "mdi:history"
       }
     },
+    "number": {
+      "gas_reading": {
+        "default": "mdi:counter"
+      }
+    },
     "sensor": {
       "ratio_heating_today": {
         "default": "mdi:heat-pump-outline"
@@ -253,6 +258,12 @@
     },
     "heat_load": {
       "service": "mdi:home-thermometer"
+    },
+    "add_gas_reading": {
+      "service": "mdi:counter"
+    },
+    "remove_gas_reading": {
+      "service": "mdi:delete-outline"
     }
   }
 }
