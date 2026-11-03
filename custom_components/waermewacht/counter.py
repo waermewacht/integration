@@ -28,6 +28,12 @@ RESET_MIN_KWH = 1.0
 # tolerance covers counters in whole kWh, which step by 1 kWh at once.
 POWER_MARGIN = 1.5
 JUMP_TOLERANCE_KWH = 1.0
+# The hours count from the last rise, not from the last reading: a source that
+# drops out repeats its old value when it comes back, then catches up with
+# several kWh (observed: P1P2MQTT, 2 and 3 kWh within a minute after the same
+# value, stalled 36 and 52 minutes). At most this far back, so that a counter
+# idle for weeks (cooling in winter) still rejects glitches.
+CATCH_UP_HOURS = 1.0
 
 # A day counter (energy "today") taken for a lifetime counter: it falls by half
 # or more at the same local hour on different days (own assumption; the rule of
@@ -142,6 +148,8 @@ class Counter:
     previous_day: bool = False
     last_value: float | None = None
     last_time: datetime | None = None
+    # When the baseline last moved up (first value, rise, reset, jump).
+    rose_time: datetime | None = None
 
     def update(self, value: float, at: datetime) -> CounterUpdate:
         """Process a reading in kWh taken at `at` (timezone-aware)."""
@@ -149,7 +157,7 @@ class Counter:
         if previous_time is not None and at < previous_time:
             return CounterUpdate()  # out of order: keep the newer baseline
         if previous_value is None or previous_time is None:
-            self.last_value, self.last_time = value, at
+            self.last_value, self.last_time, self.rose_time = value, at, at
             return CounterUpdate(event=CounterEvent.FIRST)
         if self.day_tz is not None:
             return self._update_day(value, at, previous_value, previous_time)
@@ -158,11 +166,18 @@ class Counter:
             if -delta <= max(RESET_MIN_KWH, RESET_FRACTION * previous_value):
                 self.last_time = at
                 return CounterUpdate(event=CounterEvent.DIP)
-            self.last_value, self.last_time = value, at
+            self.last_value, self.last_time, self.rose_time = value, at, at
             return CounterUpdate(event=CounterEvent.RESET)
+        rose_time = self.rose_time
         self.last_value, self.last_time = value, at
+        if delta == 0:
+            return CounterUpdate()
+        self.rose_time = at
         if self.max_kw is not None:
             hours = (at - previous_time).total_seconds() / 3600
+            if rose_time is not None:
+                since_rise = (at - rose_time).total_seconds() / 3600
+                hours = max(hours, min(since_rise, CATCH_UP_HOURS))
             if delta > self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH:
                 return CounterUpdate(event=CounterEvent.JUMP)
         return CounterUpdate(delta=delta)
@@ -205,9 +220,12 @@ class Counter:
         return {
             "last_value": self.last_value,
             "last_time": self.last_time.isoformat() if self.last_time else None,
+            "rose_time": self.rose_time.isoformat() if self.rose_time else None,
         }
 
     def restore(self, data: dict[str, Any]) -> None:
         self.last_value = data.get("last_value")
         last_time = data.get("last_time")
         self.last_time = datetime.fromisoformat(last_time) if last_time else None
+        rose_time = data.get("rose_time")
+        self.rose_time = datetime.fromisoformat(rose_time) if rose_time else None

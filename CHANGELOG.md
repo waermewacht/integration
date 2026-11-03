@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Kein Energieverlust mehr, wenn eine Quelle nach einem Aussetzer nachholt.** Manche Quellen (beobachtet bei Daikin über P1P2MQTT) melden nach einem kurzen Ausfall erst ihren alten Zählerstand und Sekunden später 2–3 kWh auf einmal: die Energie der Minuten, in denen der Zähler stand. Wärmewacht hielt das für einen unplausiblen Sprung und buchte es nicht, weil es die Zeit nur ab dem letzten gemeldeten Wert rechnete. Jetzt zählt die Zeit ab dem letzten Anstieg des Zählers, höchstens eine Stunde zurück. Grobe Ausreißer werden weiter abgewiesen. Mit dem Verlauf aus dem Forum nachgerechnet: vorher 5 kWh Wärme verloren, jetzt keine.
 - **Diagnose: Zählersprünge mit Werten.** Steigt ein Energiezähler schneller, als eine Wärmepumpe liefern kann, bucht Wärmewacht den Anstieg nicht und zählte bisher nur das Ereignis. Die Diagnose nennt jetzt für die letzten fünf Sprünge Zähler, Zeitpunkt, alten und neuen Wert und den Abstand zum vorigen Wert in Sekunden. Daran lässt sich erkennen, ob die Quelle einen Ausreißer hatte oder nach einer Pause mehrere kWh auf einmal nachgeholt hat (Anlass: Rückmeldung im simon42-Forum, 5 kWh Wärme bei ganzzahligem Zähler nicht gebucht).
 
 ## 0.2.6 – 2026-11-02

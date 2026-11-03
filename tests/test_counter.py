@@ -160,6 +160,35 @@ def test_whole_kwh_step_is_not_a_jump() -> None:
     assert counter.update(2105.0, at(0.5)).delta == 1.0
 
 
+def test_catch_up_after_repeated_value_is_no_jump() -> None:
+    """Observed (P1P2MQTT): the source drops out, repeats its old value when
+    it comes back and 38 seconds later catches up with the 2 kWh of the 36
+    minutes since its last rise."""
+    counter = Counter(max_kw=50.0)
+    counter.update(50554.0, at(0))
+    counter.update(50555.0, at(16))
+    assert counter.update(50555.0, at(51.3)).delta == 0
+    assert counter.update(50557.0, at(52)).delta == pytest.approx(2.0)
+
+
+def test_catch_up_counts_at_most_an_hour_back() -> None:
+    """A counter idle for weeks (cooling in winter) still rejects a glitch."""
+    counter = Counter(max_kw=50.0)
+    counter.update(10.0, at(0))
+    counter.update(10.0, at(60 * 24 * 30))
+    # One hour back allows 50 kW x 1.5 x 1 h + 1 kWh = 76 kWh.
+    assert counter.update(100.0, at(60 * 24 * 30 + 1)).event is CounterEvent.JUMP
+
+
+def test_catch_up_time_survives_a_restart() -> None:
+    counter = Counter(max_kw=50.0)
+    counter.update(50627.0, at(0))
+    restored = Counter(max_kw=50.0)
+    restored.restore(counter.as_dict())
+    restored.update(50627.0, at(51))
+    assert restored.update(50630.0, at(52)).delta == pytest.approx(3.0)
+
+
 def test_long_gap_allows_large_increase() -> None:
     """Home Assistant off for 10 h: the energy of that time arrives at once."""
     counter = Counter(max_kw=20.0)
