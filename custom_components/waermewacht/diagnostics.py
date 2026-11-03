@@ -191,6 +191,7 @@ async def async_get_config_entry_diagnostics(
         "states": states,
         "since": runtime.since.isoformat() if runtime.since else None,
         "events": runtime.events,
+        "jumps": runtime.jumps,
         "tracker": runtime.tracker.as_dict(),
         "findings": {
             k: f.as_attributes() | {"problem": f.problem}

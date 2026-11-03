@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Diagnose: Zählersprünge mit Werten.** Steigt ein Energiezähler schneller, als eine Wärmepumpe liefern kann, bucht Wärmewacht den Anstieg nicht und zählte bisher nur das Ereignis. Die Diagnose nennt jetzt für die letzten fünf Sprünge Zähler, Zeitpunkt, alten und neuen Wert und den Abstand zum vorigen Wert in Sekunden. Daran lässt sich erkennen, ob die Quelle einen Ausreißer hatte oder nach einer Pause mehrere kWh auf einmal nachgeholt hat (Anlass: Rückmeldung im simon42-Forum, 5 kWh Wärme bei ganzzahligem Zähler nicht gebucht).
+
 ## 0.2.6 – 2026-11-02
 
 - **ViCare: kein Plattenzugriff beim Start.** Die Vorlage für ViCare nennt ihre Zeitzone für die Tageswerte (UTC) jetzt als festen Wert statt als Namen. Bisher schlug Wärmewacht den Namen beim Einrichten nach; war die Zone noch nicht geladen, las Home Assistant dafür eine Datei und hielt solange alles andere an (Hinweis aus der HACS-Prüfung).

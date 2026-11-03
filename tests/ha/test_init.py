@@ -165,6 +165,35 @@ async def test_restart_during_run_is_no_new_start(
 
 
 @pytest.mark.freeze_time(START)
+async def test_jump_readings_in_diagnostics(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    freezer.tick(timedelta(seconds=30))
+    # 3 kWh in 30 seconds: more than 50 kW x 1.5 allow, not booked.
+    hass.states.async_set(HEAT_HEATING, "1003.0", ENERGY)
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "heat_heating") == 0
+
+    jump = {
+        "signal": "heat_heating",
+        "at": "2026-01-15T06:01:00+00:00",
+        "from": 1000.0,
+        "to": 1003.0,
+        "seconds": 30.0,
+    }
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["events"]["jump:heat_heating"] == 1
+    assert diagnostics["jumps"] == [jump]
+
+    # Kept over a restart.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["jumps"] == [jump]
+
+
+@pytest.mark.freeze_time(START)
 async def test_unavailable_counter_is_not_zero(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:

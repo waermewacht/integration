@@ -207,6 +207,8 @@ UNAVAILABLE_LIMIT = timedelta(minutes=60)
 RESTART_BASELINE = timedelta(days=28)
 # Daily diary kept in the history file (about 150 bytes a day).
 DIARY_DAYS = 1100
+# Last rejected counter jumps with their readings, for the diagnostics.
+JUMPS_KEPT = 5
 # Performance curve and heat load: shortly after the start, then daily.
 ANALYSIS_DELAY = timedelta(minutes=2)
 ANALYSIS_HOUR = 3  # local time
@@ -407,6 +409,9 @@ class HeatPumpRuntime:
         self.history_adjusted = False
         self._adjusting = False
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
+        # Readings around the last jumps: show whether a source caught up or
+        # glitched (diagnostics).
+        self.jumps: list[dict[str, Any]] = []
         # Counters seen with decimals; the others count in whole kWh.
         self.decimal: set[Signal] = set()
         self._started_at = dt_util.utcnow()
@@ -1776,9 +1781,11 @@ class HeatPumpRuntime:
         if kwh != round(kwh):
             self.decimal.add(signal)
         counter = self.counters[signal]
-        previous = counter.last_time
-        rose = counter.last_value is not None and kwh > counter.last_value
+        previous, before = counter.last_time, counter.last_value
+        rose = before is not None and kwh > before
         update = counter.update(kwh, at)
+        if update.event is CounterEvent.JUMP:
+            self._note_jump(signal, before, kwh, previous, at)
         if rose or update.event is CounterEvent.RESET:
             self._stuck_seconds.pop(signal.value, None)
             if signal in HEAT_SIGNALS.values():
@@ -1788,6 +1795,28 @@ class HeatPumpRuntime:
         if update.delta <= 0:
             return
         self._book(signal, update.delta, previous, at)
+        self._dirty = True
+
+    def _note_jump(
+        self,
+        signal: Signal,
+        before: float | None,
+        kwh: float,
+        previous: datetime | None,
+        at: datetime,
+    ) -> None:
+        self.jumps.append(
+            {
+                "signal": signal.value,
+                "at": at.isoformat(),
+                "from": before,
+                "to": kwh,
+                "seconds": None
+                if previous is None
+                else round((at - previous).total_seconds(), 1),
+            }
+        )
+        del self.jumps[:-JUMPS_KEPT]
         self._dirty = True
 
     def _book(
@@ -2178,6 +2207,7 @@ class HeatPumpRuntime:
             "spread": self.spread.as_dict(),
             "flow": self.flow.as_dict(),
             "events": dict(self.events),
+            "jumps": list(self.jumps),
             "decimal": sorted(s.value for s in self.decimal),
             # Electricity of a fetch still waiting for its heat (day values).
             "pending": [[m.value, kwh, at.isoformat()] for m, kwh, at in self._pending],
@@ -2229,6 +2259,7 @@ class HeatPumpRuntime:
         self.spread = Mean.from_dict(data.get("spread"))
         self.flow = Mean.from_dict(data.get("flow"))
         self.events = dict(data.get("events", {}))
+        self.jumps = list(data.get("jumps", []))
         self.decimal = {Signal(s) for s in data.get("decimal", [])}
         self._pending = [
             (Mode(m), kwh, datetime.fromisoformat(at))
