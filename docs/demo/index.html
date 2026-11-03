@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wärmewacht – Live-Demo</title>
+    <meta
+      name="description"
+      content="Wärmewacht zum Ausprobieren: Arbeitszahlen, Takte, Gesundheits-Check und Heizlast einer erfundenen Wärmepumpe – gerechnet vom Code der Integration."
+    />
+    <link rel="icon" href="../../custom_components/waermewacht/brand/icon.png" />
+    <style>
+      /* Page chrome in the Wärmewacht colours (docs/BRAND.md), the dashboard
+         with Home Assistant's default theme variables. */
+      :root {
+        color-scheme: light;
+        --page-bg: #faf7f2;
+        --page-text: #1f1c18;
+        --page-muted: #6b6357;
+        --page-line: #e4ddd1;
+        --brand: #de5e32;
+        --brand-text: #b8461f;
+        --accent: #f5a623;
+        --control-bg: #ffffff;
+        --primary-color: #03a9f4;
+        --card-background-color: #ffffff;
+        --primary-text-color: #212121;
+        --secondary-text-color: #727272;
+        --secondary-background-color: #f2f2f2;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --state-icon-color: #44739e;
+        --red-color: #db4437;
+        --green-color: #43a047;
+        --disabled-color: #bdbdbd;
+        /* Home Assistant's chart palette */
+        --s-heat-heating: #ff725c;
+        --s-heat-dhw: #efb118;
+        --s-elec-heating: #4269d0;
+        --s-elec-dhw: #6cc5b0;
+        --s-standby: #9498a0;
+        --s-previous: #2f6fb0;
+        --s-current: #de5e32;
+        --band-dhw: rgba(66, 105, 208, 0.12);
+        --band-defrost: rgba(108, 197, 176, 0.28);
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page-bg: #14181d;
+        --page-text: #ece8e1;
+        --page-muted: #b9b2a6;
+        --page-line: #2a3038;
+        --brand-text: #f08a63;
+        --control-bg: #1d232a;
+        --card-background-color: #1c1c1c;
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --secondary-background-color: #282828;
+        --divider-color: rgba(225, 225, 225, 0.12);
+        --state-icon-color: #6aa7d8;
+        --disabled-color: #6f6f6f;
+        --s-previous: #6aa7d8;
+        --s-current: #f08a63;
+        --s-elec-heating: #6f8fe0;
+        --band-dhw: rgba(111, 143, 224, 0.18);
+        --band-defrost: rgba(108, 197, 176, 0.25);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--page-bg); color: var(--page-text);
+        font: 15px/1.5 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
+      header { display: flex; gap: 14px; align-items: center; margin-bottom: 20px; }
+      header img { width: 52px; height: 52px; border-radius: 12px; }
+      h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+      h1 span { color: var(--page-muted); font-weight: 400; }
+      .tagline { margin: 2px 0 0; color: var(--page-muted); }
+      header a.repo { margin-left: auto; color: var(--brand-text); text-decoration: none; font-weight: 600;
+        white-space: nowrap; }
+      .controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin-bottom: 20px; }
+      .group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .group > span { font-size: 12px; color: var(--page-muted); text-transform: uppercase; letter-spacing: .04em; }
+      .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; overflow: hidden;
+        border: 1px solid var(--page-line); border-radius: 8px; background: var(--control-bg); }
+      .seg button { border: 0; border-right: 1px solid var(--page-line); background: none; color: inherit;
+        font: inherit; padding: 6px 12px; cursor: pointer; }
+      .seg button:last-child { border-right: 0; }
+      .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+      .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+      svg.mdi { width: 1em; height: 1em; fill: currentColor; flex: none; vertical-align: -0.125em; }
+      .banner { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; padding: 10px 14px;
+        border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+        background: color-mix(in srgb, var(--accent) 14%, var(--page-bg)); font-size: 14px; }
+      .banner svg.mdi { font-size: 22px; color: var(--accent); }
+      .story { margin: -8px 0 20px; color: var(--page-muted); font-size: 14px; }
+
+      /* Dashboard: Home Assistant's sections view. */
+      .sections { display: grid; gap: 24px 16px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+      .section { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .section.double { grid-column: span 2; }
+      .section.wide { grid-column: 1 / -1; }
+      @media (max-width: 720px) { .section.double { grid-column: auto; } header a.repo { display: none; } }
+      .heading { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 16px;
+        font-weight: 500; color: var(--primary-text-color); }
+      .heading svg.mdi { font-size: 20px; color: var(--secondary-text-color); }
+      .subheading { font-size: 14px; font-weight: 500; color: var(--secondary-text-color); padding: 6px 4px 0; }
+      .subtitle { font-size: 13px; color: var(--secondary-text-color); padding: 2px 4px; }
+      .card { background: var(--card-background-color); color: var(--primary-text-color);
+        border: 1px solid var(--divider-color); border-radius: 12px; overflow: hidden; min-width: 0; }
+      .card-title { padding: 12px 16px 0; font-size: 16px; font-weight: 500; }
+      .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
+      .c12 { grid-column: span 12; } .c6 { grid-column: span 6; } .c4 { grid-column: span 4; }
+
+      /* Tile card */
+      .tile { display: flex; gap: 10px; align-items: center; padding: 10px 12px; min-height: 56px; }
+      .tile .shape { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+        font-size: 20px; color: var(--tile-color, var(--state-icon-color));
+        background: color-mix(in srgb, var(--tile-color, var(--state-icon-color)) 18%, transparent); }
+      .tile.problem { --tile-color: var(--red-color); }
+      .tile.inactive { --tile-color: var(--disabled-color); }
+      .tile > div:last-child { min-width: 0; }
+      .tile b { display: block; font-size: 14px; font-weight: 500; line-height: 1.3; overflow-wrap: break-word; }
+      .tile small { display: block; font-size: 13px; color: var(--secondary-text-color); overflow-wrap: break-word; }
+      @media (max-width: 720px) { .tile.c4 .shape { display: none; } .tile.c4 { padding: 10px; } }
+      code { font: 12px ui-monospace, Consolas, monospace; background: var(--secondary-background-color);
+        padding: 0 4px; border-radius: 4px; }
+
+      /* Sensor card with its graph, gauge card */
+      .sensor { padding: 12px 14px 0; display: flex; flex-direction: column; }
+      .sensor .top { display: flex; justify-content: space-between; color: var(--secondary-text-color); font-size: 14px; }
+      .sensor .top svg.mdi { font-size: 22px; color: var(--state-icon-color); }
+      .sensor .value { font-size: 28px; line-height: 1.3; }
+      .sensor .value span { font-size: 14px; color: var(--secondary-text-color); margin-left: 3px; }
+      .sensor svg.spark { display: block; width: calc(100% + 28px); margin: 4px -14px 0; height: 44px; }
+      .sensor svg.spark path.line { fill: none; stroke: var(--primary-color); stroke-width: 2; }
+      .sensor svg.spark path.area { fill: color-mix(in srgb, var(--primary-color) 14%, transparent); }
+      .gauge { padding: 10px 12px 8px; text-align: center; }
+      .gauge svg { width: 100%; max-width: 180px; height: auto; display: block; margin: 0 auto; }
+      .gauge .track { stroke: var(--divider-color); }
+      .gauge .bar { stroke: var(--primary-color); }
+      .gauge text.v { fill: var(--primary-text-color); font-size: 15px; }
+      .gauge .name { font-size: 14px; color: var(--secondary-text-color); }
+
+      /* Entities card */
+      .rows { padding: 4px 0; }
+      .row { display: flex; align-items: center; gap: 16px; padding: 7px 16px; font-size: 14px; }
+      .row svg.mdi { font-size: 24px; color: var(--state-icon-color); }
+      .row .value { margin-left: auto; text-align: right; white-space: nowrap; }
+      .row small { display: block; color: var(--secondary-text-color); font-size: 12px; }
+      .device { padding: 10px 16px 0; font-size: 13px; color: var(--secondary-text-color); }
+      .markdown { padding: 12px 16px; font-size: 14px; }
+      .markdown p { margin: 0 0 8px; }
+      .markdown ul { margin: 0; padding-left: 18px; }
+      .markdown li { margin-bottom: 4px; }
+
+      /* Charts */
+      svg.chart { display: block; width: 100%; height: auto; }
+      svg.chart text { fill: var(--secondary-text-color); font-size: 11px; }
+      svg.chart .grid { stroke: var(--divider-color); }
+      svg.chart .now { stroke: var(--secondary-text-color); stroke-dasharray: 3 3; }
+      svg.chart .mark { stroke: var(--secondary-text-color); stroke-dasharray: 2 3; }
+      .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; padding: 0 12px 10px;
+        font-size: 12px; }
+      .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+      .legend i.dot { border-radius: 50%; }
+      .legend i.dash { height: 0; width: 14px; border-top: 2px dashed currentColor; border-radius: 0; vertical-align: 3px; }
+      .footnote { padding: 0 16px 10px; font-size: 12px; color: var(--secondary-text-color); }
+
+      /* Action response */
+      details { padding: 0 16px 12px; }
+      summary { cursor: pointer; font-size: 14px; color: var(--brand-text); padding: 4px 0; }
+      pre { margin: 6px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--secondary-background-color);
+        font: 12px/1.5 ui-monospace, Consolas, monospace; overflow: auto; max-height: 420px; }
+      .table-wrap { overflow-x: auto; }
+      table.figures { width: 100%; border-collapse: collapse; font-size: 13px; }
+      table.figures th, table.figures td { padding: 6px 16px; text-align: right; border-bottom: 1px solid var(--divider-color);
+        white-space: nowrap; }
+      table.figures th:first-child, table.figures td:first-child { text-align: left; }
+      table.figures th { font-weight: 500; color: var(--secondary-text-color); }
+
+      .below { margin-top: 28px; display: grid; gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+      .box { border: 1px solid var(--page-line); border-radius: 10px; padding: 12px 14px; background: var(--control-bg); }
+      .box h2 { margin: 0 0 6px; font-size: 14px; }
+      .box p, .box li { margin: 0 0 6px; color: var(--page-muted); font-size: 14px; }
+      .box ul { margin: 0; padding-left: 18px; }
+      a { color: var(--brand-text); }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <img src="../../custom_components/waermewacht/brand/icon.png" alt="" />
+        <div>
+          <h1>Wärmewacht <span data-t="demo"></span></h1>
+          <p class="tagline" data-t="tagline"></p>
+        </div>
+        <a class="repo" href="https://github.com/waermewacht/integration">GitHub →</a>
+      </header>
+
+      <div class="controls">
+        <div class="group"><span data-t="scenario"></span><div class="seg" id="scenario"></div></div>
+        <div class="group"><span data-t="lang"></span><div class="seg" id="lang"></div></div>
+        <div class="group"><span data-t="theme"></span><div class="seg" id="dark"></div></div>
+      </div>
+
+      <div class="banner" id="banner"></div>
+      <p class="story" id="story"></p>
+      <main class="sections" id="dashboard"></main>
+
+      <div class="below">
+        <div class="box">
+          <h2 data-t="about"></h2>
+          <p data-t="data"></p>
+          <p data-t="rebuilt"></p>
+          <p data-t="credits"></p>
+        </div>
+        <div class="box">
+          <h2 data-t="plantTitle"></h2>
+          <ul id="plant"></ul>
+        </div>
+        <div class="box">
+          <h2 data-t="build"></h2>
+          <p data-t="cards"></p>
+          <p><a href="https://github.com/waermewacht/integration#dashboard-beispiele" data-t="readme"></a></p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { PATHS } from "./icons.js";
+
+      const SCENARIOS = ["januar", "herbst", "gas"];
+      const SERIES = {
+        heat_heating: "var(--s-heat-heating)",
+        heat_dhw: "var(--s-heat-dhw)",
+        electricity_heating: "var(--s-elec-heating)",
+        electricity_dhw: "var(--s-elec-dhw)",
+        standby: "var(--s-standby)",
+        heating: "var(--s-heat-heating)",
+        dhw: "var(--s-heat-dhw)",
+      };
+      // Icons of the entities (custom_components/waermewacht/icons.json).
+      const ICONS = {
+        ratio_heating: "heat-pump-outline", ratio_dhw: "water-boiler", ratio_combined: "heat-pump",
+        heat_heating: "fire", heat_dhw: "water-boiler", electricity_heating: "lightning-bolt",
+        electricity_dhw: "lightning-bolt", standby: "power-sleep", cost_month: "currency-eur",
+        cost_season: "currency-eur", heat_cost_season: "cash", gas_savings_season: "piggy-bank-outline",
+        performance_curve_heating: "chart-bell-curve-cumulative", heat_load_per_kelvin: "home-thermometer-outline",
+        heat_load_design: "home-thermometer", heating_limit: "thermometer-chevron-up", starts_today: "counter",
+        starts_yesterday: "counter", starts_total: "counter", starts_season: "counter", runtime_today: "timer-outline",
+        run_minutes_today: "timer-sand", run_minutes_week: "timer-sand", run_minutes_month: "timer-sand",
+        short_runs_today: "timer-alert-outline", shortest_pause_today: "pause-circle-outline",
+        defrosts_today: "snowflake-melt", standby_power_7d: "power-sleep", spread_today: "thermometer-lines",
+        flow_temp_today: "thermometer-water", spread_7d: "arrow-expand-vertical", oversize_factor: "resize",
+        flow_at_zero: "chart-line-variant", degree_days_season: "thermometer-minus",
+        heat_per_degree_day_season: "home-thermometer-outline", ratio_dhw_last_charge: "water-boiler",
+        ratio_dhw_charges_30d: "water-boiler", cycling_problem: "sine-wave", efficiency_drop: "trending-down",
+        aux_mild_weather: "heating-coil", aux_dhw_charges: "water-boiler-alert",
+        dhw_efficiency_drop: "water-thermometer-outline", gas_heat_load_per_kelvin: "home-thermometer-outline",
+        gas_heat_load_design: "home-thermometer", gas_heating_limit: "thermometer-chevron-up",
+        gas_heat_per_degree_day: "chart-bell-curve-cumulative", gas_dhw_share: "water-boiler",
+        gas_consumption_year: "fire", gas_cost_year: "cash",
+      };
+
+      const TEXT = {
+        de: {
+          demo: "Live-Demo",
+          tagline: "Wie effizient arbeitet die Wärmepumpe, wie oft taktet sie? So zeigt es Wärmewacht in Home Assistant.",
+          scenario: "Szenario",
+          lang: "Sprache",
+          theme: "Darstellung",
+          scenarios: { januar: "Kalte Januarwoche", herbst: "Milder Herbst, zu groß", gas: "Gasheizung vor dem Umstieg" },
+          stories: {
+            januar:
+              "Eine gut eingestellte Luft/Wasser-Wärmepumpe mit Pufferspeicher nach einer Woche Frost: wenige, lange Läufe, Abtauungen, Warmwasser zweimal am Tag.",
+            herbst:
+              "Dieselbe Wärmepumpe in einem kleinen, gut gedämmten Haus ohne Puffer. Bei mildem Wetter braucht das Haus weit weniger als ihre kleinste Leistung – sie taktet.",
+            gas:
+              "Ein Haus heizt noch mit Gas. Wärmewacht rechnet aus dem Gaszähler, wie groß eine Wärmepumpe sein müsste (Eintragstyp „Gasheizung“).",
+          },
+          auto: "Auto", light: "Hell", dark: "Dunkel",
+          banner: (time) =>
+            `Alle Messwerte, Preise und Anlagen sind erfunden – nur zur Vorführung. Demo-Zeit: ${time} Uhr.`,
+          unknown: "Unbekannt",
+          on: "Problem", off: "OK",
+          yes: "ja", no: "nein",
+          since: (t) => `seit ${t}`,
+          ago: (h) => (h < 1 ? "vor wenigen Minuten" : `vor ${h} ${h === 1 ? "Stunde" : "Stunden"}`),
+          perDay: (v) => `${v} je Tag`,
+          now: "Jetzt",
+          activityName: "Betriebsart",
+          activity: { heating: "Heizen", dhw: "Warmwasser", defrost: "Abtauen", off: "Aus" },
+          speed: "Kompressordrehzahl",
+          elecPower: "Strom",
+          heatPower: "Wärme",
+          flow: "Vorlauf",
+          ret: "Rücklauf",
+          dhwTemp: "Warmwasser",
+          dhwSet: "Solltemperatur Warmwasser",
+          outdoor: "Außentemperatur",
+          flowRate: "Durchfluss",
+          compressor: "Kompressor",
+          running: "läuft", stopped: "steht",
+          sourceDevice: (d) => `Quelle „${d}“ (erfundene Entitäten der Wärmepumpe)`,
+          todayTitle: "Heute: Wärme- und Stromleistung",
+          todayNote: "Mittel je 5 Minuten. Hinterlegt: Warmwasser und Abtauen.",
+          heatKw: "Wärme kW", elecKw: "Strom kW",
+          ratios: "Arbeitszahlen",
+          today: "Heute", month: "Monat", season: "Saison", total: "Gesamt",
+          costs: "Kosten",
+          monthsTitle: "Wärme und Strom je Monat",
+          monthsNote: "Statistik-Karte der Energie-Sensoren (Änderung je Monat, 365 Tage); eine Arbeitszahl je Monat liefert die Aktion „Bericht“.",
+          cycles: "Takte",
+          cyclesToday: "Heute",
+          cyclesMore: "Gestern, 7 Tage, gesamt",
+          defrosts7d: "Abtauungen 7 Tage",
+          standby7d: "Stillstand, Ø 7 Tage",
+          health: "Gesundheit",
+          healthNote:
+            "Wärmewacht prüft einmal täglich gegen 3 Uhr. Reichen die Daten nicht, ist ein Sensor unbekannt und nennt im Attribut <code>reason</code> den Grund – nie „OK“ mangels Daten.",
+          cyclingAttrs: (a) =>
+            `Letzte 24 Stunden: höchstens ${a.max_starts_per_hour} Starts in einer Stunde (Grenze: mehr als ${a.starts_per_hour_limit}), ` +
+            `${a.critical_runs_24h} Läufe unter 6 Minuten (Grenze: 3), ${a.short_runs_24h} unter 10 Minuten.`,
+          dropAttrs: (a) =>
+            `AZ Heizen ${a.ratio_current} gegen ${a.ratio_previous_same_weather} der Vorsaison bei gleichem Wetter (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
+          dhwDropAttrs: (a) =>
+            `AZ normaler Ladungen ${a.ratio} (${a.charges}) gegen ${a.previous_ratio} (${a.previous_charges}) in denselben 30 Tagen des Vorjahres: ${a.change} % (Grenze −${a.threshold_percent} %).`,
+          dhw: "Warmwasser",
+          lastCharge: (a) => `${a.minutes} min, ${a.start_temp} → ${a.max_temp} °C`,
+          charges30: (a) => `${a.charges} Ladungen, Ø ${a.mean_minutes} min, Hub Ø ${a.mean_lift} K`,
+          chargeTitle: "Letzte Ladung",
+          chargeRows: { start: "Beginn", minutes: "Dauer", heat_kwh: "Wärme", electricity_kwh: "Strom" },
+          analysis: "Analyse",
+          curveTitle: "AZ-Kennlinie Heizen (x: Außentemperatur Tagesmittel)",
+          curveNote: "Arbeitszahl Heizen je 2-K-Klasse, ohne Stillstand; eine Klasse braucht 7 Tage.",
+          previous: "Vorige Saison", current: "Laufende Saison",
+          signatureTitle: "Energiesignatur (x: Außentemperatur Wochenmittel)",
+          signatureNote: (a, gas) =>
+            `Wochen ${gas ? "der letzten 365 Tage" : "der letzten vollständigen Saison"} (${a.week_count}, R² ${a.r_squared}). Heizgrenze ${a.heating_limit} °C, ` +
+            `normgerecht ${a.standard_kw} kW bei ${a.design_temp} °C.`,
+          signaturePreliminary: (a) => `Noch keine Heizlast: ${a.reasons.join(", ")}.`,
+          weeks: "Wochen", measured: "Gerade (gemessen)", standard: "normgerecht (durch 0 bei 20 °C)",
+          kw: "Heizleistung kW", cop: "Arbeitszahl",
+          computed: "Berechnet",
+          plant: "Anlage",
+          ownDevice: (d) => `Gerät „${d}“ (Wärmewacht)`,
+          setupSince: (d) => `seit der Einrichtung am ${d}`,
+          report: "Bericht",
+          reportTitle: (s) => `Aktion „Bericht“: laufende Saison seit ${s}`,
+          scope: { heating: "Heizen", dhw: "Warmwasser", heating_dhw: "Heizen+WW" },
+          heat: "Wärme", electricity: "Strom", standbyCol: "Stillstand", ratio: "AZ",
+          estimated: (t) => `Bis ${t} aus den Zählern der Wärmepumpe gerechnet (Stillstand stundenweise geschätzt), danach aus den eigenen Sensoren.`,
+          response: "Antwort der Aktion anzeigen",
+          gas: "Gasheizung",
+          gasMonths: "Gas je Monat",
+          gasMonthsNote: "Gaszähler der Quelle, aufgeteilt mit dem Sommersockel (Warmwasser = Median der Tage ab 15 °C).",
+          gasHeating: "Heizen", gasDhw: "Warmwasser",
+          heatLoadAction: "Aktion „Heizlast“: letzte 365 Tage",
+          reasons: {
+            too_few_days: "zu wenige Tage im Fenster",
+            no_previous_year: "im Vorjahr keine Ladungen im Tagebuch",
+            no_previous_season: "keine Vorsaison",
+            too_few_classes: "zu wenig gemeinsamer Temperaturbereich mit der Vorsaison",
+            too_little_electricity: "zu wenig Strom im Vergleich",
+            too_few_charges: "zu wenige Ladungen",
+            not_analysed_yet: "noch nicht gerechnet",
+            comparison_restarted: "Vergleich neu gestartet",
+            no_standby: "kein Stillstand",
+            too_little_heating: "zu wenig Heizbetrieb an kalten Tagen",
+            heat_load_insufficient: "Heizlast noch unbekannt",
+            too_few_weeks: "zu wenige Wochen",
+            spread_too_small: "zu wenig Spanne",
+            too_few_frost_days: "zu wenige Frosttage",
+            no_aux_counter: "kein Heizstab-Zähler",
+          },
+          reasonNote: (code) => `Grund: ${code}`,
+          about: "Erfunden, aber echt gerechnet",
+          data:
+            "Wetter, Häuser und Wärmepumpe sind erfunden; es gibt kein echtes Gerät und keinen Hersteller dahinter. " +
+            "Eine kleine Simulation liefert Minute für Minute, was eine Quell-Integration meldet: Zähler, Kompressor, Betriebsart, Temperaturen. " +
+            "Gerechnet wird es vom Code der Integration – Läufe, Ladungen, Zeiträume, Rückblick, Kennlinie, Heizlast, Gradtage, Kosten, Gesundheits-Check.",
+          rebuilt:
+            "Was in Home Assistant an der Laufzeit hängt, ist im Generator nachgebaut: die Buchung als Lauf oder Stillstand, das Tagebuch um Mitternacht, " +
+            "die tägliche Analyse um 3 Uhr und „Auffälliges Takten“. Wärmewacht ist hier seit September 2024 eingerichtet; " +
+            "die Wochen davor kommen aus dem Rückblick auf die Zähler-Statistik. Wo die Daten für eine Prüfung nicht reichen, bleibt sie unbekannt und nennt den Grund.",
+          credits: "Symbole: Material Design Icons (Pictogrammers Free License).",
+          plantTitle: "Die erfundene Anlage",
+          plantHp: (d) => [
+            `Beispiel-Wärmepumpe, Luft/Wasser 8 kW (kein Hersteller): ${num(d.options.rated_kw, 1)} kW bei A−7/W35, kleinste Leistung ${num(d.options.min_kw, 1)} kW, Speicher 250 l.`,
+            `Haus: Wärmeverlust ${d.house.ua_w_per_k} W/K in der Simulation, Heizgrenze ${num(d.house.heating_limit, 0)} °C, ${d.house.buffer ? "mit Pufferspeicher" : "ohne Puffer, wenig Wasser im Kreis"}.`,
+            `Einstellungen: Normaußentemperatur ${num(d.options.design_temp, 0)} °C, Strom ${num(d.options.electricity_price_ct, 0)} ct/kWh, Gas ${num(d.options.gas_price_ct, 0)} ct/kWh und ${num(d.options.gas_base_price, 0)} € im Jahr (Preise erfunden).`,
+            `Wärmewacht eingerichtet am ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; die Statistik der Zähler reicht bis 1. Juli 2024 zurück (Rückblick).`,
+          ],
+          plantGas: (d) => [
+            `Beispiel-Gasheizung (Brennwertkessel), ein Gaszähler für Heizen und Warmwasser, Nutzungsgrad ${num(d.options.boiler_efficiency, 2)}.`,
+            `Haus: Wärmeverlust ${d.house.ua_w_per_k} W/K in der Simulation, Heizgrenze ${num(d.house.heating_limit, 1)} °C, Nachtabsenkung.`,
+            `Einstellungen: Normaußentemperatur ${num(d.options.design_temp, 0)} °C, Gas ${num(d.options.gas_price_ct, 0)} ct/kWh und ${num(d.options.gas_base_price, 0)} € im Jahr (erfunden).`,
+          ],
+          build: "Selbst bauen",
+          cards:
+            "Die Abschnitte bestehen aus normalen Dashboard-Karten (Kachel, Sensor, Anzeige, Statistik-Diagramm, Markdown); " +
+            "AZ-Kennlinie und Energiesignatur zeichnet die HACS-Karte apexcharts-card. Die README hat die Konfiguration.",
+          readme: "Dashboard-Beispiele in der README →",
+        },
+        en: {
+          demo: "live demo",
+          tagline: "How efficient is the heat pump, how often does it cycle? This is how Wärmewacht shows it in Home Assistant.",
+          scenario: "Scenario",
+          lang: "Language",
+          theme: "Theme",
+          scenarios: { januar: "Cold January week", herbst: "Mild autumn, oversized", gas: "Gas boiler before the switch" },
+          stories: {
+            januar:
+              "A well set up air/water heat pump with a buffer tank after a week of frost: few, long runs, defrosts, hot water twice a day.",
+            herbst:
+              "The same heat pump in a small, well insulated house without a buffer. In mild weather the house needs far less than its smallest power – it cycles.",
+            gas:
+              "A house still heats with gas. From the gas meter Wärmewacht works out how large a heat pump would have to be (entry type “gas boiler”).",
+          },
+          auto: "Auto", light: "Light", dark: "Dark",
+          banner: (time) => `All readings, prices and installations are made up – for demonstration only. Demo time: ${time}.`,
+          unknown: "Unknown",
+          on: "Problem", off: "OK",
+          yes: "yes", no: "no",
+          since: (t) => `since ${t}`,
+          ago: (h) => (h < 1 ? "a few minutes ago" : `${h} ${h === 1 ? "hour" : "hours"} ago`),
+          perDay: (v) => `${v} per day`,
+          now: "Now",
+          activityName: "Operating mode",
+          activity: { heating: "Heating", dhw: "Hot water", defrost: "Defrost", off: "Off" },
+          speed: "Compressor speed",
+          elecPower: "Electricity",
+          heatPower: "Heat",
+          flow: "Flow",
+          ret: "Return",
+          dhwTemp: "Hot water",
+          dhwSet: "Hot water set point",
+          outdoor: "Outdoor temperature",
+          flowRate: "Flow rate",
+          compressor: "Compressor",
+          running: "running", stopped: "stopped",
+          sourceDevice: (d) => `Source “${d}” (made-up entities of the heat pump)`,
+          todayTitle: "Today: heat and electric power",
+          todayNote: "Means per 5 minutes. Shaded: hot water and defrost.",
+          heatKw: "Heat kW", elecKw: "Electricity kW",
+          ratios: "Coefficients of performance",
+          today: "Today", month: "Month", season: "Season", total: "Total",
+          costs: "Costs",
+          monthsTitle: "Heat and electricity per month",
+          monthsNote: "Statistics card of the energy sensors (change per month, 365 days); the action “Report” gives a COP per month.",
+          cycles: "Cycling",
+          cyclesToday: "Today",
+          cyclesMore: "Yesterday, 7 days, total",
+          defrosts7d: "Defrosts 7 days",
+          standby7d: "Standby, mean 7 days",
+          health: "Health",
+          healthNote:
+            "Wärmewacht checks once a day around 3 am. Without enough data a sensor is unknown and names the reason in its attribute <code>reason</code> – never “OK” for lack of data.",
+          cyclingAttrs: (a) =>
+            `Last 24 hours: at most ${a.max_starts_per_hour} ${a.max_starts_per_hour === 1 ? "start" : "starts"} within one hour (limit: more than ${a.starts_per_hour_limit}), ` +
+            `${a.critical_runs_24h} runs under 6 minutes (limit: 3), ${a.short_runs_24h} under 10 minutes.`,
+          dropAttrs: (a) =>
+            `COP heating ${a.ratio_current} against ${a.ratio_previous_same_weather} last season in the same weather (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
+          dhwDropAttrs: (a) =>
+            `COP of normal charges ${a.ratio} (${a.charges}) against ${a.previous_ratio} (${a.previous_charges}) in the same 30 days last year: ${a.change} % (limit −${a.threshold_percent} %).`,
+          dhw: "Hot water",
+          lastCharge: (a) => `${a.minutes} min, ${a.start_temp} → ${a.max_temp} °C`,
+          charges30: (a) => `${a.charges} charges, mean ${a.mean_minutes} min, lift ${a.mean_lift} K`,
+          chargeTitle: "Last charge",
+          chargeRows: { start: "Start", minutes: "Duration", heat_kwh: "Heat", electricity_kwh: "Electricity" },
+          analysis: "Analysis",
+          curveTitle: "Performance curve heating (x: daily mean outdoor temperature)",
+          curveNote: "COP heating per 2 K class, without standby; a class needs 7 days.",
+          previous: "Previous season", current: "Current season",
+          signatureTitle: "Energy signature (x: weekly mean outdoor temperature)",
+          signatureNote: (a, gas) =>
+            `Weeks of ${gas ? "the last 365 days" : "the last complete season"} (${a.week_count}, R² ${a.r_squared}). Heating limit ${a.heating_limit} °C, ` +
+            `standard ${a.standard_kw} kW at ${a.design_temp} °C.`,
+          signaturePreliminary: (a) => `No heat load yet: ${a.reasons.join(", ")}.`,
+          weeks: "Weeks", measured: "Line (measured)", standard: "standard (through 0 at 20 °C)",
+          kw: "Heating power kW", cop: "COP",
+          computed: "Computed",
+          plant: "Installation",
+          ownDevice: (d) => `Device “${d}” (Wärmewacht)`,
+          setupSince: (d) => `since setup on ${d}`,
+          report: "Report",
+          reportTitle: (s) => `Action “Report”: current season since ${s}`,
+          scope: { heating: "Heating", dhw: "Hot water", heating_dhw: "Heating+DHW" },
+          heat: "Heat", electricity: "Electricity", standbyCol: "Standby", ratio: "COP",
+          estimated: (t) => `Until ${t} computed from the heat pump's meters (standby estimated per hour), then from the own sensors.`,
+          response: "Show the action's response",
+          gas: "Gas boiler",
+          gasMonths: "Gas per month",
+          gasMonthsNote: "Gas meter of the source, split with the summer base (hot water = median of the days from 15 °C).",
+          gasHeating: "Heating", gasDhw: "Hot water",
+          heatLoadAction: "Action “Heat load”: last 365 days",
+          reasons: {
+            too_few_days: "too few days in the window",
+            no_previous_year: "no charges in last year's diary",
+            no_previous_season: "no previous season",
+            too_few_classes: "too little outdoor range in common with the previous season",
+            too_little_electricity: "too little electricity compared",
+            too_few_charges: "too few charges",
+            not_analysed_yet: "not computed yet",
+            comparison_restarted: "comparison restarted",
+            no_standby: "no standby",
+            too_little_heating: "too little heating on cold days",
+            heat_load_insufficient: "heat load not known yet",
+            too_few_weeks: "too few weeks",
+            spread_too_small: "too little spread",
+            too_few_frost_days: "too few frost days",
+            no_aux_counter: "no backup heater counter",
+          },
+          reasonNote: (code) => `Reason: ${code}`,
+          about: "Made up, but computed for real",
+          data:
+            "Weather, houses and heat pump are made up; there is no real device and no vendor behind them. " +
+            "A small simulation delivers, minute by minute, what a source integration reports: meters, compressor, operating mode, temperatures. " +
+            "The integration's own code computes the rest – runs, charges, periods, look-back, performance curve, heat load, degree days, costs, health check.",
+          rebuilt:
+            "What depends on Home Assistant's runtime is rebuilt in the generator: booking electricity as running or standby, the diary at midnight, " +
+            "the daily analysis at 3 am and “conspicuous cycling”. Wärmewacht was set up here in September 2024; " +
+            "the weeks before come from the look-back on the meters' statistics. Where the data do not suffice for a check, it stays unknown and names the reason.",
+          credits: "Icons: Material Design Icons (Pictogrammers Free License).",
+          plantTitle: "The made-up installation",
+          plantHp: (d) => [
+            `Example heat pump, air/water 8 kW (no vendor): ${num(d.options.rated_kw, 1)} kW at A−7/W35, smallest power ${num(d.options.min_kw, 1)} kW, 250 l storage.`,
+            `House: heat loss ${d.house.ua_w_per_k} W/K in the simulation, heating limit ${num(d.house.heating_limit, 0)} °C, ${d.house.buffer ? "with a buffer tank" : "no buffer, little water in the circuit"}.`,
+            `Options: design temperature ${num(d.options.design_temp, 0)} °C, electricity ${num(d.options.electricity_price_ct, 0)} ct/kWh, gas ${num(d.options.gas_price_ct, 0)} ct/kWh and ${num(d.options.gas_base_price, 0)} € a year (prices made up).`,
+            `Wärmewacht set up on ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; the meters' statistics go back to 1 July 2024 (look-back).`,
+          ],
+          plantGas: (d) => [
+            `Example gas boiler (condensing), one gas meter for heating and hot water, efficiency ${num(d.options.boiler_efficiency, 2)}.`,
+            `House: heat loss ${d.house.ua_w_per_k} W/K in the simulation, heating limit ${num(d.house.heating_limit, 1)} °C, night setback.`,
+            `Options: design temperature ${num(d.options.design_temp, 0)} °C, gas ${num(d.options.gas_price_ct, 0)} ct/kWh and ${num(d.options.gas_base_price, 0)} € a year (made up).`,
+          ],
+          build: "Build it yourself",
+          cards:
+            "The sections are made of standard dashboard cards (tile, sensor, gauge, statistics graph, markdown); " +
+            "the HACS card apexcharts-card draws the performance curve and the energy signature. The README has the configuration.",
+          readme: "Dashboard examples in the README →",
+        },
+      };
+
+      // State, kept in the URL so a view can be linked.
+      const params = new URLSearchParams(location.search);
+      const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+      const state = {
+        scenario: pick(params.get("scenario"), SCENARIOS, "januar"),
+        lang: pick(params.get("lang"), ["de", "en"], navigator.language?.startsWith("de") ? "de" : "en"),
+        dark: pick(params.get("dark"), ["auto", "0", "1"], "auto"),
+      };
+      const t = () => TEXT[state.lang];
+      const saveState = () => history.replaceState(null, "", `?${new URLSearchParams(state)}`);
+      const systemDark = matchMedia("(prefers-color-scheme: dark)");
+      const isDark = () => (state.dark === "auto" ? systemDark.matches : state.dark === "1");
+
+      const escapeHtml = (value) =>
+        String(value ?? "").replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const icon = (name) =>
+        `<svg class="mdi" viewBox="0 0 24 24" aria-hidden="true"><path d="${PATHS[name]}" /></svg>`;
+      const num = (value, digits) =>
+        new Intl.NumberFormat(state.lang, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+      const dateFmt = (iso, opts) => new Date(iso).toLocaleDateString(state.lang, { timeZone: "Europe/Berlin", ...opts });
+      const timeFmt = (iso) =>
+        new Date(iso).toLocaleTimeString(state.lang, { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+      const UNITS = { "€": "€", "€/kWh": "€/kWh" };
+
+      const cache = {};
+      async function load(key) {
+        cache[key] ??= await (await fetch(`data/${key}.json`)).json();
+        return cache[key];
+      }
+
+      // ---- Entities ------------------------------------------------------------------
+
+      let data; // the scenario shown
+      const name = (key) => data.names[state.lang][key] ?? key;
+      const sensor = (key) => data.sensors[key];
+
+      function value(key) {
+        // The state as Home Assistant formats it: precision, unit, locale.
+        const entity = sensor(key);
+        if (!entity || entity.s === null || entity.s === undefined) return t().unknown;
+        if (key === "performance_curve_heating") {
+          const hours = Math.floor((new Date(data.now) - new Date(entity.s)) / 3600000);
+          return t().ago(hours);
+        }
+        const digits = entity.p ?? 0;
+        const unit = entity.u ? ` ${UNITS[entity.u] ?? entity.u}` : "";
+        return `${num(entity.s, digits)}${unit}`;
+      }
+
+      const attr = (key, a) => sensor(key)?.a?.[a];
+      const fmtAttr = (v, digits, unit = "") => (v === null || v === undefined ? t().unknown : `${num(v, digits)}${unit}`);
+
+      const tile = (mdi, title, secondary, cls = "c6") =>
+        `<div class="card tile ${cls}"><div class="shape">${icon(mdi)}</div><div><b>${escapeHtml(title)}</b><small>${secondary}</small></div></div>`;
+      const iconOf = (key) => ICONS[key] ?? ICONS[key.replace(/_(today|yesterday|month|season|total)$/, "")] ?? "information-outline";
+      const entityTile = (key, cls = "c6", extra = "") => tile(iconOf(key), name(key), escapeHtml(value(key)) + extra, cls);
+
+      function reasonText(code) {
+        if (!code) return "";
+        const human = t().reasons[code];
+        return `${human ? escapeHtml(human) + " · " : ""}<code>${escapeHtml(code)}</code>`;
+      }
+
+      function problemTile(key) {
+        const entity = data.binary[key];
+        const tx = t();
+        const label = entity.s === "on" ? tx.on : entity.s === "off" ? tx.off : tx.unknown;
+        const reason = entity.a.reason ? ` · ${reasonText(entity.a.reason)}` : "";
+        const cls = entity.s === "on" ? "c12 problem" : entity.s === "off" ? "c12" : "c12 inactive";
+        return tile(ICONS[key], name(key), `${escapeHtml(label)}${reason}`, cls);
+      }
+
+      // ---- Charts --------------------------------------------------------------------
+
+      function niceStep(max, parts = 4) {
+        const raw = max / parts;
+        const p = 10 ** Math.floor(Math.log10(raw));
+        return [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw);
+      }
+
+      function legend(items) {
+        return `<div class="legend">${items
+          .map(([color, label, kind = ""]) =>
+            kind === "dash"
+              ? `<span style="color:${color}"><i class="dash"></i><span style="color:var(--primary-text-color)">${escapeHtml(label)}</span></span>`
+              : `<span><i class="${kind}" style="background:${color}"></i>${escapeHtml(label)}</span>`,
+          )
+          .join("")}</div>`;
+      }
+
+      const narrow = () => innerWidth < 720;
+
+      function barChart(groups, keys, labels, unit, height = 220, W = narrow() ? 400 : 640) {
+        const H = height, L = 44, R = 8, T = 20, B = 24;
+        const max = Math.max(1, ...groups.flatMap((g) => keys.map((k) => g.values[k] ?? 0)));
+        const step = niceStep(max);
+        const top = Math.ceil(max / step) * step;
+        const y = (v) => T + (1 - v / top) * (H - T - B);
+        const slot = (W - L - R) / groups.length;
+        const bar = Math.max(1, (slot * 0.84) / keys.length);
+        let svg = "";
+        for (let v = 0; v <= top + 1e-9; v += step) {
+          svg += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" />
+            <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${num(v, 0)}</text>`;
+        }
+        svg += `<text x="${L - 6}" y="${T - 9}" text-anchor="end">${unit}</text>`;
+        groups.forEach((g, i) => {
+          const x0 = L + i * slot + slot * 0.08;
+          keys.forEach((k, j) => {
+            const v = g.values[k] ?? 0;
+            svg += `<rect x="${x0 + j * bar}" y="${y(v)}" width="${bar * 0.9}" height="${y(0) - y(v)}" fill="${SERIES[k]}" rx="1"><title>${escapeHtml(g.title)}: ${escapeHtml(labels[k])} ${num(v, 1)} ${unit}</title></rect>`;
+          });
+          svg += `<text x="${x0 + (bar * keys.length) / 2}" y="${H - 6}" text-anchor="middle">${g.label}</text>`;
+        });
+        return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
+      }
+
+      function scatter({ series, lines = [], xMin = -15, xMax = 20, yMin, yMax, yLabel, marks = [], W = narrow() ? 420 : 640, H = narrow() ? 260 : 280 }) {
+        const L = 40, R = 12, T = 16, B = 26;
+        const x = (v) => L + ((v - xMin) / (xMax - xMin)) * (W - L - R);
+        const y = (v) => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B);
+        let svg = "";
+        const yStep = niceStep(yMax - yMin);
+        for (let v = yMin; v <= yMax + 1e-9; v += yStep) {
+          svg += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" />
+            <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${num(v, yStep < 1 ? 1 : 0)}</text>`;
+        }
+        for (let v = Math.ceil(xMin / 5) * 5; v <= xMax; v += 5) {
+          svg += `<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H - B}" />
+            <text x="${x(v)}" y="${H - 8}" text-anchor="middle">${num(v, 0)} °C</text>`;
+        }
+        svg += `<text x="${L}" y="${T - 4}">${escapeHtml(yLabel)}</text>`;
+        for (const m of marks) {
+          svg += `<line class="mark" x1="${x(m.x)}" x2="${x(m.x)}" y1="${T}" y2="${H - B}" />
+            <text x="${x(m.x) + 4}" y="${T + 24}">${escapeHtml(m.label)}</text>`;
+        }
+        for (const l of lines) {
+          svg += `<line x1="${x(l.x1)}" y1="${y(l.y1)}" x2="${x(l.x2)}" y2="${y(l.y2)}" stroke="${l.color}" stroke-width="2" ${l.dash ? 'stroke-dasharray="6 4"' : ""} />`;
+        }
+        for (const s of series) {
+          const pts = s.points.filter((p) => p[1] !== null && p[1] !== undefined).sort((a, b) => a[0] - b[0]);
+          if (s.line && pts.length > 1) {
+            svg += `<path d="${pts.map((p, i) => `${i ? "L" : "M"}${x(p[0])},${y(p[1])}`).join("")}" fill="none" stroke="${s.color}" stroke-width="2" />`;
+          }
+          for (const p of pts) {
+            svg += `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="${s.r ?? 4.5}" fill="${s.color}"><title>${escapeHtml(p[2] ?? "")}</title></circle>`;
+          }
+        }
+        return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
+      }
+
+      function todayChart(rows) {
+        const tx = t();
+        const W = 400, H = 220, L = 30, R = 8, T = 16, B = 22;
+        const minutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
+        const max = Math.max(1, ...rows.map((r) => r.heat));
+        const step = niceStep(max);
+        const top = Math.ceil(max / step) * step;
+        const x = (m) => L + (m / 1440) * (W - L - R);
+        const y = (v) => T + (1 - v / top) * (H - T - B);
+        let svg = "";
+        rows.forEach((r) => {
+          const fill = r.act === "dhw" ? "var(--band-dhw)" : r.act === "defrost" ? "var(--band-defrost)" : null;
+          if (fill) svg += `<rect x="${x(minutes(r.t) - 5)}" y="${T}" width="${x(5) - x(0) + 0.3}" height="${H - T - B}" fill="${fill}" />`;
+        });
+        for (let v = 0; v <= top + 1e-9; v += step) {
+          svg += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" />
+            <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${num(v, step < 1 ? 1 : 0)}</text>`;
+        }
+        svg += `<text x="${L - 6}" y="${T - 3}" text-anchor="end">kW</text>`;
+        for (const [k, color] of [["heat", "var(--s-heat-heating)"], ["elec", "var(--s-elec-heating)"]]) {
+          let d = "";
+          rows.forEach((r, i) => {
+            const m = minutes(r.t);
+            d += `${i ? "L" : "M"}${x(m - 5)},${y(r[k])}L${x(m)},${y(r[k])}`;
+          });
+          svg += `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" />`;
+        }
+        for (let h = 0; h <= 24; h += 4) {
+          svg += `<text x="${x(h * 60)}" y="${H - 6}" text-anchor="middle">${String(h).padStart(2, "0")}:00</text>`;
+        }
+        const last = minutes(rows.at(-1).t);
+        svg += `<line class="now" x1="${x(last)}" x2="${x(last)}" y1="${T}" y2="${H - B}" />
+          <text x="${x(last) + 4}" y="${T + 10}">${escapeHtml(tx.now.toLowerCase())}</text>`;
+        return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
+      }
+
+      function spark(rows, key) {
+        const W = 300, H = 44;
+        const values = rows.map((r) => r[key]);
+        const lo = Math.min(...values), hi = Math.max(...values);
+        const span = hi - lo || 1;
+        const x = (i) => (i / Math.max(1, rows.length - 1)) * W;
+        const y = (v) => H - 4 - ((v - lo) / span) * (H - 10);
+        const line = values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+        return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+          <path class="area" d="${line}L${W},${H}L0,${H}Z" /><path class="line" d="${line}" vector-effect="non-scaling-stroke" /></svg>`;
+      }
+
+      function sensorCard(title, mdi, v, digits, unit, rows, key, cls = "c6") {
+        return `<div class="card sensor ${cls}"><div class="top"><span>${escapeHtml(title)}</span>${icon(mdi)}</div>
+          <div class="value">${num(v, digits)}<span>${unit}</span></div>${spark(rows, key)}</div>`;
+      }
+
+      function gauge(title, v, max, unit, cls = "c6") {
+        const share = Math.max(0, Math.min(1, v / max));
+        const arc = (f) => {
+          const a = Math.PI * (1 - f);
+          return [60 + 46 * Math.cos(a), 58 - 46 * Math.sin(a)];
+        };
+        const [ex, ey] = arc(share);
+        const bar = share > 0 ? `<path class="bar" d="M14,58 A46,46 0 0 1 ${ex.toFixed(2)},${ey.toFixed(2)}" fill="none" stroke-width="10" />` : "";
+        return `<div class="card gauge ${cls}"><svg viewBox="0 0 120 70" aria-hidden="true">
+          <path class="track" d="M14,58 A46,46 0 0 1 106,58" fill="none" stroke-width="10" />${bar}
+          <text class="v" x="60" y="55" text-anchor="middle">${num(v, 0)} ${unit}</text></svg>
+          <div class="name">${escapeHtml(title)}</div></div>`;
+      }
+
+      function yaml(value, indent = "") {
+        if (Array.isArray(value)) {
+          return value
+            .map((item) => {
+              const body = yaml(item, indent + "  ");
+              return typeof item === "object" && item ? `\n${indent}- ${body.trimStart()}` : `\n${indent}- ${body}`;
+            })
+            .join("");
+        }
+        if (value && typeof value === "object") {
+          return Object.entries(value)
+            .map(([k, v]) => {
+              const inner = yaml(v, indent + "  ");
+              if (Array.isArray(v) && !v.length) return `\n${indent}${k}: []`;
+              return typeof v === "object" && v !== null ? `\n${indent}${k}:${inner}` : `\n${indent}${k}: ${inner}`;
+            })
+            .join("");
+        }
+        if (value === null) return "null";
+        return typeof value === "string" && /[:#]/.test(value) ? `"${value}"` : String(value);
+      }
+
+      // ---- Heat pump sections ----------------------------------------------------------------
+
+      function nowSection() {
+        const tx = t();
+        const live = data.live;
+        const rows = data.today;
+        const since = live.activity_since ? tx.since(timeFmt(live.activity_since)) : "";
+        return `
+          <section class="section">
+            <div class="heading">${icon("heat-pump")}<span>${tx.now}</span></div>
+            <div class="subtitle">${escapeHtml(tx.sourceDevice(data.device))}</div>
+            <div class="grid">
+              ${tile("heat-pump", tx.activityName, `${escapeHtml(tx.activity[live.activity])} · ${escapeHtml(since)}`, "c12")}
+              ${sensorCard(tx.speed, "fan", live.speed_hz, 0, "Hz", rows, "speed", "c12")}
+              ${gauge(tx.elecPower, live.elec_w, 3000, "W")}
+              ${gauge(tx.heatPower, live.heat_w, 9000, "W")}
+              ${sensorCard(tx.flow, "thermometer", live.flow, 1, "°C", rows, "flow")}
+              ${sensorCard(tx.ret, "thermometer", live.return, 1, "°C", rows, "ret")}
+              ${sensorCard(tx.dhwTemp, "water-thermometer", live.dhw, 1, "°C", rows, "dhw", "c12")}
+              ${tile("thermometer-water", tx.dhwSet, `${num(live.dhw_set, 1)} °C`, "c12")}
+              <div class="card c12"><div class="card-title">${tx.todayTitle}</div>${todayChart(rows)}
+                ${legend([["var(--s-heat-heating)", tx.heatKw], ["var(--s-elec-heating)", tx.elecKw], ["var(--band-dhw)", tx.activity.dhw], ["var(--band-defrost)", tx.activity.defrost]])}
+                <div class="footnote">${tx.todayNote}</div></div>
+            </div>
+          </section>`;
+      }
+
+      function ratiosSection() {
+        const tx = t();
+        const periods = [["today", tx.today], ["month", tx.month], ["season", tx.season], ["total", tx.total]];
+        const blocks = periods
+          .map(
+            ([p, label]) =>
+              `<div class="subheading">${label}</div><div class="grid">${["heating", "dhw", "combined"]
+                .map((s) => entityTile(`ratio_${s}_${p}`, "c4"))
+                .join("")}</div>`,
+          )
+          .join("");
+        const keys = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
+        const labels = Object.fromEntries(keys.map((k) => [k, name(k)]));
+        const groups = data.months.map((m) => ({
+          title: m.month,
+          label: dateFmt(`${m.month}-15`, { month: "short" }),
+          values: m,
+        }));
+        return `
+          <section class="section double">
+            <div class="heading">${icon("speedometer")}<span>${tx.ratios}</span></div>
+            ${blocks}
+            <div class="subheading">${tx.costs}</div>
+            <div class="grid">${["cost_month", "cost_season", "heat_cost_season", "gas_savings_season"].map((k) => entityTile(k)).join("")}</div>
+            <div class="card"><div class="card-title">${tx.monthsTitle}</div>${barChart(groups, keys, labels, "kWh")}
+              ${legend(keys.map((k) => [SERIES[k], labels[k]]))}<div class="footnote">${tx.monthsNote}</div></div>
+          </section>`;
+      }
+
+      function cyclesSection() {
+        const tx = t();
+        const season = sensor("starts_season");
+        const seasonTile = season
+          ? tile(ICONS.starts_season, name("starts_season"), `${escapeHtml(value("starts_season"))} · ${escapeHtml(tx.perDay(num(season.a.per_day, 1)))}`)
+          : "";
+        const d = sensor("defrosts_today").a;
+        const standby = sensor("standby");
+        return `
+          <section class="section">
+            <div class="heading">${icon("sync")}<span>${tx.cycles}</span></div>
+            <div class="subheading">${tx.cyclesToday}</div>
+            <div class="grid">${["starts_today", "runtime_today", "run_minutes_today", "shortest_pause_today", "short_runs_today", "defrosts_today", "spread_today", "flow_temp_today"].map((k) => entityTile(k)).join("")}</div>
+            <div class="subheading">${tx.cyclesMore}</div>
+            <div class="grid">
+              ${entityTile("starts_yesterday")}${entityTile("run_minutes_week")}${seasonTile}${entityTile("spread_7d")}
+              ${tile(ICONS.defrosts_today, tx.defrosts7d, `${fmtAttr(d.defrosts_7d, 0)} · Ø ${fmtAttr(d.mean_minutes_7d, 1, " min")}`)}
+              ${tile(ICONS.standby, tx.standby7d, `${escapeHtml(value("standby"))} · ${standby.a.mean_power_w_7d === null ? reasonText(standby.a.reason) : fmtAttr(standby.a.mean_power_w_7d, 0, " W")}`)}
+              ${entityTile("starts_total", "c12")}
+            </div>
+          </section>`;
+      }
+
+      function healthSection() {
+        const tx = t();
+        const b = data.binary;
+        const notes = [`<p>${tx.healthNote}</p>`, "<ul>"];
+        notes.push(`<li><b>${escapeHtml(name("cycling_problem"))}:</b> ${escapeHtml(tx.cyclingAttrs(b.cycling_problem.a))}</li>`);
+        if (b.efficiency_drop.a.drop_percent !== undefined) {
+          const a = b.efficiency_drop.a;
+          const shown = { ...a, ratio_current: num(a.ratio_current, 2), ratio_previous_same_weather: num(a.ratio_previous_same_weather, 2) };
+          notes.push(`<li><b>${escapeHtml(name("efficiency_drop"))}:</b> ${escapeHtml(tx.dropAttrs(shown))}</li>`);
+        }
+        const w = b.dhw_efficiency_drop.a;
+        if (w.change_percent !== null && w.change_percent !== undefined) {
+          notes.push(`<li><b>${escapeHtml(name("dhw_efficiency_drop"))}:</b> ${escapeHtml(tx.dhwDropAttrs({ ...w, ratio: num(w.ratio, 2), previous_ratio: num(w.previous_ratio, 2), change: num(w.change_percent, 1) }))}</li>`);
+        }
+        notes.push("</ul>");
+        return `
+          <section class="section">
+            <div class="heading">${icon("stethoscope")}<span>${tx.health}</span></div>
+            <div class="grid">${["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem"].map(problemTile).join("")}
+              <div class="card c12 markdown">${notes.join("")}</div></div>
+          </section>`;
+      }
+
+      function dhwSection() {
+        const tx = t();
+        const last = sensor("ratio_dhw_last_charge").a;
+        const charges = sensor("ratio_dhw_charges_30d").a;
+        const row = (label, v) => `<div class="row"><span>${escapeHtml(label)}</span><span class="value">${v}</span></div>`;
+        const rows = [
+          row(tx.chargeRows.start, `${dateFmt(last.start, { day: "numeric", month: "short" })}, ${timeFmt(last.start)}`),
+          row(tx.chargeRows.minutes, `${num(last.minutes, 0)} min`),
+          row(tx.chargeRows.heat_kwh, `${num(last.heat_kwh, 2)} kWh`),
+          row(tx.chargeRows.electricity_kwh, `${num(last.electricity_kwh, 2)} kWh`),
+          row(tx.dhwTemp, `${num(last.start_temp, 1)} → ${num(last.max_temp, 1)} °C`),
+        ];
+        return `
+          <section class="section">
+            <div class="heading">${icon("water-boiler")}<span>${tx.dhw}</span></div>
+            <div class="grid">
+              ${entityTile("ratio_dhw_last_charge", "c12", ` · ${escapeHtml(tx.lastCharge({ ...last, start_temp: num(last.start_temp, 1), max_temp: num(last.max_temp, 1) }))}`)}
+              ${entityTile("ratio_dhw_charges_30d", "c12", ` · ${escapeHtml(tx.charges30({ ...charges, mean_lift: num(charges.mean_lift, 1) }))}`)}
+              <div class="card c12"><div class="card-title">${tx.chargeTitle}</div><div class="rows">${rows.join("")}</div></div>
+            </div>
+          </section>`;
+      }
+
+      function signatureChart(a, gas = false) {
+        const tx = t();
+        const weeks = a.weeks ?? [];
+        const maxKw = Math.max(1, ...weeks.map((w) => w.power_kw), a.standard_kw ?? 0, a.measured_kw ?? 0);
+        const lines = [];
+        const lo = a.design_temp ?? -12;
+        if (a.intercept_kw !== null) {
+          const hi = a.heating_limit ?? 15;
+          lines.push({ x1: lo, y1: a.intercept_kw + a.slope_kw_per_k * lo, x2: hi, y2: 0, color: "var(--s-current)" });
+          if (a.standard_kw !== null) lines.push({ x1: lo, y1: a.standard_kw, x2: 20, y2: 0, color: "var(--s-current)", dash: true });
+        }
+        const top = Math.ceil((maxKw * 1.1) / 1) * 1;
+        const chart = scatter({
+          series: [{ color: "var(--s-previous)", points: weeks.map((w) => [w.mean_outdoor, w.power_kw, `${w.start}: ${num(w.mean_outdoor, 1)} °C, ${num(w.power_kw, 2)} kW`]) }],
+          lines,
+          xMin: -15, xMax: 20, yMin: 0, yMax: top, yLabel: tx.kw,
+          marks: a.design_temp !== null ? [{ x: a.design_temp, label: `${num(a.design_temp, 0)} °C` }] : [],
+        });
+        const note = a.sufficient
+          ? tx.signatureNote({ ...a, r_squared: num(a.r_squared, 2), heating_limit: num(a.heating_limit, 1), standard_kw: num(a.standard_kw, 1), design_temp: num(a.design_temp, 0) }, gas)
+          : tx.signaturePreliminary(a);
+        return `<div class="card"><div class="card-title">${tx.signatureTitle}</div>${chart}
+          ${legend([["var(--s-previous)", tx.weeks, "dot"], ["var(--s-current)", tx.measured], ["var(--s-current)", tx.standard, "dash"]])}
+          <div class="footnote">${escapeHtml(note)}</div></div>`;
+      }
+
+      function analysisSection() {
+        const tx = t();
+        const curve = sensor("performance_curve_heating").a;
+        const pts = (rows) => rows.filter((c) => c.ratio !== null).map((c) => [(c.lower + c.upper) / 2, c.ratio, `${c.lower}…${c.upper} °C: ${num(c.ratio, 2)} (${c.days} d)`]);
+        const all = [...curve.current, ...curve.previous].map((c) => c.ratio).filter((r) => r !== null);
+        const curveChart = scatter({
+          series: [
+            { color: "var(--s-previous)", points: pts(curve.previous), line: true },
+            { color: "var(--s-current)", points: pts(curve.current), line: true },
+          ],
+          xMin: -15, xMax: 20,
+          yMin: Math.max(0, Math.floor(Math.min(...all) - 0.5)), yMax: Math.ceil(Math.max(...all) + 0.3),
+          yLabel: tx.cop,
+        });
+        const zero = sensor("flow_at_zero").a;
+        const perDegree = sensor("heat_per_degree_day_season").a;
+        return `
+          <section class="section double">
+            <div class="heading">${icon("chart-bell-curve-cumulative")}<span>${tx.analysis}</span></div>
+            <div class="card"><div class="card-title">${tx.curveTitle}</div>${curveChart}
+              ${legend([["var(--s-previous)", tx.previous, "dot"], ["var(--s-current)", tx.current, "dot"]])}
+              <div class="footnote">${tx.curveNote}</div></div>
+            ${signatureChart(sensor("heat_load_per_kelvin").a)}
+            <div class="grid">
+              ${entityTile("heat_load_per_kelvin")}${entityTile("heat_load_design")}
+              ${entityTile("heating_limit")}${tile(ICONS.performance_curve_heating, `${name("performance_curve_heating")}`, `${tx.computed} ${escapeHtml(value("performance_curve_heating"))}`)}
+              ${entityTile("degree_days_season")}
+              ${entityTile("heat_per_degree_day_season", "c6", ` · ${escapeHtml(tx.previous)} ${fmtAttr(perDegree.previous_season, 2)}`)}
+              ${entityTile("flow_at_zero", "c6", ` · ${escapeHtml(tx.previous)} ${fmtAttr(zero.previous_season, 1, " °C")}`)}
+              ${entityTile("oversize_factor")}
+            </div>
+          </section>`;
+      }
+
+      function plantSection() {
+        const tx = t();
+        const live = data.live;
+        const since = tx.setupSince(dateFmt(data.setup, { day: "numeric", month: "long", year: "numeric" }));
+        const row = (key) =>
+          `<div class="row">${icon(ICONS[key])}<span>${escapeHtml(name(key))}<small>${escapeHtml(since)}</small></span><span class="value">${escapeHtml(value(key))}</span></div>`;
+        return `
+          <section class="section">
+            <div class="heading">${icon("cog")}<span>${tx.plant}</span></div>
+            <div class="grid">
+              ${tile("thermometer", tx.outdoor, `${num(live.outdoor, 1)} °C`)}
+              ${tile("pump", tx.flowRate, `${num(live.flow_rate, 0)} l/h`)}
+              ${tile("heat-pump-outline", tx.compressor, escapeHtml(live.compressor ? tx.running : tx.stopped), "c12")}
+            </div>
+            <div class="card"><div class="device">${escapeHtml(tx.ownDevice(data.device))}</div><div class="rows">
+              ${["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"].map(row).join("")}
+            </div></div>
+          </section>`;
+      }
+
+      function reportSection() {
+        const tx = t();
+        const r = data.report;
+        const head = `<tr><th></th><th>${tx.heat}</th><th>${tx.electricity}</th><th>${tx.standbyCol}</th><th>${tx.ratio}</th></tr>`;
+        const line = (scope) => {
+          const s = r[scope];
+          return `<tr><td>${tx.scope[scope]}</td><td>${num(s.heat_kwh, 1)} kWh</td><td>${num(s.electricity_kwh, 1)} kWh</td>
+            <td>${s.standby_kwh === undefined ? "–" : `${num(s.standby_kwh, 1)} kWh`}</td><td>${s.ratio === null ? "–" : num(s.ratio, 2)}</td></tr>`;
+        };
+        const start = dateFmt(r.start, { day: "numeric", month: "long", year: "numeric" });
+        const estimated = r.estimated_until
+          ? `<div class="footnote">${escapeHtml(tx.estimated(`${dateFmt(r.estimated_until, { day: "numeric", month: "numeric", year: "numeric" })}, ${timeFmt(r.estimated_until)}`))}</div>`
+          : "";
+        return `
+          <section class="section wide">
+            <div class="heading">${icon("calendar-month-outline")}<span>${tx.report}</span></div>
+            <div class="card">
+              <div class="card-title">${escapeHtml(tx.reportTitle(start))}</div>
+              <div class="table-wrap"><table class="figures">${head}${["heating", "dhw", "heating_dhw"].map(line).join("")}</table></div>
+              ${estimated}
+              <details><summary>${tx.response}</summary><pre>${escapeHtml(yaml(r).trimStart())}</pre></details>
+            </div>
+          </section>`;
+      }
+
+      // ---- Gas boiler sections --------------------------------------------------------
+
+      function gasSections() {
+        const tx = t();
+        const keys = ["heating", "dhw"];
+        const labels = { heating: tx.gasHeating, dhw: tx.gasDhw };
+        const groups = data.months.map((m) => ({ title: m.month, label: dateFmt(`${m.month}-15`, { month: "short" }), values: m }));
+        const response = data.response;
+        return `
+          <section class="section">
+            <div class="heading">${icon("fire")}<span>${tx.gas}</span></div>
+            <div class="grid">
+              ${entityTile("gas_heat_load_per_kelvin")}${entityTile("gas_heat_load_design")}
+              ${entityTile("gas_heating_limit")}${entityTile("gas_heat_per_degree_day")}
+              ${entityTile("gas_dhw_share")}${entityTile("gas_consumption_year")}
+              ${entityTile("gas_cost_year", "c12")}
+            </div>
+          </section>
+          <section class="section double">
+            <div class="heading">${icon("chart-bell-curve-cumulative")}<span>${tx.analysis}</span></div>
+            ${signatureChart(sensor("gas_heat_load_per_kelvin").a, true)}
+            <div class="card"><div class="card-title">${tx.gasMonths}</div>${barChart(groups, keys, labels, "kWh")}
+              ${legend(keys.map((k) => [SERIES[k], labels[k]]))}<div class="footnote">${tx.gasMonthsNote}</div></div>
+          </section>
+          <section class="section wide">
+            <div class="heading">${icon("calendar-month-outline")}<span>${tx.report}</span></div>
+            <div class="card">
+              <div class="card-title">${tx.heatLoadAction}</div>
+              <details><summary>${tx.response}</summary><pre>${escapeHtml(yaml(response).trimStart())}</pre></details>
+            </div>
+          </section>`;
+      }
+
+      // ---- Page ----------------------------------------------------------------------
+
+      async function render() {
+        const tx = t();
+        data = await load(state.scenario);
+        const clock = new Date(data.now).toLocaleString(state.lang, {
+          timeZone: "Europe/Berlin",
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        document.getElementById("banner").innerHTML = `${icon("information-outline")}<span>${escapeHtml(tx.banner(clock))}</span>`;
+        document.getElementById("story").textContent = tx.stories[state.scenario];
+        document.getElementById("dashboard").innerHTML =
+          data.kind === "gas"
+            ? gasSections()
+            : nowSection() + ratiosSection() + cyclesSection() + healthSection() + dhwSection() + analysisSection() + plantSection() + reportSection();
+        document.getElementById("plant").innerHTML = (data.kind === "gas" ? tx.plantGas(data) : tx.plantHp(data))
+          .map((line) => `<li>${escapeHtml(line)}</li>`)
+          .join("");
+      }
+
+      function applyTheme() {
+        document.documentElement.dataset.theme = isDark() ? "dark" : "light";
+      }
+
+      function applyText() {
+        const tx = t();
+        document.documentElement.lang = state.lang;
+        for (const el of document.querySelectorAll("[data-t]")) el.textContent = tx[el.dataset.t];
+        segment("scenario", SCENARIOS, (v) => tx.scenarios[v], render);
+        segment("lang", ["de", "en"], (v) => v.toUpperCase(), () => (applyText(), render()));
+        segment("dark", ["auto", "0", "1"], (v) => tx[{ auto: "auto", 0: "light", 1: "dark" }[v]], applyTheme);
+      }
+
+      function segment(id, values, label, onChange) {
+        const box = document.getElementById(id);
+        box.replaceChildren(
+          ...values.map((value) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label(value);
+            button.setAttribute("aria-pressed", String(state[id] === value));
+            button.addEventListener("click", () => {
+              if (state[id] === value) return;
+              state[id] = value;
+              for (const b of box.children) b.setAttribute("aria-pressed", String(b === button));
+              saveState();
+              onChange();
+            });
+            return button;
+          }),
+        );
+      }
+
+      systemDark.addEventListener("change", () => state.dark === "auto" && applyTheme());
+      applyText();
+      applyTheme();
+      saveState();
+      await render();
+    </script>
+  </body>
+</html>

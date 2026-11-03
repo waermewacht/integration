@@ -6,12 +6,15 @@
 [![Release](https://img.shields.io/github/v/release/waermewacht/integration?color=DE5E32)](https://github.com/waermewacht/integration/releases)
 [![CI](https://github.com/waermewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/waermewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
+[![Live-Demo](https://img.shields.io/badge/Live--Demo-ausprobieren-F5A623.svg)](https://waermewacht.github.io/integration/?lang=de)
 
 **Deutsch** · [English](https://github.com/waermewacht/integration/blob/main/README.en.md)
 
-> **Neu.** Die Vorlagen für EMS-ESP und Bosch HomeCom laufen an einer echten Anlage, alle anderen sind Beta (siehe [Voraussetzungen](#voraussetzungen)). Rückmeldungen sind willkommen, siehe [Fehler melden](#fehler-melden).
+> **Vorlagen:** Die Vorlagen für EMS-ESP und Bosch HomeCom laufen an einer echten Anlage, alle anderen sind Beta (siehe [Voraussetzungen](#voraussetzungen)).
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
+
+**Ausprobieren ohne Installation:** Die [Live-Demo](https://waermewacht.github.io/integration/?lang=de) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie und Energiesignatur für eine kalte Januarwoche, einen milden Herbst mit taktender Anlage und eine Gasheizung vor dem Umstieg – mit erfundenen Werten, aber gerechnet vom Code der Integration.
 
 **Noch mit Gas?** Wärmewacht rechnet auch die Heizlast deines Hauses aus dem Gasverbrauch, als Grundlage für die Auslegung einer Wärmepumpe: [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg).
 

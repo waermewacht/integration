@@ -6,12 +6,15 @@
 [![Release](https://img.shields.io/github/v/release/waermewacht/integration?color=DE5E32)](https://github.com/waermewacht/integration/releases)
 [![CI](https://github.com/waermewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/waermewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/Live_demo-try_it-F5A623.svg)](https://waermewacht.github.io/integration/?lang=en)
 
 [Deutsch](https://github.com/waermewacht/integration/blob/main/README.md) · **English**
 
-> **New.** The templates for EMS-ESP and Bosch HomeCom run on a real installation; all others are beta (see [Requirements](#requirements)). Feedback is welcome, see [Reporting issues](#reporting-issues).
+> **Templates:** The templates for EMS-ESP and Bosch HomeCom run on a real installation; all others are beta (see [Requirements](#requirements)).
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
+
+**Try it without installing:** the [live demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit and a gas boiler before switching – with made-up values, but computed by the integration's own code.
 
 **Still on gas?** Wärmewacht also computes your house's heat load from the gas consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
 
