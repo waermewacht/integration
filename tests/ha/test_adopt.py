@@ -3,13 +3,21 @@ them; counters moved to the form the template prefers (adopt.py)."""
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 import pytest
-from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
+from custom_components.waermewacht import ADOPT_RETRY_DELAY
 from custom_components.waermewacht.const import (
     CONF_ENTITIES,
     CONF_HISTORY,
@@ -113,6 +121,68 @@ async def test_a_signal_the_source_adds_later_is_taken_over(
     await hass.async_block_till_done()
     assert entry.data[CONF_ENTITIES]["activity"] == found
     assert "activity" in entry.data[CONF_KNOWN_SIGNALS]
+
+
+def homecom_entry(entities: dict[str, str]) -> MockConfigEntry:
+    """An entry of 0.2.6 that has not found the compressor status yet."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        minor_version=2,
+        data={
+            CONF_NAME: "WP",
+            CONF_TEMPLATE: "bosch_homecom",
+            CONF_ENTITIES: entities,
+            CONF_KNOWN_SIGNALS: sorted(entities),
+        },
+    )
+
+
+async def test_a_source_slower_than_the_entry_is_taken_over_once_started(
+    hass: HomeAssistant,
+) -> None:
+    """After a restart bosch_homecom waits for the cloud: when the entry
+    starts, all its entities are still unavailable and nothing is found. Once
+    Home Assistant has started they are there, and the status is taken over
+    without another restart (which would run the same race)."""
+    entities = homecom(hass)
+    found = status(hass)
+    states = {e: hass.states.get(e) for e in [*entities.values(), found]}
+    for entity_id in states:
+        hass.states.async_set(entity_id, STATE_UNAVAILABLE)
+    entry = homecom_entry(entities)
+    hass.set_state(CoreState.not_running)
+    await set_up(hass, entry)
+    assert "activity" not in entry.data[CONF_ENTITIES]
+
+    for entity_id, state in states.items():
+        hass.states.async_set(entity_id, state.state, state.attributes)
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+    assert entry.data[CONF_ENTITIES]["activity"] == found
+    assert "activity" in entry.data[CONF_KNOWN_SIGNALS]
+    assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_a_source_later_than_the_start_is_taken_over_by_the_retry(
+    hass: HomeAssistant,
+) -> None:
+    """A source that comes up only after Home Assistant has started (an MQTT
+    device waiting for its broker) is caught by the later retry."""
+    entities = homecom(hass)
+    entry = homecom_entry(entities)
+    await set_up(hass, entry)
+    assert "activity" not in entry.data[CONF_ENTITIES]
+
+    found = status(hass)
+    await hass.async_block_till_done()
+    async_fire_time_changed(
+        hass, dt_util.utcnow() + ADOPT_RETRY_DELAY + timedelta(seconds=1)
+    )
+    await hass.async_block_till_done()
+    assert entry.data[CONF_ENTITIES]["activity"] == found
+    assert entry.state is ConfigEntryState.LOADED
 
 
 def ems_esp(hass: HomeAssistant) -> dict[str, str]:

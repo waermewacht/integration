@@ -13,6 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.hass_dict import HassKey
 
@@ -68,6 +69,9 @@ type GasConfigEntry = ConfigEntry[GasRuntime]
 # Renames come in bursts ("recreate entity IDs" of a device): the entries
 # reload once, this long after the last one.
 RENAME_RELOAD_DELAY = timedelta(seconds=3)
+# The last retry of taking over new signals, for a source that comes up well
+# after Home Assistant has started (an MQTT device waiting for its broker).
+ADOPT_RETRY_DELAY = timedelta(minutes=10)
 # Entries whose sources were renamed and which wait for that reload.
 RENAMED: HassKey[set[str]] = HassKey(f"{DOMAIN}_renamed")
 # A reload picks up the renamed sources; a disabled or unloaded entry reads
@@ -187,6 +191,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     )
     # Options or entities changed: reload.
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    _retry_adoption(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # Once: the past into the statistics of the energy sensors (now registered).
     runtime.spawn(runtime.async_import_history(), "import_history", background=True)
@@ -200,6 +205,33 @@ async def _async_setup_gas(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, GAS_PLATFORMS)
     return True
+
+
+@callback
+def _retry_adoption(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> None:
+    """Take over new signals again once the sources are up.
+
+    A source that sets up after Wärmewacht (bosch_homecom waits for the
+    cloud, an MQTT source for its broker) still has no usable entities when
+    the entry starts, so nothing of it is found; the next restart runs the
+    same race. Retried when Home Assistant has started and once more after
+    ADOPT_RETRY_DELAY. Taking something over updates the entry, and the update
+    listener reloads it; a counter moved here is safe because the books name
+    the entity they read (runtime, counter_entities)."""
+
+    @callback
+    def _retry(_: Any = None) -> None:
+        if entry.state is ConfigEntryState.LOADED:
+            _adopt_new_signals(hass, entry)
+
+    entry.async_on_unload(async_at_started(hass, _retry))
+    entry.async_on_unload(
+        async_call_later(
+            hass,
+            ADOPT_RETRY_DELAY,
+            HassJob(_retry, "waermewacht_adopt", cancel_on_shutdown=True),
+        )
+    )
 
 
 def _adopt_new_signals(
