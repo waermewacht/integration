@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **„Effizienz gesunken“ bei oft taktenden Anlagen:** Vor der Einrichtung rechnet Wärmewacht aus den Stundenwerten der Zähler und erkennt Stillstand nur in Stunden ganz ohne Wärme. Bei einer Anlage, die alle paar Minuten startet, zählte der Stillstand dort fast vollständig als Lauf: Die Vorsaison wirkte schlechter, als sie war, und ein echter Effizienzverlust in der laufenden Saison konnte unentdeckt bleiben (simuliert: 20 % Verlust erschienen als 9 %). Reichen die beiden verglichenen Zeiträume über die Einrichtung, vergleicht Wärmewacht sie jetzt beide nach derselben Methode aus den Zählern. Die angezeigten AZ-Kennlinien bleiben, wie sie sind; die README nennt die Unschärfe vor der Einrichtung jetzt genauer.
 - **Live-Demo zum Ausprobieren ohne Installation:** [waermewacht.github.io/integration](https://waermewacht.github.io/integration/) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie, Energiesignatur und den Bericht – für eine kalte Januarwoche, einen milden Herbst mit zu großer, taktender Anlage und eine Gasheizung vor dem Umstieg. Alle Werte sind erfunden und so gekennzeichnet; gerechnet werden sie vom Code der Integration.
 - README: Hinweis „Neu“ auf die Angabe zu den Vorlagen gekürzt.
 - Intern: `tools/make_demo.py` erzeugt die Daten der Demo, der Workflow „Live-Demo“ veröffentlicht sie über GitHub Pages.

@@ -118,6 +118,22 @@ def by_hour(
     }
 
 
+def compare_on_source(
+    start: datetime, end: datetime, switch: datetime, previous_day: bool
+) -> bool:
+    """Whether periods in [start, end) are compared on the source counters
+    alone (booked by `by_hour` on both sides).
+
+    Before `switch` the energy comes from the source counters, where standby
+    is only told apart in hours without heat; after it from Wärmewacht's own
+    sensors, which separate it by the compressor state. A unit that cycles has
+    heat in nearly every hour, so its standby would count as running in the
+    earlier period only and make it look less efficient. Sources with day
+    values (`previous_day`) have no source hours: their own sensors only.
+    """
+    return not previous_day and start < switch < end
+
+
 def coarse(values: Mapping[datetime, float]) -> bool:
     """Whether a counter steps in whole kWh: every hourly change integral."""
     steps = [v for v in values.values() if v]

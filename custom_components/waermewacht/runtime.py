@@ -50,7 +50,13 @@ from homeassistant.util import dt as dt_util
 
 from .activity import combine
 from .averages import Mean
-from .backfill import HourlyChanges, bookable_hours, by_hour, energy_between
+from .backfill import (
+    HourlyChanges,
+    bookable_hours,
+    by_hour,
+    compare_on_source,
+    energy_between,
+)
 from .charges import (
     COARSE_LATE,
     DISINFECTION_TEMP_C,
@@ -910,7 +916,8 @@ class HeatPumpRuntime:
                         ("previous", last_season, previous, current),
                     )
                 }
-            self._health_findings(now, hours, outdoor, current, previous)
+            compared = await self._async_comparison_hours(previous, now, hours)
+            self._health_findings(now, hours, outdoor, current, previous, compared)
             today = now.astimezone(self.tz).date()
             self.spread_7d = spread_figure(self.diary, today)
             self.oversize = oversizing(
@@ -939,6 +946,23 @@ class HeatPumpRuntime:
             self._analysis_day = now.astimezone(self.tz).date()
             self._analysing = False
             self._notify()
+
+    async def _async_comparison_hours(
+        self, start: datetime, end: datetime, hours: dict[datetime, Totals]
+    ) -> dict[datetime, Totals]:
+        """Hourly energy for comparing periods in [start, end) with one method:
+        the source counters alone when the periods span the switch to the own
+        sensors (backfill.compare_on_source), else `hours` as booked."""
+        if not compare_on_source(
+            start, end, self._switch(), self.template.previous_day
+        ):
+            return hours
+        source = by_hour(
+            await self._async_source_hours(start, end),
+            self.heat_modes,
+            self.template.heat_includes_electricity,
+        )
+        return source or hours
 
     def _counter_check_due(self, now: datetime) -> bool:
         """Shortly after the start, then daily (as the analysis, but also
@@ -975,13 +999,18 @@ class HeatPumpRuntime:
         outdoor: dict[datetime, float],
         current: datetime,
         previous: datetime,
+        compared: dict[datetime, Totals],
     ) -> None:
-        """Efficiency drop and backup heater on mild days (health.py)."""
+        """Efficiency drop and backup heater on mild days (health.py).
+
+        `compared`: the hours the efficiency comparison uses, booked the same
+        way on both sides (`_async_comparison_hours`).
+        """
 
         def curve(start: datetime, end: datetime) -> list[dict[str, Any]]:
             return curve_as_dicts(
                 performance_curve(
-                    {h: t for h, t in hours.items() if start <= h < end},
+                    {h: t for h, t in compared.items() if start <= h < end},
                     {h: v for h, v in outdoor.items() if start <= h < end},
                     self.tz,
                     min_electricity=self.min_electricity,
@@ -994,8 +1023,8 @@ class HeatPumpRuntime:
             self._dirty = True
         if reset is None:
             drop = efficiency_drop(
-                self.curves["current"],
-                self.curves["previous"],
+                curve(current, now),
+                curve(previous, current),
                 threshold=self.drop_threshold,
                 was_on=self._efficiency_on,
             )

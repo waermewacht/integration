@@ -582,7 +582,7 @@ months:
 - `electricity_kwh` is without standby; for `heating_dhw`, `standby_kwh` enters the factor.
 - `degree_days` (total and per month, only with an outdoor temperature): degree days G20/15, heating heat per degree day (`kwh_per_degree_day`, heating days of at least 1 kWh only, from 10 K·d) and the days counted. Only whole days with at least 20 hourly values count.
 - `data_until`: until when hourly values were available. `estimated_until`: until when the figures come from the heat pump's own meters (see below); `null` if the period starts after the setup.
-- **Before the setup**, Wärmewacht calculates from the long-term statistics of your meters. They hold no compressor state. So the electricity of a mode in an hour without heat of that mode counts as standby. Hours with a run keep their minutes of standby as running; the factor per mode comes out slightly lower there.
+- **Before the setup**, Wärmewacht calculates from the long-term statistics of your meters. They hold no compressor state. So the electricity of a mode in an hour without heat of that mode counts as standby. Hours with a run keep their minutes of standby as running; the factor per mode comes out slightly lower there. A unit that cycles a lot has a run in nearly every hour: then nearly all standby counts as running, and the factor before the setup comes out noticeably lower (about 12 % in a simulation with a start every 20 minutes). “Efficiency dropped” therefore compares both seasons the same way from the meters when they reach across the setup.
 - **From the first full hour after the setup** the report uses the statistics of Wärmewacht's own [energy sensors](#energy).
 
 ### Performance curve

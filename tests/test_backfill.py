@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from custom_components.waermewacht.backfill import (
     by_hour,
     coarse,
+    compare_on_source,
     energy_between,
     hour_totals,
 )
-from custom_components.waermewacht.energy import Kind
+from custom_components.waermewacht.curve import curve_as_dicts, performance_curve
+from custom_components.waermewacht.energy import Kind, Totals
+from custom_components.waermewacht.health import efficiency_drop
 from custom_components.waermewacht.model import Mode, Signal, has_elec
 
 H0 = datetime(2026, 7, 15, 0, tzinfo=UTC)
@@ -141,3 +145,72 @@ def test_fine_counters_keep_the_same_hour_rule() -> None:
 )
 def test_coarse(values: dict, expected: bool) -> None:
     assert coarse(values) is expected
+
+
+# --- comparing two seasons with one method -------------------------------------
+
+SWITCH = datetime(2026, 1, 29, 0, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "previous_day", "expected"),
+    [
+        (SWITCH - timedelta(days=60), SWITCH + timedelta(days=30), False, True),
+        (SWITCH + timedelta(days=1), SWITCH + timedelta(days=30), False, False),
+        (SWITCH - timedelta(days=60), SWITCH, False, False),
+        (SWITCH - timedelta(days=60), SWITCH + timedelta(days=30), True, False),
+    ],
+)
+def test_compare_on_source(
+    start: datetime, end: datetime, previous_day: bool, expected: bool
+) -> None:
+    assert compare_on_source(start, end, SWITCH, previous_day) is expected
+
+
+def test_cycling_unit_compared_with_one_method() -> None:
+    """A unit with heat in every hour: before the switch the source counters
+    book its standby (20 Wh an hour) as running, after it the own sensors
+    tell it apart. A real drop of 20 % then hides behind the lower previous
+    season; on the source counters alone it shows."""
+    tz = ZoneInfo("Europe/Berlin")
+    start = SWITCH - timedelta(days=28)
+    source: dict[Signal, dict[datetime, float]] = {
+        Signal.HEAT_HEATING: {},
+        Signal.ELEC_HEATING: {},
+    }
+    own: dict[datetime, Totals] = {}
+    outdoor: dict[datetime, float] = {}
+    for n in range(56 * 24):
+        at = start + timedelta(hours=n)
+        day = n // 24
+        outdoor[at] = 5.0 if day % 2 else 9.0  # two classes, 14 days each
+        running = 0.15 if at < SWITCH else 0.1875  # ratio 4.0, then 3.2
+        source[Signal.HEAT_HEATING][at] = 0.6
+        source[Signal.ELEC_HEATING][at] = running + 0.02
+        exact = Totals()
+        exact.add(Kind.HEAT, Mode.HEATING, 0.6)
+        exact.add(Kind.ELEC, Mode.HEATING, running)
+        exact.add(Kind.STANDBY, Mode.HEATING, 0.02)
+        own[at] = exact
+
+    def drop(hours: dict[datetime, Totals]):
+        def curve(a: datetime, b: datetime):
+            return curve_as_dicts(
+                performance_curve(
+                    {h: t for h, t in hours.items() if a <= h < b},
+                    {h: v for h, v in outdoor.items() if a <= h < b},
+                    tz,
+                )
+            )
+
+        end = start + timedelta(days=56)
+        return efficiency_drop(curve(SWITCH, end), curve(start, SWITCH))
+
+    booked = by_hour(source)
+    mixed = {h: booked[h] if h < SWITCH else own[h] for h in booked}
+    hidden = drop(mixed)
+    assert hidden.problem is False
+    assert hidden.evidence["drop_percent"] == pytest.approx(9.3, abs=0.2)
+    shown = drop(booked)
+    assert shown.problem is True
+    assert shown.evidence["drop_percent"] == pytest.approx(18.1, abs=0.2)
