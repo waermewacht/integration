@@ -869,9 +869,9 @@ By the same author and built the same way: set up in the UI, in German and Engli
 - **Energy**
   - [Einspeisewacht](https://github.com/einspeisewacht/integration) – what negative electricity prices cost your PV feed-in (German EEG § 51) · [live demo](https://einspeisewacht.github.io/integration/?lang=en)
   - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [live demo](https://tarifwacht.github.io/integration/?lang=en)
-  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [live demo](https://speicherwacht.github.io/integration/?lang=en)
 - **Everyday**
-  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German)
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [live demo](https://eilwacht.github.io/integration/?lang=en)
   - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [live demo](https://streckenwacht.github.io/integration/?lang=en)
 
 ## License
