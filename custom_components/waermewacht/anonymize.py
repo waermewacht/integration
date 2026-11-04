@@ -15,6 +15,11 @@ import re
 # ULIDs (config entry ids since 2024), uuid4 hex (older entries), and runs of
 # at least four digits (serial numbers, gateway ids).
 _PATTERN = re.compile(r"[0-9A-HJKMNP-TV-Z]{26}|[0-9a-f]{32}|\d{4,}")
+# States that are no identifiers: a reading, a date or a timestamp.
+_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+_TIME = re.compile(
+    r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?(?:Z|[+-]\d{2}:\d{2})?"
+)
 
 
 class Masker:
@@ -40,3 +45,16 @@ class Masker:
         if text is None:
             return None
         return _PATTERN.sub(lambda m: self._replacement(m.group(0)), text)
+
+    def state(self, text: str | None, *, measured: bool) -> str | None:
+        """A state: readings and times stay, other text is masked like ids.
+
+        A number is a reading if its entity has a unit or a state class
+        (counter, temperature, starts); a bare number may be a serial.
+        Masking readings made counters of 1000 and more useless for a
+        fixture (ViCare, 2026-11)."""
+        if text is None:
+            return None
+        if (measured and _NUMBER.fullmatch(text)) or _TIME.fullmatch(text):
+            return text
+        return self(text)

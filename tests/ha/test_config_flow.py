@@ -223,6 +223,38 @@ async def test_manual_compressor_only_is_cycling(hass: HomeAssistant) -> None:
     assert result["result"].unique_id == "binary_sensor.compressor"
 
 
+async def test_own_sensor_as_source_is_refused(hass: HomeAssistant) -> None:
+    """Standby electricity mapped to the entry's own standby sensor (ViCare
+    user, 2026-11): the entry would read its own results."""
+    hass.states.async_set("binary_sensor.compressor", "off")
+    own = er.async_get(hass).async_get_or_create(
+        "sensor", DOMAIN, "01JZ_standby", suggested_object_id="wp_standby_electricity"
+    )
+    hass.states.async_set(own.entity_id, "0.5", ENERGY)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            **EMPTY_SECTIONS,
+            "operation": {
+                "compressor": "binary_sensor.compressor",
+                "elec_standby": own.entity_id,
+            },
+        },
+    )
+    assert result["errors"] == {"base": "own_entity"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**EMPTY_SECTIONS, "operation": {"compressor": "binary_sensor.compressor"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
 async def test_options(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
     entry.add_to_hass(hass)

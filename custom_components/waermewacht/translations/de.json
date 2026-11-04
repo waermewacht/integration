@@ -135,6 +135,7 @@
       }
     },
     "error": {
+      "own_entity": "Als Quelle ist ein Sensor von Wärmewacht selbst gewählt: Der Eintrag würde seine eigenen Ergebnisse lesen. Bitte die Entitäten der Wärmepumpe bzw. der Therme wählen.",
       "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen).",
       "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
       "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides.",

@@ -135,6 +135,7 @@
       }
     },
     "error": {
+      "own_entity": "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
       "no_mode": "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
       "aux_twice": "Backup heater either per mode or as total, not both.",

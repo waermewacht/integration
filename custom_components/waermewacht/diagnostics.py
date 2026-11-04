@@ -55,9 +55,17 @@ def _source_entities(
                 or attributes.get("device_class"),
                 "unit": attributes.get("unit_of_measurement"),
                 "state_class": attributes.get("state_class"),
-                # Masked like ids (a number may be a serial); the fake keeps
-                # the length, so the magnitude of a counter stays visible.
-                "state": mask(state.state) if state else None,
+                # Readings and times as they are; other text masked like ids
+                # (a bare number or a text state may carry a serial).
+                "state": mask.state(
+                    state.state,
+                    measured=bool(
+                        attributes.get("unit_of_measurement")
+                        or attributes.get("state_class")
+                    ),
+                )
+                if state
+                else None,
             }
         )
     models = []

@@ -26,6 +26,23 @@ def test_entry_ids_keep_their_kind() -> None:
     assert hexid == "00000000000000000000000000000002_x"
 
 
+def test_readings_and_times_stay_bare_numbers_are_masked() -> None:
+    """A counter of 1000 kWh and more stays readable; a timestamp keeps its
+    year; a number without unit or state class may be a serial."""
+    mask = Masker()
+    assert mask.state("2765", measured=True) == "2765"
+    assert mask.state("1006.6", measured=True) == "1006.6"
+    assert mask.state("-12.5", measured=True) == "-12.5"
+    assert mask.state("2026-11-04T09:27:34.100005+00:00", measured=False) == (
+        "2026-11-04T09:27:34.100005+00:00"
+    )
+    assert mask.state("2026-11-04", measured=False) == "2026-11-04"
+    assert mask.state("7736123456", measured=False) == "1000000001"
+    assert mask.state("SN 7736123456", measured=True) == "SN 1000000001"
+    assert mask.state("ready", measured=False) == "ready"
+    assert mask.state(None, measured=True) is None
+
+
 def test_keys_and_short_numbers_stay() -> None:
     mask = Masker()
     for text in ("boiler_hptc1", "TOP14", "eu08l_hp1_flow", "SET12", None):

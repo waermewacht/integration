@@ -310,6 +310,24 @@ async def test_gas_counter_without_statistics_is_refused(hass: HomeAssistant) ->
     assert result["errors"] == {"base": "gas_no_statistics"}
 
 
+async def test_gas_own_sensor_as_source_is_refused(hass: HomeAssistant) -> None:
+    hass.states.async_set(GAS, "12.0", VOLUME)
+    own = er.async_get(hass).async_get_or_create(
+        "sensor", DOMAIN, "01JZ_outdoor", suggested_object_id="gas_outdoor"
+    )
+    hass.states.async_set(own.entity_id, "3.0", TEMPERATURE)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Gas", "source": "gas"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"gas_heating": GAS, "outdoor_temp": own.entity_id}
+    )
+    assert result["errors"] == {"base": "own_entity"}
+
+
 async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
     kwh = {**VOLUME, "unit_of_measurement": "kWh", "device_class": "energy"}
     hass.states.async_set(GAS, "1234.5", kwh)
