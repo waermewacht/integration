@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/waermewacht/integration?color=DE5E32)](https://github.com/waermewacht/integration/releases)
 [![CI](https://github.com/waermewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/waermewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
-[![Live-Demo](https://img.shields.io/badge/Live--Demo-ausprobieren-F5A623.svg)](https://waermewacht.github.io/integration/?lang=de)
+[![Demo](https://img.shields.io/badge/Demo-erfundene_Daten-F5A623.svg)](https://waermewacht.github.io/integration/?lang=de)
 
 **Deutsch** · [English](https://github.com/waermewacht/integration/blob/main/README.en.md)
 
@@ -14,7 +14,7 @@
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
 
-**Ausprobieren ohne Installation:** Die [Live-Demo](https://waermewacht.github.io/integration/?lang=de) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie und Energiesignatur für eine kalte Januarwoche, einen milden Herbst mit taktender Anlage und eine Gasheizung vor dem Umstieg – mit erfundenen Werten, aber gerechnet vom Code der Integration.
+**Ausprobieren ohne Installation:** Die [Demo](https://waermewacht.github.io/integration/?lang=de) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie und Energiesignatur für eine kalte Januarwoche, einen milden Herbst mit taktender Anlage und eine Gasheizung vor dem Umstieg – mit erfundenen Werten, aber gerechnet vom Code der Integration.
 
 **Noch mit Gas?** Wärmewacht rechnet auch die Heizlast deines Hauses aus dem Gasverbrauch, als Grundlage für die Auslegung einer Wärmepumpe: [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg).
 
@@ -870,12 +870,12 @@ Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 Vom selben Autor und nach demselben Muster gebaut: Einrichtung über die Oberfläche, deutsch und englisch, schonend für SD-Karten.
 
 - **Energie**
-  - [Einspeisewacht](https://github.com/einspeisewacht/integration) – was negative Strompreise bei der PV-Einspeisung kosten (§ 51 EEG) · [Live-Demo](https://einspeisewacht.github.io/integration/?lang=de)
-  - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3 · [Live-Demo](https://tarifwacht.github.io/integration/?lang=de)
-  - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers · [Live-Demo](https://speicherwacht.github.io/integration/?lang=de)
+  - [Einspeisewacht](https://github.com/einspeisewacht/integration) – was negative Strompreise bei der PV-Einspeisung kosten (§ 51 EEG) · [Demo](https://einspeisewacht.github.io/integration/?lang=de)
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3 · [Demo](https://tarifwacht.github.io/integration/?lang=de)
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers · [Demo](https://speicherwacht.github.io/integration/?lang=de)
 - **Alltag**
-  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen · [Live-Demo](https://eilwacht.github.io/integration/?lang=de)
-  - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken · [Live-Demo](https://streckenwacht.github.io/integration/?lang=de)
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen · [Demo](https://eilwacht.github.io/integration/?lang=de)
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken · [Demo](https://streckenwacht.github.io/integration/?lang=de)
 
 ## Lizenz
 

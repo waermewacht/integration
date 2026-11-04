@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/waermewacht/integration?color=DE5E32)](https://github.com/waermewacht/integration/releases)
 [![CI](https://github.com/waermewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/waermewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/Live_demo-try_it-F5A623.svg)](https://waermewacht.github.io/integration/?lang=en)
+[![Demo](https://img.shields.io/badge/Demo-sample_data-F5A623.svg)](https://waermewacht.github.io/integration/?lang=en)
 
 [Deutsch](https://github.com/waermewacht/integration/blob/main/README.md) · **English**
 
@@ -14,7 +14,7 @@
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
 
-**Try it without installing:** the [live demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit and a gas boiler before switching – with made-up values, but computed by the integration's own code.
+**Try it without installing:** the [demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit and a gas boiler before switching – with made-up values, but computed by the integration's own code.
 
 **Still on gas?** Wärmewacht also computes your house's heat load from the gas consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
 
@@ -870,12 +870,12 @@ Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an Engli
 By the same author and built the same way: set up in the UI, in German and English, gentle on SD cards.
 
 - **Energy**
-  - [Einspeisewacht](https://github.com/einspeisewacht/integration) – what negative electricity prices cost your PV feed-in (German EEG § 51) · [live demo](https://einspeisewacht.github.io/integration/?lang=en)
-  - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [live demo](https://tarifwacht.github.io/integration/?lang=en)
-  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [live demo](https://speicherwacht.github.io/integration/?lang=en)
+  - [Einspeisewacht](https://github.com/einspeisewacht/integration) – what negative electricity prices cost your PV feed-in (German EEG § 51) · [demo](https://einspeisewacht.github.io/integration/?lang=en)
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [demo](https://tarifwacht.github.io/integration/?lang=en)
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [demo](https://speicherwacht.github.io/integration/?lang=en)
 - **Everyday**
-  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [live demo](https://eilwacht.github.io/integration/?lang=en)
-  - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [live demo](https://streckenwacht.github.io/integration/?lang=en)
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [demo](https://eilwacht.github.io/integration/?lang=en)
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [demo](https://streckenwacht.github.io/integration/?lang=en)
 
 ## License
 
