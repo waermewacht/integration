@@ -603,6 +603,10 @@
       "title": "Wärmewacht: Entität fehlt",
       "description": "Die Wärmepumpe {name} nutzt Entitäten, die es nicht mehr gibt: {entities}. Umbenannt oder entfernt? Unter Geräte & Dienste → Wärmewacht → Neu konfigurieren wieder auswählen."
     },
+    "own_entity": {
+      "title": "Wärmewacht: eigener Sensor als Quelle",
+      "description": "Die Wärmepumpe {name} nutzt Sensoren von Wärmewacht selbst als Quelle: {entities}. Sie würde damit ihre eigenen Ergebnisse lesen, deshalb werden sie nicht ausgewertet. Unter Geräte & Dienste → Wärmewacht → Neu konfigurieren entfernen (Feld leer lassen oder die Entität der Wärmepumpe wählen). Was damit schon gebucht wurde, bleibt."
+    },
     "energy_unit": {
       "title": "Wärmewacht: unbrauchbare Einheit",
       "description": "Diese Energiezähler von {name} melden nicht die Einheit Wh, kWh oder MWh und werden nicht gezählt: {entities}."

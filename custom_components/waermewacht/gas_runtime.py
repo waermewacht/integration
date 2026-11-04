@@ -45,6 +45,7 @@ from .const import (
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .energy import Totals
+from .entity import own_entities
 from .gas import GasAnalysis, analyse, heat_hours, split_dhw, volume_to_kwh, window
 from .heat_load import HeatLoad
 from .model import Signal
@@ -97,6 +98,15 @@ class GasRuntime:
         self.entry = entry
         self.tz = dt_util.get_default_time_zone()
         configured: dict[str, str] = dict(entry.data[CONF_ENTITIES])
+        if own := own_entities(hass, configured.values()):
+            # From before the form refused them; the outdoor temperature
+            # cannot be left out, so only a warning.
+            _LOGGER.warning(
+                "%s reads sensors of Wärmewacht itself (%s); choose the "
+                "boiler's under Reconfigure",
+                entry.title,
+                ", ".join(own),
+            )
         # Readings by hand: a meter for heating and hot water.
         self.manual_unit: str | None = MANUAL_UNITS.get(
             entry.data.get(CONF_MANUAL_UNIT) or ""

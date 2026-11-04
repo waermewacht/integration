@@ -114,6 +114,34 @@ async def test_e3_cycling_and_electricity_without_heat(
 
 
 @pytest.mark.freeze_time(START)
+async def test_own_sensor_as_source_is_ignored_with_an_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """An entry from before the form refused it (Vitocal 151-A, 2026-11): the
+    own standby sensor as standby meter. Not read, and a repair issue until
+    it is removed under Reconfigure."""
+    own = er.async_get(hass).async_get_or_create(
+        "sensor", DOMAIN, "01JZ_standby", suggested_object_id="pac_standby"
+    )
+    hass.states.async_set(own.entity_id, "0.5", ENERGY)
+    hass.states.async_set(COMPRESSOR, "off")
+    entry = await setup(hass, {"compressor": COMPRESSOR, "elec_standby": own.entity_id})
+    assert own.entity_id not in entry.runtime_data.entities.values()
+    await tick(hass, freezer, 11)
+    issues = ir.async_get(hass)
+    issue = issues.async_get_issue(DOMAIN, f"{entry.entry_id}_own_entity")
+    assert issue is not None
+    assert issue.translation_placeholders["entities"] == own.entity_id
+
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_ENTITIES: {"compressor": COMPRESSOR}}
+    )
+    await hass.async_block_till_done()
+    await tick(hass, freezer, 11)
+    assert issues.async_get_issue(DOMAIN, f"{entry.entry_id}_own_entity") is None
+
+
+@pytest.mark.freeze_time(START)
 async def test_e3_phase_without_activity_raises_an_issue(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:

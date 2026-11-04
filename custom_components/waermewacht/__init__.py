@@ -48,6 +48,7 @@ PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.S
 GAS_PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SENSOR]
 ISSUES = (
     "missing_entity",
+    "own_entity",
     "energy_unit",
     "counter_stuck",
     "source_unavailable",

@@ -110,6 +110,7 @@ from .cycling import (
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days
 from .energy import Kind, Totals
+from .entity import own_entities
 from .health import (
     AUX_KWH,
     CHARGE_DAYS,
@@ -260,8 +261,12 @@ class HeatPumpRuntime:
         (adopt.py), for books from before counter_entities was stored."""
         self.hass = hass
         self.entry = entry
+        configured = {k: v for k, v in entry.data[CONF_ENTITIES].items() if v}
+        # Sensors of Wärmewacht itself are no source (an entry from before the
+        # form refused them): left out, with a repair issue until removed.
+        self._own = own_entities(hass, configured.values())
         self.entities: dict[Signal, str] = {
-            Signal(k): v for k, v in entry.data[CONF_ENTITIES].items() if v
+            Signal(k): v for k, v in configured.items() if v not in self._own
         }
         self._moved = frozenset(moved)
         # Energy meters ({signal: entity}) the look-back before the setup was
@@ -2065,6 +2070,7 @@ class HeatPumpRuntime:
             ):
                 wrong_unit.append(entity_id)
         self._set_issue("missing_entity", missing)
+        self._set_issue("own_entity", self._own)
         self._set_issue("energy_unit", wrong_unit)
         stale = (
             self.hourly

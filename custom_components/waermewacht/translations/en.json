@@ -603,6 +603,10 @@
       "title": "Wärmewacht: entity missing",
       "description": "The heat pump {name} uses entities that no longer exist: {entities}. Renamed or removed? Choose them again under Devices & services → Wärmewacht → Reconfigure."
     },
+    "own_entity": {
+      "title": "Wärmewacht: own sensor as a source",
+      "description": "The heat pump {name} uses sensors of Wärmewacht itself as a source: {entities}. It would read its own results, so they are ignored. Remove them under Devices & services → Wärmewacht → Reconfigure (leave the field empty or choose the heat pump's entity). Figures already booked from them stay."
+    },
     "energy_unit": {
       "title": "Wärmewacht: unusable unit",
       "description": "These energy meters of {name} report no unit Wh, kWh or MWh and are not counted: {entities}."

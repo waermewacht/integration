@@ -78,6 +78,7 @@ from .const import (
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .day_counters import async_wrong_counters, wrong_kind
+from .entity import own_entities
 from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
 from .model import (
@@ -231,21 +232,9 @@ def flatten(user_input: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def _own_entity(hass: HomeAssistant, entity_ids: Iterable[str]) -> bool:
-    """Whether one of them belongs to Wärmewacht itself: an entry would read
-    its own results (seen 2026-11: standby electricity mapped to the entry's
-    own standby sensor)."""
-    registry = er.async_get(hass)
-    return any(
-        (entry := registry.async_get(entity_id)) is not None
-        and entry.platform == DOMAIN
-        for entity_id in entity_ids
-    )
-
-
 def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
     """Error key, or None if the mapping can be used."""
-    if _own_entity(hass, entities.values()):
+    if own_entities(hass, entities.values()):
         return "own_entity"
     signals = {Signal(key) for key in entities}
     complete = any(
@@ -402,7 +391,7 @@ def gas_schema(values: dict[str, Any]) -> vol.Schema:
 def validate_gas(hass: HomeAssistant, values: dict[str, Any]) -> str | None:
     """Error key, or None if the gas mapping can be used."""
     keys = (*GAS_COUNTERS, Signal.OUTDOOR_TEMP.value, Signal.FLOW_TEMP.value)
-    if _own_entity(hass, (values[k] for k in keys if values.get(k))):
+    if own_entities(hass, (values[k] for k in keys if values.get(k))):
         return "own_entity"
     if (unit := values.get(CONF_MANUAL_UNIT)) is not None:
         # Readings by hand: no counter, no flow (no hourly gas).
