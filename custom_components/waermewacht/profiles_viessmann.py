@@ -36,11 +36,13 @@ makes two devices with two prefixes of the same gateway. Rule (group()):
   the user picks by hand. A device with a burner (gas boiler of a hybrid)
   is never a donor.
 
-The cloud's day values are said to start anew at midnight UTC (forum
-reports, unconfirmed). Counting days in UTC is the safe choice: if the cloud
-uses local midnight after all, a day's first value is only booked an hour or
-two late, nothing is lost; the other way round most of a day would land in
-the wrong day.
+When the cloud's day values start anew: forum reports say midnight UTC; a
+Vitocal 151-A (E3, Switzerland, 2026-11) starts at local midnight. Days are
+counted in UTC on purpose, which suits both: with a local reset the values
+up to midnight UTC are dips, and the first value after it books everything
+since the reset (an hour late, two in summer; nothing lost or doubled).
+Counting in local time would lose that hour every day on a source that
+resets at midnight UTC (its values after local midnight are jumps).
 """
 
 from __future__ import annotations

@@ -15,7 +15,7 @@
       },
       "entities": {
         "title": "Entitäten",
-        "description": "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler. Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.",
+        "description": "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen). Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.\n\nVon einer Vorlage ausgefüllt: Ein leeres Feld heißt, die Quelle hat dafür nichts Passendes. Dann lieber leer lassen als etwas Ähnliches wählen; eine falsche Entität ergibt falsche Werte.",
         "sections": {
           "heating": {
             "name": "Heizen",

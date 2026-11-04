@@ -144,6 +144,31 @@ def test_day_counter_stale_value_dated_by_its_change() -> None:
     assert counter.update(5.0, local(27, 12)).delta == pytest.approx(4.9)
 
 
+@pytest.mark.parametrize("month", [1, 7])
+def test_utc_days_with_a_reset_at_local_midnight(month: int) -> None:
+    """ViCare Vitocal 151-A starts its day values at local midnight, the
+    template counts UTC days: the values until midnight UTC are dips, the
+    first one after it books everything since the reset (one hour late, two
+    in summer). Over two days exactly the energy used is booked."""
+    zurich = ZoneInfo("Europe/Zurich")
+    counter = Counter(max_kw=50.0, day_tz=UTC)
+    booked = 0.0
+    used = 0.0
+    value = 0.0
+    start = datetime(2026, month, 14, 12, tzinfo=zurich)
+    counter.update(value, start)
+    # 1 kWh every 30 minutes, the day value restarting at local midnight.
+    for step in range(1, 96):
+        moment = start + timedelta(minutes=30 * step)
+        if moment.astimezone(zurich).time() == datetime.min.time():
+            value = 0.0
+        else:
+            value += 1.0
+            used += 1.0
+        booked += counter.update(value, moment).delta
+    assert booked == pytest.approx(used)
+
+
 def test_implausible_jump_is_not_booked() -> None:
     counter = Counter(max_kw=20.0)
     counter.update(100.0, at(0))

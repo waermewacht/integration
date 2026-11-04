@@ -15,7 +15,7 @@
       },
       "entities": {
         "title": "Entities",
-        "description": "At least one mode needs a heat and an electricity meter. Electricity meters of the compressor without backup heater; the backup heater separately.",
+        "description": "At least one mode needs a heat and an electricity meter, or at least the compressor (then cycling and electricity only, no ratios). Electricity meters of the compressor without backup heater; the backup heater separately.\n\nFilled in by a template: an empty field means the source has nothing that fits. Leave it empty rather than choose something similar; a wrong entity gives wrong figures.",
         "sections": {
           "heating": {
             "name": "Heating",
