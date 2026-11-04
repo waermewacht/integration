@@ -58,31 +58,36 @@ def test_e3_finds_cycling_and_electricity() -> None:
         Signal.ELEC_HEATING: s + "heating_electricity_consumption_today",
         Signal.ELEC_DHW: s + "dhw_electricity_consumption_today",
         Signal.COMPRESSOR: b + "compressor",
-        Signal.ACTIVITY: s + "compressor_phase",  # dropped by the flow: "ready"
         Signal.STARTS_TOTAL: s + "compressor_starts",
         Signal.OUTDOOR_TEMP: s + "outside_temperature",
         Signal.FLOW_TEMP: s + "secondary_circuit_supply_temperature",
         Signal.RETURN_TEMP: s + "return_temperature",
         Signal.DHW_TEMP: s + "dhw_storage_temperature",
     }
-    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG}
+    # E3: the phase carries no activity (ready / not_ready).
+    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
     assert not any(s in match.entities for s in HEAT_SIGNALS.values())
 
 
 def test_e3_enabled_by_default_is_enough() -> None:
     (match,) = find(VICARE, entries(E3, with_disabled=False))
-    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG}
+    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
 
 
 def test_e3_phase_is_foreign() -> None:
-    (match,) = find(VICARE, entries(E3))
     states = {e["entity_id"]: e["state"] for e in load_fixture(E3)["entities"]}
-    dropped = drop_foreign_activity(match, states.get)
-    assert Signal.ACTIVITY not in dropped.entities
-    assert Signal.COMPRESSOR in dropped.entities
-    # A phase that happens to be "off" at setup keeps it (repair issue later).
+    phase = "sensor.e3_vitocal_compressor_phase"
+    assert VICARE.is_foreign_activity(states[phase])
+
+
+def test_e3_phase_left_out_whatever_it_shows() -> None:
+    """Vitocal 151-A (2026-11): the phase showed "off" at setup, so the flow
+    kept it, and the entry then asked to remove it. Electricity tells E3."""
+    (match,) = find(VICARE, entries(E3))
+    assert Signal.ACTIVITY not in match.entities
     kept = drop_foreign_activity(match, lambda _: "off")
-    assert Signal.ACTIVITY in kept.entities
+    assert Signal.ACTIVITY not in kept.entities
+    assert Signal.COMPRESSOR in kept.entities
 
 
 def test_vitotronic_finds_cycling_and_defrost() -> None:
@@ -193,13 +198,13 @@ SPLIT_EXPECTED = {
     Signal.ELEC_HEATING: "sensor.vitocal_200a_heating_electricity_consumption_today",
     Signal.ELEC_DHW: "sensor.vitocal_200a_dhw_electricity_consumption_today",
     Signal.COMPRESSOR: "binary_sensor.vitocal_200a_outdoor_compressor",
-    Signal.ACTIVITY: "sensor.vitocal_200a_outdoor_compressor_phase",
     Signal.STARTS_TOTAL: "sensor.vitocal_200a_outdoor_compressor_starts",
     Signal.FLOW_TEMP: "sensor.vitocal_200a_outdoor_secondary_circuit_supply_temperature",
     Signal.DHW_TEMP: "sensor.vitocal_200a_dhw_storage_temperature",
 }
 SPLIT_MISSING = {
     Signal.ELEC_COOLING,
+    Signal.ACTIVITY,  # E3 (merged electricity)
     Signal.DHW_FLAG,
     Signal.OUTDOOR_TEMP,  # system.temperature.outside: no getter in PyViCare
     Signal.RETURN_TEMP,
@@ -221,9 +226,9 @@ def test_split_system_order_does_not_matter() -> None:
 
 
 def test_split_system_null_phase_is_unknown() -> None:
-    (match,) = find(VICARE, entries(SPLIT))
     states = {e["entity_id"]: e["state"] for e in load_fixture(SPLIT)["entities"]}
-    assert VICARE.parse_activity(states[match.entities[Signal.ACTIVITY]]) is None
+    phase = "sensor.vitocal_200a_outdoor_compressor_phase"
+    assert VICARE.parse_activity(states[phase]) is None
 
 
 def test_split_system_devices_alone() -> None:

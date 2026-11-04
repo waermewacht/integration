@@ -98,7 +98,20 @@ class ViCareTemplate(Template):
             gateways.setdefault(prefix.partition("_")[0], []).append(prefix)
         for prefixes in gateways.values():
             self._merge(by_prefix, known, prefixes)
+        for found in by_prefix.values():
+            self._drop_e3_phase(found)
         return by_prefix
+
+    def _drop_e3_phase(self, found: dict[tuple[str, str], str]) -> None:
+        """Electricity means an E3 controller, whose phase carries no
+        activity: leave it out. Telling it by the phase's value at setup
+        missed a phase that happened to be "off" (Vitocal 151-A, 2026-11);
+        the entry then raised the repair issue for an entity the template
+        had chosen itself."""
+        energy = {c for s in ENERGY_SIGNALS for c in self.signals.get(s, ())}
+        if energy.intersection(found):
+            for candidate in self.signals[Signal.ACTIVITY]:
+                found.pop(candidate, None)
 
     def _merge(
         self,
@@ -148,7 +161,7 @@ VICARE = ViCareTemplate(
         # Only where heating.power.consumption.cooling is enabled (Vitocal 151-A).
         Signal.ELEC_COOLING: ((_S, "energy_consumption_cooling_today"),),
         Signal.COMPRESSOR: ((_B, "compressor_active-0"),),
-        # Mode and defrost on Vitotronic only; foreign on E3 (see above).
+        # Mode and defrost on Vitotronic only; left out on E3 (group()).
         Signal.ACTIVITY: ((_S, "compressor_phase-0"),),
         # heating.dhw.charging, Vitotronic only.
         Signal.DHW_FLAG: ((_B, "charging_active"),),
