@@ -6,7 +6,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from custom_components.waermewacht.config_flow import SECTIONS
+from custom_components.waermewacht.config_flow import FORM_SIGNALS, MORE, SECTIONS
 from custom_components.waermewacht.const import DOMAIN, VERSION
 from custom_components.waermewacht.gas_sensor import GAS_DESCRIPTIONS
 from custom_components.waermewacht.sensor import DESCRIPTIONS
@@ -116,6 +116,8 @@ def test_entity_form_translated() -> None:
     sections = load(INTEGRATION / "strings.json")["config"]["step"]["entities"][
         "sections"
     ]
-    assert set(sections) == set(SECTIONS)
+    assert set(sections) == {*SECTIONS, MORE}
     for name, signals in SECTIONS.items():
         assert set(sections[name]["data"]) == {s.value for s in signals}, name
+    # "more" may hold any field a template did not find.
+    assert set(sections[MORE]["data"]) == {s.value for s in FORM_SIGNALS}

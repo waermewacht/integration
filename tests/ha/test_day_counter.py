@@ -26,7 +26,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 
 from custom_components.waermewacht.const import DOMAIN
 
-from .conftest import ELEC_HEATING, ENERGY, HEAT_HEATING, entry_data
+from .conftest import ELEC_HEATING, ENERGY, HEAT_HEATING, entry_data, form_input
 
 HEAT_TOTAL = "sensor.boiler_nrgheat_total"
 RESTARTING = "sensor.esphome_heat"
@@ -242,10 +242,9 @@ async def test_lifetime_counter_warning_on_reconfigure(hass: HomeAssistant) -> N
     )
     entry.add_to_hass(hass)
     result = await entry.start_reconfigure_flow(hass)
-    mapping = {
-        **EMPTY_SECTIONS,
-        "heating": {"heat_heating": HEAT_TOTAL, "elec_heating": HEAT_HEATING},
-    }
+    mapping = form_input(
+        result, heating={"heat_heating": HEAT_TOTAL, "elec_heating": HEAT_HEATING}
+    )
     result = await hass.config_entries.flow.async_configure(result["flow_id"], mapping)
     assert result["errors"] == {"base": "lifetime_counter"}
     result = await hass.config_entries.flow.async_configure(result["flow_id"], mapping)

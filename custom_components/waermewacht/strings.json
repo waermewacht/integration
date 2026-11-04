@@ -15,7 +15,7 @@
       },
       "entities": {
         "title": "Entities",
-        "description": "At least one mode needs a heat and an electricity meter, or at least the compressor (then cycling and electricity only, no ratios). Electricity meters of the compressor without backup heater; the backup heater separately.\n\nFilled in by a template: an empty field means the source has nothing that fits. Leave it empty rather than choose something similar; a wrong entity gives wrong figures.",
+        "description": "At least one mode needs a heat and an electricity meter, or at least the compressor (then cycling and electricity only, no ratios). Electricity meters of the compressor without backup heater; the backup heater separately.\n\nFilled in by a template: the sections show what it found, the rest is under “More fields”. Leave a field empty rather than choose something similar; a wrong entity gives wrong figures.",
         "sections": {
           "heating": {
             "name": "Heating",
@@ -94,6 +94,51 @@
               "cooling_mode": "Set operating mode (cooling?)"
             },
             "description": "Only if the heat pump has no single activity entity. An 'on' flag wins in this order: defrost, hot water, cooling, heating. The set mode turns heating into cooling while it cools."
+          },
+          "more": {
+            "name": "More fields (not found by the template)",
+            "description": "The template found nothing for these. Fill one in only if you are sure the entity delivers exactly this; one that only sounds alike gives wrong figures.",
+            "data": {
+              "heat_heating": "Heat produced heating (meter)",
+              "elec_heating": "Compressor electricity heating",
+              "aux_heating": "Backup heater heating",
+              "heat_dhw": "Heat produced hot water (meter)",
+              "elec_dhw": "Compressor electricity hot water",
+              "aux_dhw": "Backup heater hot water",
+              "dhw_temp": "Hot water temperature (actual, tank)",
+              "heat_cooling": "Heat removed cooling (meter)",
+              "elec_cooling": "Compressor electricity cooling",
+              "compressor": "Compressor running (on/off or speed)",
+              "activity": "Activity",
+              "starts_total": "Compressor starts total",
+              "elec_total": "Compressor electricity total (only without per mode)",
+              "aux_total": "Backup heater total (only without per mode)",
+              "elec_defrost": "Electricity defrost",
+              "elec_standby": "Electricity standby",
+              "outdoor_temp": "Outdoor temperature",
+              "flow_temp": "Flow temperature",
+              "return_temp": "Return temperature",
+              "flow_rate": "Flow rate",
+              "defrost_flag": "Defrost running (on/off)",
+              "dhw_flag": "Hot water running (on/off)",
+              "cooling_flag": "Cooling running (on/off)",
+              "heating_flag": "Heating running (on/off)",
+              "cooling_mode": "Set operating mode (cooling?)"
+            },
+            "data_description": {
+              "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
+              "aux_heating": "Electricity of the backup heater for heating, if it is metered apart.",
+              "dhw_temp": "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections.",
+              "compressor": "An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as \"heating\": that belongs under Activity.",
+              "activity": "What the heat pump is doing (heating, hot water, defrost, ...), e.g. EMS-ESP \"hpactivity\". Gives defrosts and the mode of each run; without it runs are counted without a mode.",
+              "starts_total": "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
+              "elec_total": "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",
+              "aux_total": "Only if the backup heater exists as one meter for all modes; then leave the fields per mode empty.",
+              "elec_defrost": "Only if the heat pump meters this electricity apart (Lambda, iDM).",
+              "elec_standby": "Only if the heat pump meters this electricity apart (Lambda). Otherwise Wärmewacht separates standby itself.",
+              "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
+              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...)."
+            }
           }
         }
       },

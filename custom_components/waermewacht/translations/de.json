@@ -15,7 +15,7 @@
       },
       "entities": {
         "title": "Entitäten",
-        "description": "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen). Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.\n\nVon einer Vorlage ausgefüllt: Ein leeres Feld heißt, die Quelle hat dafür nichts Passendes. Dann lieber leer lassen als etwas Ähnliches wählen; eine falsche Entität ergibt falsche Werte.",
+        "description": "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen). Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.\n\nVon einer Vorlage ausgefüllt: Die Abschnitte zeigen, was sie gefunden hat, der Rest steht unter „Weitere Felder“. Ein Feld lieber leer lassen als etwas Ähnliches wählen; eine falsche Entität ergibt falsche Werte.",
         "sections": {
           "heating": {
             "name": "Heizen",
@@ -94,6 +94,51 @@
               "cooling_mode": "Eingestellte Betriebsart (Kühlen?)"
             },
             "description": "Nur, wenn die Wärmepumpe keine einzelne Betriebsart-Entität hat. Ein Merker „an“ gewinnt in dieser Reihenfolge: Abtauen, Warmwasser, Kühlen, Heizen. Die eingestellte Betriebsart macht aus Heizen Kühlen, solange sie kühlt."
+          },
+          "more": {
+            "name": "Weitere Felder (von der Vorlage nicht gefunden)",
+            "description": "Dafür hat die Vorlage nichts gefunden. Nur ausfüllen, wenn du sicher bist, dass die Entität genau das liefert; eine nur ähnlich klingende ergibt falsche Werte.",
+            "data": {
+              "heat_heating": "Erzeugte Wärme Heizen (Zähler)",
+              "elec_heating": "Strom Kompressor Heizen",
+              "aux_heating": "Strom Heizstab Heizen",
+              "heat_dhw": "Erzeugte Wärme Warmwasser (Zähler)",
+              "elec_dhw": "Strom Kompressor Warmwasser",
+              "aux_dhw": "Strom Heizstab Warmwasser",
+              "dhw_temp": "Warmwasser-Temperatur (Ist, Speicher)",
+              "heat_cooling": "Wärme Kühlen (entzogen, Zähler)",
+              "elec_cooling": "Strom Kompressor Kühlen",
+              "compressor": "Kompressor läuft (an/aus oder Drehzahl)",
+              "activity": "Betriebsart (Aktivität)",
+              "starts_total": "Kompressorstarts gesamt",
+              "elec_total": "Strom Kompressor gesamt (nur ohne Aufteilung je Modus)",
+              "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)",
+              "elec_defrost": "Strom Abtauen",
+              "elec_standby": "Strom Stillstand",
+              "outdoor_temp": "Außentemperatur",
+              "flow_temp": "Vorlauftemperatur",
+              "return_temp": "Rücklauftemperatur",
+              "flow_rate": "Durchfluss",
+              "defrost_flag": "Abtauen läuft (an/aus)",
+              "dhw_flag": "Warmwasser läuft (an/aus)",
+              "cooling_flag": "Kühlen läuft (an/aus)",
+              "heating_flag": "Heizen läuft (an/aus)",
+              "cooling_mode": "Eingestellte Betriebsart (Kühlen?)"
+            },
+            "data_description": {
+              "elec_heating": "Strom des Kompressors fürs Heizen, ohne Heizstab.",
+              "aux_heating": "Strom des Heizstabs fürs Heizen, falls er getrennt gezählt wird.",
+              "dhw_temp": "Ist-Temperatur im Warmwasserspeicher, nicht der Sollwert. Ergibt Ladungen und Desinfektionen.",
+              "compressor": "Eine An/aus-Entität oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Modulation in %). Kein Status-Text wie „heating“ – der gehört unter „Betriebsart“.",
+              "activity": "Was die Wärmepumpe gerade tut (Heizen, Warmwasser, Abtauen …), z. B. EMS-ESP „hpactivity“. Ergibt Abtauungen und die Betriebsart jedes Laufs; ohne sie werden Läufe ohne Betriebsart gezählt.",
+              "starts_total": "Zähler der Kompressorstarts der Wärmepumpe selbst. Ohne ihn zählt Wärmewacht die Starts ab der Einrichtung.",
+              "elec_total": "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+              "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+              "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
+              "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
+              "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
+              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
+            }
           }
         }
       },

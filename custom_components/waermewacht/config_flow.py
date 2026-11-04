@@ -179,8 +179,25 @@ def _selector(signal: Signal) -> selector.EntitySelector:
     return selector.EntitySelector(selector.EntitySelectorConfig(filter=filters))
 
 
-def entities_schema(values: dict[str, str]) -> vol.Schema:
-    """The entity form, one section per mode; `values` prefill it."""
+# A template's form: what it did not find, collapsed at the end.
+MORE = "more"
+
+
+def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.Schema:
+    """The entity form, one section per mode; `values` prefill it.
+
+    With `top` (a template's finds) the mode sections hold only those
+    fields, and every other field goes to the collapsed section "more": a
+    beginner filled the empty fields of a template with entities that only
+    sounded alike (frost protection as defrost, ViCare 2026-11).
+    """
+    groups = {
+        name: tuple(s for s in signals if top is None or s.value in top)
+        for name, signals in SECTIONS.items()
+    }
+    if top is not None:
+        groups[MORE] = tuple(s for s in FORM_SIGNALS if s.value not in top)
+    collapsible = ("cooling", "measurements", "activity_parts", MORE)
     return vol.Schema(
         {
             vol.Required(name): section(
@@ -194,11 +211,12 @@ def entities_schema(values: dict[str, str]) -> vol.Schema:
                     }
                 ),
                 {
-                    "collapsed": name in ("cooling", "measurements", "activity_parts")
+                    "collapsed": name in collapsible
                     and not any(values.get(s.value) for s in signals)
                 },
             )
-            for name, signals in SECTIONS.items()
+            for name, signals in groups.items()
+            if signals
         }
     )
 
@@ -207,7 +225,7 @@ def flatten(user_input: dict[str, Any]) -> dict[str, str]:
     """Section values -> {signal: entity_id} without empty fields."""
     return {
         key: value
-        for name in SECTIONS
+        for name in (*SECTIONS, MORE)
         for key, value in (user_input.get(name) or {}).items()
         if value
     }
@@ -458,6 +476,8 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._prefill: dict[str, str] = {}
         # Signals the template found for the heat pump (known once set up).
         self._found: set[str] = set()
+        # Fields shown in the mode sections (a template's); None: all.
+        self._top: set[str] | None = None
         # Entity -> other entities of the same counter (backfill only).
         self._history: dict[str, list[str]] = {}
         # Mapping that drew the warning on the kind of a counter: sent again
@@ -486,6 +506,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     s.value: e for s, e in match.entities.items() if s in FORM_SIGNALS
                 }
                 self._found = {s.value for s in match.entities}
+                self._top = set(self._prefill)
                 self._history = {
                     match.entities[s]: aliases for s, aliases in match.history.items()
                 }
@@ -545,7 +566,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self._async_finish(values)
             errors["base"] = error
         return self.async_show_form(
-            step_id="entities", data_schema=entities_schema(values), errors=errors
+            step_id="entities",
+            data_schema=entities_schema(values, self._top),
+            errors=errors,
         )
 
     async def _async_counter_kind(self, entities: dict[str, str]) -> str | None:
@@ -585,6 +608,8 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         entry = self._get_reconfigure_entry()
         self._prefill = dict(entry.data[CONF_ENTITIES])
+        if entry.data.get(CONF_TEMPLATE):
+            self._top = set(self._prefill)
         if entry.data.get(CONF_KIND) == KIND_GAS:
             return await self.async_step_gas()
         return await self.async_step_entities()

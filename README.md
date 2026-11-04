@@ -156,7 +156,7 @@ Findet HACS Wärmewacht nicht (die Aufnahme in die Standardliste ist beantragt),
 ## Einrichtung
 
 1. **Name und Quelle:** Der Name (Vorgabe „Wärmepumpe“) wird Gerätename und Präfix der Entity-IDs. Als Quelle stehen die gefundenen Wärmepumpen zur Wahl (EMS-ESP, bei mehreren mit ihrem MQTT-Präfix; Bosch HomeCom mit der Gateway-Nummer) oder *Manuell*.
-2. **Entitäten:** Mit einer Vorlage ist das Formular ausgefüllt; jedes Feld lässt sich ändern. Manuell wählst du selbst.
+2. **Entitäten:** Mit einer Vorlage ist das Formular ausgefüllt; jedes Feld lässt sich ändern. Die Abschnitte zeigen dann nur, was die Vorlage gefunden hat. Alle übrigen Felder stehen eingeklappt unter **Weitere Felder**: Dafür liefert die Quelle nichts Passendes, und eine nur ähnlich klingende Entität (etwa Frostschutz statt Abtauen) ergibt falsche Werte. Manuell wählst du selbst, alle Abschnitte wie in der Tabelle unten.
 
 <table>
   <tr>

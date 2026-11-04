@@ -8,11 +8,15 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.waermewacht.config_flow import _selector
+from custom_components.waermewacht.config_flow import (
+    SECTIONS,
+    _selector,
+    entities_schema,
+)
 from custom_components.waermewacht.const import CONF_ENTITIES, CONF_TEMPLATE, DOMAIN
 from custom_components.waermewacht.model import Signal
 
-from .conftest import ENERGY, entry_data
+from .conftest import ENERGY, entry_data, form_input
 
 EMPTY_SECTIONS = {
     "heating": {},
@@ -59,14 +63,14 @@ async def test_ems_esp_is_found_and_prefilled(hass: HomeAssistant) -> None:
     assert result["step_id"] == "entities"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            **EMPTY_SECTIONS,
-            "heating": {
+        form_input(
+            result,
+            heating={
                 "heat_heating": "sensor.boiler_nrgheat",
                 "elec_heating": "sensor.boiler_meterheat",
             },
-            "operation": {"compressor": "binary_sensor.boiler_hpcompon"},
-        },
+            operation={"compressor": "binary_sensor.boiler_hpcompon"},
+        ),
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "WP"
@@ -75,6 +79,54 @@ async def test_ems_esp_is_found_and_prefilled(hass: HomeAssistant) -> None:
         result["data"][CONF_ENTITIES]["compressor"] == "binary_sensor.boiler_hpcompon"
     )
     assert result["result"].unique_id == "ems_esp:"
+
+
+async def test_template_form_shows_its_finds_and_collapses_the_rest(
+    hass: HomeAssistant,
+) -> None:
+    """A template's form: the mode sections hold what it found, every other
+    field is in the collapsed section "more" (a beginner filled the empty
+    fields of the ViCare template with look-alikes, 2026-11). A field filled
+    there is taken over."""
+    add_ems_esp(hass)
+    hass.states.async_set("sensor.outdoor", "5.0", {"unit_of_measurement": "°C"})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "ems_esp:"}
+    )
+    shown = {str(k): k for k in result["data_schema"].schema}
+    assert set(shown) == {"heating", "dhw", "operation", "more"}
+
+    def fields(name: str) -> set[str]:
+        return {str(k) for k in result["data_schema"].schema[shown[name]].schema.schema}
+
+    assert fields("heating") == {"heat_heating", "elec_heating"}
+    assert fields("operation") == {"compressor", "activity"}
+    assert {"aux_heating", "defrost_flag", "elec_standby", "outdoor_temp"} <= fields(
+        "more"
+    )
+    assert not fields("more") & (fields("heating") | fields("operation"))
+    assert result["data_schema"].schema[shown["more"]].options["collapsed"] is True
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        form_input(
+            result,
+            heating={
+                "heat_heating": "sensor.boiler_nrgheat",
+                "elec_heating": "sensor.boiler_meterheat",
+            },
+            operation={"compressor": "binary_sensor.boiler_hpcompon"},
+            more={"outdoor_temp": "sensor.outdoor"},
+        ),
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_ENTITIES]["outdoor_temp"] == "sensor.outdoor"
+
+
+def test_manual_form_shows_every_section() -> None:
+    assert {str(k) for k in entities_schema({}).schema} == set(SECTIONS)
 
 
 def add_homecom(hass: HomeAssistant, *, enabled: bool) -> None:
@@ -132,16 +184,16 @@ async def test_homecom_is_found_and_prefilled(hass: HomeAssistant) -> None:
     assert result["step_id"] == "entities"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            **EMPTY_SECTIONS,
-            "heating": {
+        form_input(
+            result,
+            heating={
                 "heat_heating": "sensor.boschcom_k40_101234567_heat_produced_ch",
                 "elec_heating": "sensor.boschcom_k40_101234567_energy_compressor_ch",
             },
-            "operation": {
+            operation={
                 "compressor": "sensor.boschcom_k40_101234567_local_compressor_speed"
             },
-        },
+        ),
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_TEMPLATE] == "bosch_homecom"
@@ -358,10 +410,10 @@ async def test_reconfigure_found_heat_pump_keeps_the_unique_id(
     result = await entry.start_reconfigure_flow(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {
-            **EMPTY_SECTIONS,
-            "heating": {"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"},
-        },
+        form_input(
+            result,
+            heating={"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"},
+        ),
     )
     assert result["reason"] == "reconfigure_successful"
     assert entry.unique_id == "ems_esp:boiler"

@@ -156,7 +156,7 @@ If HACS does not find Wärmewacht (inclusion in the default list is pending), fi
 ## Setup
 
 1. **Name and source:** The name (default "Wärmepumpe") becomes the device name and the prefix of the entity IDs. As source you choose one of the heat pumps found (EMS-ESP, with the MQTT prefix if there are several; Bosch HomeCom with the gateway number) or *Manual*.
-2. **Entities:** With a template the form is filled in; every field can be changed. With *Manual* you pick them yourself.
+2. **Entities:** With a template the form is filled in; every field can be changed. The sections then show only what the template found. All other fields are collapsed under **More fields**: the source has nothing that fits, and an entity that only sounds alike (say frost protection instead of defrost) gives wrong figures. With *Manual* you pick them yourself, all sections as in the table below.
 
 <table>
   <tr>

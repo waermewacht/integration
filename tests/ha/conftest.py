@@ -50,6 +50,14 @@ def entry_data(**changes: Any) -> dict[str, Any]:
     }
 
 
+def form_input(result: Any, **sections: dict[str, str]) -> dict[str, Any]:
+    """Input for the entity form: every section it shows, empty unless given
+    (a template's form shows only the sections with finds and "more")."""
+    shown = {str(key): {} for key in result["data_schema"].schema}
+    assert set(sections) <= set(shown), set(sections) - set(shown)
+    return {**shown, **sections}
+
+
 if importlib.util.find_spec("pytest_homeassistant_custom_component") is None:
     collect_ignore_glob = ["test_*.py"]
 else:
