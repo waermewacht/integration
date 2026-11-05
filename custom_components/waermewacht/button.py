@@ -1,5 +1,6 @@
 """Buttons: restart the efficiency comparison after a deliberate change;
-recompute the look-back before the setup from the statistics."""
+recompute the look-back before the setup from the statistics; show a short
+report for a bug report (issue_report.py), also for gas entries."""
 
 from __future__ import annotations
 
@@ -8,9 +9,15 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import WaermewachtConfigEntry
+from . import WaermewachtConfigEntry, is_gas
 from .binary_sensor import _heating
+from .const import CONF_ENTITIES, CONF_MANUAL_UNIT, CONF_TEMPLATE, DOMAIN, VERSION
 from .entity import HeatPumpEntity
+from .gas_runtime import GasRuntime
+from .issue_report import build, show
+from .runtime import HeatPumpRuntime
+
+NAME = "Wärmewacht"
 
 
 async def async_setup_entry(
@@ -18,7 +25,10 @@ async def async_setup_entry(
     entry: WaermewachtConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    buttons: list[HeatPumpEntity] = []
+    buttons: list[HeatPumpEntity] = [IssueReport(entry)]
+    if is_gas(entry):
+        async_add_entities(buttons)
+        return
     if _heating(entry.runtime_data):
         buttons.append(RestartComparison(entry))
     if not entry.runtime_data.template.previous_day:
@@ -50,3 +60,81 @@ class RebuildHistory(HeatPumpEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await self.runtime.async_rebuild_history()
+
+
+class IssueReport(HeatPumpEntity, ButtonEntity):
+    """A short report to copy into a bug report, as a notification: what an
+    issue needs without the diagnostics download (issue_report.py)."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, entry: WaermewachtConfigEntry) -> None:
+        super().__init__(entry, "issue_report")
+        self._entry = entry
+
+    async def async_press(self) -> None:
+        entry = self._entry
+        runtime = entry.runtime_data
+        if isinstance(runtime, GasRuntime):
+            mapping = dict(entry.data.get(CONF_ENTITIES) or {})
+            extra = _gas_lines(entry, runtime)
+        else:
+            mapping = {s.value: e for s, e in runtime.entities.items()}
+            extra = _heat_pump_lines(entry, runtime)
+        report = build(
+            self.hass, DOMAIN, NAME, VERSION, entry, mapping=mapping, extra=extra
+        )
+        show(self.hass, DOMAIN, NAME, entry, report)
+
+
+def _heat_pump_lines(
+    entry: WaermewachtConfigEntry, runtime: HeatPumpRuntime
+) -> list[tuple[str, str]]:
+    template = runtime.template
+    return [
+        ("kind", "heat pump"),
+        ("template", str(entry.data.get(CONF_TEMPLATE) or "own mapping")),
+        ("beta template", str(template.experimental)),
+        ("day values", str(template.day_values)),
+        ("previous day", str(template.previous_day)),
+        ("since", runtime.since.date().isoformat() if runtime.since else "-"),
+        (
+            "counter events",
+            ", ".join(f"{k} {v}" for k, v in sorted(runtime.events.items())) or "none",
+        ),
+        ("jumps not booked", str(len(runtime.jumps))),
+    ]
+
+
+def _gas_lines(
+    entry: WaermewachtConfigEntry, runtime: GasRuntime
+) -> list[tuple[str, str]]:
+    lines = [
+        ("kind", "gas boiler"),
+        ("readings by hand", str(entry.data.get(CONF_MANUAL_UNIT) or "no")),
+        ("problem", str(runtime.problem or "none")),
+    ]
+    if runtime.manual:
+        lines.append(("readings", str(len(runtime.readings))))
+    if (analysis := runtime.analysis) is not None:
+        load = analysis.heat_load
+        lines += [
+            ("window", f"{analysis.start.isoformat()} - {analysis.end.isoformat()}"),
+            ("days with gas", str(analysis.gas_days)),
+            (
+                "hot water",
+                f"{analysis.split.method}, {analysis.split.summer_days} summer days",
+            ),
+            (
+                "signature",
+                f"{len(load.weeks)} points, spread {_num(load.spread)} K, "
+                f"{load.frost_days} frost days, "
+                + ("sufficient" if load.sufficient else ", ".join(load.reasons) or "-"),
+            ),
+            ("flow", analysis.flow_reason or ("-" if analysis.flow is None else "ok")),
+        ]
+    return lines
+
+
+def _num(value: float | None) -> str:
+    return "-" if value is None else f"{value:.1f}"

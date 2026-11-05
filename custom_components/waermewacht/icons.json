@@ -18,6 +18,9 @@
       }
     },
     "button": {
+      "issue_report": {
+        "default": "mdi:clipboard-text-outline"
+      },
       "restart_comparison": {
         "default": "mdi:restart"
       },

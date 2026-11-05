@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -248,6 +249,23 @@ async def test_repair_issue_for_missing_entity(
     issue = issues.async_get_issue(DOMAIN, issue_id)
     assert issue is not None
     assert issue.translation_placeholders["entities"] == FLOW
+
+    # The report for a bug report names the issue and the missing source.
+    button = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_issue_report"
+    )
+    with patch(
+        "custom_components.waermewacht.issue_report.persistent_notification.async_create"
+    ) as create:
+        await hass.services.async_call(
+            "button", "press", {"entity_id": button}, blocking=True
+        )
+    message = create.call_args.args[1]
+    assert "kind: heat pump" in message
+    assert "open: missing_entity" in message
+    assert "flow_temp: no registry entry, no state" in message
+    assert FLOW not in message
+
     hass.states.async_set(FLOW, "28.0", TEMPERATURE)
     await tick(hass, freezer, 1)
     assert issues.async_get_issue(DOMAIN, issue_id) is None

@@ -82,6 +82,7 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
         set(strings["button"])
         == set(icons["button"])
         == {
+            "issue_report",
             "restart_comparison",
             "rebuild_history",
         }

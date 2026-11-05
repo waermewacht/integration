@@ -840,7 +840,7 @@ Weiteres:
 - **Arbeitszahl bleibt unbekannt:** Im Zeitraum gab es keine Wärme oder weniger Strom als den Mindeststrom. Das ist im Sommer beim Heizen normal.
 - **Keine Takte:** „Kompressor läuft“ ist nicht zugeordnet.
 - **Kennlinie oder Heizlast leer:** Nach einem Neustart etwa 2 Minuten warten. Haben die Außentemperatur oder die Energie-Sensoren keine Langzeitstatistik (aus dem [Recorder](#recorder-schlank-halten) ausgeschlossen?), bleiben beide leer. Bei der Heizlast nennt das Attribut `reasons`, was fehlt.
-- **Diagnose:** *Wärmewacht → Eintrag → ⋮ → Diagnosedaten herunterladen*. **Debug-Protokoll:** *Wärmewacht → ⋮ → Debug-Protokoll aktivieren*.
+- **Bericht für Fehlermeldung:** Schaltfläche am Gerät unter *Diagnose*, siehe [Fehler melden](#fehler-melden). **Diagnose:** *Wärmewacht → Eintrag → ⋮ → Diagnosedaten herunterladen*. **Debug-Protokoll:** *Wärmewacht → ⋮ → Debug-Protokoll aktivieren*.
 
 ## Datenschutz
 
@@ -855,7 +855,16 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 ## Fehler melden
 
-Bitte als [Issue](https://github.com/waermewacht/integration/issues), am besten mit Diagnose-Datei, dem Modell der Wärmepumpe und den Versionen von Home Assistant, Wärmewacht und gegebenenfalls EMS-ESP. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
+Bitte als [Issue](https://github.com/waermewacht/integration/issues), mit dem Modell der Wärmepumpe und dem **Bericht für Fehlermeldung**: *Wärmewacht → Eintrag → Gerät → Diagnose → Bericht für Fehlermeldung* drücken. Der Bericht erscheint als Benachrichtigung (Glocke unten links) zum Kopieren. Er enthält Versionen, die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand), die Einstellungen, welche Sensoren unbekannt sind und warum, und offene Reparaturhinweise. Entity-IDs, Namen und Bereiche stehen nicht darin. Lies ihn trotzdem vor dem Teilen und lösche, was du nicht zeigen willst. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
+
+### Was steht in der Diagnose-Datei?
+
+Reicht der Bericht nicht, kommt im Issue die Bitte um die Diagnose-Datei (*⋮ → Diagnosedaten herunterladen*). Sie ist ausführlicher, und nicht alles darin kommt von Wärmewacht:
+
+- **Von Home Assistant** (jede Integration hat diesen Kopf, Wärmewacht kann ihn nicht ändern): Version und Installationsart, Betriebssystem, Zeitzone und unter `custom_components` die Liste **aller** installierten benutzerdefinierten Integrationen mit Versionen. Diese Blöcke darfst du vor dem Hochladen löschen, sie werden nicht gebraucht.
+- **Von Wärmewacht** (unter `data`): Zuordnung, Einstellungen, Zustände der Quell-Entitäten (also Zählerstände), Energiesummen, Zählerereignisse und unter `source` alle Entitäten der Quellgeräte mit Hersteller, Modell und Firmware. Seriennummern und Eintrags-IDs sind durch erfundene Werte gleicher Länge ersetzt; der Name des Eintrags, Gerätenamen und Bereiche fehlen.
+
+Willst du die Datei nicht öffentlich teilen, ist das in Ordnung: Dann reichen meist der Bericht und gezielte Angaben, nach denen im Issue gefragt wird.
 
 Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 

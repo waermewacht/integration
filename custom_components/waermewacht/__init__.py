@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR]
 # A gas boiler has figures only.
-GAS_PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SENSOR]
+GAS_PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.NUMBER, Platform.SENSOR]
 ISSUES = (
     "missing_entity",
     "own_entity",

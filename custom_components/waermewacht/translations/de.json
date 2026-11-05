@@ -330,6 +330,9 @@
       }
     },
     "button": {
+      "issue_report": {
+        "name": "Bericht für Fehlermeldung"
+      },
       "restart_comparison": {
         "name": "Effizienzvergleich neu starten"
       },

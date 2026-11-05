@@ -330,6 +330,9 @@
       }
     },
     "button": {
+      "issue_report": {
+        "name": "Report for a bug report"
+      },
       "restart_comparison": {
         "name": "Restart efficiency comparison"
       },

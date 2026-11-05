@@ -840,7 +840,7 @@ More:
 - **Factor stays unknown:** There was no heat in the period or less electricity than the minimum. That is normal for heating in summer.
 - **No cycling:** "Compressor running" is not mapped.
 - **Performance curve or heat load empty:** After a restart wait about 2 minutes. If the outdoor temperature or the energy sensors have no long-term statistics (excluded from the [recorder](#keeping-the-recorder-lean)?), both stay empty. For the heat load, the attribute `reasons` tells what is missing.
-- **Diagnostics:** *Wärmewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Wärmewacht → ⋮ → Enable debug logging*.
+- **Report for a bug report:** button on the device under *Diagnostic*, see [Reporting issues](#reporting-issues). **Diagnostics:** *Wärmewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Wärmewacht → ⋮ → Enable debug logging*.
 
 ## Privacy
 
@@ -855,7 +855,16 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 
 ## Reporting issues
 
-Please open an [issue](https://github.com/waermewacht/integration/issues), ideally with the diagnostics file, the heat pump model and the versions of Home Assistant, Wärmewacht and, if used, EMS-ESP. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+Please open an [issue](https://github.com/waermewacht/integration/issues) with the heat pump model and the **report for a bug report**: press *Wärmewacht → entry → device → Diagnostic → Report for a bug report*. The report shows up as a notification (bell at the bottom left) to copy. It holds the versions, the mapping by role (integration, unit, state class, state), the settings, which sensors are unknown and why, and open repair issues. Entity ids, names and areas are not in it. Still read it before sharing and delete what you would rather not show. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+
+### What is in the diagnostics file?
+
+If the report is not enough, the issue will ask for the diagnostics file (*⋮ → Download diagnostics*). It is more detailed, and not all of it comes from Wärmewacht:
+
+- **From Home Assistant** (every integration gets this header, Wärmewacht cannot change it): version and installation type, operating system, time zone and under `custom_components` the list of **all** installed custom integrations with versions. You may delete these blocks before uploading; they are not needed.
+- **From Wärmewacht** (under `data`): mapping, settings, states of the source entities (that is, meter readings), energy totals, counter events and under `source` every entity of the source devices with manufacturer, model and firmware. Serial numbers and entry ids are replaced by made-up values of the same length; the entry name, device names and areas are left out.
+
+If you would rather not share the file publicly, that is fine: the report and the specific details asked for in the issue are usually enough.
 
 Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an English summary at the end).
 

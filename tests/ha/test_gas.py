@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from homeassistant.components.recorder import Recorder
@@ -180,13 +181,37 @@ async def test_gas_boiler_from_statistics(hass: HomeAssistant) -> None:
     assert year.attributes["complete"] is False
     cost = state(hass, entry, "gas_cost_year")
     assert float(cost.state) == pytest.approx(gas * 0.12, rel=1e-3)
-    # A gas boiler has no heat pump entities.
+    # A gas boiler has no heat pump entities, only the report button.
     assert state(hass, entry, "gas_heat_per_degree_day") is not None
-    assert not [
-        e
+    assert [
+        e.unique_id
         for e in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
         if e.domain in ("binary_sensor", "button")
-    ]
+    ] == [f"{entry.entry_id}_issue_report"]
+
+    # The report for a bug report: roles and properties, no entity ids.
+    button = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_issue_report"
+    )
+    with patch(
+        "custom_components.waermewacht.issue_report.persistent_notification.async_create"
+    ) as create:
+        await hass.services.async_call(
+            "button", "press", {"entity_id": button}, blocking=True
+        )
+    message = create.call_args.args[1]
+    assert create.call_args.kwargs["notification_id"] == (
+        f"waermewacht_issue_report_{entry.entry_id}"
+    )
+    assert "kind: gas boiler" in message
+    assert (
+        "gas_total: no registry entry, m³, gas, total_increasing, state 1234.5"
+        in message
+    )
+    assert "hot water: summer_base, 20 summer days" in message
+    assert "gas_price: 12.0" in message
+    assert "open: none" in message
+    assert GAS not in message and OUTDOOR not in message
 
     # The action heat_load: by default the last 365 days.
     load = await hass.services.async_call(
