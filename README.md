@@ -144,14 +144,12 @@ Geht es nur um die Größe der Datenbank, genügt oft eine kurze Aufbewahrung (`
 
 ## Installation
 
-**Mit einem Klick:** [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=waermewacht&repository=integration&category=integration) → herunterladen, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waermewacht)
+**Mit einem Klick:** [![Im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=waermewacht&repository=integration&category=integration) → installieren, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waermewacht)
 
 Oder von Hand:
 
-1. In HACS nach Wärmewacht suchen und herunterladen. Home Assistant neu starten.
+1. *Einstellungen → Marketplace → Durchstöbern*, nach Wärmewacht suchen und installieren (vor Home Assistant 2026.11: in HACS suchen und herunterladen). Home Assistant neu starten.
 2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Wärmewacht*.
-
-Findet HACS Wärmewacht nicht (die Aufnahme in die Standardliste ist beantragt), vorher HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/waermewacht/integration`, Typ *Integration*.
 
 ## Einrichtung
 
@@ -662,7 +660,7 @@ entities:
 
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="AZ-Kennlinie Heizen über der Außentemperatur, Energiesignatur mit Heizlast-Gerade und Kennwerte wie Heizlast, Heizgrenze und Gradtage" width="720">
 
-Beide Diagramme brauchen die HACS-Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die Grenzen der y-Achse (`min`, `max`) passt du an deine Anlage an.
+Beide Diagramme brauchen die Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card) aus dem Marketplace (vor Home Assistant 2026.11: HACS). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die Grenzen der y-Achse (`min`, `max`) passt du an deine Anlage an.
 
 AZ-Kennlinie Heizen, vorige und laufende Saison:
 
@@ -845,7 +843,7 @@ Wärmewacht rechnet lokal, liest nur die Entitäten, die du zuordnest, und fragt
 ## Entfernen
 
 1. *Einstellungen → Geräte & Dienste → Wärmewacht* → beim Eintrag ⋮ → *Löschen*. Die gespeicherten Werte und Reparaturmeldungen dieses Eintrags werden mit gelöscht.
-2. Optional: HACS → Wärmewacht → ⋮ → *Entfernen*, dann Home Assistant neu starten.
+2. Optional: *Einstellungen → Marketplace → Installiert* → Wärmewacht → ⋮ → *Deinstallieren* (vor Home Assistant 2026.11: HACS → Wärmewacht → ⋮ → *Entfernen*), dann Home Assistant neu starten.
 
 Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten, bis du sie unter *Einstellungen → Werkzeuge → Statistik* (früher *Entwicklerwerkzeuge*) entfernst.
 

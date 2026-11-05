@@ -144,14 +144,12 @@ If it is only about the size of the database, a short retention is often enough 
 
 ## Installation
 
-**One click:** [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=waermewacht&repository=integration&category=integration) → download, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waermewacht)
+**One click:** [![Open in the Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=waermewacht&repository=integration&category=integration) → install, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waermewacht)
 
 Or by hand:
 
-1. Search for Wärmewacht in HACS and download it. Restart Home Assistant.
+1. *Settings → Marketplace → Browse*, search for Wärmewacht and install it (before Home Assistant 2026.11: search for it in HACS and download it). Restart Home Assistant.
 2. *Settings → Devices & services → Add integration → Wärmewacht*.
-
-If HACS does not find Wärmewacht (inclusion in the default list is pending), first add it under HACS → ⋮ → *Custom repositories* → `https://github.com/waermewacht/integration`, type *Integration*.
 
 ## Setup
 
@@ -662,7 +660,7 @@ entities:
 
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="Heating performance curve over the outdoor temperature, energy signature with the heat load line and figures such as heat load, heating limit and degree days" width="720">
 
-Both charts need the HACS card [apexcharts-card](https://github.com/RomRider/apexcharts-card). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. Adjust the limits of the y axis (`min`, `max`) to your installation.
+Both charts need the card [apexcharts-card](https://github.com/RomRider/apexcharts-card) from the Marketplace (before Home Assistant 2026.11: HACS). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. Adjust the limits of the y axis (`min`, `max`) to your installation.
 
 Performance curve heating, previous and current season:
 
@@ -845,7 +843,7 @@ Wärmewacht calculates locally, reads only the entities you map and makes no net
 ## Removal
 
 1. *Settings → Devices & services → Wärmewacht* → ⋮ at the entry → *Delete*. The stored figures and repair issues of this entry are deleted with it.
-2. Optional: HACS → Wärmewacht → ⋮ → *Remove*, then restart Home Assistant.
+2. Optional: *Settings → Marketplace → Installed* → Wärmewacht → ⋮ → *Uninstall* (before Home Assistant 2026.11: HACS → Wärmewacht → ⋮ → *Remove*), then restart Home Assistant.
 
 The long-term statistics of the deleted sensors stay in Home Assistant until you remove them under *Settings → Tools → Statistics* (formerly *Developer tools*).
 
