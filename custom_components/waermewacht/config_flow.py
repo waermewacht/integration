@@ -654,8 +654,16 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if manual:
             await self.async_set_unique_id(f"{KIND_GAS}:manual:{uuid4().hex}")
         else:
-            await self.async_set_unique_id(_gas_unique_id(entities))
-            self._abort_if_unique_id_configured()
+            unique_id = _gas_unique_id(entities)
+            # Its own text: a second entry is no way to add fields later.
+            if existing := self.hass.config_entries.async_entry_for_domain_unique_id(
+                DOMAIN, unique_id
+            ):
+                return self.async_abort(
+                    reason="gas_already_configured",
+                    description_placeholders={"title": existing.title},
+                )
+            await self.async_set_unique_id(unique_id)
         name = self._name if self._name != "Wärmepumpe" else "Gasheizung"
         return self.async_create_entry(
             title=name,

@@ -196,7 +196,8 @@
       "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement)."
     },
     "abort": {
-      "already_configured": "This heat pump is already set up.",
+      "already_configured": "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
+      "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure).",
       "reconfigure_successful": "Entities saved."
     }
   },

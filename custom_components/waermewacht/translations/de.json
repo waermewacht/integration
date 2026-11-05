@@ -196,7 +196,8 @@
       "gas_flow_no_statistics": "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement)."
     },
     "abort": {
-      "already_configured": "Diese Wärmepumpe ist bereits eingerichtet.",
+      "already_configured": "Diese Wärmepumpe ist bereits eingerichtet. Ihre Entitäten änderst du dort unter ⋮ → Neu konfigurieren.",
+      "gas_already_configured": "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren).",
       "reconfigure_successful": "Entitäten gespeichert."
     }
   },

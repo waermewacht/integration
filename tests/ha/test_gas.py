@@ -287,6 +287,26 @@ async def test_gas_setup_flow(hass: HomeAssistant) -> None:
     }
     await hass.async_block_till_done()
     assert entry.runtime_data.efficiency == 0.8
+
+    # The same meter again: an own text that points to the existing entry.
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Gas 2", "source": "gas"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "gas_total": GAS,
+            "outdoor_temp": OUTDOOR,
+            "calorific_value": 11.2,
+            "z_number": 0.95,
+        },
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "gas_already_configured"
+    assert result["description_placeholders"] == {"title": "Gasheizung"}
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 
