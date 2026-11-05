@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.7 – 2026-11-05
 
 - **Neue Signale auch von Quellen, die nach Wärmewacht starten.** Wärmewacht übernimmt Signale, die eine Vorlage später gelernt hat (etwa den Kompressorstatus von Bosch HomeCom ab 1.6.1), beim Start des Eintrags. Nach einem Neustart von Home Assistant war Bosch HomeCom zu diesem Zeitpunkt aber oft noch nicht so weit, weil es auf die Cloud wartet. Wärmewacht fand dann nichts, und beim nächsten Neustart passierte dasselbe: Der Kompressorstatus und damit Abtauungen und die Betriebsart je Lauf kamen nie an, auch nicht mit 0.2.6. Jetzt versucht Wärmewacht es noch einmal, wenn Home Assistant fertig gestartet ist, und zehn Minuten später für Quellen, die noch länger brauchen (z. B. über MQTT).
 - **Eigene Sensoren sind keine Quelle mehr.** Beim Einrichten und unter „Neu konfigurieren“ ließen sich Sensoren von Wärmewacht selbst als Quelle wählen, etwa der eigene „Strom Standby“ als Standby-Zähler. Der Eintrag las dann seine eigenen Ergebnisse. Das Formular lehnt solche Sensoren jetzt mit einem Hinweis ab (Rückmeldung mit Diagnose zu einer Viessmann Vitocal 151-A). Bestehende Einträge mit einem eigenen Sensor lesen ihn nicht mehr, und ein Reparaturhinweis bittet, ihn unter „Neu konfigurieren“ zu entfernen. Was schon damit gebucht wurde, bleibt. Bei der Gasheizung lässt sich die Außentemperatur nicht weglassen; dort steht nur eine Warnung im Protokoll.
