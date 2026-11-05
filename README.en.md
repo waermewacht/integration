@@ -230,7 +230,7 @@ Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUN
 
 ### Reconfigure
 
-*Wärmewacht → ⋮ → Reconfigure* shows the entity form again with the current mapping. The figures booked so far are kept. A newly added meter counts from that moment; Wärmewacht adds the time before the setup from the long-term statistics by itself when the entry reloads, as the button **Recalculate look-back** does.
+*Wärmewacht → ⋮ → Reconfigure* shows the entity form again with the current mapping. There you can **swap, add or remove any entity**, the outdoor temperature too, for example after replacing a sensor. Deleting the entry and setting it up again is never needed for this; for a heat pump it would discard the booked figures. The figures booked so far are kept. A newly added meter counts from that moment; Wärmewacht adds the time before the setup from the long-term statistics by itself when the entry reloads, as the button **Recalculate look-back** does.
 
 **Recalculate look-back** (button, configuration) computes the energy before the setup anew from the long-term statistics, with today's entities and rules: when an update improved the rules of the look-back or you imported a meter's statistics later. After a meter was added or changed, Wärmewacht does it by itself at the next start. What Wärmewacht booked since the setup stays. The time between the setup and adding a meter is still missing, and the imported statistics of the own energy sensors before the setup stay as they were. Not for sources with previous-day values (MELCloud, F1p bridge): their statistics do not suit a look-back.
 
@@ -259,6 +259,8 @@ If you still heat with gas and think about a heat pump, the key figure is the **
 | Calorific value, Z-number | only for counters in m³, from the gas bill (kWh = m³ × calorific value × Z-number) |
 
 The counters need long-term statistics (state class `total` or `total_increasing`). Wärmewacht reads only those, for the **last 365 days**: if your gas meter's statistics already reach back that far (for example from the energy dashboard), the results appear 2 minutes after the setup. After that Wärmewacht recomputes daily at 3:00. It listens to no states and stores nothing.
+
+**Changing it later:** swap, add or remove counters, outdoor temperature and flow under *Wärmewacht → ⋮ → Reconfigure*; efficiency, design outdoor temperature and prices under the gear (*Configure*). A second entry for the same counter is not needed and is refused; nor is deleting and setting it up again (with readings by hand, that would discard the entered readings). As Wärmewacht computes everything from the long-term statistics, a change applies to the whole 365 days at once. A new outdoor sensor brings its own statistics, though: heat load and heating limit then start over with its data.
 
 **Heat from gas:** gas in kWh on the gross calorific value (as on the bill) times **efficiency 0.87**, the field value of condensing boilers (Jagnow/Wolff, DBU 2004). Older boilers are lower; change it in the settings. The heat load changes in proportion.
 
@@ -296,7 +298,11 @@ If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_
 
 - Boilers mostly estimate their gas from burner time and power instead of measuring it. A real gas meter is more accurate.
 - A gas cooker on the same meter counts as hot water (summer base) or as heating; it cannot be separated.
-- A fireplace, tiled stove or solar thermal lowers the gas on cold or sunny days. The heat load then comes out too low.
+- A fireplace or tiled stove lowers the gas mainly on cold days. The line gets flatter, the heat load comes out too low.
+- **Solar thermal** (hot water or space heating support) delivers heat no gas meter sees:
+  - In summer it often covers the hot water. The summer base, and with it the hot water share, come out too low.
+  - With space heating support it lowers the gas in sunny weeks. How that moves the line depends on when the system delivers: mainly in mild weeks of spring and autumn it gets steeper (heat load rather too high, heating limit too low), on sunny frost days flatter (heat load too low). A heat meter on the solar circuit would settle it; Wärmewacht does not use one yet.
+  - The flow of a heating circuit behind the buffer tank is not lifted by hot water charges. With "Gas total" and no hot water counter it still stays unknown (`flow_needs_dhw_counter`), as Wärmewacht does not know where the sensor sits.
 
 ## Entities
 

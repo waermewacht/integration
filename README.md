@@ -230,7 +230,7 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 
 ### Neu konfigurieren
 
-*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt; die Zeit vor der Einrichtung holt Wärmewacht beim Neuladen selbst aus der Langzeitstatistik nach, wie die Schaltfläche **Rückblick neu berechnen**.
+*Wärmewacht → ⋮ → Neu konfigurieren* zeigt das Entitäten-Formular erneut, mit der bisherigen Zuordnung. Dort lässt sich **jede Entität tauschen, nachtragen oder entfernen**, auch die Außentemperatur, etwa nach einem Fühlertausch. Den Eintrag zu löschen und neu anzulegen ist dafür nie nötig; bei einer Wärmepumpe gingen dabei die gebuchten Werte verloren. Die bisher gebuchten Werte bleiben. Ein neu hinzugefügter Zähler zählt ab diesem Zeitpunkt; die Zeit vor der Einrichtung holt Wärmewacht beim Neuladen selbst aus der Langzeitstatistik nach, wie die Schaltfläche **Rückblick neu berechnen**.
 
 **Rückblick neu berechnen** (Schaltfläche, Konfiguration) rechnet die Energie vor der Einrichtung neu aus der Langzeitstatistik, mit den heutigen Entitäten und Regeln: wenn ein Update die Regeln des Rückblicks verbessert hat oder du die Statistik eines Zählers nachträglich importiert hast. Nach einem neu eingetragenen oder gewechselten Zähler tut Wärmewacht das beim nächsten Start selbst. Was Wärmewacht seit der Einrichtung gebucht hat, bleibt. Die Zeit zwischen Einrichtung und Nachtragen eines Zählers fehlt weiterhin, und die nachgetragene Statistik der eigenen Energie-Sensoren vor der Einrichtung bleibt, wie sie war. Nicht bei Quellen mit Vortageswerten (MELCloud, F1p-Brücke): Deren Statistik taugt nicht für den Rückblick.
 
@@ -259,6 +259,8 @@ Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem d
 | Brennwert, Zustandszahl | nur für Zähler in m³, aus der Gasrechnung (kWh = m³ × Brennwert × Zustandszahl) |
 
 Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_increasing`). Wärmewacht liest nur sie, und zwar die **letzten 365 Tage**: Reicht die Statistik deines Gaszählers schon so weit zurück (etwa aus dem Energie-Dashboard), gibt es die Ergebnisse 2 Minuten nach der Einrichtung. Danach rechnet Wärmewacht täglich um 3 Uhr neu. Es hört keine Zustände ab und speichert nichts.
+
+**Später ändern:** Zähler, Außentemperatur und Vorlauf tauschst, ergänzt oder entfernst du unter *Wärmewacht → ⋮ → Neu konfigurieren*, Nutzungsgrad, Normaußentemperatur und Preise unter dem Zahnrad (*Konfigurieren*). Ein zweiter Eintrag für denselben Zähler ist nicht nötig und wird abgelehnt; Löschen und neu anlegen auch nicht (bei der Ablesung von Hand gingen dabei die eingetragenen Stände verloren). Weil Wärmewacht alles aus der Langzeitstatistik rechnet, gilt eine Änderung sofort für die ganzen 365 Tage. Ein neuer Außenfühler bringt allerdings seine eigene Statistik mit: Heizlast und Heizgrenze beginnen dann mit seinen Daten von vorn.
 
 **Wärme aus Gas:** Gas in kWh auf den Brennwert (wie auf der Rechnung) mal **Nutzungsgrad 0,87**, dem Feldwert von Brennwertkesseln (Jagnow/Wolff, DBU 2004). Ältere Kessel liegen darunter; stell den Wert in den Einstellungen um. Die Heizlast ändert sich im selben Verhältnis.
 
@@ -296,7 +298,11 @@ Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet
 
 - Thermen schätzen ihren Gasverbrauch meist aus Brennerlaufzeit und Leistung, statt ihn zu messen. Ein echter Gaszähler ist genauer.
 - Ein Gasherd am selben Zähler zählt als Warmwasser (Sommersockel) oder als Heizen; trennen lässt er sich nicht.
-- Kamin, Kachelofen oder Solarthermie senken den Gasverbrauch an kalten oder sonnigen Tagen. Die Heizlast fällt dann zu niedrig aus.
+- Kamin oder Kachelofen senken den Gasverbrauch vor allem an kalten Tagen. Die Gerade wird flacher, die Heizlast fällt zu niedrig aus.
+- **Solarthermie** (Warmwasser oder Heizungsunterstützung) liefert Wärme, die kein Gaszähler sieht:
+  - Im Sommer deckt sie oft das Warmwasser. Der Sommersockel und damit der Warmwasseranteil fallen zu niedrig aus.
+  - Mit Heizungsunterstützung senkt sie das Gas in sonnigen Wochen. Wie sich die Gerade dadurch verschiebt, hängt davon ab, wann die Anlage liefert: vor allem in milden Wochen der Übergangszeit wird sie steiler (Heizlast eher zu hoch, Heizgrenze zu niedrig), an sonnigen Frosttagen flacher (Heizlast zu niedrig). Ein Wärmemengenzähler am Solarkreis würde das klären; Wärmewacht wertet ihn noch nicht aus.
+  - Der Vorlauf eines Heizkreises hinter dem Pufferspeicher wird von Warmwasserladungen nicht gehoben. Mit „Gas gesamt“ ohne Warmwasser-Zähler bleibt er trotzdem unbekannt (`flow_needs_dhw_counter`), weil Wärmewacht die Lage des Fühlers nicht kennt.
 
 ## Entitäten
 
