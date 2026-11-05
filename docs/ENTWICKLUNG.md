@@ -229,7 +229,7 @@ Folge für den Kern: Erkennung als Daten verallgemeinern (Muster mit `prefix`/`k
 - **Recorder-Statistik:** `statistics_during_period(..., types={"change"} | {"sum"})`; `state` ist der rohe Zählerstand, nicht reset-korrigiert. Für reines Lesen keine Änderung durch `mean_type`/`unit_class` (2026.11).
 - **Aktion mit Antwort:** `SupportsResponse.ONLY`, Registrierung in `async_setup`.
 - Flow-Methoden `async_show_form/menu/progress` und `async_external_step` mit `step_id` aufrufen (Pflicht ab 2027.5, [Blog](https://contributors.home-assistant.io/blog/2026/10/23/flow-results-require-step-id/)).
-- **Manifest `categories`:** für Custom-Integrationen optional; hassfest warnt nur bei unbekannter Kategorie, die HACS-Action warnt ohne Schlüssel und scheitert bei unbekannter ([Blog 2026-10-20](https://contributors.home-assistant.io/blog/2026/10/20/integration-categories/), Liste unter [Integration categories](https://contributors.home-assistant.io/core/integrations/categories/)). Einspeisewacht sah am 2026-10-26 noch eine Ablehnung – beim ersten CI-Lauf prüfen.
+- **Manifest `categories`:** für Custom-Integrationen optional; hassfest warnt nur bei unbekannter Kategorie, die HACS-Action warnt ohne Schlüssel und scheitert bei unbekannter ([Blog 2026-10-20](https://contributors.home-assistant.io/blog/2026/10/20/integration-categories/), Liste unter [Integration categories](https://contributors.home-assistant.io/core/integrations/categories/)). hassfest `latest` lehnte den Schlüssel bis HA 2026.11.0 ab (Einspeisewacht 2026-10-26). Seit 2026-11-05 eingetragen: `climate.heat_pumps_air_conditioning` und `energy.meters_monitoring`.
 - Brand-Bilder in `custom_components/waermewacht/brand/` (ab HA 2026.3).
 - `pytest-homeassistant-custom-component` 0.13.375 = HA 2026.10.4, **Python ≥ 3.14**.
 - Quality Scale: Ziel Bronze (Selbstprüfung; hassfest prüft `quality_scale.yaml` bei Custom-Integrationen nicht). Bronze hat 2026 20 Regeln (neu: `docs-conditions`, `docs-triggers`).
@@ -333,5 +333,5 @@ Darüber hinaus: `config-entry-unloading`, `diagnostics`, `entity-translations`,
 - ~~Abtauwärme~~ **geklärt 2026-10-27:** Die Bosch-Wärmezähler ziehen sie ab – `nrgheat` sank bei einer Abtauung um 0,31 kWh in Schritten von 0,04–0,06 kWh (ebenso `nrgtotal` und die HomeCom-Lebenszeit-Summe). `counter.py` hält deshalb den Höchststand (netto).
 - ~~`heatingstarts`~~ **geklärt:** Kompressorstarts – HomeCom-Starts `ch` + `dhw` + `cooling` = `total` = `totalcompstarts`.
 - ~~Heizstab je Modus mit 0,01 kWh (0x4AF Offsets 28/36)~~ **erledigt:** ab EMS-ESP 3.9 ausgewertet (#3325), in der Vorlage nach 0.2.5.
-- Passende `categories` für das Manifest.
+- ~~Passende `categories` für das Manifest~~ **erledigt 2026-11-05** (siehe „Manifest `categories`“ oben).
 - DPMAregister für den Namen prüfen (Inhaber).
