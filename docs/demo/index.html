@@ -116,6 +116,7 @@
         font-size: 20px; color: var(--tile-color, var(--state-icon-color));
         background: color-mix(in srgb, var(--tile-color, var(--state-icon-color)) 18%, transparent); }
       .tile.problem { --tile-color: var(--red-color); }
+      .tile.ok { --tile-color: var(--green-color); }
       .tile.inactive { --tile-color: var(--disabled-color); }
       .tile > div:last-child { min-width: 0; }
       .tile b { display: block; font-size: 14px; font-weight: 500; line-height: 1.3; overflow-wrap: break-word; }
@@ -176,6 +177,7 @@
         white-space: nowrap; }
       table.figures th:first-child, table.figures td:first-child { text-align: left; }
       table.figures th { font-weight: 500; color: var(--secondary-text-color); }
+      @media (max-width: 500px) { table.figures th, table.figures td { padding: 6px 8px; } }
 
       .below { margin-top: 28px; display: grid; gap: 16px;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
@@ -282,7 +284,7 @@
           banner: (time) =>
             `Alle Messwerte, Preise und Anlagen sind erfunden – nur zur Vorführung. Demo-Zeit: ${time} Uhr.`,
           unknown: "Unbekannt",
-          on: "Problem", off: "OK",
+          on: "auffällig", off: "in Ordnung",
           yes: "ja", no: "nein",
           since: (t) => `seit ${t}`,
           ago: (h) => (h < 1 ? "vor wenigen Minuten" : `vor ${h} ${h === 1 ? "Stunde" : "Stunden"}`),
@@ -307,6 +309,8 @@
           heatKw: "Wärme kW", elecKw: "Strom kW",
           ratios: "Arbeitszahlen",
           today: "Heute", month: "Monat", season: "Saison", total: "Gesamt",
+          ratioRows: { heating: "Heizen", dhw: "Warmwasser", combined: "beides" },
+          ratiosNote: "Eine Markdown-Karte ohne Zusatzkarten, Vorlage im README unter „Dashboard-Beispiele“.",
           costs: "Kosten",
           monthsTitle: "Wärme und Strom je Monat",
           monthsNote: "Statistik-Karte der Energie-Sensoren (Änderung je Monat, 365 Tage); eine Arbeitszahl je Monat liefert die Aktion „Bericht“.",
@@ -316,8 +320,15 @@
           defrosts7d: "Abtauungen 7 Tage",
           standby7d: "Stillstand, Ø 7 Tage",
           health: "Gesundheit",
+          healthDetail: {
+            efficiency_drop: (a) => `AZ Heizen ${num(a.ratio_current, 2)} statt ${num(a.ratio_previous_same_weather, 2)} (${signed(-a.drop_percent)} %)`,
+            aux_mild_weather: (a) => `${num(a.aux_kwh_7d, 1)} kWh in 7 Tagen`,
+            aux_dhw_charges: (a) => `${num(a.aux_share, 1)} % · ${num(a.aux_kwh, 2)} kWh in 30 Tagen`,
+            dhw_efficiency_drop: (a) => `AZ ${num(a.ratio, 2)} statt ${num(a.previous_ratio, 2)} (${signed(a.change_percent)} %)`,
+            cycling_problem: (a) => `max. ${a.max_starts_per_hour} Starts/h · ${a.short_runs_24h} Kurzläufe`,
+          },
           healthNote:
-            "Wärmewacht prüft einmal täglich gegen 3 Uhr. Reichen die Daten nicht, ist ein Sensor unbekannt und nennt im Attribut <code>reason</code> den Grund – nie „OK“ mangels Daten.",
+            "Wärmewacht prüft einmal täglich gegen 3 Uhr. Reichen die Daten nicht, ist ein Sensor unbekannt und nennt im Attribut <code>reason</code> den Grund – nie „in Ordnung“ mangels Daten.",
           cyclingAttrs: (a) =>
             `Letzte 24 Stunden: höchstens ${a.max_starts_per_hour} Starts in einer Stunde (Grenze: mehr als ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} Läufe unter 6 Minuten (Grenze: 3), ${a.short_runs_24h} unter 10 Minuten.`,
@@ -420,7 +431,7 @@
           auto: "Auto", light: "Light", dark: "Dark",
           banner: (time) => `All readings, prices and installations are made up – for demonstration only. Demo time: ${time}.`,
           unknown: "Unknown",
-          on: "Problem", off: "OK",
+          on: "conspicuous", off: "fine",
           yes: "yes", no: "no",
           since: (t) => `since ${t}`,
           ago: (h) => (h < 1 ? "a few minutes ago" : `${h} ${h === 1 ? "hour" : "hours"} ago`),
@@ -445,6 +456,8 @@
           heatKw: "Heat kW", elecKw: "Electricity kW",
           ratios: "Coefficients of performance",
           today: "Today", month: "Month", season: "Season", total: "Total",
+          ratioRows: { heating: "Heating", dhw: "Hot water", combined: "both" },
+          ratiosNote: "One markdown card without extra cards, template in the README under “Dashboard examples”.",
           costs: "Costs",
           monthsTitle: "Heat and electricity per month",
           monthsNote: "Statistics card of the energy sensors (change per month, 365 days); the action “Report” gives a COP per month.",
@@ -454,8 +467,15 @@
           defrosts7d: "Defrosts 7 days",
           standby7d: "Standby, mean 7 days",
           health: "Health",
+          healthDetail: {
+            efficiency_drop: (a) => `COP heating ${num(a.ratio_current, 2)} instead of ${num(a.ratio_previous_same_weather, 2)} (${signed(-a.drop_percent)} %)`,
+            aux_mild_weather: (a) => `${num(a.aux_kwh_7d, 1)} kWh in 7 days`,
+            aux_dhw_charges: (a) => `${num(a.aux_share, 1)} % · ${num(a.aux_kwh, 2)} kWh in 30 days`,
+            dhw_efficiency_drop: (a) => `COP ${num(a.ratio, 2)} instead of ${num(a.previous_ratio, 2)} (${signed(a.change_percent)} %)`,
+            cycling_problem: (a) => `max. ${a.max_starts_per_hour} starts/h · ${a.short_runs_24h} short runs`,
+          },
           healthNote:
-            "Wärmewacht checks once a day around 3 am. Without enough data a sensor is unknown and names the reason in its attribute <code>reason</code> – never “OK” for lack of data.",
+            "Wärmewacht checks once a day around 3 am. Without enough data a sensor is unknown and names the reason in its attribute <code>reason</code> – never “fine” for lack of data.",
           cyclingAttrs: (a) =>
             `Last 24 hours: at most ${a.max_starts_per_hour} ${a.max_starts_per_hour === 1 ? "start" : "starts"} within one hour (limit: more than ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} runs under 6 minutes (limit: 3), ${a.short_runs_24h} under 10 minutes.`,
@@ -564,6 +584,7 @@
         `<svg class="mdi" viewBox="0 0 24 24" aria-hidden="true"><path d="${PATHS[name]}" /></svg>`;
       const num = (value, digits) =>
         new Intl.NumberFormat(state.lang, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+      const signed = (value) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${num(Math.abs(value), 1)}`;
       const dateFmt = (iso, opts) => new Date(iso).toLocaleDateString(state.lang, { timeZone: "Europe/Berlin", ...opts });
       const timeFmt = (iso) =>
         new Date(iso).toLocaleTimeString(state.lang, { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
@@ -611,10 +632,12 @@
       function problemTile(key) {
         const entity = data.binary[key];
         const tx = t();
-        const label = entity.s === "on" ? tx.on : entity.s === "off" ? tx.off : tx.unknown;
-        const reason = entity.a.reason ? ` · ${reasonText(entity.a.reason)}` : "";
-        const cls = entity.s === "on" ? "c12 problem" : entity.s === "off" ? "c12" : "c12 inactive";
-        return tile(ICONS[key], name(key), `${escapeHtml(label)}${reason}`, cls);
+        const a = entity.a;
+        const known = !a.reason && (entity.s === "on" || entity.s === "off");
+        const label = a.reason ? reasonText(a.reason) : escapeHtml(entity.s === "on" ? tx.on : entity.s === "off" ? tx.off : tx.unknown);
+        const detail = known && tx.healthDetail[key] ? ` · ${escapeHtml(tx.healthDetail[key](a))}` : "";
+        const cls = !known ? "c12 inactive" : entity.s === "on" ? "c12 problem" : "c12 ok";
+        return tile(ICONS[key], name(key), `${label}${detail}`, cls);
       }
 
       // ---- Charts --------------------------------------------------------------------
@@ -815,14 +838,19 @@
       function ratiosSection() {
         const tx = t();
         const periods = [["today", tx.today], ["month", tx.month], ["season", tx.season], ["total", tx.total]];
-        const blocks = periods
-          .map(
-            ([p, label]) =>
-              `<div class="subheading">${label}</div><div class="grid">${["heating", "dhw", "combined"]
-                .map((s) => entityTile(`ratio_${s}_${p}`, "c4"))
-                .join("")}</div>`,
-          )
+        const cell = (key) => {
+          const entity = sensor(key);
+          return entity && entity.s !== null && entity.s !== undefined ? escapeHtml(value(key)) : "–";
+        };
+        const head = `<tr><th></th>${periods.map(([, label]) => `<th>${label}</th>`).join("")}</tr>`;
+        const lines = ["heating", "dhw", "combined"]
+          .map((s) => {
+            const label = s === "combined" ? `<b>${tx.ratioRows[s]}</b>` : tx.ratioRows[s];
+            return `<tr><td>${label}</td>${periods.map(([p]) => `<td>${cell(`ratio_${s}_${p}`)}</td>`).join("")}</tr>`;
+          })
           .join("");
+        const blocks = `<div class="card"><div class="table-wrap"><table class="figures">${head}${lines}</table></div>
+            <div class="footnote">${tx.ratiosNote}</div></div>`;
         const keys = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
         const labels = Object.fromEntries(keys.map((k) => [k, name(k)]));
         const groups = data.months.map((m) => ({

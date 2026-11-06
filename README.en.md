@@ -635,6 +635,71 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 The entity IDs depend on the name of the entry (here the default "Wärmepumpe") and on the language of Home Assistant at setup; the examples use the IDs of an English setup. Add a card with *Edit dashboard → Add card → Manual*.
 
+### Performance factors as a table
+
+All performance factors in one markdown card, without any extra card from HACS. Rows without sensors (cooling, for instance) drop out by themselves; a missing value shows "–". The column "Today" fills only once you enable the "COP … today" sensors, which are disabled by default. With another name of the entry, change the first line only.
+
+```yaml
+type: markdown
+content: |-
+  {%- set p = 'sensor.warmepumpe_' -%}
+  | | Today | Month | Season | Total |
+  |:--|--:|--:|--:|--:|
+  {% for name, key in [('Heating', 'cop_heating'), ('Hot water', 'cop_hot_water'),
+  ('**both**', 'cop_heating_dhw'), ('Cooling', 'eer_cooling')]
+  if states[p ~ key ~ '_total'] is not none -%}
+  | {{ name }} |{% for period in ['today', 'month', 'season', 'total'] %} {%
+  set x = states(p ~ key ~ '_' ~ period) %}{{ '%.2f' | format(x | float)
+  if x | is_number else '–' }} |{% endfor %}
+  {% endfor %}
+```
+
+### Health at a glance
+
+All checks of the [health check](#health-check) in one card: green, red or grey with the reason in words and the figure that matters. Checks your heat pump does not have drop out.
+
+```yaml
+type: markdown
+content: |-
+  {%- set p = 'binary_sensor.warmepumpe_' -%}
+  {%- set reasons = {'not_analysed_yet': 'not analysed yet',
+  'no_previous_season': 'no previous season yet', 'no_previous_year': 'no previous year yet',
+  'too_few_classes': 'too little comparable weather', 'too_few_days': 'too few days',
+  'too_little_electricity': 'too little electricity', 'too_few_charges': 'too few charges',
+  'comparison_restarted': 'comparison restarted', 'no_aux_counter': 'no backup heater meter',
+  'no_outdoor_temp': 'no outdoor temperature'} -%}
+  {%- macro num(x, n=1, f='%.*f') %}{{ f | format(n, x | float(0)) }}{% endmacro -%}
+  {%- for name, key in [('Efficiency', 'efficiency_dropped'),
+  ('Backup heater on mild days', 'backup_heater_on_mild_days'),
+  ('Backup heater for hot water', 'backup_heater_in_hot_water_charges'),
+  ('Hot water against last year', 'hot_water_efficiency_below_last_year'),
+  ('Cycling', 'conspicuous_cycling')] if states[p ~ key] is not none -%}
+  {%- set e = p ~ key -%}{%- set a = states[e].attributes -%}{%- set r = a.get('reason') -%}
+  {%- if r -%}{%- set text = '⚪ ' ~ reasons.get(r, r) -%}
+  {%- elif is_state(e, 'on') -%}{%- set text = '🔴 **conspicuous**' -%}
+  {%- elif is_state(e, 'off') -%}{%- set text = '🟢 fine' -%}
+  {%- else -%}{%- set text = '⚪ unknown' -%}{%- endif -%}
+  {%- set detail = '' -%}
+  {%- if not r -%}
+  {%- if key == 'efficiency_dropped' -%}{%- set detail = 'COP heating ' ~
+  num(a.get('ratio_current'), 2) ~ ' instead of ' ~ num(a.get('ratio_previous_same_weather'), 2)
+  ~ ' (' ~ num(-(a.get('drop_percent') | float(0)), 1, '%+.*f') ~ ' %)' -%}
+  {%- elif key == 'backup_heater_on_mild_days' -%}{%- set detail =
+  num(a.get('aux_kwh_7d')) ~ ' kWh in 7 days' -%}
+  {%- elif key == 'backup_heater_in_hot_water_charges' -%}{%- set detail =
+  num(a.get('aux_share')) ~ ' % · ' ~ num(a.get('aux_kwh'), 2) ~ ' kWh in 30 days' -%}
+  {%- elif key == 'hot_water_efficiency_below_last_year' -%}{%- set detail = 'COP ' ~
+  num(a.get('ratio'), 2) ~ ' instead of ' ~ num(a.get('previous_ratio'), 2) ~ ' (' ~
+  num(a.get('change_percent'), 1, '%+.*f') ~ ' %)' -%}
+  {%- elif key == 'conspicuous_cycling' -%}{%- set detail = 'max. ' ~
+  a.get('max_starts_per_hour') ~ ' starts/h · ' ~ a.get('short_runs_24h') ~ ' short runs' -%}
+  {%- endif -%}{%- endif %}
+  **{{ name }}:** {{ text }}{{ ' · ' ~ detail if detail }}
+  {% endfor %}
+```
+
+Backup heater during a defrost does not count in either backup heater check. To show it, add `a.get('aux_kwh_defrost')` or `a.get('aux_kwh_defrost_7d')`.
+
 ### Statistics card: heat and electricity per month
 
 The [report](#report) gives a performance factor per month. A statistics card shows heat and electricity per month, standby as a bar of its own. The months before the setup come from the long-term statistics of the meters:

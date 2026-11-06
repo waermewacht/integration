@@ -635,6 +635,71 @@ AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeo
 
 Die Entity-IDs hängen vom Namen des Eintrags ab (hier die Vorgabe „Wärmepumpe“). Eine Karte fügst du so hinzu: *Dashboard bearbeiten → Karte hinzufügen → Manuell*.
 
+### Arbeitszahlen als Tabelle
+
+Alle Arbeitszahlen in einer Markdown-Karte, ganz ohne Zusatzkarten aus HACS. Zeilen ohne Sensoren (etwa Kühlen) fallen von selbst weg; fehlt ein Wert, steht „–“. Die Spalte „Heute“ füllt sich erst, wenn du die standardmäßig deaktivierten Sensoren „AZ … heute“ aktivierst. Bei einem anderen Namen des Eintrags nur die erste Zeile anpassen.
+
+```yaml
+type: markdown
+content: |-
+  {%- set p = 'sensor.warmepumpe_' -%}
+  | | Heute | Monat | Saison | Gesamt |
+  |:--|--:|--:|--:|--:|
+  {% for name, key in [('Heizen', 'az_heizen'), ('Warmwasser', 'az_warmwasser'),
+  ('**beides**', 'az_heizen_ww'), ('Kühlen', 'eer_kuhlen')]
+  if states[p ~ key ~ '_gesamt'] is not none -%}
+  | {{ name }} |{% for period in ['heute', 'monat', 'saison', 'gesamt'] %} {%
+  set x = states(p ~ key ~ '_' ~ period) %}{{ ('%.2f' | format(x | float)) |
+  replace('.', ',') if x | is_number else '–' }} |{% endfor %}
+  {% endfor %}
+```
+
+### Gesundheit auf einen Blick
+
+Alle Prüfungen des [Gesundheits-Checks](#gesundheits-check) in einer Karte: grün, rot oder grau mit dem Grund in Worten und der entscheidenden Zahl. Prüfungen, die es bei deiner Anlage nicht gibt, fallen weg.
+
+```yaml
+type: markdown
+content: |-
+  {%- set p = 'binary_sensor.warmepumpe_' -%}
+  {%- set gruende = {'not_analysed_yet': 'noch nicht ausgewertet',
+  'no_previous_season': 'noch keine Vorsaison', 'no_previous_year': 'noch kein Vorjahr',
+  'too_few_classes': 'zu wenig vergleichbares Wetter', 'too_few_days': 'zu wenige Tage',
+  'too_little_electricity': 'zu wenig Strom', 'too_few_charges': 'zu wenige Ladungen',
+  'comparison_restarted': 'Vergleich neu gestartet', 'no_aux_counter': 'kein Heizstab-Zähler',
+  'no_outdoor_temp': 'keine Außentemperatur'} -%}
+  {%- macro zahl(x, n=1, f='%.*f') %}{{ (f | format(n, x | float(0))) | replace('.', ',') }}{% endmacro -%}
+  {%- for name, key in [('Effizienz', 'effizienz_gesunken'),
+  ('Heizstab bei milder Witterung', 'heizstab_bei_milder_witterung'),
+  ('Heizstab bei Warmwasser', 'heizstab_bei_warmwasserladungen'),
+  ('Warmwasser gegen Vorjahr', 'warmwasser_effizienz_unter_vorjahr'),
+  ('Takten', 'auffalliges_takten')] if states[p ~ key] is not none -%}
+  {%- set e = p ~ key -%}{%- set a = states[e].attributes -%}{%- set r = a.get('reason') -%}
+  {%- if r -%}{%- set text = '⚪ ' ~ gruende.get(r, r) -%}
+  {%- elif is_state(e, 'on') -%}{%- set text = '🔴 **auffällig**' -%}
+  {%- elif is_state(e, 'off') -%}{%- set text = '🟢 in Ordnung' -%}
+  {%- else -%}{%- set text = '⚪ unbekannt' -%}{%- endif -%}
+  {%- set detail = '' -%}
+  {%- if not r -%}
+  {%- if key == 'effizienz_gesunken' -%}{%- set detail = 'AZ Heizen ' ~
+  zahl(a.get('ratio_current'), 2) ~ ' statt ' ~ zahl(a.get('ratio_previous_same_weather'), 2)
+  ~ ' (' ~ zahl(-(a.get('drop_percent') | float(0)), 1, '%+.*f') ~ ' %)' -%}
+  {%- elif key == 'heizstab_bei_milder_witterung' -%}{%- set detail =
+  zahl(a.get('aux_kwh_7d')) ~ ' kWh in 7 Tagen' -%}
+  {%- elif key == 'heizstab_bei_warmwasserladungen' -%}{%- set detail =
+  zahl(a.get('aux_share')) ~ ' % · ' ~ zahl(a.get('aux_kwh'), 2) ~ ' kWh in 30 Tagen' -%}
+  {%- elif key == 'warmwasser_effizienz_unter_vorjahr' -%}{%- set detail = 'AZ ' ~
+  zahl(a.get('ratio'), 2) ~ ' statt ' ~ zahl(a.get('previous_ratio'), 2) ~ ' (' ~
+  zahl(a.get('change_percent'), 1, '%+.*f') ~ ' %)' -%}
+  {%- elif key == 'auffalliges_takten' -%}{%- set detail = 'max. ' ~
+  a.get('max_starts_per_hour') ~ ' Starts/h · ' ~ a.get('short_runs_24h') ~ ' Kurzläufe' -%}
+  {%- endif -%}{%- endif %}
+  **{{ name }}:** {{ text }}{{ ' · ' ~ detail if detail }}
+  {% endfor %}
+```
+
+Heizstab während einer Abtauung zählt in beiden Heizstab-Prüfungen nicht mit. Wer ihn sehen will, hängt `a.get('aux_kwh_defrost')` bzw. `a.get('aux_kwh_defrost_7d')` an.
+
 ### Statistik-Karte: Wärme und Strom je Monat
 
 Eine Arbeitszahl je Monat liefert der [Bericht](#bericht). Wärme und Strom je Monat zeigt eine Statistik-Karte, der Stillstand als eigener Balken. Die Monate vor der Einrichtung stammen aus der Langzeitstatistik der Zähler:
