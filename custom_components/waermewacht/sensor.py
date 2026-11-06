@@ -354,10 +354,18 @@ def _aux_share_attributes(
     return attributes
 
 
+def _boiler_incomplete(runtime: HeatPumpRuntime, period: Period) -> bool:
+    """The boiler was mapped after the period began (Reconfigure): its share
+    would compare the heat pump's whole period with part of the boiler's."""
+    since = runtime.boiler_from
+    start = runtime.marks.starts.get(period)
+    return since is not None and (start is None or start < since)
+
+
 def _share_value(period: Period) -> Value:
     def value(runtime: HeatPumpRuntime) -> float | None:
         totals = runtime.energy(period)
-        if totals is None:
+        if totals is None or _boiler_incomplete(runtime, period):
             return None
         share = heat_pump_share(
             totals, runtime.boiler_efficiency, runtime.fuel_modes, Mode.HEATING
@@ -378,8 +386,11 @@ def _share_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, A
         efficiency, fuel = runtime.boiler_efficiency, runtime.fuel_modes
         both = heat_pump_share(totals, efficiency, fuel, Mode.HEATING, Mode.DHW)
         start = runtime.marks.starts.get(period)
+        incomplete = _boiler_incomplete(runtime, period)
         return {
-            "with_dhw": None if both is None else round(both, 1),
+            "with_dhw": None if both is None or incomplete else round(both, 1),
+            # Boiler mapped later: a share again for periods from then on.
+            "boiler_from": runtime.boiler_from.isoformat() if incomplete else None,
             "heat_pump_heat_kwh": round(totals.heat(Mode.HEATING), 1),
             "boiler_heat_kwh": round(
                 totals.boiler_heat(efficiency, fuel, Mode.HEATING), 1

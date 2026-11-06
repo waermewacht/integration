@@ -125,6 +125,24 @@ def building_hours[K](
     return {h: building_totals(t, efficiency, fuel_modes) for h, t in hours.items()}
 
 
+def replace_boiler[K](
+    hours: Mapping[K, Totals], boiler: Mapping[K, Totals]
+) -> dict[K, Totals]:
+    """`hours` with their boiler heat and fuel taken from `boiler` (hourly
+    changes of the boiler's own counters): complete also for the time before
+    a boiler was mapped, which the own sensors cannot know."""
+    result: dict[K, Totals] = {}
+    for hour in hours.keys() | boiler.keys():
+        totals = hours[hour].copy() if hour in hours else Totals()
+        for kind in (Kind.BOILER, Kind.FUEL):
+            for mode in Mode:
+                totals.values.pop(Totals.key(kind, mode), None)
+        if hour in boiler:
+            totals = totals + boiler[hour]
+        result[hour] = totals
+    return result
+
+
 def heat_pump_share(
     totals: Totals, efficiency: float, fuel_modes: Collection[Mode], *modes: Mode
 ) -> float | None:

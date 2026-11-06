@@ -147,3 +147,47 @@ async def test_boiler_efficiency_only_for_heat_from_fuel(hass: HomeAssistant) ->
     with_heat.add_to_hass(hass)
     result = await hass.config_entries.options.async_init(with_heat.entry_id)
     assert "boiler_efficiency" not in {str(k) for k in result["data_schema"].schema}
+
+
+@pytest.mark.freeze_time(START)
+async def test_boiler_unavailable_and_dhw_fuel_leave_runs_and_charges(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass, fuel_heating=FUEL, fuel_dhw=FUEL_DHW)
+    runtime = entry.runtime_data
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Warmwasser")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(FUEL, "unavailable")  # the boiler's gateway drops
+    hass.states.async_set(FUEL_DHW, "1901.0", ENERGY)  # fuel during the charge
+    await tick(hass, freezer, 30)
+    hass.states.async_set(HEAT_DHW, "502.0", ENERGY)
+    hass.states.async_set(ELEC_DHW, "200.8", ENERGY)
+    await tick(hass, freezer, 30)
+    run = runtime.tracker.open_run
+    assert run is not None and not run.uncertain
+    charge = runtime.charge_tracker.open
+    assert charge is not None
+    assert charge.aux_kwh == 0.0 and charge.aux_defrost_kwh == 0.0
+    assert charge.electricity_kwh == pytest.approx(0.8)
+    assert runtime.totals.get(Kind.FUEL, Mode.DHW) == pytest.approx(1.0)
+
+
+@pytest.mark.freeze_time(START)
+async def test_boiler_mapped_later_gives_no_share_for_the_running_periods(
+    hass: HomeAssistant,
+) -> None:
+    """Reconfigure adds the boiler: the share of the month and the season
+    begun before would compare unlike periods, so it is unknown."""
+    entry = await setup(hass)
+    assert entry.runtime_data.boiler_from is None
+    hass.config_entries.async_update_entry(
+        entry,
+        data=entry_data(entities={**ENTITIES, "boiler_heat_heating": BOILER_HEAT}),
+    )
+    await hass.async_block_till_done()
+    runtime = entry.runtime_data
+    assert runtime.boiler_from is not None
+    share = hass.states.get(entity_id(hass, entry, "heat_pump_share_month"))
+    assert share.state == "unknown"
+    assert share.attributes["boiler_from"] == runtime.boiler_from.isoformat()

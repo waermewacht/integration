@@ -423,7 +423,7 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 
 ### Hybridanlage
 
-Mit einem Kessel neben der Wärmepumpe (Abschnitt „Kessel (Hybridanlage)“ in der Einrichtung) zählt Wärmewacht den Kessel **nie als Wärmepumpe**: Arbeitszahlen, AZ-Kennlinie, Stillstand, Heizstab und Kosten bleiben die der Wärmepumpe. Die Wärme des Kessels geht dort ein, wo es um das Gebäude geht: Heizlast und Energiesignatur, Wärme je Gradtag und Vorlauf bei 0 °C rechnen mit der Wärme von Wärmepumpe **und** Kessel.
+Mit einem Kessel neben der Wärmepumpe (Abschnitt „Kessel (Hybridanlage)“ in der Einrichtung) zählt Wärmewacht den Kessel **nie als Wärmepumpe**: Arbeitszahlen, AZ-Kennlinie, Stillstand, Heizstab und Kosten bleiben die der Wärmepumpe. Die Wärme des Kessels geht dort ein, wo es um das Gebäude geht: Heizlast und Energiesignatur sowie Wärme je Gradtag rechnen mit der Wärme von Wärmepumpe **und** Kessel, aus der Statistik der Kesselzähler (auch für die Zeit vor der Zuordnung). Vorlauf bei 0 °C bleibt bei den Stunden der Wärmepumpe: Ob ihr Vorlauffühler im Kesselbetrieb den Heizkreis sieht, ist offen.
 
 | Entität | Was | Braucht |
 | --- | --- | --- |
@@ -434,6 +434,7 @@ Mit einem Kessel neben der Wärmepumpe (Abschnitt „Kessel (Hybridanlage)“ in
 - **Kesselwärme:** am besten die Wärme, die der Kessel selbst meldet. Nur ohne sie rechnet Wärmewacht Brennstoff × Kesselnutzungsgrad (Einstellungen, Vorgabe 0,87 auf Hs). Den Wert `boiler_nrgheat` von EMS-ESP nimmt Wärmewacht nie: Den rechnet EMS-ESP selbst aus Modulation × eingestellter Nennleistung.
 - **Genauigkeit:** Auch der Kessel misst nicht, er schätzt aus seinen Betriebsdaten (laut Buderus mit möglicherweise erheblicher Abweichung). Der Anteil der Wärmepumpe ist deshalb eine gute Größenordnung, kein Messwert, und kein Nachweis nach dem Gebäudemodernisierungsgesetz.
 - **Zeitraum:** Kessel- und Wärmepumpenzähler beginnen oft zu verschiedenen Zeitpunkten; Wärmewacht rechnet den Anteil deshalb nur aus Monat und Saison, nie aus Lebenszeitständen. Der Kessel meldet etwa alle 10 Minuten in 0,1 kWh.
+- **Kessel später zugeordnet** (Neu konfigurieren): Für Monat und Saison, die vorher begannen, bleibt der Anteil *unbekannt* (Attribut `boiler_from`), ab dem nächsten Monat bzw. der nächsten Saison gibt es ihn wieder.
 - **Leistung je Heizlast** ist bei einer Hybridanlage meist unter 1: so geplant, kein Fehler.
 
 ### Kosten und Gasvergleich

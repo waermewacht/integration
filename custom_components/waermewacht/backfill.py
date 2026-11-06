@@ -116,6 +116,20 @@ def hour_totals(
     return totals
 
 
+def boiler_hours(hourly: HourlyChanges) -> dict[datetime, Totals]:
+    """Boiler heat and fuel of every hour (hybrid system), nothing else."""
+    result: dict[datetime, Totals] = {}
+    for kind, signals in (
+        (Kind.BOILER, BOILER_HEAT_SIGNALS),
+        (Kind.FUEL, FUEL_SIGNALS),
+    ):
+        for mode, signal in signals.items():
+            for hour, kwh in hourly.get(signal, {}).items():
+                if kwh:
+                    result.setdefault(hour, Totals()).add(kind, mode, kwh)
+    return result
+
+
 def by_hour(
     hourly: HourlyChanges,
     heat_modes: Collection[Mode] = tuple(Mode),

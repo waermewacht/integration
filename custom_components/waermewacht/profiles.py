@@ -404,7 +404,8 @@ EMS_ESP = Template(
 #   "gasmeter" (0x2E, on Hs per the Buderus supplement 6721828053, also for
 #   oil). Never "nrgheat"/"nrg" of the boiler: EMS-ESP calculates those from
 #   modulation x nominal power. Outdoor and storage temperature are the
-#   boiler's too.
+#   boiler's too. A boiler device that is itself a heat pump has none of
+#   these (boiler.cpp registers them only `if (!isHeatPump())`).
 EMS_ESP_HEATPUMP_ACTIVITY = {
     **{word: a for word, a in EMS_ESP_ACTIVITY.items() if not word.isdigit()},
     "0": Activity.OFF,

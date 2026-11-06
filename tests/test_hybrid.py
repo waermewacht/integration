@@ -146,3 +146,28 @@ def test_energy_signature_counts_the_boilers_heat() -> None:
     both = heat_load(building_hours(hours, 0.87, set()), outdoor, tz, design_temp=-12.0)
     assert both.slope_kw_per_k == pytest.approx(-0.1, rel=0.05)
     assert alone.slope_kw_per_k is None or alone.slope_kw_per_k > -0.09
+
+
+def test_boiler_hours_and_replace_take_the_source() -> None:
+    """The building's figures take the boiler from its own counters' hourly
+    statistics: also for hours before it was mapped."""
+    from custom_components.waermewacht.backfill import boiler_hours
+    from custom_components.waermewacht.energy import replace_boiler
+
+    h1 = datetime(2026, 1, 15, 6, tzinfo=UTC)
+    h2 = h1 + timedelta(hours=1)
+    source = boiler_hours(
+        {
+            Signal.BOILER_HEAT_HEATING: {h1: 4.0, h2: 0.0},
+            Signal.FUEL_DHW: {h2: 1.0},
+            Signal.HEAT_HEATING: {h1: 9.0},  # not the boiler's: left out
+        }
+    )
+    assert set(source) == {h1, h2}
+    assert source[h1].heat(H) == 0.0
+    own = {h1: totals(heat_heating=3.0, boiler_heating=1.0)}  # own: too little
+    merged = replace_boiler(own, source)
+    assert merged[h1].get(Kind.BOILER, H) == 4.0
+    assert merged[h1].heat(H) == 3.0  # the heat pump's own heat stays
+    assert merged[h2].get(Kind.FUEL, W) == 1.0
+    assert own[h1].get(Kind.BOILER, H) == 1.0  # input untouched

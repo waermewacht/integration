@@ -423,7 +423,7 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 
 ### Hybrid system
 
-With a boiler next to the heat pump (section "Boiler (hybrid system)" in the setup) Wärmewacht **never counts the boiler as heat pump**: performance factors, performance curve, standby, backup heater and costs stay the heat pump's. The boiler's heat enters where the building is concerned: heat load and energy signature, heat per degree day and flow at 0 °C count the heat of heat pump **and** boiler.
+With a boiler next to the heat pump (section "Boiler (hybrid system)" in the setup) Wärmewacht **never counts the boiler as heat pump**: performance factors, performance curve, standby, backup heater and costs stay the heat pump's. The boiler's heat enters where the building is concerned: heat load and energy signature and heat per degree day count the heat of heat pump **and** boiler, from the statistics of the boiler's counters (also for the time before it was mapped). Flow at 0 °C stays with the heat pump's hours: whether its flow sensor sees the heating circuit while the boiler runs is open.
 
 | Entity | What | Needs |
 | --- | --- | --- |
@@ -434,6 +434,7 @@ With a boiler next to the heat pump (section "Boiler (hybrid system)" in the set
 - **Boiler heat:** best the heat the boiler reports itself. Only without it Wärmewacht takes fuel × boiler efficiency (settings, default 0.87 on the gross calorific value). It never takes EMS-ESP's `boiler_nrgheat`: EMS-ESP calculates that one from modulation × the nominal power set.
 - **Accuracy:** the boiler does not measure either, it estimates from its operating data (per Buderus possibly with a considerable deviation). The heat pump's share is a good order of magnitude, not a measurement, and no proof under the building law.
 - **Period:** boiler and heat pump counters often start at different times; the share is therefore only computed for month and season, never from lifetime readings. The boiler reports about every 10 minutes in 0.1 kWh.
+- **Boiler mapped later** (Reconfigure): for the month and season begun before, the share stays *unknown* (attribute `boiler_from`); from the next month or season on it is back.
 - **Power per heat load** is mostly below 1 in a hybrid system: planned that way, not a fault.
 
 ### Costs and gas comparison

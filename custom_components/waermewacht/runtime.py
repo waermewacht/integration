@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Coroutine, Iterable
+from collections.abc import Callable, Collection, Coroutine, Iterable
 from datetime import date, datetime, time, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -52,6 +52,7 @@ from .activity import combine
 from .averages import Mean
 from .backfill import (
     HourlyChanges,
+    boiler_hours,
     bookable_hours,
     by_hour,
     compare_on_source,
@@ -111,7 +112,7 @@ from .cycling import (
 )
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days
-from .energy import Kind, Totals, building_hours
+from .energy import Kind, Totals, building_hours, replace_boiler
 from .entity import own_entities
 from .health import (
     AUX_KWH,
@@ -320,6 +321,9 @@ class HeatPumpRuntime:
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
         self.aux_mild_from: float = options.get(CONF_AUX_MILD_FROM, MILD_FROM)
         self.drop_threshold: float = options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT)
+        # A boiler mapped after the setup is booked from this time on (None:
+        # from the setup, with the look-back before it).
+        self.boiler_from: datetime | None = None
         # Hybrid system: boiler heat = fuel x efficiency (on Hs, as the gas
         # mode; costs.BOILER_EFFICIENCY_HS, docs/ENTWICKLUNG.md "Hybrid").
         self.boiler_efficiency: float = options.get(
@@ -416,8 +420,8 @@ class HeatPumpRuntime:
             else {
                 s: Counter(
                     max_kw=MAX_POWER_KW,
-                    day_tz=day_tz,
-                    previous_day=self.template.previous_day,
+                    day_tz=None if s in BOILER_KIND else day_tz,
+                    previous_day=self.template.previous_day and s not in BOILER_KIND,
                 )
                 for s in self._energy
             }
@@ -877,11 +881,25 @@ class HeatPumpRuntime:
         """Modes whose boiler heat is fuel x efficiency (no heat counter)."""
         return fuel_modes(self.entities)
 
-    def building_hours(self, hours: dict[datetime, Totals]) -> dict[datetime, Totals]:
+    async def async_building_hours(
+        self, hours: dict[datetime, Totals], start: datetime, end: datetime
+    ) -> dict[datetime, Totals]:
         """`hours` with the boiler's heat in the heat of each mode; unchanged
-        without a boiler. For the building's figures only, never ratios."""
+        without a boiler. For the building's figures only, never ratios.
+
+        The boiler comes from the statistics of its own counters, not from
+        the own sensors: those start only when the boiler was mapped, the
+        building's figures need it for the whole window.
+        """
         if not self.has_boiler:
             return hours
+        signals = [s for s in self._energy if s in BOILER_KIND]
+        try:
+            source = await self._async_source_hours(start, end, signals)
+        except Exception:  # keep the own sensors' boiler, never block
+            _LOGGER.exception("Reading the boiler's statistics failed")
+        else:
+            hours = replace_boiler(hours, boiler_hours(source))
         return building_hours(hours, self.boiler_efficiency, self.fuel_modes)
 
     async def async_analysis_data(
@@ -910,10 +928,10 @@ class HeatPumpRuntime:
         try:
             current, previous = self.seasons(now)
             hours, outdoor = await self.async_analysis_data(previous, now)
-            # Heat load, signature, degree days and flow curve describe the
-            # building: with the boiler's heat in a hybrid system. Ratios and
-            # the performance curve stay the heat pump's own.
-            building = self.building_hours(hours)
+            # Heat load, signature and degree days describe the building:
+            # with the boiler's heat in a hybrid system. Ratios, the
+            # performance curve and the flow curve stay the heat pump's.
+            building = await self.async_building_hours(hours, previous, now)
 
             def window(
                 start: datetime, end: datetime, source: dict | None = None
@@ -968,8 +986,8 @@ class HeatPumpRuntime:
                         self.tz,
                     )
                     for name, span, start, end in (
-                        ("current", this_building, current, now),
-                        ("previous", last_building, previous, current),
+                        ("current", this_season, current, now),
+                        ("previous", last_season, previous, current),
                     )
                 }
             compared = await self._async_comparison_hours(previous, now, hours)
@@ -1521,7 +1539,10 @@ class HeatPumpRuntime:
             self._booking = False
 
     async def _async_source_hours(
-        self, start: datetime, end: datetime
+        self,
+        start: datetime,
+        end: datetime,
+        signals: Collection[Signal] | None = None,
     ) -> HourlyChanges:
         """Hourly changes of the source counters, by signal.
 
@@ -1533,6 +1554,7 @@ class HeatPumpRuntime:
         ids = {
             s: [self._statistic_ids[s], *history.get(self.entities[s], [])]
             for s in self._energy
+            if signals is None or s in signals
         }
         rows = await self.async_hourly(
             {i for group in ids.values() for i in group}, start, end
@@ -1592,13 +1614,17 @@ class HeatPumpRuntime:
             first = start.astimezone(self.tz).date()
             last = (end - timedelta(microseconds=1)).astimezone(self.tz).date()
             days, _, _ = daily_degree_days(
-                self.building_hours(hours),
+                await self.async_building_hours(hours, start, end),
                 await self.async_outdoor_hours(start, end),
                 self.tz,
                 first,
                 last + timedelta(days=1),
             )
             degrees = {"degree_days": degree_day_figures(days)}
+            if self.has_boiler:
+                # Heat per degree day counts the boiler's heat too; the heat
+                # of the months above is the heat pump's alone.
+                degrees["degree_days"]["includes_boiler_heat"] = True
             per_month = degree_days_by_month(days)
             for row in months:
                 row["degree_days"] = per_month.get(row["month"])
@@ -1974,7 +2000,7 @@ class HeatPumpRuntime:
         """Book energy that arrived at `at`; a previous-day value goes into
         the previous day (and its month and season)."""
         self.totals.add(kind, mode, kwh)
-        if self.template.previous_day:
+        if self.template.previous_day and kind not in (Kind.BOILER, Kind.FUEL):
             day = at.astimezone(self.tz).date() - timedelta(days=1)
             noon = datetime.combine(day, time(12), tzinfo=self.tz)
             booked = Totals()
@@ -2312,6 +2338,8 @@ class HeatPumpRuntime:
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
             "counter_entities": {s.value: self.entities.get(s) for s in self.counters},
             "look_back_entities": self._look_back_entities,
+            # Only with a boiler: removed and mapped again, it starts anew.
+            **({"boiler_from": _iso(self.boiler_from)} if self.has_boiler else {}),
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
             "marks": self.marks.as_dict(),
@@ -2402,6 +2430,15 @@ class HeatPumpRuntime:
         backfill = data.get("backfill_until")
         self.backfill_until = datetime.fromisoformat(backfill) if backfill else None
         self._look_back_entities = data.get("look_back_entities")
+        # Boiler mapped after the setup: from then on its energy is booked.
+        if not self.has_boiler:
+            self.boiler_from = None
+        elif "boiler_from" in data:
+            stored = data.get("boiler_from")
+            self.boiler_from = dt_util.parse_datetime(stored) if stored else None
+        else:
+            self.boiler_from = dt_util.utcnow()
+            self._dirty = True
         # Verdicts made for other entities (reconfigured since) are dropped.
         before = data.get("verdict_entities")
         if before is not None:
