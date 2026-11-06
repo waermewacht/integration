@@ -14,7 +14,7 @@
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
 
-**Try it without installing:** the [demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit and a gas boiler before switching – with made-up values, but computed by the integration's own code.
+**Try it without installing:** the [demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit, a hybrid system with a gas boiler and a gas boiler before switching – with the real [cards](#cards), made-up values, but computed by the integration's own code.
 
 **Still on gas or oil?** Wärmewacht also computes your house's heat load from the gas or oil consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
 

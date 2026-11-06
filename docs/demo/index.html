@@ -165,6 +165,16 @@
       .legend i.dot { border-radius: 50%; }
       .legend i.dash { height: 0; width: 14px; border-top: 2px dashed currentColor; border-radius: 0; vertical-align: 3px; }
       .footnote { padding: 0 16px 10px; font-size: 12px; color: var(--secondary-text-color); }
+      .cardtype { font-size: 12px; color: var(--page-muted); padding: 0 4px; }
+      .cardtype code { font-size: 12px; }
+      dialog.info { max-width: min(560px, 92vw); border: 1px solid var(--divider-color); border-radius: 12px;
+        background: var(--card-background-color); color: var(--primary-text-color); padding: 16px 20px; }
+      dialog.info::backdrop { background: rgba(0, 0, 0, 0.35); }
+      dialog.info h2 { margin: 0 0 4px; font-size: 16px; }
+      dialog.info .state { font-size: 22px; margin: 4px 0 12px; }
+      dialog.info pre { max-height: 50vh; overflow: auto; font-size: 12px; background: var(--secondary-background-color);
+        padding: 8px 10px; border-radius: 8px; }
+      dialog.info button { float: right; }
 
       /* Action response */
       details { padding: 0 16px 12px; }
@@ -189,6 +199,7 @@
     </style>
   </head>
   <body>
+    <dialog class="info" id="info"></dialog>
     <div class="page">
       <header>
         <img src="../../custom_components/waermewacht/brand/icon.png" alt="" />
@@ -230,8 +241,10 @@
 
     <script type="module">
       import { PATHS } from "./icons.js";
+      // The integration's own cards, unchanged (frontend/waermewacht-card.js).
+      import "../../custom_components/waermewacht/frontend/waermewacht-card.js";
 
-      const SCENARIOS = ["januar", "herbst", "gas"];
+      const SCENARIOS = ["januar", "herbst", "hybrid", "gas"];
       const SERIES = {
         heat_heating: "var(--s-heat-heating)",
         heat_dhw: "var(--s-heat-dhw)",
@@ -271,12 +284,14 @@
           scenario: "Szenario",
           lang: "Sprache",
           theme: "Darstellung",
-          scenarios: { januar: "Kalte Januarwoche", herbst: "Milder Herbst, zu groß", gas: "Gasheizung vor dem Umstieg" },
+          scenarios: { januar: "Kalte Januarwoche", herbst: "Milder Herbst, zu groß", hybrid: "Hybridanlage", gas: "Gasheizung vor dem Umstieg" },
           stories: {
             januar:
               "Eine gut eingestellte Luft/Wasser-Wärmepumpe mit Pufferspeicher nach einer Woche Frost: wenige, lange Läufe, Abtauungen, Warmwasser zweimal am Tag.",
             herbst:
               "Dieselbe Wärmepumpe in einem kleinen, gut gedämmten Haus ohne Puffer. Bei mildem Wetter braucht das Haus weit weniger als ihre kleinste Leistung – sie taktet.",
+            hybrid:
+              "Dieselbe Wärmepumpe in einem älteren, größeren Haus, neben einem Gaskessel: Unter −3 °C heizt der Kessel, darüber die Wärmepumpe. Wärmewacht zeigt den Anteil der Wärmepumpe; Heizlast und Gradtage zählen die Wärme beider, die Arbeitszahlen nur die der Wärmepumpe.",
             gas:
               "Ein Haus heizt noch mit Gas. Wärmewacht rechnet aus dem Gaszähler, wie groß eine Wärmepumpe sein müsste (Eintragstyp „Gasheizung“).",
           },
@@ -285,6 +300,7 @@
             `Alle Messwerte, Preise und Anlagen sind erfunden – nur zur Vorführung. Demo-Zeit: ${time} Uhr.`,
           unknown: "Unbekannt",
           on: "auffällig", off: "in Ordnung",
+          problemState: "Problem", fineState: "OK", close: "Schließen", compressor: "Kompressor", outdoor: "Außentemperatur",
           yes: "ja", no: "nein",
           since: (t) => `seit ${t}`,
           ago: (h) => (h < 1 ? "vor wenigen Minuten" : `vor ${h} ${h === 1 ? "Stunde" : "Stunden"}`),
@@ -401,6 +417,9 @@
             `Haus: Wärmeverlust ${d.house.ua_w_per_k} W/K in der Simulation, Heizgrenze ${num(d.house.heating_limit, 0)} °C, ${d.house.buffer ? "mit Pufferspeicher" : "ohne Puffer, wenig Wasser im Kreis"}.`,
             `Einstellungen: Normaußentemperatur ${num(d.options.design_temp, 0)} °C, Strom ${num(d.options.electricity_price_ct, 0)} ct/kWh, Gas ${num(d.options.gas_price_ct, 0)} ct/kWh und ${num(d.options.gas_base_price, 0)} € im Jahr (Preise erfunden).`,
             `Wärmewacht eingerichtet am ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; die Statistik der Zähler reicht bis 1. Juli 2024 zurück (Rückblick).`,
+            ...(d.options.bivalent !== null && d.options.bivalent !== undefined
+              ? [`Hybridanlage: Gaskessel mit eigenem Wärmezähler, unter ${num(d.options.bivalent, 0)} °C heizt nur er (bivalent alternativ), Warmwasser immer die Wärmepumpe.`]
+              : []),
           ],
           plantGas: (d) => [
             `Beispiel-Gasheizung (Brennwertkessel), ein Gaszähler für Heizen und Warmwasser, Nutzungsgrad ${num(d.options.boiler_efficiency, 2)}.`,
@@ -409,8 +428,8 @@
           ],
           build: "Selbst bauen",
           cards:
-            "Die Abschnitte bestehen aus normalen Dashboard-Karten (Kachel, Sensor, Anzeige, Statistik-Diagramm, Markdown); " +
-            "AZ-Kennlinie und Energiesignatur zeichnet die Karte apexcharts-card (aus dem Marketplace, vor Home Assistant 2026.11 aus HACS). Die README hat die Konfiguration.",
+            "Die Karten hier sind die echten Karten von Wärmewacht (seit 0.3.1, ohne Zusatzkarten aus HACS): Dashboard bearbeiten → Karte hinzufügen → „Wärmewacht“. " +
+            "Unter jeder Karte steht ihr Typ; ein Klick auf einen Wert zeigt die Attribute. Die README zeigt außerdem Beispiele mit Bordmitteln und apexcharts-card.",
           readme: "Dashboard-Beispiele in der README →",
         },
         en: {
@@ -419,12 +438,14 @@
           scenario: "Scenario",
           lang: "Language",
           theme: "Theme",
-          scenarios: { januar: "Cold January week", herbst: "Mild autumn, oversized", gas: "Gas boiler before the switch" },
+          scenarios: { januar: "Cold January week", herbst: "Mild autumn, oversized", hybrid: "Hybrid system", gas: "Gas boiler before the switch" },
           stories: {
             januar:
               "A well set up air/water heat pump with a buffer tank after a week of frost: few, long runs, defrosts, hot water twice a day.",
             herbst:
               "The same heat pump in a small, well insulated house without a buffer. In mild weather the house needs far less than its smallest power – it cycles.",
+            hybrid:
+              "The same heat pump in an older, larger house next to a gas boiler: below −3 °C the boiler heats, above it the heat pump. Wärmewacht shows the heat pump's share; heat load and degree days count the heat of both, the performance factors only the heat pump's.",
             gas:
               "A house still heats with gas. From the gas meter Wärmewacht works out how large a heat pump would have to be (entry type “gas boiler”).",
           },
@@ -432,6 +453,7 @@
           banner: (time) => `All readings, prices and installations are made up – for demonstration only. Demo time: ${time}.`,
           unknown: "Unknown",
           on: "conspicuous", off: "fine",
+          problemState: "Problem", fineState: "OK", close: "Close", compressor: "Compressor", outdoor: "Outdoor temperature",
           yes: "yes", no: "no",
           since: (t) => `since ${t}`,
           ago: (h) => (h < 1 ? "a few minutes ago" : `${h} ${h === 1 ? "hour" : "hours"} ago`),
@@ -548,6 +570,9 @@
             `House: heat loss ${d.house.ua_w_per_k} W/K in the simulation, heating limit ${num(d.house.heating_limit, 0)} °C, ${d.house.buffer ? "with a buffer tank" : "no buffer, little water in the circuit"}.`,
             `Options: design temperature ${num(d.options.design_temp, 0)} °C, electricity ${num(d.options.electricity_price_ct, 0)} ct/kWh, gas ${num(d.options.gas_price_ct, 0)} ct/kWh and ${num(d.options.gas_base_price, 0)} € a year (prices made up).`,
             `Wärmewacht set up on ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; the meters' statistics go back to 1 July 2024 (look-back).`,
+            ...(d.options.bivalent !== null && d.options.bivalent !== undefined
+              ? [`Hybrid system: gas boiler with its own heat meter; below ${num(d.options.bivalent, 0)} °C only the boiler heats (bivalent alternative), hot water always the heat pump.`]
+              : []),
           ],
           plantGas: (d) => [
             `Example gas boiler (condensing), one gas meter for heating and hot water, efficiency ${num(d.options.boiler_efficiency, 2)}.`,
@@ -556,8 +581,8 @@
           ],
           build: "Build it yourself",
           cards:
-            "The sections are made of standard dashboard cards (tile, sensor, gauge, statistics graph, markdown); " +
-            "the card apexcharts-card (from the Marketplace, before Home Assistant 2026.11 from HACS) draws the performance curve and the energy signature. The README has the configuration.",
+            "The cards here are Wärmewacht's real cards (since 0.3.1, no extra cards from HACS): Edit dashboard → Add card → “Wärmewacht”. " +
+            "Below each card is its type; a click on a value shows the attributes. The README also has examples with built-in cards and apexcharts-card.",
           readme: "Dashboard examples in the README →",
         },
       };
@@ -808,7 +833,187 @@
         return typeof value === "string" && /[:#]/.test(value) ? `"${value}"` : String(value);
       }
 
+
+      // ---- The real cards on a made-up Home Assistant -----------------------------------
+      // What the cards use of Home Assistant: the entity registry, states,
+      // formatEntityState, two websocket commands, ha-card and ha-icon.
+
+      if (!customElements.get("ha-card")) {
+        customElements.define("ha-card", class extends HTMLElement {
+          constructor() {
+            super();
+            this.attachShadow({ mode: "open" }).innerHTML =
+              "<style>:host{display:block;background:var(--card-background-color);border:1px solid var(--divider-color);" +
+              "border-radius:12px;color:var(--primary-text-color)}</style><slot></slot>";
+          }
+        });
+      }
+      if (!customElements.get("ha-icon")) {
+        customElements.define("ha-icon", class extends HTMLElement {
+          connectedCallback() {
+            const path = PATHS[(this.getAttribute("icon") || "").replace("mdi:", "")] ?? "";
+            this.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" style="display:block;width:var(--mdc-icon-size,24px);` +
+              `height:var(--mdc-icon-size,24px);fill:currentColor"><path d="${path}"/></svg>`;
+          }
+        });
+      }
+
+      const DEVICE_ID = "demo_heat_pump";
+      let demo; // the made-up hass of the scenario shown
+      let precision = {}; // entity id -> decimals (suggested_display_precision)
+      let sourceIds = {}; // role -> source entity (activity, temperatures)
+
+      function demoHass() {
+        const tx = t();
+        const entities = {};
+        const states = {};
+        precision = {};
+        const add = (id, key, value, attributes, since = data.now) => {
+          if (key) entities[id] = { entity_id: id, platform: "waermewacht", device_id: DEVICE_ID, translation_key: key };
+          states[id] = {
+            entity_id: id,
+            state: value === null || value === undefined ? "unknown" : String(value),
+            attributes,
+            last_changed: since,
+            last_updated: since,
+          };
+        };
+        for (const [key, e] of Object.entries(data.sensors)) {
+          const id = `sensor.waermepumpe_${key}`;
+          precision[id] = e.p ?? undefined;
+          add(id, key, e.s, { ...e.a, ...(e.u ? { unit_of_measurement: e.u } : {}), friendly_name: name(key) });
+        }
+        for (const [key, e] of Object.entries(data.binary)) {
+          add(`binary_sensor.waermepumpe_${key}`, key, e.s, { ...e.a, friendly_name: name(key) });
+        }
+        // The source integration's entities ("Now" card).
+        const live = data.live;
+        sourceIds = {
+          activity: "sensor.source_activity",
+          compressor: "binary_sensor.source_compressor",
+          outdoor_temp: "sensor.source_outdoor_temp",
+          flow_temp: "sensor.source_flow_temp",
+          return_temp: "sensor.source_return_temp",
+          dhw_temp: "sensor.source_dhw_temp",
+        };
+        add(sourceIds.activity, null, live.activity, { friendly_name: tx.activityName }, live.activity_since);
+        add(sourceIds.compressor, null, live.compressor ? "on" : "off", { friendly_name: tx.compressor });
+        for (const [role, value, label] of [
+          ["outdoor_temp", live.outdoor, tx.outdoor],
+          ["flow_temp", live.flow, tx.flow],
+          ["return_temp", live.return, tx.ret],
+          ["dhw_temp", live.dhw, tx.dhwTemp],
+        ]) {
+          precision[sourceIds[role]] = 1;
+          add(sourceIds[role], null, value, { unit_of_measurement: "°C", device_class: "temperature", friendly_name: label });
+        }
+        return {
+          entities,
+          states,
+          devices: { [DEVICE_ID]: { id: DEVICE_ID, name: data.device } },
+          language: state.lang,
+          locale: { language: state.lang, number_format: "language", time_format: "24", time_zone: "server" },
+          config: { time_zone: "Europe/Berlin" },
+          formatEntityState: formatState,
+          callWS: async (message) => {
+            if (message.type === "waermewacht/sources") return { entities: sourceIds };
+            if (message.type === "recorder/statistics_during_period") return monthRows(message.statistic_ids, entities);
+            throw new Error(`not in the demo: ${message.type}`);
+          },
+        };
+      }
+
+      /** A state as Home Assistant formats it: language, decimals, unit. */
+      function formatState(s) {
+        const tx = t();
+        if (!s || s.state === "unknown" || s.state === "unavailable") return tx.unknown;
+        if (s.entity_id === sourceIds.activity) return tx.activity[s.state] ?? s.state;
+        if (s.entity_id === sourceIds.compressor) {
+          const text = s.state === "on" ? tx.running : tx.stopped;
+          return text.charAt(0).toUpperCase() + text.slice(1);
+        }
+        if (s.entity_id.startsWith("binary_sensor.")) return s.state === "on" ? tx.problemState : tx.fineState;
+        const digits = precision[s.entity_id];
+        const value = Number(s.state);
+        if (digits === undefined || Number.isNaN(value)) return s.state;
+        const unit = s.attributes.unit_of_measurement;
+        return `${num(value, digits)}${unit ? ` ${UNITS[unit] ?? unit}` : ""}`;
+      }
+
+      /** Monthly statistics of the energy sensors (the "months" card). */
+      function monthRows(ids, entities) {
+        const result = {};
+        for (const id of ids) {
+          const key = entities[id]?.translation_key;
+          result[id] = data.months
+            .filter((m) => m[key] !== undefined)
+            .map((m) => ({ start: new Date(`${m.month}-01T00:00:00${offset(m.month)}`).getTime(), change: m[key] }));
+        }
+        return result;
+      }
+
+      /** UTC offset of Berlin at the start of a month ("+01:00" or "+02:00"). */
+      function offset(month) {
+        const [y, m] = month.split("-").map(Number);
+        const summer = m > 3 && m < 11; // whole months only: April to October
+        return summer ? "+02:00" : "+01:00";
+      }
+
+      function cardSlot(topic, cls = "section", extra = "") {
+        return `<section class="${cls}"><div data-card="${topic}"></div>
+          <div class="cardtype"><code>type: custom:waermewacht-${topic}-card</code></div>${extra}</section>`;
+      }
+
+      function mountCards() {
+        demo = demoHass();
+        for (const slot of document.querySelectorAll("[data-card]")) {
+          const card = document.createElement(`waermewacht-${slot.dataset.card}-card`);
+          card.setConfig({});
+          card.hass = demo;
+          slot.replaceWith(card);
+        }
+      }
+
+      // A click on a tile opens the details, as in Home Assistant.
+      document.addEventListener("hass-more-info", (event) => {
+        const s = demo?.states[event.detail.entityId];
+        if (!s) return;
+        const { friendly_name: title, ...attributes } = s.attributes;
+        const dialog = document.getElementById("info");
+        dialog.innerHTML = `<button type="button" aria-label="${escapeHtml(t().close)}">✕</button>
+          <h2>${escapeHtml(title ?? s.entity_id)}</h2><div class="state">${escapeHtml(formatState(s))}</div>
+          <div class="cardtype"><code>${escapeHtml(s.entity_id)}</code></div>
+          ${Object.keys(attributes).length ? `<pre>${escapeHtml(yaml(attributes).trimStart())}</pre>` : ""}`;
+        dialog.querySelector("button").addEventListener("click", () => dialog.close());
+        dialog.showModal();
+      });
+
       // ---- Heat pump sections ----------------------------------------------------------------
+
+      function todayCard() {
+        const tx = t();
+        return `<div class="card"><div class="card-title">${tx.todayTitle}</div>${todayChart(data.today)}
+          ${legend([["var(--s-heat-heating)", tx.heatKw], ["var(--s-elec-heating)", tx.elecKw], ["var(--band-dhw)", tx.activity.dhw], ["var(--band-defrost)", tx.activity.defrost]])}
+          <div class="footnote">${tx.todayNote}</div></div>`;
+      }
+
+      function cardSections() {
+        const tx = t();
+        const hybrid = data.sensors.heat_pump_share_season !== undefined;
+        return (
+          cardSlot("now", "section", todayCard()) +
+          cardSlot("ratios") +
+          cardSlot("costs") +
+          (hybrid ? cardSlot("hybrid") : "") +
+          cardSlot("health", "section", `<div class="card markdown">${healthNotes()}</div>`) +
+          cardSlot("cycling") +
+          cardSlot("dhw") +
+          cardSlot("months", "section double") +
+          cardSlot("analysis", "section double") +
+          plantSection() +
+          reportSection()
+        );
+      }
 
       function nowSection() {
         const tx = t();
@@ -892,7 +1097,7 @@
           </section>`;
       }
 
-      function healthSection() {
+      function healthNotes() {
         const tx = t();
         const b = data.binary;
         const notes = [`<p>${tx.healthNote}</p>`, "<ul>"];
@@ -907,11 +1112,17 @@
           notes.push(`<li><b>${escapeHtml(name("dhw_efficiency_drop"))}:</b> ${escapeHtml(tx.dhwDropAttrs({ ...w, ratio: num(w.ratio, 2), previous_ratio: num(w.previous_ratio, 2), change: num(w.change_percent, 1) }))}</li>`);
         }
         notes.push("</ul>");
+        return notes.join("");
+      }
+
+      function healthSection() {
+        const tx = t();
+        const b = data.binary;
         return `
           <section class="section">
             <div class="heading">${icon("stethoscope")}<span>${tx.health}</span></div>
             <div class="grid">${["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem"].map(problemTile).join("")}
-              <div class="card c12 markdown">${notes.join("")}</div></div>
+              <div class="card c12 markdown">${healthNotes()}</div></div>
           </section>`;
       }
 
@@ -1092,10 +1303,8 @@
         });
         document.getElementById("banner").innerHTML = `${icon("information-outline")}<span>${escapeHtml(tx.banner(clock))}</span>`;
         document.getElementById("story").textContent = tx.stories[state.scenario];
-        document.getElementById("dashboard").innerHTML =
-          data.kind === "gas"
-            ? gasSections()
-            : nowSection() + ratiosSection() + cyclesSection() + healthSection() + dhwSection() + analysisSection() + plantSection() + reportSection();
+        document.getElementById("dashboard").innerHTML = data.kind === "gas" ? gasSections() : cardSections();
+        if (data.kind !== "gas") mountCards();
         document.getElementById("plant").innerHTML = (data.kind === "gas" ? tx.plantGas(data) : tx.plantHp(data))
           .map((line) => `<li>${escapeHtml(line)}</li>`)
           .join("");

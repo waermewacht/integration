@@ -81,10 +81,13 @@ from custom_components.waermewacht.degree_days import (  # noqa: E402
     daily_degree_days,
     degree_days,
 )
+from custom_components.waermewacht.costs import BOILER_EFFICIENCY_HS  # noqa: E402
 from custom_components.waermewacht.energy import (  # noqa: E402
     Kind,
     Totals,
+    building_hours,
     combined_ratio,
+    heat_pump_share,
     mode_ratio,
 )
 from custom_components.waermewacht.gas import analyse as analyse_gas  # noqa: E402
@@ -192,6 +195,10 @@ class Scenario:
     house: House
     moment: datetime
     seed: int
+    # Hybrid system: below this outdoor temperature a boiler heats instead of
+    # the heat pump (bivalent alternative, e.g. Hybrid Manager HM200); hot
+    # water stays with the heat pump.
+    bivalent: float | None = None
 
 
 SCENARIOS = [
@@ -211,6 +218,15 @@ SCENARIOS = [
         House(ua=0.085, limit=15.0, solar_kw=0.8, band_kwh=0.09, min_run=240, min_off=300),
         datetime(2025, 10, 29, 17, 40, tzinfo=TZ),
         2,
+    ),
+    # An older, larger house: a boiler takes over below -3 °C.
+    Scenario(
+        "hybrid",
+        "Hybridanlage im Januar",
+        House(ua=0.21, limit=16.0, solar_kw=1.0, band_kwh=0.6, min_run=600, min_off=900),
+        datetime(2026, 1, 22, 17, 40, tzinfo=TZ),
+        3,
+        bivalent=-3.0,
     ),
 ]  # fmt: skip
 GAS_MOMENT = datetime(2026, 10, 28, 18, 0, tzinfo=TZ)
@@ -365,6 +381,7 @@ class Sim:
         self.speed = 0.0
         self.outdoor = 10.0
         self.demand = 0.0
+        self.boiler_kw = 0.0
         self.day_draws: dict[date, list[tuple[float, float, float]]] = {}
         # What the recorder keeps: hourly changes and means.
         self.src: dict[Signal, dict[datetime, float]] = {
@@ -376,6 +393,7 @@ class Sim:
                 Signal.ELEC_DHW,
                 Signal.AUX_HEATING,
                 Signal.AUX_DHW,
+                *((Signal.BOILER_HEAT_HEATING,) if scenario.bivalent is not None else ()),
             )
         }
         self.own: dict[datetime, dict[str, float]] = {}
@@ -456,6 +474,11 @@ class Sim:
 
     # Control.
 
+    def _boiler(self, heating: bool) -> bool:
+        """Whether the boiler heats (hybrid system below the bivalent point)."""
+        bivalent = self.sc.bivalent
+        return bivalent is not None and heating and self.outdoor < bivalent
+
     def _decide(self, at: datetime, heating: bool) -> None:
         h = self.house
         if self.defrosting and self.defrost_left <= 1e-6:
@@ -473,6 +496,9 @@ class Sim:
                 self._start(Mode.DHW, at)
             return
         if self.on and self.mode is Mode.HEATING and not self.defrosting:
+            if self._boiler(heating):
+                self._stop(at)  # the boiler takes over
+                return
             if self.frost >= 1.0 - 1e-9:
                 minutes = 4.0 + 0.1 * max(0.0, -self.outdoor)
                 self.defrosting = True
@@ -485,7 +511,7 @@ class Sim:
                 self._stop(at)
             return
         cooled = self.buf <= -h.band_kwh + 1e-9 and self.off_s >= h.min_off - 1e-9
-        if not self.on and heating and cooled:
+        if not self.on and heating and cooled and not self._boiler(heating):
             self._start(Mode.HEATING, at)
 
     def _rates(self, heating: bool, draw_kw: float) -> dict[str, float]:
@@ -493,6 +519,10 @@ class Sim:
         outdoor, d = self.outdoor, self.demand
         curve = flow_target(outdoor)
         rates = {"buf": -d if heating else 0.0, "storage": -draw_kw / STORAGE_KWH_PER_K}
+        # The boiler of a hybrid system covers the demand while it heats.
+        self.boiler_kw = d if self._boiler(heating) else 0.0
+        if self.boiler_kw:
+            rates["buf"] = 0.0
         if not self.on:
             self.heat_kw, self.elec_kw, self.speed = 0.0, STANDBY_KW, 0.0
             self.flow = curve - 2.5 if heating else 24.0
@@ -587,6 +617,10 @@ class Sim:
         # The source puts standby into the heating meter (like Bosch, EMS-ESP).
         self.src[elec_signal][hour] = self.src[elec_signal].get(hour, 0.0) + elec
         self.flow_hours[hour] = self.flow_hours.get(hour, 0.0) + self.flow * dt / 3600
+        boiler = self.boiler_kw * dt / 3600
+        if boiler:
+            signal = Signal.BOILER_HEAT_HEATING
+            self.src[signal][hour] = self.src[signal].get(hour, 0.0) + boiler
         if self.recording:
             sample = self._sample
             sample["heat"] = sample.get("heat", 0.0) + heat
@@ -596,6 +630,9 @@ class Sim:
         # runtime._book/_running: electricity is running when the compressor
         # ran in its mode, else standby (booked to heating).
         own = self.own.setdefault(hour, {})
+        if boiler:
+            self.totals.add(Kind.BOILER, Mode.HEATING, boiler)
+            own["boiler_heat_heating"] = own.get("boiler_heat_heating", 0.0) + boiler
         if heat:
             self.totals.add(Kind.HEAT, mode, heat)
             key = f"heat_{mode}"
@@ -770,6 +807,17 @@ class Sim:
             )
 
         this_season, last_season = window(current, now), window(previous, current)
+        # Heat load, signature and degree days describe the building: with
+        # the boiler's heat (runtime.async_building_hours), ratios without.
+        building = building_hours(hours, BOILER_EFFICIENCY_HS, ())
+        this_building = (
+            {h: t for h, t in building.items() if current <= h < now},
+            this_season[1],
+        )
+        last_building = (
+            {h: t for h, t in building.items() if previous <= h < current},
+            last_season[1],
+        )
         curves = {
             "current": curve_as_dicts(
                 performance_curve(*this_season, TZ, min_electricity=MIN_ELECTRICITY)
@@ -778,7 +826,7 @@ class Sim:
                 performance_curve(*last_season, TZ, min_electricity=MIN_ELECTRICITY)
             ),
         }
-        load = heat_load(*last_season, TZ, design_temp=DESIGN_TEMP)
+        load = heat_load(*last_building, TZ, design_temp=DESIGN_TEMP)
         today = now.astimezone(TZ).date()
         first = current.astimezone(TZ).date()
         flow = {h: v for h, v in self.flow_hours.items() if h in outdoor}
@@ -803,9 +851,9 @@ class Sim:
             "previous": previous,
             "curves": curves,
             "heat_load": load,
-            "degree_days": degree_days(*this_season, TZ, first, today),
+            "degree_days": degree_days(*this_building, TZ, first, today),
             "degree_days_previous": degree_days(
-                *last_season, TZ, previous.astimezone(TZ).date(), first
+                *last_building, TZ, previous.astimezone(TZ).date(), first
             ),
             "flow_curves": flow_curves,
             "efficiency_drop": efficiency_drop(
@@ -967,6 +1015,36 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         **rise.as_attributes(),
     )
     put("standby_power_7d", rise.evidence.get("mean_power_w_7d"), "W", 0)
+    if sim.sc.bivalent is not None:
+        put(
+            "boiler_heat_heating",
+            round(sim.totals.get(Kind.BOILER, Mode.HEATING), 1),
+            "kWh",
+            1,
+        )
+        for period in (Period.MONTH, Period.SEASON):
+            totals = sim.marks.energy(period, sim.totals)
+            assert totals is not None
+            share = heat_pump_share(totals, BOILER_EFFICIENCY_HS, (), Mode.HEATING)
+            both = heat_pump_share(
+                totals, BOILER_EFFICIENCY_HS, (), Mode.HEATING, Mode.DHW
+            )
+            start = sim.marks.starts.get(period)
+            put(
+                f"heat_pump_share_{period}",
+                _r(share, 1),
+                "%",
+                0,
+                with_dhw=_r(both, 1),
+                boiler_from=None,
+                heat_pump_heat_kwh=round(totals.heat(Mode.HEATING), 1),
+                boiler_heat_kwh=round(totals.get(Kind.BOILER, Mode.HEATING), 1),
+                heat_pump_heat_dhw_kwh=round(totals.heat(Mode.DHW), 1),
+                boiler_heat_dhw_kwh=0.0,
+                boiler_heat_from_fuel=[],
+                boiler_efficiency=None,
+                period_start=start.astimezone(TZ).isoformat() if start else None,
+            )
 
     today, yesterday = sim.cycles("today", now), sim.cycles("yesterday", now)
     put("starts_today", today.starts)
@@ -1457,6 +1535,7 @@ def heat_pump_scenario(scenario: Scenario, w: Weather) -> dict[str, Any]:
             "short_run_minutes": SHORT_SECONDS / 60,
             "critical_run_minutes": CRITICAL_SECONDS / 60,
             "starts_per_hour": STARTS_PER_HOUR,
+            "bivalent": scenario.bivalent,
         },
         "house": {
             "ua_w_per_k": round(scenario.house.ua * 1000),

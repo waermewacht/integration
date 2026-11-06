@@ -14,7 +14,7 @@
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
 
-**Ausprobieren ohne Installation:** Die [Demo](https://waermewacht.github.io/integration/?lang=de) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie und Energiesignatur für eine kalte Januarwoche, einen milden Herbst mit taktender Anlage und eine Gasheizung vor dem Umstieg – mit erfundenen Werten, aber gerechnet vom Code der Integration.
+**Ausprobieren ohne Installation:** Die [Demo](https://waermewacht.github.io/integration/?lang=de) zeigt Arbeitszahlen, Takte, Gesundheits-Check, Warmwasser, AZ-Kennlinie und Energiesignatur für eine kalte Januarwoche, einen milden Herbst mit taktender Anlage, eine Hybridanlage mit Gaskessel und eine Gasheizung vor dem Umstieg – mit den echten [Karten](#karten), erfundenen Werten, aber gerechnet vom Code der Integration.
 
 **Noch mit Gas oder Öl?** Wärmewacht rechnet auch die Heizlast deines Hauses aus dem Gas- oder Ölverbrauch, als Grundlage für die Auslegung einer Wärmepumpe: [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg).
 
