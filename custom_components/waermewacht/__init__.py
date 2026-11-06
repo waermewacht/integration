@@ -24,6 +24,7 @@ from .adopt import (
     preferred_entities,
     signals_to_adopt,
 )
+from .cards import async_setup_cards
 from .const import (
     CONF_ENTITIES,
     CONF_HISTORY,
@@ -94,9 +95,11 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the actions and follow renamed sources (once, for all entries)."""
+    """Register the actions, the cards and follow renamed sources (once, for
+    all entries)."""
     async_setup_services(hass)
     _async_follow_renames(hass)
+    await async_setup_cards(hass)
     return True
 
 

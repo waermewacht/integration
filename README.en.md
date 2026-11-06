@@ -32,7 +32,7 @@ The user interface is available in German and English and follows the language o
 - **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup) · [Settings](#settings) · [Gas boiler before switching](#gas-boiler-before-switching)
 - **[Entities](#entities):** [Performance factors](#performance-factors) · [Energy](#energy) · [Cycling](#cycling) · [Hot water charges](#hot-water-charges) · [Health check](#health-check) · [Hybrid system](#hybrid-system) · [Costs and gas comparison](#costs-and-gas-comparison) · [Performance curve and heat load](#performance-curve-and-heat-load)
 - **[Actions](#actions):** [Report](#report) · [Performance curve](#performance-curve) · [Heat load](#heat-load)
-- **More:** [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
+- **More:** [Cards](#cards) · [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
 
 ## Features
 
@@ -650,6 +650,30 @@ data:
 The response contains the same values as the attributes of "Heat load per kelvin".
 
 Performance curve and heat load report an error when no outdoor temperature is mapped or the recorder is missing.
+
+## Cards
+
+Wärmewacht ships its own cards, without any extra card from HACS and without adding a resource: *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
+
+| Card | Shows |
+| --- | --- |
+| Wärmewacht Now (`custom:waermewacht-now-card`) | activity (since when), compressor, outdoor, flow, return and storage temperature of the source; heat and electric power if you pick them in the editor |
+| Wärmewacht Performance factors (`…-ratios-card`) | table heating, hot water, both, cooling × today, month, season, total |
+| Wärmewacht Health (`…-health-card`) | every check with a dot (green, red, grey), the finding in words and the figure that matters |
+| Wärmewacht Cycling (`…-cycling-card`) | starts, run times, shortest pause, short runs, defrosts, spread, standby |
+| Wärmewacht Hot water (`…-dhw-card`) | last charge (duration, temperature lift) and the charges of the last 30 days |
+| Wärmewacht Costs (`…-costs-card`) | electricity month and season, cost per kWh of heat, savings against gas |
+| Wärmewacht Hybrid system (`…-hybrid-card`) | heat pump share, boiler heat |
+| Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C |
+| Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor |
+
+```yaml
+type: custom:waermewacht-health-card
+# device_id: …   # only with several heat pumps
+# title: Findings  # own heading; a single space hides it
+```
+
+All in one card: `type: custom:waermewacht-card`, optionally with `sections: [ratios, health, …]`. The markdown examples below keep working, also with older versions.
 
 ## Dashboard examples
 

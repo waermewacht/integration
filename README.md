@@ -32,7 +32,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung) · [Einstellungen](#einstellungen) · [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg)
 - **[Entitäten](#entitäten):** [Arbeitszahlen](#arbeitszahlen) · [Energie](#energie) · [Takte](#takte) · [Warmwasser-Ladungen](#warmwasser-ladungen) · [Gesundheits-Check](#gesundheits-check) · [Hybridanlage](#hybridanlage) · [Kosten und Gasvergleich](#kosten-und-gasvergleich) · [Kennlinie und Heizlast](#kennlinie-und-heizlast)
 - **[Aktionen](#aktionen):** [Bericht](#bericht) · [AZ-Kennlinie](#az-kennlinie) · [Heizlast](#heizlast)
-- **Mehr:** [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
+- **Mehr:** [Karten](#karten) · [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
 
 ## Was Wärmewacht kann
 
@@ -650,6 +650,30 @@ data:
 Die Antwort enthält dieselben Werte wie die Attribute von „Heizlast je Kelvin“.
 
 AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeordnet ist oder der Recorder fehlt.
+
+## Karten
+
+Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS und ohne Ressource eintragen: *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
+
+| Karte | Zeigt |
+| --- | --- |
+| Wärmewacht Jetzt (`custom:waermewacht-now-card`) | Betriebsart (seit wann), Kompressor, Außen-, Vor-, Rücklauf- und Speichertemperatur der Quelle; Wärme- und Stromleistung, wenn du sie im Editor wählst |
+| Wärmewacht Arbeitszahlen (`…-ratios-card`) | Tabelle Heizen, Warmwasser, beides, Kühlen × heute, Monat, Saison, gesamt |
+| Wärmewacht Gesundheit (`…-health-card`) | jede Prüfung mit Punkt (grün, rot, grau), Befund in Worten und der entscheidenden Zahl |
+| Wärmewacht Takte (`…-cycling-card`) | Starts, Laufzeiten, kürzeste Pause, Kurzläufe, Abtauungen, Spreizung, Stillstand |
+| Wärmewacht Warmwasser (`…-dhw-card`) | letzte Ladung (Dauer, Temperaturhub) und die Ladungen der letzten 30 Tage |
+| Wärmewacht Kosten (`…-costs-card`) | Strom Monat und Saison, Kosten je kWh Wärme, Ersparnis gegenüber Gas |
+| Wärmewacht Hybridanlage (`…-hybrid-card`) | Anteil der Wärmepumpe, Wärme des Kessels |
+| Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C |
+| Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl |
+
+```yaml
+type: custom:waermewacht-health-card
+# device_id: …   # nur bei mehreren Wärmepumpen
+# title: Befund  # eigene Überschrift; ein Leerzeichen blendet sie aus
+```
+
+Wer alles in einer Karte will: `type: custom:waermewacht-card`, optional mit `sections: [ratios, health, …]`. Die Markdown-Beispiele weiter unten funktionieren weiter, auch mit älteren Versionen.
 
 ## Dashboard-Beispiele
 

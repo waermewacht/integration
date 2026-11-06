@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Neu: eigene Karten fürs Dashboard.** Wärmewacht bringt neun Karten mit, eine je Thema: Jetzt, Arbeitszahlen, Gesundheit, Takte, Warmwasser, Kosten, Hybridanlage, Kennlinie und Heizlast sowie Wärme und Strom je Monat. Sie stehen in der Kartenauswahl unter „Wärmewacht“, ohne Zusatzkarten aus HACS und ohne Ressource eintragen. Die Karten finden ihre Entitäten selbst, auch bei anderer Sprache oder umbenannten Entity-IDs, und zeigen Zahlen und Befunde so, wie Home Assistant sie formatiert. Kennlinie, Energiesignatur und Monatssäulen sind eigene Diagramme (kein apexcharts nötig). Für alles in einer Karte gibt es zusätzlich „Wärmewacht“.
+
 ## 0.3.0 – 2026-11-06
 
 - **Daikin Altherma über P1P2MQTT nicht mehr Beta:** Die Vorlage läuft seit Ende Oktober an zwei echten Altherma 3 und passt zu deren eigenen Zählern; in der Einrichtung steht sie jetzt ohne „(beta)“.

@@ -2,7 +2,10 @@
   "domain": "waermewacht",
   "name": "Wärmewacht",
   "after_dependencies": [
-    "recorder"
+    "frontend",
+    "http",
+    "recorder",
+    "websocket_api"
   ],
   "categories": [
     "climate.heat_pumps_air_conditioning",
