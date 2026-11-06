@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.3.2 – 2026-11-06
 
 - **Karten in Abschnitten richtig breit:** Kosten, Takte, Gesundheit und Co. füllten im Abschnitts-Dashboard nur die halbe Breite ihres Abschnitts. Jetzt nutzen alle Karten die ganze Breite; die Arbeitszahlen-Tabelle passt auch in eine schmale Spalte.
 - **Gerätename nur, wo nötig:** Die Karten zeigen den Namen der Wärmepumpe nur noch, wenn mehrere Wärmepumpen da sind und keine gewählt ist (oder mit `show_device: true`).
