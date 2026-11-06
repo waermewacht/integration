@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.3.0 – 2026-11-06
 
 - **Daikin Altherma über P1P2MQTT nicht mehr Beta:** Die Vorlage läuft seit Ende Oktober an zwei echten Altherma 3 und passt zu deren eigenen Zählern; in der Einrichtung steht sie jetzt ohne „(beta)“.
 - **Neu (Beta): Hybridanlagen aus Wärmepumpe und Öl- oder Gaskessel.** Mit einem Kessel neben der Wärmepumpe (neuer Abschnitt „Kessel (Hybridanlage)“ in der Einrichtung) zählt Wärmewacht die Wärme beider: Heizlast, Energiesignatur und Wärme je Gradtag beschreiben jetzt das ganze Haus, nicht nur den Teil, den die Wärmepumpe liefert. Neu sind „Anteil Wärmepumpe Heizen“ (Monat, Saison) sowie Wärme und Brennstoff des Kessels als eigene Sensoren. Die Arbeitszahlen bleiben die der Wärmepumpe; der Kessel zählt dort nie mit. Als Kesselwärme nimmt Wärmewacht, was der Kessel selbst meldet, sonst Brennstoff × Kesselnutzungsgrad (einstellbar, Vorgabe 0,87).
