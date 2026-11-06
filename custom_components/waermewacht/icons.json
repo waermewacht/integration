@@ -250,21 +250,6 @@
       "gas_cost_year": {
         "default": "mdi:cash"
       },
-      "cycling_problem_status": {
-        "default": "mdi:sine-wave"
-      },
-      "efficiency_drop_status": {
-        "default": "mdi:trending-down"
-      },
-      "aux_mild_weather_status": {
-        "default": "mdi:heating-coil"
-      },
-      "aux_dhw_charges_status": {
-        "default": "mdi:water-boiler-alert"
-      },
-      "dhw_efficiency_drop_status": {
-        "default": "mdi:water-thermometer-outline"
-      },
       "boiler_heat_heating": {
         "default": "mdi:fire"
       },
@@ -282,6 +267,21 @@
       },
       "heat_pump_share_season": {
         "default": "mdi:heat-pump"
+      },
+      "cycling_problem_status": {
+        "default": "mdi:sine-wave"
+      },
+      "efficiency_drop_status": {
+        "default": "mdi:trending-down"
+      },
+      "aux_mild_weather_status": {
+        "default": "mdi:heating-coil"
+      },
+      "aux_dhw_charges_status": {
+        "default": "mdi:water-boiler-alert"
+      },
+      "dhw_efficiency_drop_status": {
+        "default": "mdi:water-thermometer-outline"
       }
     }
   },

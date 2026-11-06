@@ -51,13 +51,13 @@
           },
           "boiler": {
             "name": "Boiler (hybrid system)",
-            "description": "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
             "data": {
               "boiler_heat_heating": "Boiler heat heating",
               "boiler_heat_dhw": "Boiler heat hot water",
               "fuel_heating": "Boiler fuel heating",
               "fuel_dhw": "Boiler fuel hot water"
             },
+            "description": "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
             "data_description": {
               "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
               "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
@@ -124,6 +124,10 @@
               "dhw_temp": "Hot water temperature (actual, tank)",
               "heat_cooling": "Heat removed cooling (meter)",
               "elec_cooling": "Compressor electricity cooling",
+              "boiler_heat_heating": "Boiler heat heating",
+              "boiler_heat_dhw": "Boiler heat hot water",
+              "fuel_heating": "Boiler fuel heating",
+              "fuel_dhw": "Boiler fuel hot water",
               "compressor": "Compressor running (on/off or speed)",
               "activity": "Activity",
               "starts_total": "Compressor starts total",
@@ -139,16 +143,16 @@
               "dhw_flag": "Hot water running (on/off)",
               "cooling_flag": "Cooling running (on/off)",
               "heating_flag": "Heating running (on/off)",
-              "cooling_mode": "Set operating mode (cooling?)",
-              "boiler_heat_heating": "Boiler heat heating",
-              "boiler_heat_dhw": "Boiler heat hot water",
-              "fuel_heating": "Boiler fuel heating",
-              "fuel_dhw": "Boiler fuel hot water"
+              "cooling_mode": "Set operating mode (cooling?)"
             },
             "data_description": {
               "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
               "aux_heating": "Electricity of the backup heater for heating, if it is metered apart.",
               "dhw_temp": "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections.",
+              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
+              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
+              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
+              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter.",
               "compressor": "An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as \"heating\": that belongs under Activity.",
               "activity": "What the heat pump is doing (heating, hot water, defrost, ...), e.g. EMS-ESP \"hpactivity\". Gives defrosts and the mode of each run; without it runs are counted without a mode.",
               "starts_total": "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
@@ -200,7 +204,6 @@
       }
     },
     "error": {
-      "own_entity": "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
       "no_mode": "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
       "aux_twice": "Backup heater either per mode or as total, not both.",
@@ -214,19 +217,19 @@
       "gas_no_statistics": "A gas counter has no long-term statistics (state class total or total_increasing).",
       "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill.",
       "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement).",
+      "own_entity": "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
       "boiler_without_heat_pump": "The boiler needs the heat pump's heating meter (heat heating): its heat is compared with the heat pump's."
     },
     "abort": {
       "already_configured": "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
-      "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure).",
-      "reconfigure_successful": "Entities saved."
+      "reconfigure_successful": "Entities saved.",
+      "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure)."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Settings",
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
         "data": {
           "min_electricity": "Minimum electricity for a ratio",
           "short_run_minutes": "Short run below",
@@ -276,11 +279,11 @@
               "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
             }
           }
-        }
+        },
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "gas": {
         "title": "Settings",
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
         "data": {
           "boiler_efficiency": "Boiler efficiency (Hs)",
           "design_outdoor_temp": "Design outdoor temperature",
@@ -296,7 +299,8 @@
           "gas_base_price": "Gross per year.",
           "calorific_value": "Only for counters in m³: from the gas bill.",
           "z_number": "Only for counters in m³: from the gas bill."
-        }
+        },
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       }
     }
   },
@@ -582,6 +586,24 @@
       "gas_cost_year": {
         "name": "Gas cost 365 days"
       },
+      "boiler_heat_heating": {
+        "name": "Boiler heat heating"
+      },
+      "boiler_heat_dhw": {
+        "name": "Boiler heat hot water"
+      },
+      "fuel_heating": {
+        "name": "Boiler fuel heating"
+      },
+      "fuel_dhw": {
+        "name": "Boiler fuel hot water"
+      },
+      "heat_pump_share_month": {
+        "name": "Heat pump share heating month"
+      },
+      "heat_pump_share_season": {
+        "name": "Heat pump share heating season"
+      },
       "cycling_problem_status": {
         "name": "Check cycling",
         "state": {
@@ -666,24 +688,6 @@
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
-      },
-      "boiler_heat_heating": {
-        "name": "Boiler heat heating"
-      },
-      "boiler_heat_dhw": {
-        "name": "Boiler heat hot water"
-      },
-      "fuel_heating": {
-        "name": "Boiler fuel heating"
-      },
-      "fuel_dhw": {
-        "name": "Boiler fuel hot water"
-      },
-      "heat_pump_share_month": {
-        "name": "Heat pump share heating month"
-      },
-      "heat_pump_share_season": {
-        "name": "Heat pump share heating season"
       }
     },
     "number": {
@@ -734,10 +738,6 @@
     "missing_entity": {
       "title": "Wärmewacht: entity missing",
       "description": "The heat pump {name} uses entities that no longer exist: {entities}. Renamed or removed? Choose them again under Devices & services → Wärmewacht → Reconfigure."
-    },
-    "own_entity": {
-      "title": "Wärmewacht: own sensor as a source",
-      "description": "The heat pump {name} uses sensors of Wärmewacht itself as a source: {entities}. It would read its own results, so they are ignored. Remove them under Devices & services → Wärmewacht → Reconfigure (leave the field empty or choose the heat pump's entity). Figures already booked from them stay."
     },
     "energy_unit": {
       "title": "Wärmewacht: unusable unit",
@@ -790,6 +790,10 @@
     "outdoor_temp_implausible": {
       "title": "Wärmewacht: outdoor temperature unusable",
       "description": "The outdoor temperature of {name} ({entities}) was outside -35 to +45 °C for {hours} hours yesterday. Performance curve, heat load and the checks 'Efficiency dropped' and 'Backup heater on mild days' depend on it. Check the sensor or choose another entity under Reconfigure."
+    },
+    "own_entity": {
+      "title": "Wärmewacht: own sensor as a source",
+      "description": "The heat pump {name} uses sensors of Wärmewacht itself as a source: {entities}. It would read its own results, so they are ignored. Remove them under Devices & services → Wärmewacht → Reconfigure (leave the field empty or choose the heat pump's entity). Figures already booked from them stay."
     }
   },
   "services": {

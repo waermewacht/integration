@@ -231,6 +231,31 @@ SENSORS = {
     "gas_consumption_year": ("Gas 365 days", "Gas 365 Tage", "mdi:fire"),
     "gas_cost_year": ("Gas cost 365 days", "Gaskosten 365 Tage", "mdi:cash"),
 }
+# Sensors of a hybrid system (boiler next to the heat pump).
+HYBRID_SENSORS = {
+    "boiler_heat_heating": ("Boiler heat heating", "Wärme Kessel Heizen", "mdi:fire"),
+    "boiler_heat_dhw": ("Boiler heat hot water", "Wärme Kessel Warmwasser", "mdi:fire"),
+    "fuel_heating": (
+        "Boiler fuel heating",
+        "Brennstoff Kessel Heizen",
+        "mdi:fire-circle",
+    ),
+    "fuel_dhw": (
+        "Boiler fuel hot water",
+        "Brennstoff Kessel Warmwasser",
+        "mdi:fire-circle",
+    ),
+    "heat_pump_share_month": (
+        "Heat pump share heating month",
+        "Anteil Wärmepumpe Heizen Monat",
+        "mdi:heat-pump",
+    ),
+    "heat_pump_share_season": (
+        "Heat pump share heating season",
+        "Anteil Wärmepumpe Heizen Saison",
+        "mdi:heat-pump",
+    ),
+}
 BINARY = {
     "cycling_problem": ("Conspicuous cycling", "Auffälliges Takten", "mdi:sine-wave"),
     "efficiency_drop": (
@@ -292,6 +317,11 @@ STATUS_STATES = {
     "no_outdoor_temp": ("No outdoor temperature", "Keine Außentemperatur"),
 }
 BUTTONS = {
+    "issue_report": (
+        "Report for a bug report",
+        "Bericht für Fehlermeldung",
+        "mdi:clipboard-text-outline",
+    ),
     "restart_comparison": (
         "Restart efficiency comparison",
         "Effizienzvergleich neu starten",
@@ -305,6 +335,10 @@ BUTTONS = {
 }
 
 FIELDS = {
+    "boiler_heat_heating": ("Boiler heat heating", "Wärme Kessel Heizen"),
+    "boiler_heat_dhw": ("Boiler heat hot water", "Wärme Kessel Warmwasser"),
+    "fuel_heating": ("Boiler fuel heating", "Brennstoff Kessel Heizen"),
+    "fuel_dhw": ("Boiler fuel hot water", "Brennstoff Kessel Warmwasser"),
     "heat_heating": ("Heat produced heating (meter)", "Erzeugte Wärme Heizen (Zähler)"),
     "elec_heating": ("Compressor electricity heating", "Strom Kompressor Heizen"),
     "aux_heating": ("Backup heater heating", "Strom Heizstab Heizen"),
@@ -351,6 +385,22 @@ FIELDS = {
 }
 # Help below a field of the setup form (data_description).
 FIELD_HELP = {
+    "boiler_heat_heating": (
+        "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
+        "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat: Das ist nur Modulation × Nennleistung.",
+    ),
+    "boiler_heat_dhw": (
+        "EMS-ESP: boiler_dhw_nrg2.",
+        "EMS-ESP: boiler_dhw_nrg2.",
+    ),
+    "fuel_heating": (
+        "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
+        "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
+    ),
+    "fuel_dhw": (
+        "EMS-ESP: boiler_dhw_gasmeter.",
+        "EMS-ESP: boiler_dhw_gasmeter.",
+    ),
     "elec_heating": (
         "Electricity of the compressor for heating, without the backup heater.",
         "Strom des Kompressors fürs Heizen, ohne Heizstab.",
@@ -415,6 +465,14 @@ SECTIONS = {
         None,
     ),
     "cooling": (("Cooling", "Kühlen"), ("heat_cooling", "elec_cooling"), None),
+    "boiler": (
+        ("Boiler (hybrid system)", "Kessel (Hybridanlage)"),
+        ("boiler_heat_heating", "boiler_heat_dhw", "fuel_heating", "fuel_dhw"),
+        (
+            "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
+            "Nur mit einem Kessel neben der Wärmepumpe (z. B. Hybrid Manager HM200). Wärmewacht zählt den Kessel nie als Wärmepumpe: Seine Wärme geht in Heizlast, Energiesignatur und den Anteil der Wärmepumpe ein. Am besten die Wärme, die der Kessel selbst meldet; nur ohne sie den Brennstoff (Wärme = Brennstoff × Kesselnutzungsgrad, Einstellungen).",
+        ),
+    ),
     "operation": (
         ("Operation", "Betrieb"),
         (
@@ -475,6 +533,19 @@ MONTHS_DE = [
 ]
 
 
+# Fields a template did not find (config_flow.MORE): every field of the form.
+MORE = (
+    (
+        "More fields (not found by the template)",
+        "Weitere Felder (von der Vorlage nicht gefunden)",
+    ),
+    (
+        "The template found nothing for these. Fill one in only if you are sure the entity delivers exactly this; one that only sounds alike gives wrong figures.",
+        "Dafür hat die Vorlage nichts gefunden. Nur ausfüllen, wenn du sicher bist, dass die Entität genau das liefert; eine nur ähnlich klingende ergibt falsche Werte.",
+    ),
+)
+
+
 def _build(lang: int) -> dict:
     t = lambda pair: pair[lang]  # noqa: E731
     sections = {}
@@ -485,6 +556,17 @@ def _build(lang: int) -> dict:
         if help_texts := {f: t(FIELD_HELP[f]) for f in fields if f in FIELD_HELP}:
             section["data_description"] = help_texts
         sections[key] = section
+    sections["more"] = {
+        "name": t(MORE[0]),
+        "description": t(MORE[1]),
+        "data": {f: t(FIELDS[f]) for _, fields, _ in SECTIONS.values() for f in fields},
+        "data_description": {
+            f: t(FIELD_HELP[f])
+            for _, fields, _ in SECTIONS.values()
+            for f in fields
+            if f in FIELD_HELP
+        },
+    }
     sensors = {}
     for scope, (en, de, _) in SCOPES.items():
         for period, names in PERIODS.items():
@@ -492,6 +574,7 @@ def _build(lang: int) -> dict:
                 "name": f"{(en, de)[lang]} {t(names)}"
             }
     sensors.update({k: {"name": t(v[:2])} for k, v in SENSORS.items()})
+    sensors.update({k: {"name": t(v[:2])} for k, v in HYBRID_SENSORS.items()})
     sensors.update(
         {
             f"{k}_status": {
@@ -532,8 +615,8 @@ def _build(lang: int) -> dict:
                     "title": t(("Entities", "Entitäten")),
                     "description": t(
                         (
-                            "At least one mode needs a heat and an electricity meter. Electricity meters of the compressor without backup heater; the backup heater separately.",
-                            "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler. Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.",
+                            "At least one mode needs a heat and an electricity meter, or at least the compressor (then cycling and electricity only, no ratios). Electricity meters of the compressor without backup heater; the backup heater separately.\n\nFilled in by a template: the sections show what it found, the rest is under “More fields”. Leave a field empty rather than choose something similar; a wrong entity gives wrong figures.",
+                            "Mindestens ein Modus braucht einen Wärme- und einen Stromzähler oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen). Stromzähler des Kompressors ohne Heizstab; den Heizstab getrennt.\n\nVon einer Vorlage ausgefüllt: Die Abschnitte zeigen, was sie gefunden hat, der Rest steht unter „Weitere Felder“. Ein Feld lieber leer lassen als etwas Ähnliches wählen; eine falsche Entität ergibt falsche Werte.",
                         )
                     ),
                     "sections": sections,
@@ -580,8 +663,8 @@ def _build(lang: int) -> dict:
             "abort": {
                 "already_configured": t(
                     (
-                        "This heat pump is already set up.",
-                        "Diese Wärmepumpe ist bereits eingerichtet.",
+                        "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
+                        "Diese Wärmepumpe ist bereits eingerichtet. Ihre Entitäten änderst du dort unter ⋮ → Neu konfigurieren.",
                     )
                 ),
                 "reconfigure_successful": t(
@@ -1394,6 +1477,54 @@ def _add_gas(data: dict, lang: int) -> None:
     fields["start"]["description"] = HEAT_LOAD_START[lang]
 
 
+# Single texts: {dotted path: (en, de)}.
+TEXTS = {
+    "config.error.own_entity": (
+        "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
+        "Als Quelle ist ein Sensor von Wärmewacht selbst gewählt: Der Eintrag würde seine eigenen Ergebnisse lesen. Bitte die Entitäten der Wärmepumpe bzw. der Therme wählen.",
+    ),
+    "config.error.boiler_without_heat_pump": (
+        "The boiler needs the heat pump's heating meter (heat heating): its heat is compared with the heat pump's.",
+        "Der Kessel braucht den Wärmezähler Heizen der Wärmepumpe: Seine Wärme wird mit der der Wärmepumpe verglichen.",
+    ),
+    "config.abort.gas_already_configured": (
+        'This gas meter already has the entry "{title}". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure).',
+        "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren).",
+    ),
+    "options.step.init.description": (
+        "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+    ),
+    "options.step.init.data.boiler_efficiency": (
+        "Boiler efficiency",
+        "Kesselnutzungsgrad",
+    ),
+    "options.step.init.data_description.boiler_efficiency": (
+        "Only for boiler heat from fuel: heat = fuel × efficiency, on the gross calorific value (Hs) as the boiler counts its fuel. 0.87: field value of condensing gas boilers (DBU 2004), taken over for oil; a boiler that runs short and in pieces in a hybrid system reaches less.",
+        "Nur für Kesselwärme aus dem Brennstoff: Wärme = Brennstoff × Nutzungsgrad, auf den Brennwert (Hs) bezogen wie der Brennstoffzähler des Kessels. 0,87: Feldwert von Gas-Brennwertkesseln (DBU 2004), für Öl übernommen; ein Kessel, der in einer Hybridanlage kurz und gestückelt läuft, erreicht weniger.",
+    ),
+    "options.step.gas.description": (
+        "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+    ),
+    "issues.own_entity.title": (
+        "Wärmewacht: own sensor as a source",
+        "Wärmewacht: eigener Sensor als Quelle",
+    ),
+    "issues.own_entity.description": (
+        "The heat pump {name} uses sensors of Wärmewacht itself as a source: {entities}. It would read its own results, so they are ignored. Remove them under Devices & services → Wärmewacht → Reconfigure (leave the field empty or choose the heat pump's entity). Figures already booked from them stay.",
+        "Die Wärmepumpe {name} nutzt Sensoren von Wärmewacht selbst als Quelle: {entities}. Sie würde damit ihre eigenen Ergebnisse lesen, deshalb werden sie nicht ausgewertet. Unter Geräte & Dienste → Wärmewacht → Neu konfigurieren entfernen (Feld leer lassen oder die Entität der Wärmepumpe wählen). Was damit schon gebucht wurde, bleibt.",
+    ),
+}
+
+
+def _set(data: dict, path: str, value: str) -> None:
+    *parents, last = path.split(".")
+    for part in parents:
+        data = data.setdefault(part, {})
+    data[last] = value
+
+
 def build(lang: int) -> dict:
     data = _build(lang)
     steps = data["config"]["step"]
@@ -1404,6 +1535,8 @@ def build(lang: int) -> dict:
         "description": user["description"] + "\n\n" + DISABLED_HINT[lang],
     }
     _add_gas(data, lang)
+    for path, texts in TEXTS.items():
+        _set(data, path, texts[lang])
     return data
 
 
@@ -1413,6 +1546,7 @@ def icons() -> dict:
         for period in PERIODS:
             sensor[f"ratio_{scope}_{period}"] = {"default": icon}
     sensor.update({k: {"default": v[2]} for k, v in SENSORS.items()})
+    sensor.update({k: {"default": v[2]} for k, v in HYBRID_SENSORS.items()})
     sensor.update({f"{k}_status": {"default": v[2]} for k, v in STATUS.items()})
     return {
         "entity": {
