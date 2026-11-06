@@ -112,8 +112,8 @@ const TEXT = {
     noStatistics: "Noch keine Langzeitstatistik.",
     detail: {
       efficiency_drop: (a, n) => `AZ Heizen ${n(a.ratio_current, 2)} statt ${n(a.ratio_previous_same_weather, 2)}`,
-      aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 Tagen`,
-      aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 Tagen`,
+      aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 Tagen${a.aux_kwh_defrost_7d > 0 ? ` · beim Abtauen ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
+      aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 Tagen${a.aux_kwh_defrost > 0 ? ` · beim Abtauen ${n(a.aux_kwh_defrost, 2)} kWh` : ""}`,
       dhw_efficiency_drop: (a, n) => `AZ ${n(a.ratio, 2)} statt ${n(a.previous_ratio, 2)}`,
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} Starts/h · ${n(a.short_runs_24h, 0)} Kurzläufe`,
     },
@@ -230,8 +230,8 @@ const TEXT = {
     noStatistics: "No long-term statistics yet.",
     detail: {
       efficiency_drop: (a, n) => `COP heating ${n(a.ratio_current, 2)} instead of ${n(a.ratio_previous_same_weather, 2)}`,
-      aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 days`,
-      aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 days`,
+      aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 days${a.aux_kwh_defrost_7d > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
+      aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 days${a.aux_kwh_defrost > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost, 2)} kWh` : ""}`,
       dhw_efficiency_drop: (a, n) => `COP ${n(a.ratio, 2)} instead of ${n(a.previous_ratio, 2)}`,
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`,
     },
@@ -303,7 +303,7 @@ const STYLE = `
     overflow: hidden; text-overflow: ellipsis; }
   .tile .extra { font-size: 12px; color: var(--secondary-text-color); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--divider-color); color: var(--primary-text-color); }
+  th, td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--divider-color); color: var(--primary-text-color); }
   th { font-weight: 500; color: var(--secondary-text-color); }
   th:first-child, td:first-child { text-align: left; }
   td.link { cursor: pointer; }
@@ -444,8 +444,9 @@ class WaermewachtCard extends HTMLElement {
   }
 
   getGridOptions() {
-    const wide = this._topics().some((t) => WIDE.has(t)) || this._topics().length > 1;
-    return wide ? { columns: "full", min_columns: 6 } : { columns: 6, min_columns: 6 };
+    // Sections view: 12 columns are the section's full width (a section is
+    // one column of the view; analysis and months like more room).
+    return { columns: "full", min_columns: 6 };
   }
 
   static getConfigElement() {
@@ -565,7 +566,9 @@ class WaermewachtCard extends HTMLElement {
     if (card && title !== undefined && title.trim() === "" && title !== "") return "";
     const text = card && title ? title : t.topics[topic];
     let device = "";
-    if (card && (wwDevices(this._hass).length > 1 || this._config.show_device)) {
+    // The device only where it is not clear: several heat pumps and none
+    // chosen, or asked for (show_device).
+    if (card && (this._config.show_device || (!this._config.device_id && wwDevices(this._hass).length > 1))) {
       const entry = this._hass.devices?.[this._deviceId()];
       device = `<span class="device">${escapeHtml(entry?.name_by_user || entry?.name || "")}</span>`;
     }

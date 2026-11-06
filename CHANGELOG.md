@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Karten in Abschnitten richtig breit:** Kosten, Takte, Gesundheit und Co. füllten im Abschnitts-Dashboard nur die halbe Breite ihres Abschnitts. Jetzt nutzen alle Karten die ganze Breite; die Arbeitszahlen-Tabelle passt auch in eine schmale Spalte.
+- **Gerätename nur, wo nötig:** Die Karten zeigen den Namen der Wärmepumpe nur noch, wenn mehrere Wärmepumpen da sind und keine gewählt ist (oder mit `show_device: true`).
+- **Gesundheit: Heizstab beim Abtauen** steht jetzt mit in der Zeile („· beim Abtauen … kWh“), wenn es ihn gab.
+
 ## 0.3.1 – 2026-11-06
 
 - **Neu: eigene Karten fürs Dashboard.** Wärmewacht bringt neun Karten mit, eine je Thema: Jetzt, Arbeitszahlen, Gesundheit, Takte, Warmwasser, Kosten, Hybridanlage, Kennlinie und Heizlast sowie Wärme und Strom je Monat. Sie stehen in der Kartenauswahl unter „Wärmewacht“, ohne Zusatzkarten aus HACS und ohne Ressource eintragen. Die Karten finden ihre Entitäten selbst, auch bei anderer Sprache oder umbenannten Entity-IDs, und zeigen Zahlen und Befunde so, wie Home Assistant sie formatiert. Kennlinie, Energiesignatur und Monatssäulen sind eigene Diagramme (kein apexcharts nötig). Für alles in einer Karte gibt es zusätzlich „Wärmewacht“.
