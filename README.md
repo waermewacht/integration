@@ -30,7 +30,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 
 - [Was Wärmewacht kann](#was-wärmewacht-kann) · [Was Wärmewacht anders macht](#was-wärmewacht-anders-macht-als-template-sensoren)
 - **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung) · [Einstellungen](#einstellungen) · [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg)
-- **[Entitäten](#entitäten):** [Arbeitszahlen](#arbeitszahlen) · [Energie](#energie) · [Takte](#takte) · [Warmwasser-Ladungen](#warmwasser-ladungen) · [Gesundheits-Check](#gesundheits-check) · [Kosten und Gasvergleich](#kosten-und-gasvergleich) · [Kennlinie und Heizlast](#kennlinie-und-heizlast)
+- **[Entitäten](#entitäten):** [Arbeitszahlen](#arbeitszahlen) · [Energie](#energie) · [Takte](#takte) · [Warmwasser-Ladungen](#warmwasser-ladungen) · [Gesundheits-Check](#gesundheits-check) · [Hybridanlage](#hybridanlage) · [Kosten und Gasvergleich](#kosten-und-gasvergleich) · [Kennlinie und Heizlast](#kennlinie-und-heizlast)
 - **[Aktionen](#aktionen):** [Bericht](#bericht) · [AZ-Kennlinie](#az-kennlinie) · [Heizlast](#heizlast)
 - **Mehr:** [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
 
@@ -70,7 +70,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | Quelle | Status |
 | --- | --- |
 | [EMS-ESP](https://github.com/emsesp/EMS-ESP32) (MQTT) mit Bosch/Buderus-Wärmepumpen, z. B. CS5800i/CS6800i, WLW176i/WLW186i | Vorlage, erprobt an einer CS5800i/CS6800i |
-| EMS-ESP mit Gerät `heatpump`: Hybrid Manager HM200 (Hybridanlage mit Öl- oder Gaskessel), HP Module | Beta, aus den MQTT-Daten einer Hybridanlage; nur die Wärmepumpe, der Kessel zählt nicht mit |
+| EMS-ESP mit Gerät `heatpump`: Hybrid Manager HM200 (Hybridanlage mit Öl- oder Gaskessel), HP Module | Beta, aus den MQTT-Daten einer Hybridanlage; Wärmepumpe und Kessel getrennt, [Hybridanlage](#hybridanlage) |
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, lokal und Cloud) | Vorlage, neu, an derselben CS5800i/CS6800i mit EMS-ESP verglichen |
 | [Luxtronik](https://github.com/BenPru/luxtronik) (`luxtronik2`; alpha innotec, Novelan) | Beta, aus dem Quellcode; Strom je Betriebsart erst mit neuerer Firmware |
 | [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | Beta, aus dem Quellcode; Zähler in ganzen kWh; kein Strom fürs Kühlen, also keine EER |
@@ -89,7 +89,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 
 Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
 
-Bei Hybridanlagen (Kessel plus Hybrid Manager HM200) ist das Gerät `boiler` der Kessel; die Wärmepumpe steht unter dem Gerät `heatpump`. Dafür gibt es die Vorlage „EMS-ESP Heatpump“ (Beta): Kompressor aus der Drehzahl (`hpcompspd`), Zähler `nrgheat`/`meterheat` und `dhw_nrg`/`dhw_meter`. Die Außentemperatur hängt an einem anderen Gerät, sie wählst du in der Einrichtung selbst (unter „Weitere Felder“, etwa `sensor.boiler_outdoortemp`). Wärmewacht rechnet nur mit der Wärmepumpe: Heizt der Kessel mit, kommen Heizlast und Energiesignatur zu niedrig heraus.
+Bei Hybridanlagen (Öl- oder Gaskessel plus Hybrid Manager HM200) ist das Gerät `boiler` der Kessel; die Wärmepumpe steht unter dem Gerät `heatpump`. Dafür gibt es die Vorlage „EMS-ESP Heatpump“ (Beta): Wärmepumpe aus `heatpump_…` (Kompressor aus der Drehzahl `hpcompspd`), Kessel, Außen- und Speichertemperatur aus `boiler_…`. Wie Wärmewacht den Kessel behandelt, steht unter [Hybridanlage](#hybridanlage).
 
 Die HomeCom-Vorlage braucht die Energie je Betriebsart („Wärme erzeugt Heizung“, „Strom Kompressor Heizung“ usw.). `bosch_homecom` legt diese Entitäten deaktiviert an: Aktiviere sie zuerst. Die Einrichtung zeigt, welche noch deaktiviert sind. „Kompressor läuft“ ist die Kompressordrehzahl über 0. Gegenüber EMS-ESP hat HomeCom Grenzen:
 
@@ -420,6 +420,21 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 | Heizstab-Anteil Heizen / Warmwasser Monat, Saison | % | Anteil des Heizstabs innerhalb einer Betriebsart (dieselben Werte wie die Attribute `heating` und `dhw`). Läuft der Heizstab nur fürs Warmwasser, steht Heizen bei 0 % | Heizstab-Zähler und die Betriebsart vollständig |
 | Spreizung heute | K | Vorlauf minus Rücklauf, zeitgewichtet über die Zeit mit Kompressor im Heizbetrieb | Vorlauf, Rücklauf und Betriebsart |
 | Vorlauftemperatur heute | °C | mittlere Vorlauftemperatur, ebenso gewichtet | Vorlauf und Betriebsart |
+
+### Hybridanlage
+
+Mit einem Kessel neben der Wärmepumpe (Abschnitt „Kessel (Hybridanlage)“ in der Einrichtung) zählt Wärmewacht den Kessel **nie als Wärmepumpe**: Arbeitszahlen, AZ-Kennlinie, Stillstand, Heizstab und Kosten bleiben die der Wärmepumpe. Die Wärme des Kessels geht dort ein, wo es um das Gebäude geht: Heizlast und Energiesignatur, Wärme je Gradtag und Vorlauf bei 0 °C rechnen mit der Wärme von Wärmepumpe **und** Kessel.
+
+| Entität | Was | Braucht |
+| --- | --- | --- |
+| Wärme Kessel Heizen / Warmwasser | Wärme, die der Kessel meldet (Buderus „Abgegebene Energie“, EMS-ESP `boiler_nrgheat2`, `boiler_dhw_nrg2`) | Zuordnung |
+| Brennstoff Kessel Heizen / Warmwasser | Brennstoff in kWh (EMS-ESP `boiler_gasmeterheat`, `boiler_dhw_gasmeter`, auch bei Öl) | Zuordnung |
+| Anteil Wärmepumpe Heizen Monat / Saison | Wärme der Wärmepumpe in % der Wärme von Wärmepumpe und Kessel, nur Heizen (wie die meisten Feldstudien). Attribute: `with_dhw` (mit Warmwasser), `heat_pump_heat_kwh`, `boiler_heat_kwh`, dieselben mit `_dhw`, `boiler_heat_from_fuel`, `boiler_efficiency`, `period_start` | Wärme Heizen der Wärmepumpe und Kessel |
+
+- **Kesselwärme:** am besten die Wärme, die der Kessel selbst meldet. Nur ohne sie rechnet Wärmewacht Brennstoff × Kesselnutzungsgrad (Einstellungen, Vorgabe 0,87 auf Hs). Den Wert `boiler_nrgheat` von EMS-ESP nimmt Wärmewacht nie: Den rechnet EMS-ESP selbst aus Modulation × eingestellter Nennleistung.
+- **Genauigkeit:** Auch der Kessel misst nicht, er schätzt aus seinen Betriebsdaten (laut Buderus mit möglicherweise erheblicher Abweichung). Der Anteil der Wärmepumpe ist deshalb eine gute Größenordnung, kein Messwert, und kein Nachweis nach dem Gebäudemodernisierungsgesetz.
+- **Zeitraum:** Kessel- und Wärmepumpenzähler beginnen oft zu verschiedenen Zeitpunkten; Wärmewacht rechnet den Anteil deshalb nur aus Monat und Saison, nie aus Lebenszeitständen. Der Kessel meldet etwa alle 10 Minuten in 0,1 kWh.
+- **Leistung je Heizlast** ist bei einer Hybridanlage meist unter 1: so geplant, kein Fehler.
 
 ### Kosten und Gasvergleich
 

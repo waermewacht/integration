@@ -131,6 +131,8 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
     ),
 }
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
+# Sections that came after the first release of the form.
+LATER_SECTIONS = frozenset({"boiler"})
 
 
 # Flow units in Home Assistant's spelling and in lower case.
@@ -210,7 +212,13 @@ def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.
     collapsible = ("cooling", "boiler", "measurements", "activity_parts", MORE)
     return vol.Schema(
         {
-            vol.Required(name): section(
+            # Sections added later are optional: input from before them
+            # (stored flows, tests) stays valid.
+            (
+                vol.Optional(name, default={})
+                if name in LATER_SECTIONS
+                else vol.Required(name)
+            ): section(
                 vol.Schema(
                     {
                         vol.Optional(

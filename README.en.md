@@ -30,7 +30,7 @@ The user interface is available in German and English and follows the language o
 
 - [Features](#features) · [What Wärmewacht does differently](#what-wärmewacht-does-differently-from-template-sensors)
 - **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup) · [Settings](#settings) · [Gas boiler before switching](#gas-boiler-before-switching)
-- **[Entities](#entities):** [Performance factors](#performance-factors) · [Energy](#energy) · [Cycling](#cycling) · [Hot water charges](#hot-water-charges) · [Health check](#health-check) · [Costs and gas comparison](#costs-and-gas-comparison) · [Performance curve and heat load](#performance-curve-and-heat-load)
+- **[Entities](#entities):** [Performance factors](#performance-factors) · [Energy](#energy) · [Cycling](#cycling) · [Hot water charges](#hot-water-charges) · [Health check](#health-check) · [Hybrid system](#hybrid-system) · [Costs and gas comparison](#costs-and-gas-comparison) · [Performance curve and heat load](#performance-curve-and-heat-load)
 - **[Actions](#actions):** [Report](#report) · [Performance curve](#performance-curve) · [Heat load](#heat-load)
 - **More:** [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
 
@@ -70,7 +70,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | Source | Status |
 | --- | --- |
 | [EMS-ESP](https://github.com/emsesp/EMS-ESP32) (MQTT) with Bosch/Buderus heat pumps, e.g. CS5800i/CS6800i, WLW176i/WLW186i | template, tested on a CS5800i/CS6800i |
-| EMS-ESP with the device `heatpump`: Hybrid Manager HM200 (hybrid system with an oil or gas boiler), HP Module | beta, from the MQTT data of a hybrid system; the heat pump only, the boiler does not count |
+| EMS-ESP with the device `heatpump`: Hybrid Manager HM200 (hybrid system with an oil or gas boiler), HP Module | beta, from the MQTT data of a hybrid system; heat pump and boiler apart, [hybrid system](#hybrid-system) |
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, local and cloud) | template, new, compared with EMS-ESP on the same CS5800i/CS6800i |
 | [Luxtronik](https://github.com/BenPru/luxtronik) (`luxtronik2`; alpha innotec, Novelan) | beta, from the source code; electricity per mode only with newer firmware |
 | [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | beta, from the source code; meters in whole kWh; no cooling electricity, so no EER |
@@ -89,7 +89,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 
 The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID, so renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
 
-In hybrid systems (boiler plus Hybrid Manager HM200) the device `boiler` is the boiler; the heat pump sits under the device `heatpump`. The template "EMS-ESP Heatpump" (beta) covers it: compressor from the speed (`hpcompspd`), meters `nrgheat`/`meterheat` and `dhw_nrg`/`dhw_meter`. The outdoor temperature belongs to another device; pick it yourself in the setup (under "More fields", e.g. `sensor.boiler_outdoortemp`). Wärmewacht only counts the heat pump: if the boiler heats as well, heat load and energy signature come out too low.
+In hybrid systems (oil or gas boiler plus Hybrid Manager HM200) the device `boiler` is the boiler; the heat pump sits under the device `heatpump`. The template "EMS-ESP Heatpump" (beta) covers it: the heat pump from `heatpump_…` (compressor from the speed `hpcompspd`), boiler, outdoor and storage temperature from `boiler_…`. How Wärmewacht treats the boiler: see [Hybrid system](#hybrid-system).
 
 The HomeCom template needs the energy per mode ("Wärme erzeugt Heizung", "Strom Kompressor Heizung" etc.; English: heat produced and compressor energy per heating, hot water and cooling). `bosch_homecom` creates these entities disabled: enable them first. The setup shows which ones are still disabled. "Compressor running" is the compressor speed above 0. Compared with EMS-ESP, HomeCom has limits:
 
@@ -420,6 +420,21 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 | Backup heater share heating / hot water month, season | % | backup heater share within one mode (the same values as the attributes `heating` and `dhw`). If the heater only runs for hot water, heating shows 0 % | backup heater meter and the mode complete |
 | Flow-return spread today | K | flow minus return, time-weighted over the time the compressor was heating | flow, return and activity |
 | Flow temperature today | °C | mean flow temperature, weighted the same way | flow and activity |
+
+### Hybrid system
+
+With a boiler next to the heat pump (section "Boiler (hybrid system)" in the setup) Wärmewacht **never counts the boiler as heat pump**: performance factors, performance curve, standby, backup heater and costs stay the heat pump's. The boiler's heat enters where the building is concerned: heat load and energy signature, heat per degree day and flow at 0 °C count the heat of heat pump **and** boiler.
+
+| Entity | What | Needs |
+| --- | --- | --- |
+| Boiler heat heating / hot water | Heat the boiler reports (Buderus "energy supplied", EMS-ESP `boiler_nrgheat2`, `boiler_dhw_nrg2`) | mapping |
+| Boiler fuel heating / hot water | Fuel in kWh (EMS-ESP `boiler_gasmeterheat`, `boiler_dhw_gasmeter`, also for oil) | mapping |
+| Heat pump share heating month / season | Heat pump heat in % of the heat of heat pump and boiler, heating only (as most field studies). Attributes: `with_dhw` (with hot water), `heat_pump_heat_kwh`, `boiler_heat_kwh`, the same with `_dhw`, `boiler_heat_from_fuel`, `boiler_efficiency`, `period_start` | heat pump heating heat and boiler |
+
+- **Boiler heat:** best the heat the boiler reports itself. Only without it Wärmewacht takes fuel × boiler efficiency (settings, default 0.87 on the gross calorific value). It never takes EMS-ESP's `boiler_nrgheat`: EMS-ESP calculates that one from modulation × the nominal power set.
+- **Accuracy:** the boiler does not measure either, it estimates from its operating data (per Buderus possibly with a considerable deviation). The heat pump's share is a good order of magnitude, not a measurement, and no proof under the building law.
+- **Period:** boiler and heat pump counters often start at different times; the share is therefore only computed for month and season, never from lifetime readings. The boiler reports about every 10 minutes in 0.1 kWh.
+- **Power per heat load** is mostly below 1 in a hybrid system: planned that way, not a fault.
 
 ### Costs and gas comparison
 

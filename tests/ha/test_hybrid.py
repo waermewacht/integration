@@ -77,7 +77,8 @@ async def test_boiler_booked_apart_and_share(
     # A heating run of the heat pump, the boiler helping meanwhile.
     hass.states.async_set(COMPRESSOR, "on")
     hass.states.async_set(ACTIVITY, "Heizen")
-    await tick(hass, freezer, 1)
+    # Half an hour later (the jump check allows at most 50 kW per counter).
+    await tick(hass, freezer, 30)
     hass.states.async_set(HEAT_HEATING, "1003.0", ENERGY)
     hass.states.async_set(ELEC_HEATING, "301.0", ENERGY)
     hass.states.async_set(BOILER_HEAT, "15002.0", ENERGY)
