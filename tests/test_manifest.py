@@ -122,3 +122,12 @@ def test_entity_form_translated() -> None:
         assert set(sections[name]["data"]) == {s.value for s in signals}, name
     # "more" may hold any field a template did not find.
     assert set(sections[MORE]["data"]) == {s.value for s in FORM_SIGNALS}
+
+
+def test_settings_point_to_reconfigure() -> None:
+    """Entities are not in the settings (gear) but under Reconfigure: both
+    settings forms say so, users look for them there (issue #3)."""
+    for lang, word in (("en", "Reconfigure"), ("de", "Neu konfigurieren")):
+        steps = load(INTEGRATION / "translations" / f"{lang}.json")["options"]["step"]
+        for step in ("init", "gas"):
+            assert word in steps[step]["description"], (lang, step)

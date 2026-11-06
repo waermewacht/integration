@@ -205,6 +205,7 @@
     "step": {
       "init": {
         "title": "Settings",
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
         "data": {
           "min_electricity": "Minimum electricity for a ratio",
           "short_run_minutes": "Short run below",
@@ -256,6 +257,7 @@
       },
       "gas": {
         "title": "Settings",
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
         "data": {
           "boiler_efficiency": "Boiler efficiency (Hs)",
           "design_outdoor_temp": "Design outdoor temperature",

@@ -6,6 +6,7 @@
 - **README, Gasheizung:** Abschnitt „Später ändern“: Zähler, Außentemperatur und Vorlauf lassen sich unter *Neu konfigurieren* tauschen, Löschen und Neuanlegen ist nie nötig. Dasselbe steht jetzt deutlicher unter „Neu konfigurieren“ (Rückmeldung in [#3](https://github.com/waermewacht/integration/issues/3): Eintrag gelöscht, weil das nicht klar war).
 - **README, Grenzen der Gasheizung:** Solarthermie genauer: Sie senkt den Warmwasseranteil, und je nachdem, wann sie liefert, wird die Gerade steiler oder flacher. Bisher stand dort pauschal „Heizlast zu niedrig“.
 - **Gasheizung ein zweites Mal eingerichtet: klarer Hinweis.** Wer für einen schon eingerichteten Gaszähler einen weiteren Eintrag anlegte, bekam „Diese Wärmepumpe ist bereits eingerichtet“ und dachte, das Speichern habe nicht geklappt. Jetzt nennt der Hinweis den bestehenden Eintrag und wo sich Felder nachtragen lassen: Entitäten wie Vorlauftemperatur oder Warmwasser-Zähler unter ⋮ → Neu konfigurieren, Normaußentemperatur und Preise unter dem Zahnrad. Auch bei der Wärmepumpe verweist der Hinweis jetzt auf „Neu konfigurieren“ ([#3](https://github.com/waermewacht/integration/issues/3)).
+- **Einstellungen (Zahnrad) verweisen auf „Neu konfigurieren“.** Wer eine Entität ändern wollte, suchte sie unter dem Zahnrad, wo nur Kennwerte und Preise stehen. Oben im Formular steht jetzt, dass Zähler und Sensoren beim Eintrag unter ⋮ → Neu konfigurieren getauscht, ergänzt oder entfernt werden, bei Wärmepumpe und Gasheizung ([#3](https://github.com/waermewacht/integration/issues/3)).
 
 ## 0.2.7 – 2026-11-05
 

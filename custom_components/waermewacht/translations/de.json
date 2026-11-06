@@ -205,6 +205,7 @@
     "step": {
       "init": {
         "title": "Einstellungen",
+        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
         "data": {
           "min_electricity": "Mindeststrom für eine Arbeitszahl",
           "short_run_minutes": "Kurzlauf unter",
@@ -256,6 +257,7 @@
       },
       "gas": {
         "title": "Einstellungen",
+        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
         "data": {
           "boiler_efficiency": "Nutzungsgrad des Kessels (Hs)",
           "design_outdoor_temp": "Normaußentemperatur",
