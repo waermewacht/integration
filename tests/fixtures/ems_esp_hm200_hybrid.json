@@ -1,0 +1,312 @@
+{
+  "activity_values_seen": [
+    "Heizen"
+  ],
+  "entities": [
+    {
+      "entity_id": "sensor.heatpump_nrgheat",
+      "unique_id": "heatpump_nrgheat",
+      "state": "5123.45",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_meterheat",
+      "unique_id": "heatpump_meterheat",
+      "state": "1789.01",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_metertotal",
+      "unique_id": "heatpump_metertotal",
+      "state": "2101.23",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_metercomp",
+      "unique_id": "heatpump_metercomp",
+      "state": "2101.23",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_metereheat",
+      "unique_id": "heatpump_metereheat",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_nrg",
+      "unique_id": "heatpump_dhw_nrg",
+      "state": "987.65",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_meter",
+      "unique_id": "heatpump_dhw_meter",
+      "state": "312.22",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_elheat",
+      "unique_id": "heatpump_elheat",
+      "state": "1789.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_elgenheat",
+      "unique_id": "heatpump_elgenheat",
+      "state": "5123.4",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_fuelheat",
+      "unique_id": "heatpump_fuelheat",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_eldhw",
+      "unique_id": "heatpump_dhw_eldhw",
+      "state": "312.2",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_elgendhw",
+      "unique_id": "heatpump_dhw_elgendhw",
+      "state": "987.6",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_fueldhw",
+      "unique_id": "heatpump_dhw_fueldhw",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_hpcompspd",
+      "unique_id": "heatpump_hpcompspd",
+      "state": "35",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_hpactivity",
+      "unique_id": "heatpump_hpactivity",
+      "state": "Heizen",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.heatpump_hppower",
+      "unique_id": "heatpump_hppower",
+      "state": "2900",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_hpcurrpower",
+      "unique_id": "heatpump_hpcurrpower",
+      "state": "950",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_heatingstarts",
+      "unique_id": "heatpump_heatingstarts",
+      "state": "1234",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_startshp",
+      "unique_id": "heatpump_dhw_startshp",
+      "state": "150",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_curflowtemp",
+      "unique_id": "heatpump_curflowtemp",
+      "state": "41.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_rettemp",
+      "unique_id": "heatpump_rettemp",
+      "state": "37.2",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_hybridstrategy",
+      "unique_id": "heatpump_hybridstrategy",
+      "state": "kostenoptimiert",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.boiler_nrgheat",
+      "unique_id": "boiler_nrgheat",
+      "state": "15432.10",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_meterheat",
+      "unique_id": "boiler_meterheat",
+      "state": "21.3",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_gasmeterheat",
+      "unique_id": "boiler_gasmeterheat",
+      "state": "16010.5",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_nrgtotal",
+      "unique_id": "boiler_nrgtotal",
+      "state": "17210.98",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_nrg",
+      "unique_id": "boiler_dhw_nrg",
+      "state": "1778.88",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_meter",
+      "unique_id": "boiler_dhw_meter",
+      "state": "2.9",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_gasmeter",
+      "unique_id": "boiler_dhw_gasmeter",
+      "state": "1901.2",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_outdoortemp",
+      "unique_id": "boiler_outdoortemp",
+      "state": "4.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_curtemp",
+      "unique_id": "boiler_dhw_curtemp",
+      "state": "46.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.boiler_dhw_starts",
+      "unique_id": "boiler_dhw_starts",
+      "state": "280",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    }
+  ]
+}

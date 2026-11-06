@@ -13,6 +13,7 @@ from .conftest import load_fixture
 FIXTURES = {
     "ems_esp_cs6800i.json": "ems_esp",
     "ems_esp_long_names.json": "ems_esp",
+    "ems_esp_hm200_hybrid.json": "ems_esp_heatpump",
     "bosch_homecom_k40.json": "bosch_homecom",
     "luxtronik_lwd70a.json": "luxtronik",
     "stiebel_isg_wpmsystem.json": "stiebel_isg",
@@ -46,7 +47,7 @@ def test_keys_and_platforms_are_unique() -> None:
     assert all(key == t.key for key, t in TEMPLATES.items())
     # EMS-ESP, the F1p bridge and P1P2MQTT share the platform (all MQTT);
     # their keys keep them apart (test_each_fixture_found_by_its_template_only).
-    mqtt = ("f1p", "p1p2mqtt")
+    mqtt = ("f1p", "p1p2mqtt", "ems_esp_heatpump")
     platforms = [t.platform for t in TEMPLATES.values() if t.key not in mqtt]
     assert len(platforms) == len(set(platforms))
     assert {TEMPLATES[k].platform for k in (*mqtt, "ems_esp")} == {"mqtt"}

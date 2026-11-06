@@ -8,6 +8,7 @@ from custom_components.waermewacht.model import Activity, Signal
 from custom_components.waermewacht.profiles import (
     BOSCH_HOMECOM,
     EMS_ESP,
+    EMS_ESP_HEATPUMP,
     RegistryEntry,
     find,
     parse_compressor,
@@ -262,3 +263,62 @@ def test_ems_esp_backup_heater_in_hundredths_long_names() -> None:
     assert match.history[Signal.AUX_DHW] == [
         "sensor.boiler_dhw_aux_elec_heater_energy_consumption"
     ]
+
+
+def hybrid() -> list[RegistryEntry]:
+    rows = load_fixture("ems_esp_hm200_hybrid.json")["entities"]
+    return [RegistryEntry(r["entity_id"], "mqtt", r["unique_id"]) for r in rows]
+
+
+def test_hybrid_manager_is_the_heat_pump_and_the_boiler_is_not() -> None:
+    """Hybrid (boiler + HM200): the heat pump's counters sit on the device
+    heatpump. The boiler's nrgheat/meterheat are the boiler's heat and its
+    auxiliary electricity; without a compressor they never make a heat pump."""
+    assert find(EMS_ESP, hybrid()) == []
+    (match,) = find(EMS_ESP_HEATPUMP, hybrid())
+    assert match.prefix == ""
+    assert match.entities == {
+        Signal.HEAT_HEATING: "sensor.heatpump_nrgheat",
+        Signal.HEAT_DHW: "sensor.heatpump_dhw_nrg",
+        Signal.ELEC_HEATING: "sensor.heatpump_meterheat",
+        Signal.ELEC_DHW: "sensor.heatpump_dhw_meter",
+        Signal.AUX_TOTAL: "sensor.heatpump_metereheat",
+        Signal.COMPRESSOR: "sensor.heatpump_hpcompspd",
+        Signal.ACTIVITY: "sensor.heatpump_hpactivity",
+        Signal.FLOW_TEMP: "sensor.heatpump_curflowtemp",
+        Signal.RETURN_TEMP: "sensor.heatpump_rettemp",
+    }
+
+
+@pytest.mark.parametrize(
+    ("state", "activity"),
+    [
+        ("Heizen", Activity.HEATING),
+        ("hot water", Activity.DHW),
+        ("Abtauen", Activity.DEFROST),
+        # enum_hpactivity1: other indexes than the boiler's enum_hpactivity.
+        ("2", Activity.DHW),
+        ("3", Activity.DEFROST),
+        ("4", Activity.OTHER),
+    ],
+)
+def test_hybrid_manager_activity(state: str, activity: Activity) -> None:
+    assert EMS_ESP_HEATPUMP.parse_activity(state) is activity
+    if state == "2":
+        assert EMS_ESP.parse_activity(state) is Activity.COOLING
+
+
+def test_hybrid_manager_multiple_instances() -> None:
+    rows = [
+        RegistryEntry(
+            "sensor.ems_esp_heatpump_nrgheat", "mqtt", "ems-esp_heatpump_nrgheat"
+        ),
+        RegistryEntry(
+            "sensor.ems_esp_heatpump_meterheat", "mqtt", "ems-esp_heatpump_meterheat"
+        ),
+        RegistryEntry(
+            "sensor.ems_esp_heatpump_hpcompspd", "mqtt", "ems-esp_heatpump_hpcompspd"
+        ),
+    ]
+    (match,) = find(EMS_ESP_HEATPUMP, rows)
+    assert match.prefix == "ems-esp"

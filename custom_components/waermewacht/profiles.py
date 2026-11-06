@@ -386,6 +386,46 @@ EMS_ESP = Template(
     },
 )
 
+
+# EMS-ESP device "heatpump" (EMSdevice::DeviceType::HEATPUMP, device_library.h:
+# 252 "HP Module", 248 "Hybrid Manager HM200", 16 "CSH5800iG"; heatpump.cpp).
+# Seen on a hybrid system (oil/gas boiler Logano GB125 as device "boiler" plus
+# HM200.2, EMS-ESP 3.8.6, simon42 95035, 2026-11-06): the heat pump's counters
+# sit here, the device "boiler" is the boiler. The same short names as the
+# boiler device (telegrams 0x4AE/0x4AF), but in the DHW tag without the 3.6
+# names (mqtt.cpp converts only boiler and thermostat). The compressor is only
+# its speed in %, the activity is enum_hpactivity1 with other indexes than
+# enum_hpactivity (locale_common.h): 0 off, 1 heating, 2 hot water, 3 defrost,
+# 4 compressor alarm. No outdoor temperature on this device.
+EMS_ESP_HEATPUMP_ACTIVITY = {
+    **{word: a for word, a in EMS_ESP_ACTIVITY.items() if not word.isdigit()},
+    "0": Activity.OFF,
+    "1": Activity.HEATING,
+    "2": Activity.DHW,
+    "3": Activity.DEFROST,
+    "4": Activity.OTHER,
+}
+EMS_ESP_HEATPUMP = Template(
+    key="ems_esp_heatpump",
+    label="EMS-ESP Heatpump (HM200, HP Module)",
+    platform="mqtt",
+    id_format=r"(?:(?P<prefix>(?!heatpump_).+?)_)?heatpump_(?P<key>.+)",
+    signals={
+        Signal.HEAT_HEATING: ((_S, "nrgheat"), (_S, "energy_heating")),
+        Signal.HEAT_DHW: ((_S, "dhw_nrg"), (_S, "dhw_energy")),
+        Signal.ELEC_HEATING: ((_S, "meterheat"), (_S, "meter_heating")),
+        Signal.ELEC_DHW: ((_S, "dhw_meter"),),
+        Signal.AUX_TOTAL: ((_S, "metereheat"), (_S, "meter_e-heater")),
+        Signal.COMPRESSOR: ((_S, "hpcompspd"), (_S, "compressor_speed")),
+        Signal.ACTIVITY: ((_S, "hpactivity"), (_S, "compressor_activity")),
+        Signal.FLOW_TEMP: ((_S, "curflowtemp"),),
+        Signal.RETURN_TEMP: ((_S, "rettemp"),),
+    },
+    required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
+    activity_values=EMS_ESP_HEATPUMP_ACTIVITY,
+    experimental=True,
+)
+
 # Compressor status of the Bosch PointT cloud (/heatSources/compressor/status,
 # K40 gateways), the same words as EMS-ESP's hpactivity. Read by BassXT/buderus
 # and, from bosch_homecom PR #217 (homecom_alt PR #151) on, by bosch_homecom.

@@ -70,6 +70,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | Source | Status |
 | --- | --- |
 | [EMS-ESP](https://github.com/emsesp/EMS-ESP32) (MQTT) with Bosch/Buderus heat pumps, e.g. CS5800i/CS6800i, WLW176i/WLW186i | template, tested on a CS5800i/CS6800i |
+| EMS-ESP with the device `heatpump`: Hybrid Manager HM200 (hybrid system with an oil or gas boiler), HP Module | beta, from the MQTT data of a hybrid system; the heat pump only, the boiler does not count |
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, local and cloud) | template, new, compared with EMS-ESP on the same CS5800i/CS6800i |
 | [Luxtronik](https://github.com/BenPru/luxtronik) (`luxtronik2`; alpha innotec, Novelan) | beta, from the source code; electricity per mode only with newer firmware |
 | [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | beta, from the source code; meters in whole kWh; no cooling electricity, so no EER |
@@ -87,6 +88,8 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | any heat and electricity meters | manual mapping |
 
 The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID, so renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.
+
+In hybrid systems (boiler plus Hybrid Manager HM200) the device `boiler` is the boiler; the heat pump sits under the device `heatpump`. The template "EMS-ESP Heatpump" (beta) covers it: compressor from the speed (`hpcompspd`), meters `nrgheat`/`meterheat` and `dhw_nrg`/`dhw_meter`. The outdoor temperature belongs to another device; pick it yourself in the setup (under "More fields", e.g. `sensor.boiler_outdoortemp`). Wärmewacht only counts the heat pump: if the boiler heats as well, heat load and energy signature come out too low.
 
 The HomeCom template needs the energy per mode ("Wärme erzeugt Heizung", "Strom Kompressor Heizung" etc.; English: heat produced and compressor energy per heating, hot water and cooling). `bosch_homecom` creates these entities disabled: enable them first. The setup shows which ones are still disabled. "Compressor running" is the compressor speed above 0. Compared with EMS-ESP, HomeCom has limits:
 

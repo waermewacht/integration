@@ -108,5 +108,10 @@
     "source": "Entity registry of the same installation as ems_esp_cs6800i.json after the update to EMS-ESP 3.9.0-dev.23 (proddy's build with emsesp/EMS-ESP32#3325, telegram 0x4AF offsets 28 and 36), Home Assistant 2026.10.4, read on 2026-11-02. Only the two new counters; use together with ems_esp_cs6800i.json.",
     "real": "entity ids, unique ids (platform mqtt), unit, device and state class of the backup heater per mode in 0.01 kWh ('metereheatheat', DHW tag 'dhw_metereheat').",
     "made_up": "every state value."
+  },
+  "ems_esp_hm200_hybrid.json": {
+    "source": "MQTT payloads ems-esp/heatpump_data (complete) and ems-esp/boiler_data (part) of a hybrid system Buderus Logano GB125 + Hybrid Manager HM200.2 via EMS-ESP 3.8.6, posted by a user (simon42 95035 #40 and PN, 2026-11-06); entity and unique ids built by EMS-ESP's rule for the default format 'single instance, short names' (mqtt.cpp: '<device>_<tag>_<shortname>', no 3.6 names for the device heatpump).",
+    "real": "which values the two devices deliver (keys), the split of the counters (heat pump on 'heatpump', boiler with gasmeter on 'boiler'), resolution 0.01 kWh of nrg/meter and 0.1 kWh of el*/fuel*, activity word 'Heizen' (EMS-ESP German), compressor only as speed in %.",
+    "made_up": "every state value; attributes (unit, device and state class) follow EMS-ESP's discovery for kWh, °C, W and % and were not read from this installation's registry."
   }
 }

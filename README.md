@@ -70,6 +70,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | Quelle | Status |
 | --- | --- |
 | [EMS-ESP](https://github.com/emsesp/EMS-ESP32) (MQTT) mit Bosch/Buderus-Wärmepumpen, z. B. CS5800i/CS6800i, WLW176i/WLW186i | Vorlage, erprobt an einer CS5800i/CS6800i |
+| EMS-ESP mit Gerät `heatpump`: Hybrid Manager HM200 (Hybridanlage mit Öl- oder Gaskessel), HP Module | Beta, aus den MQTT-Daten einer Hybridanlage; nur die Wärmepumpe, der Kessel zählt nicht mit |
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, lokal und Cloud) | Vorlage, neu, an derselben CS5800i/CS6800i mit EMS-ESP verglichen |
 | [Luxtronik](https://github.com/BenPru/luxtronik) (`luxtronik2`; alpha innotec, Novelan) | Beta, aus dem Quellcode; Strom je Betriebsart erst mit neuerer Firmware |
 | [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | Beta, aus dem Quellcode; Zähler in ganzen kWh; kein Strom fürs Kühlen, also keine EER |
@@ -87,6 +88,8 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
 Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
+
+Bei Hybridanlagen (Kessel plus Hybrid Manager HM200) ist das Gerät `boiler` der Kessel; die Wärmepumpe steht unter dem Gerät `heatpump`. Dafür gibt es die Vorlage „EMS-ESP Heatpump“ (Beta): Kompressor aus der Drehzahl (`hpcompspd`), Zähler `nrgheat`/`meterheat` und `dhw_nrg`/`dhw_meter`. Die Außentemperatur hängt an einem anderen Gerät, sie wählst du in der Einrichtung selbst (unter „Weitere Felder“, etwa `sensor.boiler_outdoortemp`). Wärmewacht rechnet nur mit der Wärmepumpe: Heizt der Kessel mit, kommen Heizlast und Energiesignatur zu niedrig heraus.
 
 Die HomeCom-Vorlage braucht die Energie je Betriebsart („Wärme erzeugt Heizung“, „Strom Kompressor Heizung“ usw.). `bosch_homecom` legt diese Entitäten deaktiviert an: Aktiviere sie zuerst. Die Einrichtung zeigt, welche noch deaktiviert sind. „Kompressor läuft“ ist die Kompressordrehzahl über 0. Gegenüber EMS-ESP hat HomeCom Grenzen:
 

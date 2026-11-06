@@ -7,7 +7,7 @@ import from profiles.py without a cycle.
 
 from __future__ import annotations
 
-from .profiles import BOSCH_HOMECOM, EMS_ESP, Template
+from .profiles import BOSCH_HOMECOM, EMS_ESP, EMS_ESP_HEATPUMP, Template
 from .profiles_buderus import BUDERUS
 from .profiles_esphome_ecodan import ESPHOME_ECODAN
 from .profiles_f1p import F1P
@@ -26,6 +26,7 @@ TEMPLATES: dict[str, Template] = {
     t.key: t
     for t in (
         EMS_ESP,
+        EMS_ESP_HEATPUMP,
         BOSCH_HOMECOM,
         LUXTRONIK,
         STIEBEL_ISG,
