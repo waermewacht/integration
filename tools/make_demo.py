@@ -62,6 +62,7 @@ from custom_components.waermewacht.const import (  # noqa: E402
     HISTORY_DAYS,
 )
 from custom_components.waermewacht.costs import (  # noqa: E402
+    BOILER_EFFICIENCY_HS,
     CostComparison,
     compare_with_gas,
 )
@@ -81,7 +82,6 @@ from custom_components.waermewacht.degree_days import (  # noqa: E402
     daily_degree_days,
     degree_days,
 )
-from custom_components.waermewacht.costs import BOILER_EFFICIENCY_HS  # noqa: E402
 from custom_components.waermewacht.energy import (  # noqa: E402
     Kind,
     Totals,
@@ -393,7 +393,11 @@ class Sim:
                 Signal.ELEC_DHW,
                 Signal.AUX_HEATING,
                 Signal.AUX_DHW,
-                *((Signal.BOILER_HEAT_HEATING,) if scenario.bivalent is not None else ()),
+                *(
+                    (Signal.BOILER_HEAT_HEATING,)
+                    if scenario.bivalent is not None
+                    else ()
+                ),
             )
         }
         self.own: dict[datetime, dict[str, float]] = {}
