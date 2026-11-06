@@ -34,25 +34,32 @@ def _aux(runtime: HeatPumpRuntime) -> bool:
     return any(s in runtime.entities for s in (*AUX_SIGNALS.values(), Signal.AUX_TOTAL))
 
 
+def health_checks(runtime: HeatPumpRuntime) -> list[str]:
+    """The checks this heat pump has data for (also the status sensors)."""
+    checks: list[str] = []
+    if Signal.COMPRESSOR in runtime.entities:
+        checks.append("cycling_problem")
+    if _heating(runtime):
+        checks.append("efficiency_drop")
+        if _aux(runtime):
+            checks.append("aux_mild_weather")
+    # Normal and disinfection charges need the storage temperature.
+    if runtime.has_charges and Signal.DHW_TEMP in runtime.entities:
+        checks.append("dhw_efficiency_drop")
+        if any(s in runtime.entities for s in (Signal.AUX_DHW, Signal.AUX_TOTAL)):
+            checks.append("aux_dhw_charges")
+    return checks
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: WaermewachtConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    runtime = entry.runtime_data
-    entities: list[BinarySensorEntity] = []
-    if Signal.COMPRESSOR in runtime.entities:
-        entities.append(CyclingProblem(entry))
-    if _heating(runtime):
-        entities.append(HealthProblem(entry, "efficiency_drop"))
-        if _aux(runtime):
-            entities.append(HealthProblem(entry, "aux_mild_weather"))
-    # Normal and disinfection charges need the storage temperature.
-    if runtime.has_charges and Signal.DHW_TEMP in runtime.entities:
-        entities.append(HealthProblem(entry, "dhw_efficiency_drop"))
-        if any(s in runtime.entities for s in (Signal.AUX_DHW, Signal.AUX_TOTAL)):
-            entities.append(HealthProblem(entry, "aux_dhw_charges"))
-    async_add_entities(entities)
+    async_add_entities(
+        CyclingProblem(entry) if key == "cycling_problem" else HealthProblem(entry, key)
+        for key in health_checks(entry.runtime_data)
+    )
 
 
 class CyclingProblem(HeatPumpEntity, BinarySensorEntity):

@@ -558,6 +558,91 @@
       },
       "gas_cost_year": {
         "name": "Gaskosten 365 Tage"
+      },
+      "cycling_problem_status": {
+        "name": "Befund Takten",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "comparison_restarted": "Vergleich neu gestartet",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "efficiency_drop_status": {
+        "name": "Befund Effizienz",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "comparison_restarted": "Vergleich neu gestartet",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "aux_mild_weather_status": {
+        "name": "Befund Heizstab milde Tage",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "comparison_restarted": "Vergleich neu gestartet",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "aux_dhw_charges_status": {
+        "name": "Befund Heizstab Warmwasser",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "comparison_restarted": "Vergleich neu gestartet",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "dhw_efficiency_drop_status": {
+        "name": "Befund Warmwasser Vorjahr",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "comparison_restarted": "Vergleich neu gestartet",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
       }
     },
     "number": {

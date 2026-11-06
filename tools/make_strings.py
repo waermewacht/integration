@@ -254,6 +254,43 @@ BINARY = {
         "mdi:water-thermometer-outline",
     ),
 }
+# Status sensors of the checks: (en, de, icon) and their states.
+STATUS = {
+    "cycling_problem": ("Check cycling", "Befund Takten", "mdi:sine-wave"),
+    "efficiency_drop": ("Check efficiency", "Befund Effizienz", "mdi:trending-down"),
+    "aux_mild_weather": (
+        "Check backup heater mild days",
+        "Befund Heizstab milde Tage",
+        "mdi:heating-coil",
+    ),
+    "aux_dhw_charges": (
+        "Check backup heater hot water",
+        "Befund Heizstab Warmwasser",
+        "mdi:water-boiler-alert",
+    ),
+    "dhw_efficiency_drop": (
+        "Check hot water vs. last year",
+        "Befund Warmwasser Vorjahr",
+        "mdi:water-thermometer-outline",
+    ),
+}
+STATUS_STATES = {
+    "ok": ("Fine", "In Ordnung"),
+    "problem": ("Conspicuous", "Auffällig"),
+    "not_analysed_yet": ("Not analysed yet", "Noch nicht ausgewertet"),
+    "no_previous_season": ("No previous season yet", "Noch keine Vorsaison"),
+    "no_previous_year": ("No previous year yet", "Noch kein Vorjahr"),
+    "too_few_classes": (
+        "Too little comparable weather",
+        "Zu wenig vergleichbares Wetter",
+    ),
+    "too_few_days": ("Too few days", "Zu wenige Tage"),
+    "too_little_electricity": ("Too little electricity", "Zu wenig Strom"),
+    "too_few_charges": ("Too few charges", "Zu wenige Ladungen"),
+    "comparison_restarted": ("Comparison restarted", "Vergleich neu gestartet"),
+    "no_aux_counter": ("No backup heater meter", "Kein Heizstab-Zähler"),
+    "no_outdoor_temp": ("No outdoor temperature", "Keine Außentemperatur"),
+}
 BUTTONS = {
     "restart_comparison": (
         "Restart efficiency comparison",
@@ -455,6 +492,15 @@ def _build(lang: int) -> dict:
                 "name": f"{(en, de)[lang]} {t(names)}"
             }
     sensors.update({k: {"name": t(v[:2])} for k, v in SENSORS.items()})
+    sensors.update(
+        {
+            f"{k}_status": {
+                "name": t(v[:2]),
+                "state": {s: t(names) for s, names in STATUS_STATES.items()},
+            }
+            for k, v in STATUS.items()
+        }
+    )
     return {
         "config": {
             "step": {
@@ -1367,6 +1413,7 @@ def icons() -> dict:
         for period in PERIODS:
             sensor[f"ratio_{scope}_{period}"] = {"default": icon}
     sensor.update({k: {"default": v[2]} for k, v in SENSORS.items()})
+    sensor.update({f"{k}_status": {"default": v[2]} for k, v in STATUS.items()})
     return {
         "entity": {
             "binary_sensor": {k: {"default": v[2]} for k, v in BINARY.items()},

@@ -65,19 +65,18 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
     every = [*DESCRIPTIONS, *GAS_DESCRIPTIONS]
     keys = {d.key for d in every}
     assert len(keys) == len(every)
+    checks = {
+        "cycling_problem",
+        "efficiency_drop",
+        "aux_mild_weather",
+        "aux_dhw_charges",
+        "dhw_efficiency_drop",
+    }
+    # Each check also has a status sensor (sensor.HealthStatus).
+    keys |= {f"{check}_status" for check in checks}
     assert set(strings["sensor"]) == keys
     assert set(icons["sensor"]) == keys
-    assert (
-        set(strings["binary_sensor"])
-        == set(icons["binary_sensor"])
-        == {
-            "cycling_problem",
-            "efficiency_drop",
-            "aux_mild_weather",
-            "aux_dhw_charges",
-            "dhw_efficiency_drop",
-        }
-    )
+    assert set(strings["binary_sensor"]) == set(icons["binary_sensor"]) == checks
     assert (
         set(strings["button"])
         == set(icons["button"])

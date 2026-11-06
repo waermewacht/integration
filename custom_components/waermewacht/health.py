@@ -86,6 +86,35 @@ class Finding:
         return {"reason": self.reason, **self.evidence}
 
 
+# State of the status sensor of a check ("Befund …"): fine, conspicuous or
+# the reason why there is no verdict yet. Home Assistant translates these, so
+# cards need no table of reasons.
+STATUS_OK = "ok"
+STATUS_PROBLEM = "problem"
+STATUS_REASONS = (
+    NOT_ANALYSED,
+    NO_PREVIOUS,
+    NO_PREVIOUS_YEAR,
+    TOO_FEW_CLASSES,
+    TOO_FEW_DAYS,
+    TOO_LITTLE_ELECTRICITY,
+    TOO_FEW_CHARGES,
+    RESTARTED,
+    NO_AUX,
+    NO_OUTDOOR,
+)
+STATUS_OPTIONS = (STATUS_OK, STATUS_PROBLEM, *STATUS_REASONS)
+
+
+def status(problem: bool | None, reason: str | None) -> str | None:
+    """The status of a check; None (unknown) for a reason it does not know."""
+    if reason is not None:
+        return reason if reason in STATUS_REASONS else None
+    if problem is None:
+        return None
+    return STATUS_PROBLEM if problem else STATUS_OK
+
+
 def _usable(rows: Sequence[Mapping[str, Any]]) -> bool:
     return all(not r.get("sparse") and r.get("ratio") for r in rows)
 

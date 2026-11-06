@@ -134,12 +134,15 @@ async def test_health_sensors_need_outdoor_and_backup_heater(
 ) -> None:
     entry = await setup(hass)
     assert entity_id(hass, entry, "binary_sensor", "efficiency_drop") is None
+    assert entity_id(hass, entry, "sensor", "efficiency_drop_status") is None
     assert entity_id(hass, entry, "button", "restart_comparison") is None
 
     other = await setup(hass, outdoor_temp=OUTDOOR)
     assert entity_id(hass, other, "binary_sensor", "efficiency_drop")
     assert entity_id(hass, other, "button", "restart_comparison")
     assert entity_id(hass, other, "binary_sensor", "aux_mild_weather") is None
+    assert entity_id(hass, other, "sensor", "efficiency_drop_status")
+    assert entity_id(hass, other, "sensor", "aux_mild_weather_status") is None
 
 
 @pytest.mark.freeze_time(START)
@@ -152,6 +155,14 @@ async def test_unknown_with_reason_and_restart(hass: HomeAssistant) -> None:
         state = hass.states.get(found)
         assert state.state == "unknown"
         assert state.attributes["reason"] == "not_analysed_yet"
+    # The status sensors say the same in words (translated by HA).
+    drop_status = entity_id(hass, entry, "sensor", "efficiency_drop_status")
+    for check in ("efficiency_drop", "aux_mild_weather"):
+        state = hass.states.get(entity_id(hass, entry, "sensor", f"{check}_status"))
+        assert state.state == "not_analysed_yet"
+        assert "ok" in state.attributes["options"]
+    cycling = entity_id(hass, entry, "sensor", "cycling_problem_status")
+    assert hass.states.get(cycling).state == "ok"
 
     button = entity_id(hass, entry, "button", "restart_comparison")
     await hass.services.async_call(
@@ -159,6 +170,7 @@ async def test_unknown_with_reason_and_restart(hass: HomeAssistant) -> None:
     )
     await hass.async_block_till_done()
     assert hass.states.get(drop).attributes["reason"] == "comparison_restarted"
+    assert hass.states.get(drop_status).state == "comparison_restarted"
     assert entry.runtime_data.comparison_reset_at is not None
 
 

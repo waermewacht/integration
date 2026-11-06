@@ -403,6 +403,7 @@ Once a day (around 3 am) Wärmewacht checks for anomalies that cost money or hin
 
 - **Same weather:** The comparison is per 2 K class of the [performance curve](#performance-curve-and-heat-load), weighted by the heat of the current season. If one season merged classes (common early in a season with few days), Wärmewacht sums the classes of the other over the same range. It needs a common range of at least 4 K with 14 days and 10 kWh of electricity together.
 - **Attributes:** Efficiency: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` and `classes` (days and performance factor of both seasons per class). Backup heater mild: `aux_kwh_7d`, `aux_kwh_defrost_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` and `days` (per mild day). Backup heater hot water: `charges`, `aux_share`, `aux_kwh`, `aux_kwh_defrost`, `defrost_aux_charges`, `disinfections`, `aux_kwh_disinfections`, `threshold_percent`. Backup heater during a defrost (detected with meters in 0.01 kWh) does not count in either check and is shown in `…_defrost`; it stays in the performance factor. Hot water last year: `ratio`, `charges`, `from`, `to`, the same with `previous_` for last year, `change_percent`, `threshold_percent`. The lists are not recorded.
+- **Status in words:** Each check (cycling included) has a sensor "Check …" (Check efficiency, Check backup heater mild days, Check backup heater hot water, Check hot water vs. last year, Check cycling). It shows "Fine", "Conspicuous" or the reason why there is no verdict yet, translated into the language of Home Assistant. For cards without a table of reasons; in templates `state_translated('sensor.warmepumpe_check_efficiency')` gives the text. Automations keep using the binary sensors, the figures are in their attributes.
 - **Reasons for *unknown*:** `not_analysed_yet` (after start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`, `no_previous_year` (fewer than 10 charges last year, e.g. in the first year).
 - **Restart efficiency comparison** (button, configuration): after a deliberate change such as a new heating curve. The next 28 days become the new reference; until then "Efficiency dropped" is unknown.
 - **Data faults** (meter stands still, source unreachable, outdoor temperature unusable, flow rate implausible or 0, flow and return swapped) are reported as a [repair issue](#troubleshooting), not as a sensor.
@@ -698,7 +699,7 @@ content: |-
   {% endfor %}
 ```
 
-Backup heater during a defrost does not count in either backup heater check. To show it, add `a.get('aux_kwh_defrost')` or `a.get('aux_kwh_defrost_7d')`.
+Backup heater during a defrost does not count in either backup heater check. To show it, add `a.get('aux_kwh_defrost')` or `a.get('aux_kwh_defrost_7d')`. Instead of the table `reasons`, the sensors "Check …" with `state_translated()` work as well (see [health check](#health-check)); the card above also runs with older versions.
 
 ### Statistics card: heat and electricity per month
 

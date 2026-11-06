@@ -403,6 +403,7 @@ Wärmewacht prüft einmal täglich (gegen 3 Uhr) Auffälligkeiten, die Geld kost
 
 - **Gleiches Wetter:** Verglichen wird je 2-K-Klasse der [AZ-Kennlinie](#kennlinie-und-heizlast), gewichtet mit der Wärme der laufenden Saison. Hat eine Saison Klassen zusammengefasst (am Saisonanfang mit wenigen Tagen üblich), zählt Wärmewacht die Klassen der anderen über denselben Bereich zusammen. Nötig sind mindestens 4 K gemeinsamer Bereich mit zusammen 14 Tagen und 10 kWh Strom.
 - **Attribute:** Effizienz: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `threshold_percent` und `classes` (je Klasse Tage und AZ beider Saisons). Heizstab mild: `aux_kwh_7d`, `aux_kwh_defrost_7d`, `mild_days_7d`, `min_outdoor_temp`, `threshold_kwh` und `days` (je milder Tag). Heizstab Warmwasser: `charges`, `aux_share`, `aux_kwh`, `aux_kwh_defrost`, `defrost_aux_charges`, `disinfections`, `aux_kwh_disinfections`, `threshold_percent`. Heizstab während einer Abtauung (bei Zählern in 0,01 kWh erkannt) zählt in beiden Prüfungen nicht mit und steht in `…_defrost`; in der Arbeitszahl bleibt er. Warmwasser-Vorjahr: `ratio`, `charges`, `from`, `to`, dieselben mit `previous_` für das Vorjahr, `change_percent`, `threshold_percent`. Die Listen werden nicht aufgezeichnet.
+- **Befund in Worten:** Zu jeder Prüfung (auch zum Takten) gibt es einen Sensor „Befund …“ (Befund Effizienz, Befund Heizstab milde Tage, Befund Heizstab Warmwasser, Befund Warmwasser Vorjahr, Befund Takten). Er zeigt „In Ordnung“, „Auffällig“ oder den Grund, warum es noch kein Urteil gibt, übersetzt in die Sprache von Home Assistant. Für Karten ohne Übersetzungstabelle; in Vorlagen liefert `state_translated('sensor.warmepumpe_befund_effizienz')` den Text. Automationen nehmen weiter die Binärsensoren, die Zahlen stehen in deren Attributen.
 - **Gründe für *unbekannt*:** `not_analysed_yet` (nach dem Start), `no_previous_season`, `too_few_classes`, `too_few_days`, `too_little_electricity`, `comparison_restarted`, `too_few_charges`, `no_previous_year` (im Vorjahr weniger als 10 Ladungen, etwa im ersten Jahr).
 - **Effizienzvergleich neu starten** (Schaltfläche, Konfiguration): nach einer gewollten Änderung, etwa einer neuen Heizkurve. Die nächsten 28 Tage werden die neue Vergleichsbasis, bis dahin ist „Effizienz gesunken“ unbekannt.
 - **Datenfehler** (Zähler steht still, Quelle nicht erreichbar, Außentemperatur unbrauchbar, Durchfluss unplausibel oder 0, Vor- und Rücklauf vertauscht) meldet Wärmewacht als [Reparaturhinweis](#fehlerbehebung), nicht als Sensor.
@@ -698,7 +699,7 @@ content: |-
   {% endfor %}
 ```
 
-Heizstab während einer Abtauung zählt in beiden Heizstab-Prüfungen nicht mit. Wer ihn sehen will, hängt `a.get('aux_kwh_defrost')` bzw. `a.get('aux_kwh_defrost_7d')` an.
+Heizstab während einer Abtauung zählt in beiden Heizstab-Prüfungen nicht mit. Wer ihn sehen will, hängt `a.get('aux_kwh_defrost')` bzw. `a.get('aux_kwh_defrost_7d')` an. Statt der Tabelle `gruende` gehen auch die Sensoren „Befund …“ mit `state_translated()` (siehe [Gesundheits-Check](#gesundheits-check)); die Karte oben läuft dafür auch mit älteren Versionen.
 
 ### Statistik-Karte: Wärme und Strom je Monat
 

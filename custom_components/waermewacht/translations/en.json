@@ -558,6 +558,91 @@
       },
       "gas_cost_year": {
         "name": "Gas cost 365 days"
+      },
+      "cycling_problem_status": {
+        "name": "Check cycling",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "efficiency_drop_status": {
+        "name": "Check efficiency",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "aux_mild_weather_status": {
+        "name": "Check backup heater mild days",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "aux_dhw_charges_status": {
+        "name": "Check backup heater hot water",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "dhw_efficiency_drop_status": {
+        "name": "Check hot water vs. last year",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
       }
     },
     "number": {

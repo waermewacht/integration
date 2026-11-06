@@ -31,11 +31,13 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry, is_gas
+from .binary_sensor import health_checks
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_with_gas
 from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
 from .entity import HeatPumpEntity
 from .gas_sensor import gas_sensors
+from .health import STATUS_OPTIONS, status
 from .heat_load import heat_load_as_dict
 from .heating_curve import flow_curve_as_dict
 from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
@@ -777,6 +779,27 @@ async def async_setup_entry(
     async_add_entities(
         HeatPumpSensor(entry, d) for d in DESCRIPTIONS if d.needs(runtime)
     )
+    async_add_entities(HealthStatus(entry, check) for check in health_checks(runtime))
+
+
+class HealthStatus(HeatPumpEntity, SensorEntity):
+    """One check of the health check in words: fine, conspicuous or why there
+    is no verdict yet. The problem sensor of the same check stays for
+    automations and carries the figures."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+
+    def __init__(self, entry: WaermewachtConfigEntry, check: str) -> None:
+        super().__init__(entry, f"{check}_status")
+        self._check = check
+        self._attr_options = list(STATUS_OPTIONS)
+
+    @property
+    def native_value(self) -> str | None:
+        if self._check == "cycling_problem":
+            return status(bool(self.runtime.cycling_problem()["problem"]), None)
+        finding = self.runtime.findings[self._check]
+        return status(finding.problem, finding.reason)
 
 
 class HeatPumpSensor(HeatPumpEntity, SensorEntity):

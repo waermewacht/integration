@@ -281,3 +281,41 @@ def test_backup_heater_during_defrosts_is_left_out_on_mild_days() -> None:
     assert result.evidence["aux_kwh_defrost_7d"] == 2.1
     first = result.evidence["days"][0]
     assert (first["aux_kwh"], first["aux_kwh_defrost"]) == (0.0, 0.5)
+
+
+def test_status_of_a_check() -> None:
+    from custom_components.waermewacht.health import (
+        NOT_ANALYSED,
+        STATUS_OPTIONS,
+        status,
+    )
+
+    assert status(True, None) == "problem"
+    assert status(False, None) == "ok"
+    assert status(None, NOT_ANALYSED) == NOT_ANALYSED
+    assert status(None, None) is None
+    assert status(None, "something_new") is None  # not an option: unknown
+    assert len(set(STATUS_OPTIONS)) == len(STATUS_OPTIONS)
+
+
+def test_status_states_are_translated() -> None:
+    """Every status sensor names every state in both languages."""
+    import json
+    from pathlib import Path
+
+    from custom_components.waermewacht.health import STATUS_OPTIONS
+
+    root = Path(__file__).parent.parent / "custom_components" / "waermewacht"
+    checks = (
+        "cycling_problem",
+        "efficiency_drop",
+        "aux_mild_weather",
+        "aux_dhw_charges",
+        "dhw_efficiency_drop",
+    )
+    for name in ("strings.json", "translations/en.json", "translations/de.json"):
+        sensors = json.loads((root / name).read_text(encoding="utf-8"))["entity"][
+            "sensor"
+        ]
+        for check in checks:
+            assert set(sensors[f"{check}_status"]["state"]) == set(STATUS_OPTIONS)
