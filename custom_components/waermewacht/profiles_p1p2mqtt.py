@@ -7,8 +7,9 @@ buildMqttTopic), P1P2_HomeAssistant.h (units, device and state classes),
 P1P2_NetworkParams.h (default names), P1P2_ParameterConversion.h (E_SERIES
 decoding), doc/HomeAssistant.md and doc/LogicalFormat/Daikin-protocol-
 EHYHBX08AAV3.md. Home Assistant MQTT discovery, platform "mqtt" (shared with
-EMS-ESP and the F1p bridge). Derived from source code, not from a real
-installation: experimental.
+EMS-ESP and the F1p bridge). Derived from source code, then confirmed on two
+real installations (Altherma 3, diagnostics of two users from 2026-10-29 on;
+fixture p1p2mqtt_altherma3_real.json): no longer experimental.
 
 Unique ids (publishHomeAssistantConfig): "<deviceName>_<bridgeName>_<cat>
 <src>_<name>_<src>", e.g. "P1P2MQTT_bridge0_T1_Temperature_R4T_Return_Water_1".
@@ -76,7 +77,6 @@ def _key(cat: str, name: str) -> str:
 
 _S, _B = "sensor", "binary_sensor"
 P1P2MQTT = Template(
-    experimental=True,
     key="p1p2mqtt",
     label="Daikin Altherma (P1P2MQTT)",
     platform="mqtt",

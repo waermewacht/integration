@@ -53,9 +53,10 @@ def test_keys_and_platforms_are_unique() -> None:
     assert {TEMPLATES[k].platform for k in (*mqtt, "ems_esp")} == {"mqtt"}
 
 
-def test_only_the_bosch_templates_are_confirmed() -> None:
+def test_confirmed_templates() -> None:
+    """Confirmed on real installations; all others are beta."""
     confirmed = {k for k, t in TEMPLATES.items() if not t.experimental}
-    assert confirmed == {"ems_esp", "bosch_homecom"}
+    assert confirmed == {"ems_esp", "bosch_homecom", "p1p2mqtt"}
 
 
 @pytest.mark.parametrize(("fixture", "key"), FIXTURES.items())

@@ -10,7 +10,7 @@
 
 [Deutsch](https://github.com/waermewacht/integration/blob/main/README.md) · **English**
 
-> **Templates:** The templates for EMS-ESP and Bosch HomeCom run on a real installation; all others are beta (see [Requirements](#requirements)).
+> **Templates:** The templates for EMS-ESP, Bosch HomeCom and Daikin Altherma (P1P2MQTT) run on real installations; all others are beta (see [Requirements](#requirements)).
 
 **How efficient is your heat pump really?** Wärmewacht ("heat watch") calculates performance factors per operating mode and period in Home Assistant, counts starts, short runs and defrosts and shows a few diagnostic values. It works from the entities your heat pump already provides. Wärmewacht only reads and never controls anything. No cloud, no network requests.
 
@@ -46,7 +46,7 @@ The user interface is available in German and English and follows the language o
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
 - **Gas boiler before switching:** heat load, heating limit and hot water share from the gas consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
-- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and Daikin Altherma (P1P2MQTT). Other heat pumps are mapped by hand.
+- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and EMS-ESP hybrid systems (HM200); tested as well: Daikin Altherma (P1P2MQTT). Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
 
 ## What Wärmewacht does differently from template sensors
@@ -84,7 +84,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | [Mitsubishi Ecodan with ESPHome](https://github.com/gekkekoe/esphome-ecodan-hp) (`esphome`, esphome-ecodan-hp) | beta, from the source code; performance factors, cycling and defrosts |
 | [Waterkotte EcoTouch](https://github.com/marq24/ha-waterkotte) (`waterkotte_heatpump`) | beta, from the source code; compressor electricity as a total only |
 | [Buderus/Bosch via MX300, MX400, K30](https://github.com/BassXT/buderus) (`buderus_ha`) | beta, from the source code; performance factors, cycling and defrosts |
-| [Daikin Altherma via P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | beta, from the source code; performance factors, cycling and defrosts, meters in whole kWh |
+| [Daikin Altherma via P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | template, tested on two Altherma 3; performance factors, cycling and defrosts, meters in whole kWh |
 | any heat and electricity meters | manual mapping |
 
 The EMS-ESP template recognizes the heat pump by the `boiler` device. It needs the compressor state (`hpcompon`) and the heating meters. It finds the entities through the entity registry, not by entity ID, so renaming and all of EMS-ESP's naming formats are fine. It understands the activity (`hpactivity`) in all EMS-ESP languages and in the index format.

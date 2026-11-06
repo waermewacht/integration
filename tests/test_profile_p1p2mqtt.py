@@ -108,7 +108,7 @@ def test_real_installation() -> None:
 
 def test_lifetime_counters_per_mode() -> None:
     t = P1P2MQTT
-    assert t.experimental and t.platform == "mqtt"
+    assert not t.experimental and t.platform == "mqtt"  # confirmed (two Altherma 3)
     assert not t.day_values and not t.previous_day and not t.hourly_statistics
     assert t.required == (Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING)
     # Per-mode meters: no common meter, no activity entity (flags only).

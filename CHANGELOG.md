@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Daikin Altherma über P1P2MQTT nicht mehr Beta:** Die Vorlage läuft seit Ende Oktober an zwei echten Altherma 3 und passt zu deren eigenen Zählern; in der Einrichtung steht sie jetzt ohne „(beta)“.
 - **Neu (Beta): Hybridanlagen aus Wärmepumpe und Öl- oder Gaskessel.** Mit einem Kessel neben der Wärmepumpe (neuer Abschnitt „Kessel (Hybridanlage)“ in der Einrichtung) zählt Wärmewacht die Wärme beider: Heizlast, Energiesignatur und Wärme je Gradtag beschreiben jetzt das ganze Haus, nicht nur den Teil, den die Wärmepumpe liefert. Neu sind „Anteil Wärmepumpe Heizen“ (Monat, Saison) sowie Wärme und Brennstoff des Kessels als eigene Sensoren. Die Arbeitszahlen bleiben die der Wärmepumpe; der Kessel zählt dort nie mit. Als Kesselwärme nimmt Wärmewacht, was der Kessel selbst meldet, sonst Brennstoff × Kesselnutzungsgrad (einstellbar, Vorgabe 0,87).
   - **Vorlage „EMS-ESP Heatpump“:** Bei einem Hybrid Manager HM200 legt EMS-ESP die Wärmepumpe als eigenes Gerät „Heatpump“ an, das Gerät „Boiler“ ist dort der Kessel. Wärmewacht fand deshalb keine Wärmepumpe und bot nur die manuelle Zuordnung an. Die neue Vorlage findet Wärmepumpe, Kessel, Außen- und Speichertemperatur selbst.
   - Grundlage sind die MQTT-Daten einer echten Hybridanlage (Dank an den Nutzer aus dem simon42-Forum) und der EMS-ESP-Quellcode. Die Werte des Kessels sind Schätzungen des Kessels selbst; der Anteil der Wärmepumpe ist eine gute Größenordnung, kein Messwert.

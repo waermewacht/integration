@@ -10,7 +10,7 @@
 
 **Deutsch** · [English](https://github.com/waermewacht/integration/blob/main/README.en.md)
 
-> **Vorlagen:** Die Vorlagen für EMS-ESP und Bosch HomeCom laufen an einer echten Anlage, alle anderen sind Beta (siehe [Voraussetzungen](#voraussetzungen)).
+> **Vorlagen:** Die Vorlagen für EMS-ESP, Bosch HomeCom und Daikin Altherma (P1P2MQTT) laufen an echten Anlagen, alle anderen sind Beta (siehe [Voraussetzungen](#voraussetzungen)).
 
 **Wie effizient arbeitet deine Wärmepumpe wirklich?** Wärmewacht berechnet in Home Assistant Arbeitszahlen je Betriebsart und Zeitraum, zählt Starts, Kurzläufe und Abtauungen und zeigt einige Diagnosewerte. Grundlage sind die Entitäten, die deine Wärmepumpe schon liefert. Wärmewacht liest nur und steuert nie. Keine Cloud, keine Netzabfragen.
 
@@ -46,7 +46,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume. Dazu Kennwerte wie Gradtage, Vorlauf bei 0 °C (die Heizkurve), Spreizung an kalten Tagen und Leistung je Heizlast.
 - **Gasheizung vor dem Umstieg:** Heizlast, Heizgrenze und Warmwasseranteil aus dem Gasverbrauch der letzten 365 Tage, als eigener Eintrag ([mehr](#gasheizung-vor-dem-umstieg)).
 - **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
-- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p-Brücke oder ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus über das Gateway MX300/MX400 (Integration `buderus`) und Daikin Altherma (P1P2MQTT). Andere Wärmepumpen ordnest du von Hand zu.
+- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p-Brücke oder ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus über das Gateway MX300/MX400 (Integration `buderus`) und EMS-ESP-Hybridanlagen (HM200); erprobt außerdem Daikin Altherma (P1P2MQTT). Andere Wärmepumpen ordnest du von Hand zu.
 - **Schont SD-Karten:** schreibt nur, wenn sich etwas geändert hat, und dann höchstens alle 10 Minuten. Dazu am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 
 ## Was Wärmewacht anders macht als Template-Sensoren
@@ -84,7 +84,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | [Mitsubishi Ecodan mit ESPHome](https://github.com/gekkekoe/esphome-ecodan-hp) (`esphome`, esphome-ecodan-hp) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
 | [Waterkotte EcoTouch](https://github.com/marq24/ha-waterkotte) (`waterkotte_heatpump`) | Beta, aus dem Quellcode; Kompressorstrom nur gesamt |
 | [Buderus/Bosch über MX300, MX400, K30](https://github.com/BassXT/buderus) (`buderus_ha`) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
-| [Daikin Altherma über P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen, Zähler in ganzen kWh |
+| [Daikin Altherma über P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | Vorlage, erprobt an zwei Altherma 3; Arbeitszahlen, Takte und Abtauen, Zähler in ganzen kWh |
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
 Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
