@@ -1369,7 +1369,7 @@ READING_EXCEPTIONS = {
         "Zu diesem Zeitpunkt (auf die Minute) gibt es keinen Zählerstand.",
     ),
     "not_manual_gas": (
-        "This entry is no gas or oil boiler with readings by hand.",
+        "This entry is not a gas or oil boiler with readings by hand.",
         "Dieser Eintrag ist keine Gas- oder Ölheizung mit Ablesung von Hand.",
     ),
     "no_calorific_value": (
@@ -1496,14 +1496,14 @@ OIL_FIELDS = {
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "manual_unit": ("Readings by hand", "Ablesung von Hand"),
     "boiler_type": ("Boiler type", "Kesselart"),
-    "boiler_efficiency": ("Own efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
+    "boiler_efficiency": ("Custom efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
 }
 BOILER_TYPE_HELP = (
     "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
     "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
 )
 OWN_EFFICIENCY_HELP = (
-    'Only for "Own value": the share of the oil that becomes heat, on the gross calorific value.',
+    'Only for "Custom value": the share of the oil that becomes heat, on the gross calorific value.',
     "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert.",
 )
 OIL_FIELD_HELP = {
@@ -1528,8 +1528,8 @@ OIL_FIELD_HELP = {
         "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
     ),
     "manual_unit": (
-        'Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity "Enter meter reading" or "Enter tank level", or the action "Add meter reading (gas, oil)". With the tank level, enter a refill with "Enter refill" before the level after it. Each period between two readings of 5 to 35 days is one point of the energy signature.',
-        "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand das Nachfüllen über „Nachfüllen eintragen“ eintragen, vor dem Stand danach. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+        'Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity "Enter meter reading" or "Enter tank level", or the action "Add meter reading (gas, oil)". With the tank level, after filling up first "Enter refill", then the new level. Each period between two readings of 5 to 35 days is one point of the energy signature.',
+        "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand nach dem Tanken zuerst „Nachfüllen eintragen“, dann den neuen Stand. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
     ),
     "boiler_type": BOILER_TYPE_HELP,
     "boiler_efficiency": OWN_EFFICIENCY_HELP,
@@ -1552,13 +1552,17 @@ OIL_ERRORS = {
         "Ein Zähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
     ),
 }
+TANK_UNIT_CHANGE = (
+    "Tank levels count down, meters count up: the readings entered so far do not fit the other kind. Keep the kind, or delete the entry and set it up again.",
+    "Tankstände zählen abwärts, Zähler aufwärts: Die bisher eingetragenen Stände passen nicht zur anderen Art. Behalte die Art oder lösche den Eintrag und richte ihn neu ein.",
+)
 EFFICIENCY_MISSING = (
-    'For "Own value", enter the efficiency.',
+    'For "Custom value", enter the efficiency.',
     "Für „Eigener Wert“ den Nutzungsgrad eintragen.",
 )
 OIL_ABORT = (
-    'This counter already has the entry "{title}". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure).',
-    "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren).",
+    'This counter already has the entry "{title}". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure). Was it set up as a gas boiler? The fuel cannot be changed: delete that entry, then set up the oil boiler.',
+    "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren). Ist er als Gasheizung eingerichtet? Den Brennstoff kann man nicht ändern: den Eintrag löschen, dann die Ölheizung einrichten.",
 )
 OIL_OPTIONS = {
     "boiler_type": (("Boiler type", "Kesselart"), BOILER_TYPE_HELP),
@@ -1570,7 +1574,7 @@ OIL_OPTIONS = {
         ),
     ),
     "boiler_efficiency": (
-        ("Own efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
+        ("Custom efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
         OWN_EFFICIENCY_HELP,
     ),
     "design_outdoor_temp": (
@@ -1603,7 +1607,7 @@ BOILER_TYPE_OPTIONS = {
         "Constant temperature boiler (0.70)",
         "Konstanttemperaturkessel (0,70)",
     ),
-    "custom": ("Own value", "Eigener Wert"),
+    "custom": ("Custom value", "Eigener Wert"),
 }
 # Number entities of a tank level read by hand: (en, de, icon).
 OIL_NUMBERS = {
@@ -1633,7 +1637,7 @@ TANK_EXCEPTIONS = {
         "Zu diesem Zeitpunkt (auf die Minute) gibt es keine Nachfüllung.",
     ),
     "not_tank": (
-        "This entry is no oil boiler with the tank level read by hand.",
+        "This entry is not an oil boiler with the tank level read by hand.",
         "Dieser Eintrag ist keine Ölheizung mit Tankstand von Hand.",
     ),
 }
@@ -1697,6 +1701,7 @@ def _add_oil(data: dict, lang: int) -> None:
     }
     data["config"]["error"].update({k: v[lang] for k, v in OIL_ERRORS.items()})
     data["config"]["error"]["boiler_efficiency_missing"] = EFFICIENCY_MISSING[lang]
+    data["config"]["error"]["tank_unit_change"] = TANK_UNIT_CHANGE[lang]
     data["config"]["abort"]["oil_already_configured"] = OIL_ABORT[lang]
     data["options"]["step"]["oil"] = {
         "title": ("Settings", "Einstellungen")[lang],

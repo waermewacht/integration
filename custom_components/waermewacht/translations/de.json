@@ -221,7 +221,7 @@
           "gas_dhw": "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter).",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
           "flow_temp": "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
-          "manual_unit": "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand das Nachfüllen über „Nachfüllen eintragen“ eintragen, vor dem Stand danach. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+          "manual_unit": "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand nach dem Tanken zuerst „Nachfüllen eintragen“, dann den neuen Stand. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
           "boiler_type": "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
           "boiler_efficiency": "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert."
         }
@@ -247,13 +247,14 @@
       "oil_twice": "Entweder „Öl gesamt“ oder „Öl nur Heizen“, nicht beides.",
       "oil_unit": "Ein Zähler hat keine Einheit Wh, kWh, MWh oder L.",
       "oil_no_statistics": "Ein Zähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
-      "boiler_efficiency_missing": "Für „Eigener Wert“ den Nutzungsgrad eintragen."
+      "boiler_efficiency_missing": "Für „Eigener Wert“ den Nutzungsgrad eintragen.",
+      "tank_unit_change": "Tankstände zählen abwärts, Zähler aufwärts: Die bisher eingetragenen Stände passen nicht zur anderen Art. Behalte die Art oder lösche den Eintrag und richte ihn neu ein."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits eingerichtet. Ihre Entitäten änderst du dort unter ⋮ → Neu konfigurieren.",
       "reconfigure_successful": "Entitäten gespeichert.",
       "gas_already_configured": "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren).",
-      "oil_already_configured": "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren)."
+      "oil_already_configured": "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren). Ist er als Gasheizung eingerichtet? Den Brennstoff kann man nicht ändern: den Eintrag löschen, dann die Ölheizung einrichten."
     }
   },
   "options": {

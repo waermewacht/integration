@@ -84,6 +84,7 @@ from .const import (
     SOURCE_GAS,
     SOURCE_MANUAL,
     SOURCE_OIL,
+    TANK,
     VOLUME_UNIT,
 )
 from .costs import BOILER_EFFICIENCY_HS
@@ -515,19 +516,19 @@ def _validate_gas(
 
 
 # Options set in the gas or oil form (the rest under the cog).
-GAS_FORM_OPTIONS = (
-    CONF_CALORIFIC_VALUE,
-    CONF_Z_NUMBER,
-    CONF_BOILER_TYPE,
-    CONF_BOILER_EFFICIENCY,
-)
+# A reconfigure replaces exactly these; the gas efficiency is set under the
+# cog and must stay.
+GAS_FORM_OPTIONS = (CONF_CALORIFIC_VALUE, CONF_Z_NUMBER)
+OIL_FORM_OPTIONS = (CONF_BOILER_TYPE, CONF_BOILER_EFFICIENCY)
 
 
 def split_gas(values: dict[str, Any]) -> tuple[dict[str, str], dict[str, Any]]:
     """Form values -> entities and options (conversion of m³)."""
     keys = (*GAS_COUNTERS, Signal.OUTDOOR_TEMP.value, Signal.FLOW_TEMP.value)
     entities = {k: values[k] for k in keys if values.get(k)}
-    options = {k: values[k] for k in GAS_FORM_OPTIONS if values.get(k)}
+    options = {
+        k: values[k] for k in (*GAS_FORM_OPTIONS, *OIL_FORM_OPTIONS) if values.get(k)
+    }
     return entities, options
 
 
@@ -728,7 +729,15 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 values[CONF_MANUAL_UNIT] = manual
         if user_input is not None:
             values = {k: v for k, v in user_input.items() if v not in (None, "")}
-            if (error := validate_gas(self.hass, values, oil=oil)) is None:
+            error = validate_gas(self.hass, values, oil=oil)
+            if error is None and self.source == SOURCE_RECONFIGURE:
+                # Tank levels count down, meters up: the stored readings
+                # would not fit the other kind (review 07.11.).
+                before = self._get_reconfigure_entry().data.get(CONF_MANUAL_UNIT)
+                after = values.get(CONF_MANUAL_UNIT)
+                if before and after and (before == TANK) != (after == TANK):
+                    error = "tank_unit_change"
+            if error is None:
                 return await self._async_finish_gas(values, oil=oil)
             errors["base"] = error
         return self.async_show_form(
@@ -745,7 +754,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
             options = {
-                k: v for k, v in entry.options.items() if k not in GAS_FORM_OPTIONS
+                k: v
+                for k, v in entry.options.items()
+                if k not in (OIL_FORM_OPTIONS if oil else GAS_FORM_OPTIONS)
             }
             data = {k: v for k, v in entry.data.items() if k != CONF_MANUAL_UNIT}
             # The main counter identifies the boiler, also after a change;

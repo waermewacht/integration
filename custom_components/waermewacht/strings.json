@@ -213,7 +213,7 @@
           "flow_temp": "Flow temperature",
           "manual_unit": "Readings by hand",
           "boiler_type": "Boiler type",
-          "boiler_efficiency": "Own efficiency (Hs)"
+          "boiler_efficiency": "Custom efficiency (Hs)"
         },
         "data_description": {
           "gas_total": "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
@@ -221,9 +221,9 @@
           "gas_dhw": "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter).",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
           "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
-          "manual_unit": "Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity \"Enter meter reading\" or \"Enter tank level\", or the action \"Add meter reading (gas, oil)\". With the tank level, enter a refill with \"Enter refill\" before the level after it. Each period between two readings of 5 to 35 days is one point of the energy signature.",
+          "manual_unit": "Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity \"Enter meter reading\" or \"Enter tank level\", or the action \"Add meter reading (gas, oil)\". With the tank level, after filling up first \"Enter refill\", then the new level. Each period between two readings of 5 to 35 days is one point of the energy signature.",
           "boiler_type": "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
-          "boiler_efficiency": "Only for \"Own value\": the share of the oil that becomes heat, on the gross calorific value."
+          "boiler_efficiency": "Only for \"Custom value\": the share of the oil that becomes heat, on the gross calorific value."
         }
       }
     },
@@ -247,13 +247,14 @@
       "oil_twice": "Either \"Oil total\" or \"Oil heating only\", not both.",
       "oil_unit": "A counter has no unit Wh, kWh, MWh or L.",
       "oil_no_statistics": "A counter has no long-term statistics (state class total or total_increasing).",
-      "boiler_efficiency_missing": "For \"Own value\", enter the efficiency."
+      "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency.",
+      "tank_unit_change": "Tank levels count down, meters count up: the readings entered so far do not fit the other kind. Keep the kind, or delete the entry and set it up again."
     },
     "abort": {
       "already_configured": "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
       "reconfigure_successful": "Entities saved.",
       "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure).",
-      "oil_already_configured": "This counter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure)."
+      "oil_already_configured": "This counter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure). Was it set up as a gas boiler? The fuel cannot be changed: delete that entry, then set up the oil boiler."
     }
   },
   "options": {
@@ -338,21 +339,21 @@
         "data": {
           "boiler_type": "Boiler type",
           "kwh_per_litre": "Energy per litre (Hs)",
-          "boiler_efficiency": "Own efficiency (Hs)",
+          "boiler_efficiency": "Custom efficiency (Hs)",
           "design_outdoor_temp": "Design outdoor temperature",
           "oil_price": "Oil price"
         },
         "data_description": {
           "boiler_type": "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
           "kwh_per_litre": "Gross calorific value of heating oil EL: 10.66 kWh/l (net 10 kWh/l after HeizkostenV, ratio 0.938 after the KfW/BAFA infosheet). Change it only if your dealer names another value.",
-          "boiler_efficiency": "Only for \"Own value\": the share of the oil that becomes heat, on the gross calorific value.",
+          "boiler_efficiency": "Only for \"Custom value\": the share of the oil that becomes heat, on the gross calorific value.",
           "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
           "oil_price": "Gross per 100 litres, as dealers quote it (e.g. for 3000 l)."
         }
       }
     },
     "error": {
-      "boiler_efficiency_missing": "For \"Own value\", enter the efficiency."
+      "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency."
     }
   },
   "selector": {
@@ -398,7 +399,7 @@
         "condensing": "Condensing boiler (0.87)",
         "low_temperature": "Low temperature boiler (0.79)",
         "constant_temperature": "Constant temperature boiler (0.70)",
-        "custom": "Own value"
+        "custom": "Custom value"
       }
     }
   },
@@ -799,7 +800,7 @@
       "message": "There is no reading at this time (to the minute)."
     },
     "not_manual_gas": {
-      "message": "This entry is no gas or oil boiler with readings by hand."
+      "message": "This entry is not a gas or oil boiler with readings by hand."
     },
     "no_calorific_value": {
       "message": "Readings in m³ need the calorific value and the Z-number (settings of the entry)."
@@ -817,7 +818,7 @@
       "message": "There is no refill at this time (to the minute)."
     },
     "not_tank": {
-      "message": "This entry is no oil boiler with the tank level read by hand."
+      "message": "This entry is not an oil boiler with the tank level read by hand."
     }
   },
   "issues": {

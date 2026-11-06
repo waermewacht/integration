@@ -386,7 +386,8 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
             CONF_KIND: "gas",
             CONF_ENTITIES: {"gas_total": GAS, "outdoor_temp": OUTDOOR},
         },
-        options={CONF_GAS_PRICE: 12.0},
+        # The efficiency is set under the cog, not in the form: it stays.
+        options={CONF_GAS_PRICE: 12.0, "boiler_efficiency": 0.8},
         unique_id=f"gas:{GAS}",
     )
     entry.add_to_hass(hass)
@@ -403,7 +404,7 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
         "gas_dhw": "sensor.gas_dhw",
         "outdoor_temp": OUTDOOR,
     }
-    assert entry.options == {CONF_GAS_PRICE: 12.0}
+    assert entry.options == {CONF_GAS_PRICE: 12.0, "boiler_efficiency": 0.8}
     # The heating counter is the main counter now (same entity here).
     assert entry.unique_id == f"gas:{GAS}"
 

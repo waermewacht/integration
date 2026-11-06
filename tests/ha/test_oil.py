@@ -13,7 +13,7 @@ from homeassistant.components.recorder.models import (
     StatisticMetaData,
 )
 from homeassistant.components.recorder.statistics import async_import_statistics
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
@@ -198,7 +198,9 @@ async def test_oil_setup_options_reconfigure(hass: HomeAssistant) -> None:
     assert runtime.gas_price == pytest.approx(1.05 / 10.5)
 
     # Reconfigure: the oil form again; the options stay.
-    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
     assert result["step_id"] == "oil"
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
@@ -323,4 +325,14 @@ async def test_oil_tank_levels_with_refill(hass: HomeAssistant) -> None:
             blocking=True,
         )
     assert err.value.translation_key == "tank_rising"
+
+    # Tank levels count down, an oil meter up: no switch on reconfigure.
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"outdoor_temp": OUTDOOR, "manual_unit": "l", "boiler_type": "condensing"},
+    )
+    assert result["errors"] == {"base": "tank_unit_change"}
     assert await hass.config_entries.async_unload(entry.entry_id)

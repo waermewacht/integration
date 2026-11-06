@@ -94,7 +94,6 @@ NOT_ANALYSED = "not_analysed_yet"
 READING_IN_FUTURE = "reading_in_future"
 READING_NOT_FOUND = "reading_not_found"
 REFILL_NOT_FOUND = "refill_not_found"
-MAX_REFILLS = 500
 
 
 def _per_kwh(cents: float | None) -> float | None:
@@ -241,7 +240,7 @@ class GasRuntime:
     async def async_add_refill(self, at: datetime, litres: float) -> None:
         """Add a refill of the tank (replacing one at the same minute)."""
         at = self._minute(at)
-        refills = add_reading(self.refills, Reading(at, litres))[-MAX_REFILLS:]
+        refills = add_reading(self.refills, Reading(at, litres))
         self._raise(check_tank(self.readings, refills), litres)
         self.refills = refills
         await self._async_readings_changed()
