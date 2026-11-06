@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.3.1 – 2026-11-06
 
 - **Neu: eigene Karten fürs Dashboard.** Wärmewacht bringt neun Karten mit, eine je Thema: Jetzt, Arbeitszahlen, Gesundheit, Takte, Warmwasser, Kosten, Hybridanlage, Kennlinie und Heizlast sowie Wärme und Strom je Monat. Sie stehen in der Kartenauswahl unter „Wärmewacht“, ohne Zusatzkarten aus HACS und ohne Ressource eintragen. Die Karten finden ihre Entitäten selbst, auch bei anderer Sprache oder umbenannten Entity-IDs, und zeigen Zahlen und Befunde so, wie Home Assistant sie formatiert. Kennlinie, Energiesignatur und Monatssäulen sind eigene Diagramme (kein apexcharts nötig). Für alles in einer Karte gibt es zusätzlich „Wärmewacht“.
 
