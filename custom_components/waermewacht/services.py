@@ -207,6 +207,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
             result = found
         else:
             hours, outdoor = await runtime.async_analysis_data(start, end)
+            if building := getattr(runtime, "building_hours", None):
+                hours = building(hours)  # hybrid: with the boiler's heat
             result = heat_load(hours, outdoor, runtime.tz, design_temp=design)
         return {
             "start": dt_util.as_local(start).isoformat(),

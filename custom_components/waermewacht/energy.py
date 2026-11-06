@@ -8,6 +8,7 @@ includes it. Cooling never enters the seasonal ratio.
 
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
@@ -22,6 +23,8 @@ class Kind(StrEnum):
     ELEC = "elec"  # compressor electricity while running
     STANDBY = "standby"  # electricity booked while the compressor stood still
     AUX = "aux"  # electric backup heater
+    BOILER = "boiler"  # heat the boiler of a hybrid system reports
+    FUEL = "fuel"  # fuel of that boiler (not heat pump energy)
 
 
 SEASONAL_MODES = (Mode.HEATING, Mode.DHW)
@@ -80,6 +83,60 @@ class Totals:
 
     def standby(self) -> float:
         return sum(self.get(Kind.STANDBY, m) for m in Mode)
+
+    def boiler_heat(
+        self, efficiency: float, fuel_modes: Collection[Mode], *modes: Mode
+    ) -> float:
+        """Heat of the boiler of a hybrid system: what it reports, or for the
+        `fuel_modes` (no heat counter) its fuel times the efficiency."""
+        return sum(
+            efficiency * self.get(Kind.FUEL, m)
+            if m in fuel_modes
+            else self.get(Kind.BOILER, m)
+            for m in modes
+        )
+
+
+# Heat of the building below this (kWh) gives no share of the heat pump: a
+# few counter steps would swing it (own assumption, about one hour of
+# heating in mild weather).
+MIN_SHARE_HEAT_KWH = 1.0
+
+
+def building_totals(
+    totals: Totals, efficiency: float, fuel_modes: Collection[Mode]
+) -> Totals:
+    """`totals` with the boiler's heat added to the heat of each mode.
+
+    For the building's figures only (heat load, energy signature, degree
+    days, flow curve): ratios must never see the boiler's heat.
+    """
+    result = totals.copy()
+    for mode in Mode:
+        if boiler := totals.boiler_heat(efficiency, fuel_modes, mode):
+            result.add(Kind.HEAT, mode, boiler)
+    return result
+
+
+def building_hours[K](
+    hours: Mapping[K, Totals], efficiency: float, fuel_modes: Collection[Mode]
+) -> dict[K, Totals]:
+    """building_totals of every hour."""
+    return {h: building_totals(t, efficiency, fuel_modes) for h, t in hours.items()}
+
+
+def heat_pump_share(
+    totals: Totals, efficiency: float, fuel_modes: Collection[Mode], *modes: Mode
+) -> float | None:
+    """Heat pump heat in % of the heat of heat pump and boiler (heat basis,
+    as field studies of hybrid systems report it); None below
+    MIN_SHARE_HEAT_KWH or with a negative balance."""
+    pump = totals.heat(*modes)
+    boiler = totals.boiler_heat(efficiency, fuel_modes, *modes)
+    whole = pump + boiler
+    if whole < MIN_SHARE_HEAT_KWH or pump < 0 or boiler < 0:
+        return None
+    return 100 * pump / whole
 
 
 def ratio(heat: float, electricity: float, min_electricity: float) -> float | None:

@@ -49,6 +49,22 @@
               "elec_cooling": "Compressor electricity cooling"
             }
           },
+          "boiler": {
+            "name": "Boiler (hybrid system)",
+            "description": "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
+            "data": {
+              "boiler_heat_heating": "Boiler heat heating",
+              "boiler_heat_dhw": "Boiler heat hot water",
+              "fuel_heating": "Boiler fuel heating",
+              "fuel_dhw": "Boiler fuel hot water"
+            },
+            "data_description": {
+              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
+              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
+              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
+              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter."
+            }
+          },
           "operation": {
             "name": "Operation",
             "data": {
@@ -123,7 +139,11 @@
               "dhw_flag": "Hot water running (on/off)",
               "cooling_flag": "Cooling running (on/off)",
               "heating_flag": "Heating running (on/off)",
-              "cooling_mode": "Set operating mode (cooling?)"
+              "cooling_mode": "Set operating mode (cooling?)",
+              "boiler_heat_heating": "Boiler heat heating",
+              "boiler_heat_dhw": "Boiler heat hot water",
+              "fuel_heating": "Boiler fuel heating",
+              "fuel_dhw": "Boiler fuel hot water"
             },
             "data_description": {
               "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
@@ -193,7 +213,8 @@
       "gas_unit": "A gas counter has no unit Wh, kWh, MWh or m³.",
       "gas_no_statistics": "A gas counter has no long-term statistics (state class total or total_increasing).",
       "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill.",
-      "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement)."
+      "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement).",
+      "boiler_without_heat_pump": "The boiler needs the heat pump's heating meter (heat heating): its heat is compared with the heat pump's."
     },
     "abort": {
       "already_configured": "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
@@ -214,14 +235,16 @@
           "season_start_month": "Season starts in",
           "aux_mild_from": "Backup heater: mild weather from",
           "efficiency_drop_percent": "Efficiency dropped from",
-          "disinfection_temp": "Thermal disinfection from"
+          "disinfection_temp": "Thermal disinfection from",
+          "boiler_efficiency": "Boiler efficiency"
         },
         "data_description": {
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
           "season_start_month": "The current season is recomputed from the statistics.",
           "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
           "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
-          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower)."
+          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+          "boiler_efficiency": "Only for boiler heat from fuel: heat = fuel × efficiency, on the gross calorific value (Hs) as the boiler counts its fuel. 0.87: field value of condensing gas boilers (DBU 2004), taken over for oil; a boiler that runs short and in pieces in a hybrid system reaches less."
         },
         "sections": {
           "costs": {
@@ -643,6 +666,24 @@
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
+      },
+      "boiler_heat_heating": {
+        "name": "Boiler heat heating"
+      },
+      "boiler_heat_dhw": {
+        "name": "Boiler heat hot water"
+      },
+      "fuel_heating": {
+        "name": "Boiler fuel heating"
+      },
+      "fuel_dhw": {
+        "name": "Boiler fuel hot water"
+      },
+      "heat_pump_share_month": {
+        "name": "Heat pump share heating month"
+      },
+      "heat_pump_share_season": {
+        "name": "Heat pump share heating season"
       }
     },
     "number": {

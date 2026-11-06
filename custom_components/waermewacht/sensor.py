@@ -34,13 +34,28 @@ from . import WaermewachtConfigEntry, is_gas
 from .binary_sensor import health_checks
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_with_gas
-from .energy import SEASONAL_MODES, Kind, aux_share, combined_ratio, mode_ratio
+from .energy import (
+    SEASONAL_MODES,
+    Kind,
+    aux_share,
+    combined_ratio,
+    heat_pump_share,
+    mode_ratio,
+)
 from .entity import HeatPumpEntity
 from .gas_sensor import gas_sensors
 from .health import STATUS_OPTIONS, status
 from .heat_load import heat_load_as_dict
 from .heating_curve import flow_curve_as_dict
-from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
+from .model import (
+    AUX_SIGNALS,
+    BOILER_HEAT_SIGNALS,
+    FUEL_SIGNALS,
+    HEAT_SIGNALS,
+    Mode,
+    Signal,
+    has_elec,
+)
 from .periods import RATIO_PERIODS, Period
 from .runtime import HeatPumpRuntime
 
@@ -158,6 +173,15 @@ ENERGY = [
             f"electricity_{m}", Kind.ELEC, m, lambda r, m=m: has_elec(r.entities, m)
         )
         for m in Mode
+    ),
+    # Boiler of a hybrid system: what it reports, never heat pump energy.
+    *(
+        _energy_description(f"boiler_heat_{m}", Kind.BOILER, m, _has(s))
+        for m, s in BOILER_HEAT_SIGNALS.items()
+    ),
+    *(
+        _energy_description(f"fuel_{m}", Kind.FUEL, m, _has(s))
+        for m, s in FUEL_SIGNALS.items()
     ),
     HeatPumpSensorDescription(
         key="standby",
@@ -328,6 +352,68 @@ def _aux_share_attributes(
         return result
 
     return attributes
+
+
+def _share_value(period: Period) -> Value:
+    def value(runtime: HeatPumpRuntime) -> float | None:
+        totals = runtime.energy(period)
+        if totals is None:
+            return None
+        share = heat_pump_share(
+            totals, runtime.boiler_efficiency, runtime.fuel_modes, Mode.HEATING
+        )
+        return None if share is None else round(share, 1)
+
+    return value
+
+
+def _share_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
+    """Heat of both and the share with hot water (the state: space heating,
+    as most field studies of hybrid systems report it)."""
+
+    def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+        totals = runtime.energy(period)
+        if totals is None:
+            return {}
+        efficiency, fuel = runtime.boiler_efficiency, runtime.fuel_modes
+        both = heat_pump_share(totals, efficiency, fuel, Mode.HEATING, Mode.DHW)
+        start = runtime.marks.starts.get(period)
+        return {
+            "with_dhw": None if both is None else round(both, 1),
+            "heat_pump_heat_kwh": round(totals.heat(Mode.HEATING), 1),
+            "boiler_heat_kwh": round(
+                totals.boiler_heat(efficiency, fuel, Mode.HEATING), 1
+            ),
+            "heat_pump_heat_dhw_kwh": round(totals.heat(Mode.DHW), 1),
+            "boiler_heat_dhw_kwh": round(
+                totals.boiler_heat(efficiency, fuel, Mode.DHW), 1
+            ),
+            # Modes whose boiler heat is fuel x efficiency (no heat counter).
+            "boiler_heat_from_fuel": sorted(m.value for m in fuel),
+            "boiler_efficiency": efficiency if fuel else None,
+            "period_start": start.isoformat() if start else None,
+        }
+
+    return attributes
+
+
+HYBRID = [
+    HeatPumpSensorDescription(
+        key=f"heat_pump_share_{period}",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        value=_share_value(period),
+        needs=lambda r: (
+            HEAT_SIGNALS[Mode.HEATING] in r.entities
+            and any(
+                s[Mode.HEATING] in r.entities
+                for s in (BOILER_HEAT_SIGNALS, FUEL_SIGNALS)
+            )
+        ),
+        attributes=_share_attributes(period),
+    )
+    for period in (Period.MONTH, Period.SEASON)
+]
 
 
 HAS_AUX: Needs = lambda r: any(  # noqa: E731
@@ -761,6 +847,7 @@ DESCRIPTIONS: list[HeatPumpSensorDescription] = [
     *ENERGY,
     *CYCLING,
     *DIAGNOSIS,
+    *HYBRID,
     *DHW,
     *COSTS,
     *ANALYSIS,

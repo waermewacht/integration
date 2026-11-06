@@ -389,14 +389,22 @@ EMS_ESP = Template(
 
 # EMS-ESP device "heatpump" (EMSdevice::DeviceType::HEATPUMP, device_library.h:
 # 252 "HP Module", 248 "Hybrid Manager HM200", 16 "CSH5800iG"; heatpump.cpp).
-# Seen on a hybrid system (oil/gas boiler Logano GB125 as device "boiler" plus
-# HM200.2, EMS-ESP 3.8.6, simon42 95035, 2026-11-06): the heat pump's counters
-# sit here, the device "boiler" is the boiler. The same short names as the
-# boiler device (telegrams 0x4AE/0x4AF), but in the DHW tag without the 3.6
-# names (mqtt.cpp converts only boiler and thermostat). The compressor is only
-# its speed in %, the activity is enum_hpactivity1 with other indexes than
-# enum_hpactivity (locale_common.h): 0 off, 1 heating, 2 hot water, 3 defrost,
-# 4 compressor alarm. No outdoor temperature on this device.
+# Seen on a hybrid system (oil boiler Logano GB125 as device "boiler" plus
+# HM200.2, EMS-ESP 3.8.6, simon42 95035, 2026-11-06; the same pair in
+# EMS-ESP32#3196): the heat pump's counters sit on "heatpump", the device
+# "boiler" is the boiler. Keys therefore carry their device ("heatpump_…",
+# "boiler_…"), one heat pump per MQTT prefix.
+# - Heat pump: the boiler device's short names (telegrams 0x4AE/0x4AF), in
+#   the DHW tag without 3.6 names (mqtt.cpp converts only boiler and
+#   thermostat). Compressor only as speed in %; activity enum_hpactivity1
+#   with other indexes than enum_hpactivity (locale_common.h): 0 off,
+#   1 heating, 2 hot water, 3 defrost, 4 compressor alarm.
+# - Boiler: the heat it reports, "nrgheat2"/"nrg2" (telegram 0x3B, Buderus
+#   "Abgegebene Energie", EMS-ESP32#1701), and its fuel "gasmeterheat"/
+#   "gasmeter" (0x2E, on Hs per the Buderus supplement 6721828053, also for
+#   oil). Never "nrgheat"/"nrg" of the boiler: EMS-ESP calculates those from
+#   modulation x nominal power. Outdoor and storage temperature are the
+#   boiler's too.
 EMS_ESP_HEATPUMP_ACTIVITY = {
     **{word: a for word, a in EMS_ESP_ACTIVITY.items() if not word.isdigit()},
     "0": Activity.OFF,
@@ -409,22 +417,71 @@ EMS_ESP_HEATPUMP = Template(
     key="ems_esp_heatpump",
     label="EMS-ESP Heatpump (HM200, HP Module)",
     platform="mqtt",
-    id_format=r"(?:(?P<prefix>(?!heatpump_).+?)_)?heatpump_(?P<key>.+)",
+    id_format=r"(?:(?P<prefix>(?!heatpump_|boiler_).+?)_)?(?P<key>(?:heatpump|boiler)_.+)",
     signals={
-        Signal.HEAT_HEATING: ((_S, "nrgheat"), (_S, "energy_heating")),
-        Signal.HEAT_DHW: ((_S, "dhw_nrg"), (_S, "dhw_energy")),
-        Signal.ELEC_HEATING: ((_S, "meterheat"), (_S, "meter_heating")),
-        Signal.ELEC_DHW: ((_S, "dhw_meter"),),
-        Signal.AUX_TOTAL: ((_S, "metereheat"), (_S, "meter_e-heater")),
-        Signal.COMPRESSOR: ((_S, "hpcompspd"), (_S, "compressor_speed")),
-        Signal.ACTIVITY: ((_S, "hpactivity"), (_S, "compressor_activity")),
-        Signal.FLOW_TEMP: ((_S, "curflowtemp"),),
-        Signal.RETURN_TEMP: ((_S, "rettemp"),),
+        Signal.HEAT_HEATING: (
+            (_S, "heatpump_nrgheat"),
+            (_S, "heatpump_energy_heating"),
+        ),
+        Signal.HEAT_DHW: ((_S, "heatpump_dhw_nrg"), (_S, "heatpump_dhw_energy")),
+        Signal.ELEC_HEATING: (
+            (_S, "heatpump_meterheat"),
+            (_S, "heatpump_meter_heating"),
+        ),
+        Signal.ELEC_DHW: ((_S, "heatpump_dhw_meter"),),
+        Signal.AUX_TOTAL: (
+            (_S, "heatpump_metereheat"),
+            (_S, "heatpump_meter_e-heater"),
+        ),
+        Signal.COMPRESSOR: (
+            (_S, "heatpump_hpcompspd"),
+            (_S, "heatpump_compressor_speed"),
+        ),
+        Signal.ACTIVITY: (
+            (_S, "heatpump_hpactivity"),
+            (_S, "heatpump_compressor_activity"),
+        ),
+        Signal.FLOW_TEMP: ((_S, "heatpump_curflowtemp"),),
+        Signal.RETURN_TEMP: ((_S, "heatpump_rettemp"),),
+        Signal.OUTDOOR_TEMP: (
+            (_S, "boiler_outdoortemp"),
+            (_S, "boiler_outside_temperature"),
+        ),
+        Signal.DHW_TEMP: (
+            (_S, "boiler_dhw_curtemp"),
+            (_S, "boiler_dhw_current_intern_temperature"),
+            (_S, "boiler_wwcurtemp"),
+        ),
+        Signal.BOILER_HEAT_HEATING: (
+            (_S, "boiler_nrgheat2"),
+            (_S, "boiler_energy_heating_2"),
+        ),
+        Signal.BOILER_HEAT_DHW: (
+            (_S, "boiler_dhw_nrg2"),
+            (_S, "boiler_dhw_energy_2"),
+            (_S, "boiler_wwnrg2"),
+        ),
+        Signal.FUEL_HEATING: (
+            (_S, "boiler_gasmeterheat"),
+            (_S, "boiler_gas_meter_heating"),
+        ),
+        Signal.FUEL_DHW: (
+            (_S, "boiler_dhw_gasmeter"),
+            (_S, "boiler_dhw_gas_meter"),
+            (_S, "boiler_wwgasmeter"),
+        ),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=EMS_ESP_HEATPUMP_ACTIVITY,
+    # Same telegram field, 3.7+ name vs. 3.6-compatible name (boiler only).
+    aliases={
+        "boiler_dhw_curtemp": ("boiler_wwcurtemp",),
+        "boiler_dhw_nrg2": ("boiler_wwnrg2",),
+        "boiler_dhw_gasmeter": ("boiler_wwgasmeter",),
+    },
     experimental=True,
 )
+
 
 # Compressor status of the Bosch PointT cloud (/heatSources/compressor/status,
 # K40 gateways), the same words as EMS-ESP's hpactivity. Read by BassXT/buderus

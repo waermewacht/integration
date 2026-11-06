@@ -69,6 +69,7 @@ from .charges import (
 from .charges import prune as prune_charges
 from .const import (
     CONF_AUX_MILD_FROM,
+    CONF_BOILER_EFFICIENCY,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
     CONF_DISINFECTION_TEMP,
@@ -97,6 +98,7 @@ from .const import (
     SAVE_INTERVAL_SECONDS,
     STORAGE_VERSION,
 )
+from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .curve import curve_as_dicts, daily_samples, performance_curve
 from .cycling import (
@@ -109,7 +111,7 @@ from .cycling import (
 )
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days
-from .energy import Kind, Totals
+from .energy import Kind, Totals, building_hours
 from .entity import own_entities
 from .health import (
     AUX_KWH,
@@ -146,12 +148,16 @@ from .heating_curve import FlowCurve, flow_curve
 from .model import (
     ACTIVITY_PARTS,
     AUX_SIGNALS,
+    BOILER_HEAT_SIGNALS,
     ELEC_SIGNALS,
     ENERGY_SIGNALS,
+    FUEL_SIGNALS,
     HEAT_SIGNALS,
     Activity,
     Mode,
     Signal,
+    fuel_modes,
+    has_boiler,
     has_elec,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
@@ -186,6 +192,13 @@ MODE_OF: dict[Signal, Mode] = {
     **{s: m for m, s in HEAT_SIGNALS.items()},
     **{s: m for m, s in ELEC_SIGNALS.items()},
     **{s: m for m, s in AUX_SIGNALS.items()},
+    **{s: m for m, s in BOILER_HEAT_SIGNALS.items()},
+    **{s: m for m, s in FUEL_SIGNALS.items()},
+}
+# The boiler of a hybrid system: booked as it is, never heat pump energy.
+BOILER_KIND: dict[Signal, Kind] = {
+    **{s: Kind.BOILER for s in BOILER_HEAT_SIGNALS.values()},
+    **{s: Kind.FUEL for s in FUEL_SIGNALS.values()},
 }
 # Critical runs within 24 hours from which cycling counts as conspicuous.
 CRITICAL_RUNS_PER_DAY = 3
@@ -307,6 +320,11 @@ class HeatPumpRuntime:
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
         self.aux_mild_from: float = options.get(CONF_AUX_MILD_FROM, MILD_FROM)
         self.drop_threshold: float = options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT)
+        # Hybrid system: boiler heat = fuel x efficiency (on Hs, as the gas
+        # mode; costs.BOILER_EFFICIENCY_HS, docs/ENTWICKLUNG.md "Hybrid").
+        self.boiler_efficiency: float = options.get(
+            CONF_BOILER_EFFICIENCY, BOILER_EFFICIENCY_HS
+        )
         # Activity from the activity entity and/or flags (activity.py).
         self._activity_configured = {
             s for s in (Signal.ACTIVITY, *ACTIVITY_PARTS) if s in self.entities
@@ -849,6 +867,23 @@ class HeatPumpRuntime:
             outdoor[hour] = mean
         return outdoor
 
+    @property
+    def has_boiler(self) -> bool:
+        """A hybrid system: boiler heat or boiler fuel is mapped."""
+        return has_boiler(self.entities)
+
+    @property
+    def fuel_modes(self) -> frozenset[Mode]:
+        """Modes whose boiler heat is fuel x efficiency (no heat counter)."""
+        return fuel_modes(self.entities)
+
+    def building_hours(self, hours: dict[datetime, Totals]) -> dict[datetime, Totals]:
+        """`hours` with the boiler's heat in the heat of each mode; unchanged
+        without a boiler. For the building's figures only, never ratios."""
+        if not self.has_boiler:
+            return hours
+        return building_hours(hours, self.boiler_efficiency, self.fuel_modes)
+
     async def async_analysis_data(
         self, start: datetime, end: datetime
     ) -> tuple[dict[datetime, Totals], dict[datetime, float]]:
@@ -875,14 +910,22 @@ class HeatPumpRuntime:
         try:
             current, previous = self.seasons(now)
             hours, outdoor = await self.async_analysis_data(previous, now)
+            # Heat load, signature, degree days and flow curve describe the
+            # building: with the boiler's heat in a hybrid system. Ratios and
+            # the performance curve stay the heat pump's own.
+            building = self.building_hours(hours)
 
-            def window(start: datetime, end: datetime) -> tuple[dict, dict]:
+            def window(
+                start: datetime, end: datetime, source: dict | None = None
+            ) -> tuple[dict, dict]:
                 return (
-                    {h: t for h, t in hours.items() if start <= h < end},
+                    {h: t for h, t in (source or hours).items() if start <= h < end},
                     {h: v for h, v in outdoor.items() if start <= h < end},
                 )
 
             this_season, last_season = window(current, now), window(previous, current)
+            this_building = window(current, now, building)
+            last_building = window(previous, current, building)
             self.curves = {
                 "current": curve_as_dicts(
                     performance_curve(
@@ -897,14 +940,14 @@ class HeatPumpRuntime:
             }
             self.curve_starts = {"current": current, "previous": previous}
             self.heat_load = heat_load(
-                *last_season, self.tz, design_temp=self.design_temp
+                *last_building, self.tz, design_temp=self.design_temp
             )
             self.heat_load_window = (previous, current)
             today = now.astimezone(self.tz).date()
             first = current.astimezone(self.tz).date()
-            self.degree_days = degree_days(*this_season, self.tz, first, today)
+            self.degree_days = degree_days(*this_building, self.tz, first, today)
             self.degree_days_previous = degree_days(
-                *last_season, self.tz, previous.astimezone(self.tz).date(), first
+                *last_building, self.tz, previous.astimezone(self.tz).date(), first
             )
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
@@ -925,8 +968,8 @@ class HeatPumpRuntime:
                         self.tz,
                     )
                     for name, span, start, end in (
-                        ("current", this_season, current, now),
-                        ("previous", last_season, previous, current),
+                        ("current", this_building, current, now),
+                        ("previous", last_building, previous, current),
                     )
                 }
             compared = await self._async_comparison_hours(previous, now, hours)
@@ -1226,7 +1269,11 @@ class HeatPumpRuntime:
         they say nothing about the compressor)."""
         if (run := self.tracker.open_run) is None or run.uncertain:
             return
-        core = {*self.counters, Signal.COMPRESSOR, *self._activity_configured}
+        core = {
+            *(s for s in self.counters if s not in BOILER_KIND),
+            Signal.COMPRESSOR,
+            *self._activity_configured,
+        }
         since = [
             at
             for entity_id, at in self._unavailable_since.items()
@@ -1545,7 +1592,7 @@ class HeatPumpRuntime:
             first = start.astimezone(self.tz).date()
             last = (end - timedelta(microseconds=1)).astimezone(self.tz).date()
             days, _, _ = daily_degree_days(
-                hours,
+                self.building_hours(hours),
                 await self.async_outdoor_hours(start, end),
                 self.tz,
                 first,
@@ -1625,11 +1672,7 @@ class HeatPumpRuntime:
         registry = er.async_get(self.hass)
         keys = {
             entity_id: key
-            for key in (
-                *(f"heat_{m}" for m in Mode),
-                *(f"electricity_{m}" for m in Mode),
-                "standby",
-            )
+            for key in OWN_KEYS
             if (
                 entity_id := registry.async_get_entity_id(
                     "sensor", DOMAIN, f"{self.entry.entry_id}_{key}"
@@ -1883,6 +1926,10 @@ class HeatPumpRuntime:
             kind = Kind.ELEC
         elif signal is Signal.ELEC_STANDBY:
             mode, kind = Mode.HEATING, Kind.STANDBY
+        elif signal in BOILER_KIND:
+            # Boiler of a hybrid system: not a heat pump figure, no charge.
+            self._add(BOILER_KIND[signal], MODE_OF[signal], kwh, at)
+            return
         else:
             mode = MODE_OF[signal]
             if signal in HEAT_SIGNALS.values():

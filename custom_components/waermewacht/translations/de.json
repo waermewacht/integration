@@ -49,6 +49,22 @@
               "elec_cooling": "Strom Kompressor Kühlen"
             }
           },
+          "boiler": {
+            "name": "Kessel (Hybridanlage)",
+            "description": "Nur mit einem Kessel neben der Wärmepumpe (z. B. Hybrid Manager HM200). Wärmewacht zählt den Kessel nie als Wärmepumpe: Seine Wärme geht in Heizlast, Energiesignatur und den Anteil der Wärmepumpe ein. Am besten die Wärme, die der Kessel selbst meldet; nur ohne sie den Brennstoff (Wärme = Brennstoff × Kesselnutzungsgrad, Einstellungen).",
+            "data": {
+              "boiler_heat_heating": "Wärme Kessel Heizen",
+              "boiler_heat_dhw": "Wärme Kessel Warmwasser",
+              "fuel_heating": "Brennstoff Kessel Heizen",
+              "fuel_dhw": "Brennstoff Kessel Warmwasser"
+            },
+            "data_description": {
+              "boiler_heat_heating": "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat: Das ist nur Modulation × Nennleistung.",
+              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
+              "fuel_heating": "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
+              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter."
+            }
+          },
           "operation": {
             "name": "Betrieb",
             "data": {
@@ -123,7 +139,11 @@
               "dhw_flag": "Warmwasser läuft (an/aus)",
               "cooling_flag": "Kühlen läuft (an/aus)",
               "heating_flag": "Heizen läuft (an/aus)",
-              "cooling_mode": "Eingestellte Betriebsart (Kühlen?)"
+              "cooling_mode": "Eingestellte Betriebsart (Kühlen?)",
+              "boiler_heat_heating": "Wärme Kessel Heizen",
+              "boiler_heat_dhw": "Wärme Kessel Warmwasser",
+              "fuel_heating": "Brennstoff Kessel Heizen",
+              "fuel_dhw": "Brennstoff Kessel Warmwasser"
             },
             "data_description": {
               "elec_heating": "Strom des Kompressors fürs Heizen, ohne Heizstab.",
@@ -193,7 +213,8 @@
       "gas_unit": "Ein Gaszähler hat keine Einheit Wh, kWh, MWh oder m³.",
       "gas_no_statistics": "Ein Gaszähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
       "gas_calorific_value": "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung.",
-      "gas_flow_no_statistics": "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement)."
+      "gas_flow_no_statistics": "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement).",
+      "boiler_without_heat_pump": "Der Kessel braucht den Wärmezähler Heizen der Wärmepumpe: Seine Wärme wird mit der der Wärmepumpe verglichen."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits eingerichtet. Ihre Entitäten änderst du dort unter ⋮ → Neu konfigurieren.",
@@ -214,14 +235,16 @@
           "season_start_month": "Saison beginnt im",
           "aux_mild_from": "Heizstab: milde Witterung ab",
           "efficiency_drop_percent": "Effizienz gesunken ab",
-          "disinfection_temp": "Thermische Desinfektion ab"
+          "disinfection_temp": "Thermische Desinfektion ab",
+          "boiler_efficiency": "Kesselnutzungsgrad"
         },
         "data_description": {
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
           "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
           "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
           "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
-          "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger)."
+          "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
+          "boiler_efficiency": "Nur für Kesselwärme aus dem Brennstoff: Wärme = Brennstoff × Nutzungsgrad, auf den Brennwert (Hs) bezogen wie der Brennstoffzähler des Kessels. 0,87: Feldwert von Gas-Brennwertkesseln (DBU 2004), für Öl übernommen; ein Kessel, der in einer Hybridanlage kurz und gestückelt läuft, erreicht weniger."
         },
         "sections": {
           "costs": {
@@ -643,6 +666,24 @@
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
+      },
+      "boiler_heat_heating": {
+        "name": "Wärme Kessel Heizen"
+      },
+      "boiler_heat_dhw": {
+        "name": "Wärme Kessel Warmwasser"
+      },
+      "fuel_heating": {
+        "name": "Brennstoff Kessel Heizen"
+      },
+      "fuel_dhw": {
+        "name": "Brennstoff Kessel Warmwasser"
+      },
+      "heat_pump_share_month": {
+        "name": "Anteil Wärmepumpe Heizen Monat"
+      },
+      "heat_pump_share_season": {
+        "name": "Anteil Wärmepumpe Heizen Saison"
       }
     },
     "number": {

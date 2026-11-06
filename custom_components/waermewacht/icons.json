@@ -264,6 +264,24 @@
       },
       "dhw_efficiency_drop_status": {
         "default": "mdi:water-thermometer-outline"
+      },
+      "boiler_heat_heating": {
+        "default": "mdi:fire"
+      },
+      "boiler_heat_dhw": {
+        "default": "mdi:fire"
+      },
+      "fuel_heating": {
+        "default": "mdi:fire-circle"
+      },
+      "fuel_dhw": {
+        "default": "mdi:fire-circle"
+      },
+      "heat_pump_share_month": {
+        "default": "mdi:heat-pump"
+      },
+      "heat_pump_share_season": {
+        "default": "mdi:heat-pump"
       }
     }
   },

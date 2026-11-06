@@ -13,7 +13,7 @@ from typing import Any
 
 from .degree_days import DayDegrees, heat_per_degree_day
 from .energy import SEASONAL_MODES, Kind, Totals, combined_ratio, mode_ratio
-from .model import Mode
+from .model import BOILER_HEAT_SIGNALS, FUEL_SIGNALS, Mode
 
 # Scope of the report -> modes; "heating_dhw" includes standby (seasonal ratio).
 SCOPES: dict[str, tuple[Mode, ...]] = {
@@ -100,6 +100,8 @@ OWN_KEYS = (
     *(f"heat_{m}" for m in Mode),
     *(f"electricity_{m}" for m in Mode),
     "standby",
+    *(f"boiler_heat_{m}" for m in BOILER_HEAT_SIGNALS),
+    *(f"fuel_{m}" for m in FUEL_SIGNALS),
 )
 
 
@@ -111,6 +113,10 @@ def own_changes(totals: Totals) -> dict[str, float]:
             Kind.AUX, mode
         )
     changes["standby"] = totals.standby()
+    for mode in BOILER_HEAT_SIGNALS:
+        changes[f"boiler_heat_{mode}"] = totals.get(Kind.BOILER, mode)
+    for mode in FUEL_SIGNALS:
+        changes[f"fuel_{mode}"] = totals.get(Kind.FUEL, mode)
     return changes
 
 
@@ -159,4 +165,10 @@ def own_hour(changes: Mapping[str, float]) -> Totals:
         totals.add(Kind.HEAT, mode, changes.get(f"heat_{mode}", 0.0))
         totals.add(Kind.ELEC, mode, changes.get(f"electricity_{mode}", 0.0))
     totals.add(Kind.STANDBY, Mode.HEATING, changes.get("standby", 0.0))
+    for mode in BOILER_HEAT_SIGNALS:
+        if heat := changes.get(f"boiler_heat_{mode}", 0.0):
+            totals.add(Kind.BOILER, mode, heat)
+    for mode in FUEL_SIGNALS:
+        if fuel := changes.get(f"fuel_{mode}", 0.0):
+            totals.add(Kind.FUEL, mode, fuel)
     return totals

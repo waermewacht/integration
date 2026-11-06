@@ -53,6 +53,15 @@ class Signal(StrEnum):
     # mode running (mostly heating), standby is standby.
     ELEC_DEFROST = "elec_defrost"
     ELEC_STANDBY = "elec_standby"
+    # Boiler of a hybrid system, never heat pump energy. Its heat enters the
+    # building's figures (heat load, signature, degree days, flow curve) and
+    # the heat pump's share: the heat the boiler reports (Buderus "Abgegebene
+    # Energie", EMS-ESP "nrgheat2"/"nrg2"), else its fuel (EMS-ESP
+    # "gasmeterheat"/"gasmeter", also for oil, on Hs) times the efficiency.
+    BOILER_HEAT_HEATING = "boiler_heat_heating"
+    BOILER_HEAT_DHW = "boiler_heat_dhw"
+    FUEL_HEATING = "fuel_heating"
+    FUEL_DHW = "fuel_dhw"
     # Operation.
     COMPRESSOR = "compressor"
     ACTIVITY = "activity"
@@ -90,10 +99,36 @@ AUX_SIGNALS: dict[Mode, Signal] = {
     Mode.HEATING: Signal.AUX_HEATING,
     Mode.DHW: Signal.AUX_DHW,
 }
+BOILER_HEAT_SIGNALS: dict[Mode, Signal] = {
+    Mode.HEATING: Signal.BOILER_HEAT_HEATING,
+    Mode.DHW: Signal.BOILER_HEAT_DHW,
+}
+FUEL_SIGNALS: dict[Mode, Signal] = {
+    Mode.HEATING: Signal.FUEL_HEATING,
+    Mode.DHW: Signal.FUEL_DHW,
+}
 ENERGY_SIGNALS: frozenset[Signal] = frozenset(
     {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
     | {Signal.AUX_TOTAL, Signal.ELEC_TOTAL, Signal.ELEC_DEFROST, Signal.ELEC_STANDBY}
+    | set(BOILER_HEAT_SIGNALS.values())
+    | set(FUEL_SIGNALS.values())
 )
+
+
+def fuel_modes(entities: Collection[Signal]) -> frozenset[Mode]:
+    """Modes whose boiler heat comes from the fuel (no boiler heat counter)."""
+    return frozenset(
+        m
+        for m, s in FUEL_SIGNALS.items()
+        if s in entities and BOILER_HEAT_SIGNALS[m] not in entities
+    )
+
+
+def has_boiler(entities: Collection[Signal]) -> bool:
+    """A hybrid system: boiler heat or boiler fuel mapped."""
+    return any(
+        s in entities for s in (*BOILER_HEAT_SIGNALS.values(), *FUEL_SIGNALS.values())
+    )
 
 
 def has_elec(entities: Collection[Signal], mode: Mode) -> bool:

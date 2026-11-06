@@ -87,6 +87,8 @@ from .model import (
     ENERGY_SIGNALS,
     HEAT_SIGNALS,
     Signal,
+    fuel_modes,
+    has_boiler,
     has_elec,
 )
 from .profiles import Match, RegistryEntry, drop_foreign_activity, find
@@ -97,6 +99,13 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
     "heating": (Signal.HEAT_HEATING, Signal.ELEC_HEATING, Signal.AUX_HEATING),
     "dhw": (Signal.HEAT_DHW, Signal.ELEC_DHW, Signal.AUX_DHW, Signal.DHW_TEMP),
     "cooling": (Signal.HEAT_COOLING, Signal.ELEC_COOLING),
+    # Boiler of a hybrid system (collapsed when unused).
+    "boiler": (
+        Signal.BOILER_HEAT_HEATING,
+        Signal.BOILER_HEAT_DHW,
+        Signal.FUEL_HEATING,
+        Signal.FUEL_DHW,
+    ),
     "operation": (
         Signal.COMPRESSOR,
         Signal.ACTIVITY,
@@ -198,7 +207,7 @@ def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.
     }
     if top is not None:
         groups[MORE] = tuple(s for s in FORM_SIGNALS if s.value not in top)
-    collapsible = ("cooling", "measurements", "activity_parts", MORE)
+    collapsible = ("cooling", "boiler", "measurements", "activity_parts", MORE)
     return vol.Schema(
         {
             vol.Required(name): section(
@@ -252,6 +261,10 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         s.value in entities for s in ELEC_SIGNALS.values()
     ):
         return "elec_twice"
+    # The boiler only counts next to the heat pump's heating (its share,
+    # the building's heat).
+    if has_boiler(signals) and Signal.HEAT_HEATING not in signals:
+        return "boiler_without_heat_pump"
     for signal in ENERGY_SIGNALS:
         if (entity_id := entities.get(signal.value)) is None:
             continue
@@ -839,6 +852,23 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 ),
             }
         )
+        # Hybrid system whose boiler reports only its fuel: heat = fuel x η.
+        mapped = {
+            Signal(key)
+            for key in self.config_entry.data.get(CONF_ENTITIES, {})
+            if key in Signal._value2member_map_
+        }
+        if fuel_modes(mapped):
+            schema = schema.extend(
+                {
+                    vol.Required(
+                        CONF_BOILER_EFFICIENCY,
+                        default=options.get(
+                            CONF_BOILER_EFFICIENCY, BOILER_EFFICIENCY_HS
+                        ),
+                    ): number(0.5, 1.0, 0.01, "")
+                }
+            )
         optional: dict[str, selector.Selector] = {
             CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
             CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),

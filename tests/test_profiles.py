@@ -287,6 +287,14 @@ def test_hybrid_manager_is_the_heat_pump_and_the_boiler_is_not() -> None:
         Signal.ACTIVITY: "sensor.heatpump_hpactivity",
         Signal.FLOW_TEMP: "sensor.heatpump_curflowtemp",
         Signal.RETURN_TEMP: "sensor.heatpump_rettemp",
+        # From the boiler device: temperatures, its heat and its fuel, never
+        # its EMS-ESP-calculated nrgheat.
+        Signal.OUTDOOR_TEMP: "sensor.boiler_outdoortemp",
+        Signal.DHW_TEMP: "sensor.boiler_dhw_curtemp",
+        Signal.BOILER_HEAT_HEATING: "sensor.boiler_nrgheat2",
+        Signal.BOILER_HEAT_DHW: "sensor.boiler_dhw_nrg2",
+        Signal.FUEL_HEATING: "sensor.boiler_gasmeterheat",
+        Signal.FUEL_DHW: "sensor.boiler_dhw_gasmeter",
     }
 
 

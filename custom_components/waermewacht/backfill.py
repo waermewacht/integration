@@ -20,7 +20,15 @@ from collections.abc import Collection, Mapping
 from datetime import datetime, timedelta
 
 from .energy import Kind, Totals
-from .model import AUX_SIGNALS, ELEC_SIGNALS, HEAT_SIGNALS, Mode, Signal
+from .model import (
+    AUX_SIGNALS,
+    BOILER_HEAT_SIGNALS,
+    ELEC_SIGNALS,
+    FUEL_SIGNALS,
+    HEAT_SIGNALS,
+    Mode,
+    Signal,
+)
 
 # Hourly change per signal: {signal: {hour start (UTC): kWh}}.
 type HourlyChanges = Mapping[Signal, Mapping[datetime, float]]
@@ -69,6 +77,15 @@ def hour_totals(
         totals.add(Kind.STANDBY if standby else Kind.ELEC, mode, elec)
     for mode, signal in AUX_SIGNALS.items():
         totals.add(Kind.AUX, mode, changes.get(signal, 0.0))
+    # Boiler of a hybrid system: as it is, never part of the heat that
+    # decides standby, defrosts or the split of common meters above.
+    for kind, signals in (
+        (Kind.BOILER, BOILER_HEAT_SIGNALS),
+        (Kind.FUEL, FUEL_SIGNALS),
+    ):
+        for mode, signal in signals.items():
+            if kwh := changes.get(signal, 0.0):
+                totals.add(kind, mode, kwh)
     # Electricity of defrosts counted apart: to the mode with the most heat
     # that hour (it ran, a defrost interrupted it), else heating.
     defrost = changes.get(Signal.ELEC_DEFROST, 0.0)
