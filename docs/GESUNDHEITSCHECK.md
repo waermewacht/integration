@@ -104,6 +104,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 - Milder Tag: Tagesmittel ≥ 5 °C.
 - **An**, wenn in den letzten 7 vollen Tagen der Heizstab an milden Tagen zusammen ≥ 2 kWh fürs Heizen verbraucht hat. Das rollende Fenster ist die Hysterese: aus nach 7 Tagen ohne.
 - Warmwasser zählt nicht: Legionellenschaltungen dürfen den Heizstab nutzen (dafür 4.9).
+- Heizstab während einer Abtauung zählt nicht (siehe 4.9, „Heizstab beim Abtauen“), er steht getrennt in `aux_kwh_defrost_7d`.
 - Einmal täglich mit der Analyse.
 
 **Mindestdaten.** Ein Heizstab-Zähler (je Modus oder gesamt) und eine Außentemperatur; mindestens 3 milde Tage im Fenster mit Wärme Heizen > 0, sonst `unknown`. 2 kWh sind bei ganzzahligen Zählern (EMS-ESP liefert den Heizstab je Modus nur in ganzen kWh, `ENTWICKLUNG.md` §4) zwei Schritte, also kein Rundungseffekt.
@@ -112,7 +113,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Fehlalarme.** Estrichtrocknung und Inbetriebnahme (gewollt), Notbetrieb nach einer Störung, Sperrzeit mit Zuheizer-Freigabe, falsch zugeordneter Gesamt-Heizstab (bei „Strom Heizstab gesamt“ bucht Wärmewacht ihn dem laufenden Modus zu; eine Legionellenschaltung direkt nach einem Heizlauf kann so ins Heizen rutschen).
 
-**Anzeige.** Binärsensor „Heizstab bei milder Witterung“. Attribute: `aux_kwh_7d`, `mild_days_7d`, `days` (je Tag Datum, Mittel, Heizstab kWh; nicht aufgezeichnet), `min_outdoor_temp`, `threshold_kwh`, `reason`.
+**Anzeige.** Binärsensor „Heizstab bei milder Witterung“. Attribute: `aux_kwh_7d` (ohne Abtauen), `aux_kwh_defrost_7d`, `mild_days_7d`, `days` (je Tag Datum, Mittel, Heizstab kWh, ggf. `aux_kwh_defrost`; nicht aufgezeichnet), `min_outdoor_temp`, `threshold_kwh`, `reason`.
 
 Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (noch nicht umgesetzt).
 
@@ -205,6 +206,8 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 **Quelle.** Fraunhofer ISE (WP-QS): AZ Warmwasser im Feld 2,8 (n = 18) zur Einordnung. 60 °C nach DVGW W 551 (`charges.py`). 15 % und 10 % **eigene Annahme**.
 
 **Umsetzung (0.1.0b8).** `charges.ChargeTracker` bildet Ladungen aus der Betriebsart (Abtauen beendet keine Ladung; Energie bis 5 Minuten nach dem Ende zählt noch, bei ganzen kWh bis 2 Stunden oder bis zur nächsten Ladung, seit 0.1.6). Signal `dhw_temp`. Problem-Sensor `aux_dhw_charges` für den Heizstab-Anteil normaler Ladungen (30 Tage, ab 10 Ladungen, > 10 %). „Letzte thermische Desinfektion“ hängt nur an der Speichertemperatur (Übergang über die Schwelle, neu erst nach 5 K darunter), damit sie auch ohne Betriebsart und bei Bosch HomeCom geht. Vorjahresvergleich (2026-10-30, `health.dhw_efficiency_drop`): Problem-Sensor `dhw_efficiency_drop`, beide Seiten aus dem Tagebuch (normale Ladungen je Tag seit 0.1.0b8), bewertet in der Tagesanalyse; 29. Februar zählt als 28. Ohne Speichertemperatur kein Sensor (Desinfektion nicht trennbar). Greift frühestens ab Ende Oktober 2027.
+
+**Heizstab beim Abtauen (seit 0.2.8).** Beobachtet an einer Bosch Compress (EMS-ESP, 05.11.2026, ~0 °C): Abtauung mitten in einer Warmwasserladung, der Heizstab lief nur während der Abtauung (`auxheaterstatus` = „Abtauen“), Bosch buchte ihn auf den Warmwasser-Heizstabzähler. Die Ladung selbst brauchte ihn nicht. Deshalb gehört Heizstab-Energie, die während einer Abtauung oder bis `runs.DEFROST_LATE` (2 min) danach eintrifft, zur Abtauung (`Defrost.aux_kwh` je Modus) und bei einer Ladung zu `Charge.aux_defrost_kwh`. Sie bleibt im Strom der Ladung und des Modus (AZ nach H3, Abtauen ist Aufwand des Modus), zählt aber nicht in den Heizstab-Anteil von `aux_dhw_charges` und nicht in `aux_mild_weather`; beide zeigen sie getrennt (`aux_kwh_defrost`, `defrost_aux_charges` bzw. `aux_kwh_defrost_7d`). Der Anteil bezieht sich weiter auf den ganzen Strom der Ladungen. 2 min sind **eigene Annahme**: Beim beobachteten Fall kam der letzte Zählerschritt 50 s nach dem Abschalten des Heizstabs, in derselben Sekunde wie der Wechsel zurück auf Warmwasser (Werte alle 20–40 s). Nur mit laufendem Zähler in 0,01 kWh; ganze kWh, Tages- und Stundenwerte (Bosch HomeCom, ViCare, MELCloud …) sind zu grob oder zu spät, dort bleibt alles beim Modus. Ohne Betriebsart mit Abtauen ebenso. Nur live: Der Rückblick bildet keine Ladungen, und in Abtauungen aus dem Verlauf (`replay`) steht kein Heizstab. Eine eigene Prüfung „Heizstab beim Abtauen“ gibt es nicht (keine Quelle für eine Grenze, bisher ein Fall); erst nach einem Winter mit Daten entscheiden.
 
 ### 4.10 Fühler- und Datenfehler
 

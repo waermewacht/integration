@@ -706,6 +706,7 @@ def _last_charge_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         "heat_kwh": round(charge.heat_kwh, 2),
         "electricity_kwh": round(charge.electricity_kwh, 2),
         "aux_kwh": round(charge.aux_kwh, 2),
+        "aux_kwh_defrost": round(charge.aux_defrost_kwh, 2),
         "start_temp": charge.start_dhw_temp,
         "max_temp": charge.max_dhw_temp,
         "disinfection": is_disinfection(charge, runtime.disinfection_temp),

@@ -23,6 +23,12 @@ Rules:
   The storage sensor of a heat pump is not the outlet, so the threshold is a
   parameter. Disinfection charges are where backup heater energy for hot water
   usually goes, so its share is split between them and normal charges.
+- Backup heater energy that arrives during a defrost (or up to
+  runs.DEFROST_LATE after it) is kept apart as `aux_defrost_kwh`: it is part
+  of the charge electricity and of its ratio (boundary H3, the defrost costs
+  the mode), but not of the backup heater share, which asks whether hot water
+  itself needs the heater. The caller decides (`add(..., defrost=True)`),
+  because only it knows the defrost and whether the counter is fine enough.
 - ChargeTracker forms charges from the activity: a charge starts with hot
   water and ends with any other known activity; a defrost does not end it.
   Counters report a moment late, so energy of hot water within LATE after
@@ -74,7 +80,8 @@ class Charge:
     end: datetime | None = None  # None while the charge is running
     heat_kwh: float = 0.0
     electricity_kwh: float = 0.0  # compressor while running, no standby
-    aux_kwh: float = 0.0  # backup heater during the charge
+    aux_kwh: float = 0.0  # backup heater during the charge, outside defrosts
+    aux_defrost_kwh: float = 0.0  # backup heater during defrosts of the charge
     max_dhw_temp: float | None = None  # highest DHW temperature seen (degC)
     start_dhw_temp: float | None = None  # DHW temperature at the start (degC)
     uncertain: bool = False  # a gap hides part of the charge
@@ -85,7 +92,7 @@ class Charge:
     @property
     def input_kwh(self) -> float:
         """Electricity of the charge: compressor plus backup heater."""
-        return self.electricity_kwh + self.aux_kwh
+        return self.electricity_kwh + self.aux_kwh + self.aux_defrost_kwh
 
     @property
     def lift(self) -> float | None:
@@ -101,6 +108,7 @@ class Charge:
             "heat_kwh": self.heat_kwh,
             "electricity_kwh": self.electricity_kwh,
             "aux_kwh": self.aux_kwh,
+            "aux_defrost_kwh": self.aux_defrost_kwh,
             "max_dhw_temp": self.max_dhw_temp,
             "start_dhw_temp": self.start_dhw_temp,
             "uncertain": self.uncertain,
@@ -114,6 +122,7 @@ class Charge:
             heat_kwh=float(data.get("heat_kwh", 0.0)),
             electricity_kwh=float(data.get("electricity_kwh", 0.0)),
             aux_kwh=float(data.get("aux_kwh", 0.0)),
+            aux_defrost_kwh=float(data.get("aux_defrost_kwh", 0.0)),
             max_dhw_temp=_float(data.get("max_dhw_temp")),
             start_dhw_temp=_float(data.get("start_dhw_temp")),
             uncertain=data.get("uncertain", False),
@@ -146,13 +155,21 @@ class ChargeStats:
     uncertain: int  # of them with an observation gap
     heat_kwh: float
     electricity_kwh: float  # compressor
-    aux_kwh: float  # backup heater
+    aux_kwh: float  # backup heater outside defrosts
+    aux_defrost_kwh: float  # backup heater during defrosts
+    defrost_aux_charges: int  # charges with backup heater during a defrost
     ratio: float | None  # heat / (compressor + backup heater)
-    aux_share: float | None  # backup heater in % of the charge electricity
+    # Backup heater outside defrosts in % of the charge electricity.
+    aux_share: float | None
     mean_minutes: float | None  # certain charges only
     mean_heat_kwh: float | None  # certain charges only
     mean_lift: float | None  # K, certain charges with both temperatures
     lift_count: int  # charges behind `mean_lift`
+
+    @property
+    def input_kwh(self) -> float:
+        """Electricity of the charges: compressor plus all backup heater."""
+        return self.electricity_kwh + self.aux_kwh + self.aux_defrost_kwh
 
     @property
     def uncertain_share(self) -> float | None:
@@ -191,6 +208,8 @@ def charge_stats(
     heat = sum(c.heat_kwh for c, _ in chosen)
     elec = sum(c.electricity_kwh for c, _ in chosen)
     aux = sum(c.aux_kwh for c, _ in chosen)
+    aux_defrost = sum(c.aux_defrost_kwh for c, _ in chosen)
+    used = elec + aux + aux_defrost
     certain = [(c, until) for c, until in chosen if not c.uncertain]
     lifts = [lift for c, _ in certain if (lift := c.lift) is not None]
     return ChargeStats(
@@ -199,8 +218,10 @@ def charge_stats(
         heat_kwh=heat,
         electricity_kwh=elec,
         aux_kwh=aux,
-        ratio=ratio(heat, elec + aux, min_electricity),
-        aux_share=_share(aux, elec + aux, min_electricity),
+        aux_defrost_kwh=aux_defrost,
+        defrost_aux_charges=sum(1 for c, _ in chosen if c.aux_defrost_kwh > 0),
+        ratio=ratio(heat, used, min_electricity),
+        aux_share=_share(aux, used, min_electricity),
         mean_minutes=_mean([c.seconds(until) / 60 for c, until in certain]),
         mean_heat_kwh=_mean([c.heat_kwh for c, _ in certain]),
         mean_lift=_mean(lifts),
@@ -322,8 +343,11 @@ class ChargeTracker:
         self.closing, self.open = self.open, None
         return None
 
-    def add(self, kind: Kind, kwh: float, at: datetime) -> None:
-        """Hot water energy (heat, compressor or backup heater electricity)."""
+    def add(
+        self, kind: Kind, kwh: float, at: datetime, *, defrost: bool = False
+    ) -> None:
+        """Hot water energy (heat, compressor or backup heater electricity);
+        `defrost`: backup heater energy that belongs to a defrost."""
         charge = self.open
         closing = self.closing
         if charge is None and closing and closing.end and at <= closing.end + self.late:
@@ -334,6 +358,8 @@ class ChargeTracker:
             charge.heat_kwh += kwh
         elif kind is Kind.ELEC:
             charge.electricity_kwh += kwh
+        elif kind is Kind.AUX and defrost:
+            charge.aux_defrost_kwh += kwh
         elif kind is Kind.AUX:
             charge.aux_kwh += kwh
 

@@ -722,9 +722,7 @@ class Sim:
                 "charges": {
                     "count": split.normal.count,
                     "heat_kwh": round(split.normal.heat_kwh, 3),
-                    "input_kwh": round(
-                        split.normal.electricity_kwh + split.normal.aux_kwh, 3
-                    ),
+                    "input_kwh": round(split.normal.input_kwh, 3),
                     "disinfections": split.disinfection.count,
                 },
             }
@@ -1165,7 +1163,12 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     per_hour = max_starts_per_hour(sim.runs, sim.tracker.open_run, start, now)
     problem = per_hour > STARTS_PER_HOUR or stats.critical_runs >= CRITICAL_RUNS_PER_DAY
     dhw_charges = _finding(aux_dhw_charges(split))
-    for key in ("disinfections", "aux_kwh_disinfections"):
+    for key in (
+        "disinfections",
+        "aux_kwh_disinfections",
+        "aux_kwh_defrost",
+        "defrost_aux_charges",
+    ):
         dhw_charges["a"].pop(key, None)
     binary = {
         "cycling_problem": {

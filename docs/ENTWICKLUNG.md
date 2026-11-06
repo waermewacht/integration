@@ -49,7 +49,7 @@ Name: keine Treffer für „Wärmewacht“/`waermewacht` auf GitHub, PyPI, HACS,
 2. Keine Wärme oder Strom unter Mindestmenge (Vorgabe 0,5 kWh) → `unknown`, nie 0.
 3. Heizstab gehört zum Strom des jeweiligen Modus (H3); optional zusätzlich ohne Heizstab.
 4. Stillstand (Strom bei stehendem Kompressor) getrennt buchen: nicht in Arbeitszahlen je Modus, wohl in der Gesamt-JAZ.
-5. Abtauung: dem Heizsystem entzogene Wärme abziehen, nicht abschneiden (Fraunhofer S. 68; OEM: ~0,1 SPF/Jahr, [EoH-Analyse](https://docs.openenergymonitor.org/heatpumpmonitor/eoh.html)). Die Bosch-Zähler tun das schon (geklärt 2026-10-27, Abschnitt 9).
+5. Abtauung: dem Heizsystem entzogene Wärme abziehen, nicht abschneiden (Fraunhofer S. 68; OEM: ~0,1 SPF/Jahr, [EoH-Analyse](https://docs.openenergymonitor.org/heatpumpmonitor/eoh.html)). Die Bosch-Zähler tun das schon (geklärt 2026-10-27, Abschnitt 9). Heizstab während einer Abtauung bleibt Strom des Modus (H3), wird aber in den Heizstab-Prüfungen getrennt ausgewiesen (seit 0.2.8, nur live und nur bei Zählern in 0,01 kWh, `runs.DEFROST_LATE` = 2 min als eigene Annahme; GESUNDHEITSCHECK.md §4.9).
 6. Zähler: echte Resets erkennen (neue Basis, nichts buchen); kleine Rücksprünge (an einer Anlage beobachtet: −0,02 kWh) glätten, nicht als Reset werten – sonst wird doppelt gebucht.
 7. `unknown`/`unavailable` nie als 0 lesen.
 
@@ -258,7 +258,7 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 | `model.py` | `Signal`, `Mode`, `Activity` |
 | `profiles.py` | Vorlagen als Daten (EMS-ESP), Erkennung über Registry-Einträge, Aktivitätswerte aller EMS-ESP-Sprachen |
 | `counter.py` | Zählerstände → Zuwächse: erster Wert, Rücksprung (Rauschen, Abtauen: Höchststand halten = netto), Reset (> 10 % und > 1 kWh), Sprung (Zeit ab letztem Anstieg, höchstens 1 h), Tageszähler |
-| `runs.py` | Läufe (Start beobachtet? Lücke?) und Abtauungen; unbekannte Zustände ändern nichts |
+| `runs.py` | Läufe (Start beobachtet? Lücke?) und Abtauungen; unbekannte Zustände ändern nichts; Heizstab während einer Abtauung (bis `DEFROST_LATE` danach) gehört zur Abtauung |
 | `cycling.py` | Starts, Laufzeit, Kurzläufe, Pausen, Abtauungen je Zeitfenster; Starts je Stunde |
 | `energy.py` | Energie je Art (Wärme, Strom Lauf, Stillstand, Heizstab) und Modus; Arbeitszahl-Regeln |
 | `periods.py` | Stände zu Periodenbeginn (Grenzen lokal, gespeichert in UTC), Rückblick als negativer Stand |
@@ -269,7 +269,7 @@ Siehe `CLAUDE.md`, Abschnitt „Verbindliche Entscheidungen“ (alle vom 2026-10
 | `activity.py` | Betriebsart aus mehreren Merkern |
 | `adopt.py` | neue Signale einer Vorlage bei bestehenden Einträgen übernehmen, sobald die Quelle sie liefert; Zähler auf die bevorzugte Form desselben Zählers umstellen |
 | `rename.py` | umbenannte Quell-Entität in `entities`, `history` und `unique_id` ersetzen |
-| `charges.py` | Warmwasser-Ladungen, thermische Desinfektion |
+| `charges.py` | Warmwasser-Ladungen, thermische Desinfektion; Heizstab beim Abtauen getrennt (`aux_defrost_kwh`, GESUNDHEITSCHECK.md §4.9) |
 | `curve.py`, `heat_load.py`, `degree_days.py`, `heating_curve.py` | AZ-Kennlinie, Energiesignatur, Gradtage, Vorlauf bei 0 °C |
 | `costs.py` | Kosten und Gasvergleich (CO₂ gerechnet, nicht angezeigt) |
 | `health.py`, `health_extra.py` | Gesundheits-Check (`docs/GESUNDHEITSCHECK.md`) |

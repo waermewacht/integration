@@ -1,5 +1,6 @@
 """Hot water charges through real state changes: a charge with late heat,
-the thermal disinfection and the backup heater check."""
+the thermal disinfection, the backup heater check and backup heater energy
+during a defrost."""
 
 from __future__ import annotations
 
@@ -33,12 +34,12 @@ DHW_TEMP = "sensor.boiler_dhw_curtemp"
 AUX_DHW = "sensor.boiler_dhw_auxelecheatnrgcons"
 
 
-async def setup(hass: HomeAssistant) -> MockConfigEntry:
+async def setup(hass: HomeAssistant, aux: str = "10") -> MockConfigEntry:
     await hass.config.async_set_time_zone("Europe/Berlin")
     set_counters(hass, 1000.5, 300.5)
     hass.states.async_set(HEAT_DHW, "500.5", ENERGY)
     hass.states.async_set(ELEC_DHW, "200.5", ENERGY)
-    hass.states.async_set(AUX_DHW, "10", ENERGY)
+    hass.states.async_set(AUX_DHW, aux, ENERGY)
     hass.states.async_set(COMPRESSOR, "off")
     hass.states.async_set(ACTIVITY, "aus")
     hass.states.async_set(FLOW, "28.0", TEMPERATURE)
@@ -111,3 +112,52 @@ async def test_charge_disinfection_and_backup_heater_check(
     hass.states.async_set(DHW_TEMP, "60.5", TEMPERATURE)
     await tick(hass, freezer, 1)
     assert entry.runtime_data.last_disinfection == first
+
+
+@pytest.mark.freeze_time(START)
+async def test_backup_heater_during_a_defrost_in_a_charge(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Pattern of a real charge (values made up): a defrost in the middle of
+    a hot water charge, the heater runs only during the defrost and its
+    counter (0.01 kWh) reports the last step in the same moment as the
+    change back to hot water."""
+    entry = await setup(hass, aux="10.09")
+    runtime = entry.runtime_data
+    last = entity_id(hass, entry, "sensor", "ratio_dhw_last_charge")
+    check = entity_id(hass, entry, "binary_sensor", "aux_dhw_charges")
+
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Warmwasser")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(HEAT_DHW, "502.5", ENERGY)
+    hass.states.async_set(ELEC_DHW, "201.1", ENERGY)
+    await tick(hass, freezer, 10)
+    hass.states.async_set(ACTIVITY, "Abtauen")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(AUX_DHW, "10.2", ENERGY)
+    await tick(hass, freezer, 3)
+    hass.states.async_set(AUX_DHW, "10.4", ENERGY)
+    await tick(hass, freezer, 3)
+    hass.states.async_set(ACTIVITY, "Warmwasser")
+    hass.states.async_set(AUX_DHW, "10.45", ENERGY)  # late, same moment
+    await tick(hass, freezer, 5)
+    hass.states.async_set(AUX_DHW, "10.5", ENERGY)  # the heater for hot water
+    hass.states.async_set(HEAT_DHW, "504.0", ENERGY)
+    hass.states.async_set(ELEC_DHW, "201.6", ENERGY)
+    await tick(hass, freezer, 5)
+    hass.states.async_set(COMPRESSOR, "off")
+    hass.states.async_set(ACTIVITY, "aus")
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 6)
+
+    charge = runtime.charges[-1]
+    assert charge.aux_defrost_kwh == pytest.approx(0.36)
+    assert charge.aux_kwh == pytest.approx(0.05)
+    assert charge.input_kwh == pytest.approx(1.1 + 0.41)
+    assert runtime.defrosts[-1].aux_kwh == {"dhw": pytest.approx(0.36)}
+    assert hass.states.get(last).attributes["aux_kwh_defrost"] == 0.36
+    state = hass.states.get(check)
+    assert state.attributes["aux_kwh_defrost"] == 0.36
+    assert state.attributes["aux_kwh"] == 0.05
+    assert state.attributes["defrost_aux_charges"] == 1

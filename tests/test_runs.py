@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from custom_components.waermewacht.model import Activity, Mode
-from custom_components.waermewacht.runs import RunTracker
+from custom_components.waermewacht.runs import (
+    DEFROST_LATE,
+    Defrost,
+    RunTracker,
+    defrost_aux_by_day,
+)
 
 T0 = datetime(2026, 1, 15, 5, 0, tzinfo=UTC)
 
@@ -187,3 +193,43 @@ def test_source_gap_before_the_run_does_not_count() -> None:
     run = tracker.set_compressor(False, at(70))
     assert run is not None and not run.uncertain
     assert not RunTracker().source_gap(at(0), at(60))  # no open run
+
+
+def test_backup_heater_energy_belongs_to_the_defrost() -> None:
+    tracker = started(RunTracker())
+    tracker.set_compressor(True, at(10))
+    tracker.set_activity(Activity.DHW, at(10))
+    assert tracker.defrost_at(at(20)) is None
+    tracker.set_activity(Activity.DEFROST, at(30))
+    running = tracker.defrost_at(at(31))
+    assert running is tracker.open_defrost
+    running.add_aux(Mode.DHW, 0.2)
+    defrost = tracker.set_activity(Activity.DHW, at(38))
+    assert defrost is running
+    # Counters report a moment late: still the defrost, then no longer.
+    assert tracker.defrost_at(at(38)) is defrost
+    assert tracker.defrost_at(at(38) + DEFROST_LATE) is defrost
+    assert tracker.defrost_at(at(38) + DEFROST_LATE + timedelta(seconds=1)) is None
+    defrost.add_aux(Mode.DHW, 0.05)
+    assert abs(defrost.aux(Mode.DHW) - 0.25) < 1e-9
+    assert defrost.aux(Mode.HEATING) == 0.0
+
+
+def test_stored_defrost_with_and_without_heater() -> None:
+    plain = Defrost(start=at(0), end=at(4))
+    assert "aux_kwh" not in plain.as_dict()  # stored as before
+    assert Defrost.from_dict(plain.as_dict()) == plain
+    heated = Defrost(start=at(0), end=at(4), aux_kwh={"heating": 0.3})
+    assert Defrost.from_dict(heated.as_dict()) == heated
+
+
+def test_defrost_heater_per_local_day() -> None:
+    tz = ZoneInfo("Europe/Berlin")
+    late = datetime(2026, 1, 14, 23, 30, tzinfo=UTC)  # 15.01. 00:30 local
+    defrosts = [
+        Defrost(start=late, end=late + timedelta(minutes=4), aux_kwh={"heating": 0.3}),
+        Defrost(start=at(0), end=at(4), aux_kwh={"heating": 0.2, "dhw": 0.5}),
+        Defrost(start=at(60), end=at(64)),
+    ]
+    assert defrost_aux_by_day(defrosts, Mode.HEATING, tz) == {date(2026, 1, 15): 0.5}
+    assert defrost_aux_by_day(defrosts, Mode.DHW, tz) == {date(2026, 1, 15): 0.5}

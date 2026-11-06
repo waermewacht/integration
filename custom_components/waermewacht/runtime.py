@@ -166,7 +166,15 @@ from .report import (
     own_totals,
     statistics_rows,
 )
-from .runs import ACTIVITY, COMPRESSOR, Defrost, Run, RunTracker, replay
+from .runs import (
+    ACTIVITY,
+    COMPRESSOR,
+    Defrost,
+    Run,
+    RunTracker,
+    defrost_aux_by_day,
+    replay,
+)
 from .templates import TEMPLATES
 
 if TYPE_CHECKING:
@@ -1059,8 +1067,14 @@ class HeatPumpRuntime:
         days = [
             d for d in daily_samples(hours, outdoor, self.tz) if first <= d.day <= last
         ]
+        defrosts = [*self.defrosts]
+        if self.tracker.open_defrost is not None:
+            defrosts.append(self.tracker.open_defrost)
         self.findings["aux_mild_weather"] = aux_mild_weather(
-            days, mild_from=self.aux_mild_from, threshold_kwh=AUX_KWH
+            days,
+            mild_from=self.aux_mild_from,
+            threshold_kwh=AUX_KWH,
+            defrost_aux=defrost_aux_by_day(defrosts, Mode.HEATING, self.tz),
         )
 
     async def _async_starts_baseline(
@@ -1310,9 +1324,7 @@ class HeatPumpRuntime:
                 "charges": {
                     "count": split.normal.count,
                     "heat_kwh": round(split.normal.heat_kwh, 3),
-                    "input_kwh": round(
-                        split.normal.electricity_kwh + split.normal.aux_kwh, 3
-                    ),
+                    "input_kwh": round(split.normal.input_kwh, 3),
                     "disinfections": split.disinfection.count,
                 }
                 if self.has_charges
@@ -1883,10 +1895,28 @@ class HeatPumpRuntime:
                 kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
             else:
                 kind = Kind.AUX
+        defrost = self._defrost_of(signal, kind, at)
+        if defrost is not None:
+            defrost.add_aux(mode, kwh)
+            if defrost.end is not None:  # already in the history file
+                self._history_dirty = True
         self._add(kind, mode, kwh, at)
         if mode is Mode.DHW:
             self._set_charge_late()
-            self.charge_tracker.add(kind, kwh, at)
+            self.charge_tracker.add(kind, kwh, at, defrost=defrost is not None)
+
+    def _defrost_of(self, signal: Signal, kind: Kind, at: datetime) -> Defrost | None:
+        """The defrost that backup heater energy belongs to (runs.DEFROST_LATE).
+
+        Only with a live counter in 0.01 kWh: whole kWh, day values and
+        hourly statistics come too late or too coarse to tell a defrost of
+        a few minutes; their energy stays with the mode as before.
+        """
+        if kind is not Kind.AUX or signal not in self.decimal:
+            return None
+        if self.hourly or self.template.day_values or self.template.previous_day:
+            return None
+        return self.tracker.defrost_at(at)
 
     def _set_charge_late(self) -> None:
         """How long a charge takes late energy: longer for whole kWh."""

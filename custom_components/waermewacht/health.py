@@ -204,13 +204,27 @@ def aux_mild_weather(
     *,
     mild_from: float = MILD_FROM,
     threshold_kwh: float = AUX_KWH,
+    defrost_aux: Mapping[date, float] | None = None,
 ) -> Finding:
-    """Backup heater energy for heating on mild days (`days` = the window)."""
+    """Backup heater energy for heating on mild days (`days` = the window).
+
+    `defrost_aux`: heating backup heater energy during defrosts per day
+    (`runs.defrost_aux_by_day`); it is left out of the check and shown apart.
+    """
+    defrost_aux = defrost_aux or {}
     mild = [d for d in days if d.mean_outdoor >= mild_from]
     heating_days = [d for d in mild if d.totals.get(Kind.HEAT, Mode.HEATING) > 0]
-    aux = sum(d.totals.get(Kind.AUX, Mode.HEATING) for d in mild)
+
+    def split(d: DaySample) -> tuple[float, float]:
+        total = d.totals.get(Kind.AUX, Mode.HEATING)
+        defrost = min(defrost_aux.get(d.day, 0.0), total)
+        return total - defrost, defrost
+
+    parts = {d.day: split(d) for d in mild}
+    aux = sum(normal for normal, _ in parts.values())
     evidence: dict[str, Any] = {
         "aux_kwh_7d": round(aux, 1),
+        "aux_kwh_defrost_7d": round(sum((d for _, d in parts.values()), 0.0), 1),
         "mild_days_7d": len(mild),
         "min_outdoor_temp": mild_from,
         "threshold_kwh": threshold_kwh,
@@ -218,7 +232,12 @@ def aux_mild_weather(
             {
                 "day": d.day.isoformat(),
                 "mean_outdoor": round(d.mean_outdoor, 1),
-                "aux_kwh": round(d.totals.get(Kind.AUX, Mode.HEATING), 2),
+                "aux_kwh": round(parts[d.day][0], 2),
+                **(
+                    {"aux_kwh_defrost": round(parts[d.day][1], 2)}
+                    if parts[d.day][1] > 0
+                    else {}
+                ),
             }
             for d in mild
         ],
@@ -233,15 +252,22 @@ def aux_mild_weather(
 def aux_dhw_charges(
     split: DisinfectionSplit, *, threshold: float = AUX_DHW_PERCENT
 ) -> Finding:
-    """Backup heater share of normal hot water charges (`split` = the window)."""
+    """Backup heater share of normal hot water charges (`split` = the window).
+
+    Backup heater energy during defrosts is left out of the share and shown
+    apart (`aux_kwh_defrost`, all charges): it says nothing about hot water.
+    """
     normal = split.normal
+    hot = split.disinfection
     share = normal.aux_share
     evidence: dict[str, Any] = {
         "charges": normal.count,
         "aux_share": None if share is None else round(share, 1),
         "aux_kwh": round(normal.aux_kwh, 2),
-        "disinfections": split.disinfection.count,
-        "aux_kwh_disinfections": round(split.disinfection.aux_kwh, 2),
+        "aux_kwh_defrost": round(normal.aux_defrost_kwh + hot.aux_defrost_kwh, 2),
+        "defrost_aux_charges": normal.defrost_aux_charges + hot.defrost_aux_charges,
+        "disinfections": hot.count,
+        "aux_kwh_disinfections": round(hot.aux_kwh, 2),
         "threshold_percent": threshold,
     }
     if normal.count < MIN_CHARGES or share is None:

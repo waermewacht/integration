@@ -4,17 +4,27 @@ Pure Python, no Home Assistant imports. Unknown states (`None`: the source is
 unavailable or Home Assistant restarts) never start, end or split anything:
 the last known state holds, and a long gap only marks the affected run as
 uncertain. A run that was already going when first seen is not a start.
+
+Backup heater energy during a defrost belongs to the defrost
+(`RunTracker.defrost_at`), per mode it was booked to. Counters report a moment
+late: energy up to DEFROST_LATE after the end still counts. Own assumption
+from one observed defrost (EMS-ESP, 0.01 kWh, values every 20-40 s): the last
+step came 50 s after the heater went off, in the same second as the change
+back to hot water.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta, tzinfo
 from typing import Any
 
 from .const import GAP_TOLERANCE_SECONDS
 from .model import Activity, Mode
+
+# Backup heater energy up to this long after a defrost still belongs to it.
+DEFROST_LATE = timedelta(minutes=2)
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -65,15 +75,41 @@ class Defrost:
 
     start: datetime
     end: datetime | None = None
+    # Backup heater energy during the defrost per mode (Mode value -> kWh).
+    aux_kwh: dict[str, float] = field(default_factory=dict)
+
+    def add_aux(self, mode: Mode, kwh: float) -> None:
+        self.aux_kwh[mode.value] = self.aux_kwh.get(mode.value, 0.0) + kwh
+
+    def aux(self, mode: Mode) -> float:
+        return self.aux_kwh.get(mode.value, 0.0)
 
     def as_dict(self) -> dict[str, Any]:
-        return {"start": self.start.isoformat(), "end": _iso(self.end)}
+        data: dict[str, Any] = {"start": self.start.isoformat(), "end": _iso(self.end)}
+        if self.aux_kwh:
+            data["aux_kwh"] = dict(self.aux_kwh)
+        return data
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Defrost:
         return cls(
-            start=datetime.fromisoformat(data["start"]), end=_dt(data.get("end"))
+            start=datetime.fromisoformat(data["start"]),
+            end=_dt(data.get("end")),
+            aux_kwh={k: float(v) for k, v in data.get("aux_kwh", {}).items()},
         )
+
+
+def defrost_aux_by_day(
+    defrosts: Iterable[Defrost], mode: Mode, tz: tzinfo
+) -> dict[date, float]:
+    """Backup heater energy of the mode during defrosts per local day (of
+    the defrost start); days without any are left out."""
+    days: dict[date, float] = {}
+    for defrost in defrosts:
+        if (kwh := defrost.aux(mode)) > 0:
+            day = defrost.start.astimezone(tz).date()
+            days[day] = days.get(day, 0.0) + kwh
+    return days
 
 
 @dataclass
@@ -89,6 +125,9 @@ class RunTracker:
     last_mode: Mode | None = None  # latest heating/DHW/cooling activity
     open_run: Run | None = None
     open_defrost: Defrost | None = None
+    # The latest ended defrost, for late backup heater energy (not stored:
+    # after a restart DEFROST_LATE has passed anyway).
+    last_defrost: Defrost | None = None
 
     @property
     def mode(self) -> Mode | None:
@@ -151,7 +190,20 @@ class RunTracker:
         if activity is not Activity.DEFROST and self.open_defrost is not None:
             defrost, self.open_defrost = self.open_defrost, None
             defrost.end = at
+            self.last_defrost = defrost
             return defrost
+        return None
+
+    def defrost_at(
+        self, at: datetime, late: timedelta = DEFROST_LATE
+    ) -> Defrost | None:
+        """The defrost that energy arriving at `at` belongs to: the running
+        one, or the latest if it ended at most `late` before."""
+        if self.open_defrost is not None:
+            return self.open_defrost
+        last = self.last_defrost
+        if last is not None and last.end is not None and at <= last.end + late:
+            return last
         return None
 
     def tick(self, at: datetime) -> None:

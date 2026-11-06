@@ -269,3 +269,15 @@ def test_dhw_needs_ten_charges_on_each_side() -> None:
 def test_year_earlier_leap_day() -> None:
     assert year_earlier(date(2028, 2, 29)) == date(2027, 2, 28)
     assert year_earlier(date(2027, 3, 1)) == date(2026, 3, 1)
+
+
+def test_backup_heater_during_defrosts_is_left_out_on_mild_days() -> None:
+    days = [day(i, 6.0, 20.0, 0.5) for i in range(5)]
+    defrost = {d.day: 0.4 for d in days}
+    defrost[days[0].day] = 9.0  # never more than booked that day
+    result = aux_mild_weather(days, defrost_aux=defrost)
+    assert result.problem is False
+    assert result.evidence["aux_kwh_7d"] == 0.4
+    assert result.evidence["aux_kwh_defrost_7d"] == 2.1
+    first = result.evidence["days"][0]
+    assert (first["aux_kwh"], first["aux_kwh_defrost"]) == (0.0, 0.5)

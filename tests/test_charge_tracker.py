@@ -133,3 +133,60 @@ def test_whole_kwh_electricity_arrives_late() -> None:
     tracker.add(Kind.ELEC, 1.0, at(345))
     assert done.electricity_kwh == 0
     assert LATE < COARSE_LATE
+
+
+def test_backup_heater_during_a_defrost_is_kept_apart() -> None:
+    """A defrost in the middle of a charge with the heater only during the
+    defrost (pattern of a real charge, values made up)."""
+    tracker = ChargeTracker()
+    tracker.set_activity(Activity.DHW, at(0), 41.0)
+    tracker.add(Kind.HEAT, 1.5, at(10))
+    tracker.add(Kind.ELEC, 0.5, at(10))
+    tracker.set_activity(Activity.DEFROST, at(30), None)
+    tracker.add(Kind.AUX, 0.2, at(32), defrost=True)
+    tracker.add(Kind.AUX, 0.2, at(36), defrost=True)
+    tracker.set_activity(Activity.DHW, at(38), None)
+    tracker.add(Kind.AUX, 0.05, at(38), defrost=True)  # same second, late
+    tracker.add(Kind.HEAT, 1.0, at(50))
+    tracker.add(Kind.ELEC, 0.3, at(50))
+    tracker.set_activity(Activity.OFF, at(60), None)
+    done = tracker.tick(at(66))
+    assert done is not None
+    assert done.aux_kwh == 0.0
+    assert done.aux_defrost_kwh == pytest.approx(0.45)
+    # The defrost still costs the charge (boundary H3).
+    assert done.input_kwh == pytest.approx(1.25)
+    assert Charge.from_dict(done.as_dict()) == done
+
+    split = disinfection_split([done], at(0), at(24 * 60))
+    assert split.normal.aux_share == 0.0
+    assert split.normal.ratio == pytest.approx(2.5 / 1.25)
+    assert split.normal.input_kwh == pytest.approx(1.25)
+    assert split.normal.defrost_aux_charges == 1
+    result = aux_dhw_charges(split)
+    assert result.evidence["aux_kwh"] == 0.0
+    assert result.evidence["aux_kwh_defrost"] == 0.45
+    assert result.evidence["defrost_aux_charges"] == 1
+
+
+def test_stored_charge_without_defrost_heater() -> None:
+    """Charges stored before the split load with no defrost heater."""
+    data = Charge(start=at(0), end=at(30), aux_kwh=0.3).as_dict()
+    del data["aux_defrost_kwh"]
+    charge = Charge.from_dict(data)
+    assert (charge.aux_kwh, charge.aux_defrost_kwh) == (0.3, 0.0)
+
+
+def test_heater_shares_with_and_without_defrost() -> None:
+    """The share is the heater outside defrosts in % of all charge
+    electricity; ten charges each with 0.1 kWh in a defrost and 0.1 kWh
+    outside stay below the limit, without the split they would not."""
+    charges = []
+    for i in range(10):
+        charge = normal(60 * i, 0.1)
+        charge.aux_defrost_kwh = 0.1
+        charges.append(charge)
+    result = aux_dhw_charges(disinfection_split(charges, at(0), at(24 * 60)))
+    assert result.evidence["aux_share"] == pytest.approx(100 * 0.1 / 1.2, abs=0.05)
+    assert result.problem is False
+    assert result.evidence["aux_kwh_defrost"] == 1.0
