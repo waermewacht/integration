@@ -1522,6 +1522,8 @@ def _set(data: dict, path: str, value: str) -> None:
     *parents, last = path.split(".")
     for part in parents:
         data = data.setdefault(part, {})
+    # A text the tables already make belongs there, not here.
+    assert last not in data, f"{path} is generated already"
     data[last] = value
 
 
