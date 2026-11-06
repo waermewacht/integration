@@ -170,6 +170,7 @@ async def test_boiler_unavailable_and_dhw_fuel_leave_runs_and_charges(
     assert charge is not None
     assert charge.aux_kwh == 0.0 and charge.aux_defrost_kwh == 0.0
     assert charge.electricity_kwh == pytest.approx(0.8)
+    assert charge.heat_kwh == pytest.approx(2.0)
     assert runtime.totals.get(Kind.FUEL, Mode.DHW) == pytest.approx(1.0)
 
 

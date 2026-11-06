@@ -130,9 +130,15 @@ def replace_boiler[K](
 ) -> dict[K, Totals]:
     """`hours` with their boiler heat and fuel taken from `boiler` (hourly
     changes of the boiler's own counters): complete also for the time before
-    a boiler was mapped, which the own sensors cannot know."""
+    a boiler was mapped, which the own sensors cannot know.
+
+    Only hours with heat pump data: an hour of the boiler alone would count
+    as a day with energy where the heat pump's data are missing (before its
+    meters were recorded, previous-day sources before the setup) and pull
+    the heat load down.
+    """
     result: dict[K, Totals] = {}
-    for hour in hours.keys() | boiler.keys():
+    for hour in hours:
         totals = hours[hour].copy() if hour in hours else Totals()
         for kind in (Kind.BOILER, Kind.FUEL):
             for mode in Mode:

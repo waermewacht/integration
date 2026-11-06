@@ -115,6 +115,11 @@ ENERGY_SIGNALS: frozenset[Signal] = frozenset(
 )
 
 
+BOILER_SIGNALS: frozenset[Signal] = frozenset(
+    {*BOILER_HEAT_SIGNALS.values(), *FUEL_SIGNALS.values()}
+)
+
+
 def fuel_modes(entities: Collection[Signal]) -> frozenset[Mode]:
     """Modes whose boiler heat comes from the fuel (no boiler heat counter)."""
     return frozenset(

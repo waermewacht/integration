@@ -83,6 +83,7 @@ from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
 from .model import (
     AUX_SIGNALS,
+    BOILER_SIGNALS,
     ELEC_SIGNALS,
     ENERGY_SIGNALS,
     HEAT_SIGNALS,
@@ -599,7 +600,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             [
                 entities[s.value]
                 for s in ENERGY_SIGNALS
-                if s.value in entities and entities[s.value] != before.get(s.value)
+                if s.value in entities
+                and entities[s.value] != before.get(s.value)
+                # The boiler's counters are lifetime counters of their own.
+                and s not in BOILER_SIGNALS
             ],
             kind,
             previous_day=template is not None and template.previous_day,

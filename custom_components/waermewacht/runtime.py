@@ -871,6 +871,10 @@ class HeatPumpRuntime:
             outdoor[hour] = mean
         return outdoor
 
+    def _boiler_entities(self) -> dict[str, str]:
+        """The boiler's mapped entities (a change starts boiler_from anew)."""
+        return {s.value: self.entities[s] for s in BOILER_KIND if s in self.entities}
+
     @property
     def has_boiler(self) -> bool:
         """A hybrid system: boiler heat or boiler fuel is mapped."""
@@ -1060,7 +1064,9 @@ class HeatPumpRuntime:
             return
         found = await async_wrong_counters(
             self.hass,
-            [self.entities[s] for s in self._energy],
+            # The boiler's counters are lifetime counters of their own,
+            # whatever the template's energy values are.
+            [self.entities[s] for s in self._energy if s not in BOILER_KIND],
             kind,
             previous_day=self.template.previous_day,
         )
@@ -2339,7 +2345,14 @@ class HeatPumpRuntime:
             "counter_entities": {s.value: self.entities.get(s) for s in self.counters},
             "look_back_entities": self._look_back_entities,
             # Only with a boiler: removed and mapped again, it starts anew.
-            **({"boiler_from": _iso(self.boiler_from)} if self.has_boiler else {}),
+            **(
+                {
+                    "boiler_from": _iso(self.boiler_from),
+                    "boiler_entities": self._boiler_entities(),
+                }
+                if self.has_boiler
+                else {}
+            ),
             "tracker": self.tracker.as_dict(),
             "totals": self.totals.as_dict(),
             "marks": self.marks.as_dict(),
@@ -2430,10 +2443,13 @@ class HeatPumpRuntime:
         backfill = data.get("backfill_until")
         self.backfill_until = datetime.fromisoformat(backfill) if backfill else None
         self._look_back_entities = data.get("look_back_entities")
-        # Boiler mapped after the setup: from then on its energy is booked.
+        # Boiler mapped (or its entities changed) after the setup: from then
+        # on its energy is booked.
         if not self.has_boiler:
             self.boiler_from = None
-        elif "boiler_from" in data:
+        elif "boiler_from" in data and data.get("boiler_entities") == (
+            self._boiler_entities()
+        ):
             stored = data.get("boiler_from")
             self.boiler_from = dt_util.parse_datetime(stored) if stored else None
         else:

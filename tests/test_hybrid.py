@@ -169,5 +169,8 @@ def test_boiler_hours_and_replace_take_the_source() -> None:
     merged = replace_boiler(own, source)
     assert merged[h1].get(Kind.BOILER, H) == 4.0
     assert merged[h1].heat(H) == 3.0  # the heat pump's own heat stays
-    assert merged[h2].get(Kind.FUEL, W) == 1.0
+    # No hour of the boiler alone: it would pass as a day with data.
+    assert set(merged) == {h1}
     assert own[h1].get(Kind.BOILER, H) == 1.0  # input untouched
+    own[h2] = Totals()  # the heat pump's hour exists (0 kWh): boiler joins
+    assert replace_boiler(own, source)[h2].get(Kind.FUEL, W) == 1.0
