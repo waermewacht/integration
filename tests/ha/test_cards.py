@@ -7,8 +7,6 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.waermewacht.const import DOMAIN
-
 from .conftest import ACTIVITY, COMPRESSOR, FLOW, RETURN
 from .test_init import setup
 
@@ -16,8 +14,7 @@ from .test_init import setup
 async def test_sources_for_the_card_now(hass: HomeAssistant, hass_ws_client) -> None:
     assert await async_setup_component(hass, "websocket_api", {})
     entry: MockConfigEntry = await setup(hass)
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
-    assert device is not None
+    (device,) = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     client = await hass_ws_client(hass)
     await client.send_json(
         {"id": 1, "type": "waermewacht/sources", "device_id": device.id}
@@ -45,4 +42,4 @@ async def test_card_file_is_served(hass: HomeAssistant, hass_client) -> None:
     client = await hass_client()
     response = await client.get("/waermewacht/waermewacht-card.js")
     assert response.status == 200
-    assert "waermewacht-health-card" in await response.text()
+    assert "waermewacht-card-editor" in await response.text()
