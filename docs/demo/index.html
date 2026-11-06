@@ -199,7 +199,7 @@
     </style>
   </head>
   <body>
-    <dialog class="info" id="info"></dialog>
+    <dialog class="info" id="info" aria-labelledby="info-title"></dialog>
     <div class="page">
       <header>
         <img src="../../custom_components/waermewacht/brand/icon.png" alt="" />
@@ -654,19 +654,6 @@
         return `${human ? escapeHtml(human) + " · " : ""}<code>${escapeHtml(code)}</code>`;
       }
 
-      function problemTile(key) {
-        const entity = data.binary[key];
-        const tx = t();
-        const a = entity.a;
-        const known = !a.reason && (entity.s === "on" || entity.s === "off");
-        const label = a.reason ? reasonText(a.reason) : escapeHtml(entity.s === "on" ? tx.on : entity.s === "off" ? tx.off : tx.unknown);
-        const detail = known && tx.healthDetail[key] ? ` · ${escapeHtml(tx.healthDetail[key](a))}` : "";
-        const cls = !known ? "c12 inactive" : entity.s === "on" ? "c12 problem" : "c12 ok";
-        return tile(ICONS[key], name(key), `${label}${detail}`, cls);
-      }
-
-      // ---- Charts --------------------------------------------------------------------
-
       function niceStep(max, parts = 4) {
         const raw = max / parts;
         const p = 10 ** Math.floor(Math.log10(raw));
@@ -780,37 +767,6 @@
         return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
       }
 
-      function spark(rows, key) {
-        const W = 300, H = 44;
-        const values = rows.map((r) => r[key]);
-        const lo = Math.min(...values), hi = Math.max(...values);
-        const span = hi - lo || 1;
-        const x = (i) => (i / Math.max(1, rows.length - 1)) * W;
-        const y = (v) => H - 4 - ((v - lo) / span) * (H - 10);
-        const line = values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
-        return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-          <path class="area" d="${line}L${W},${H}L0,${H}Z" /><path class="line" d="${line}" vector-effect="non-scaling-stroke" /></svg>`;
-      }
-
-      function sensorCard(title, mdi, v, digits, unit, rows, key, cls = "c6") {
-        return `<div class="card sensor ${cls}"><div class="top"><span>${escapeHtml(title)}</span>${icon(mdi)}</div>
-          <div class="value">${num(v, digits)}<span>${unit}</span></div>${spark(rows, key)}</div>`;
-      }
-
-      function gauge(title, v, max, unit, cls = "c6") {
-        const share = Math.max(0, Math.min(1, v / max));
-        const arc = (f) => {
-          const a = Math.PI * (1 - f);
-          return [60 + 46 * Math.cos(a), 58 - 46 * Math.sin(a)];
-        };
-        const [ex, ey] = arc(share);
-        const bar = share > 0 ? `<path class="bar" d="M14,58 A46,46 0 0 1 ${ex.toFixed(2)},${ey.toFixed(2)}" fill="none" stroke-width="10" />` : "";
-        return `<div class="card gauge ${cls}"><svg viewBox="0 0 120 70" aria-hidden="true">
-          <path class="track" d="M14,58 A46,46 0 0 1 106,58" fill="none" stroke-width="10" />${bar}
-          <text class="v" x="60" y="55" text-anchor="middle">${num(v, 0)} ${unit}</text></svg>
-          <div class="name">${escapeHtml(title)}</div></div>`;
-      }
-
       function yaml(value, indent = "") {
         if (Array.isArray(value)) {
           return value
@@ -881,7 +837,8 @@
         for (const [key, e] of Object.entries(data.sensors)) {
           const id = `sensor.waermepumpe_${key}`;
           precision[id] = e.p ?? undefined;
-          add(id, key, e.s, { ...e.a, ...(e.u ? { unit_of_measurement: e.u } : {}), friendly_name: name(key) });
+          const extra = key === "performance_curve_heating" ? { device_class: "timestamp" } : {};
+          add(id, key, e.s, { ...e.a, ...extra, ...(e.u ? { unit_of_measurement: e.u } : {}), friendly_name: name(key) });
         }
         for (const [key, e] of Object.entries(data.binary)) {
           add(`binary_sensor.waermepumpe_${key}`, key, e.s, { ...e.a, friendly_name: name(key) });
@@ -927,17 +884,29 @@
       function formatState(s) {
         const tx = t();
         if (!s || s.state === "unknown" || s.state === "unavailable") return tx.unknown;
+        const key = demo?.entities[s.entity_id]?.translation_key;
+        const text = key && data.states?.[state.lang]?.[key]?.[s.state];
+        if (text) return text;
+        if (s.attributes.device_class === "timestamp") {
+          return `${dateFmt(s.state, { day: "numeric", month: "short" })}, ${timeFmt(s.state)}`;
+        }
         if (s.entity_id === sourceIds.activity) return tx.activity[s.state] ?? s.state;
         if (s.entity_id === sourceIds.compressor) {
           const text = s.state === "on" ? tx.running : tx.stopped;
           return text.charAt(0).toUpperCase() + text.slice(1);
         }
         if (s.entity_id.startsWith("binary_sensor.")) return s.state === "on" ? tx.problemState : tx.fineState;
-        const digits = precision[s.entity_id];
         const value = Number(s.state);
-        if (digits === undefined || Number.isNaN(value)) return s.state;
+        if (s.state === "" || Number.isNaN(value)) return s.state;
+        const digits = precision[s.entity_id];
+        const shown = digits === undefined
+          ? new Intl.NumberFormat(state.lang, { maximumFractionDigits: 3 }).format(value)
+          : num(value, digits);
         const unit = s.attributes.unit_of_measurement;
-        return `${num(value, digits)}${unit ? ` ${UNITS[unit] ?? unit}` : ""}`;
+        if (!unit) return shown;
+        // Home Assistant writes "47 %" in German, "47%" in English.
+        const space = unit === "%" && state.lang === "en" ? "" : " ";
+        return `${shown}${space}${UNITS[unit] ?? unit}`;
       }
 
       /** Monthly statistics of the energy sensors (the "months" card). */
@@ -974,6 +943,11 @@
         }
       }
 
+      // A click on the backdrop (the dialog itself, not its content) closes it.
+      document.getElementById("info").addEventListener("click", (event) => {
+        if (event.target === event.currentTarget) event.currentTarget.close();
+      });
+
       // A click on a tile opens the details, as in Home Assistant.
       document.addEventListener("hass-more-info", (event) => {
         const s = demo?.states[event.detail.entityId];
@@ -981,7 +955,7 @@
         const { friendly_name: title, ...attributes } = s.attributes;
         const dialog = document.getElementById("info");
         dialog.innerHTML = `<button type="button" aria-label="${escapeHtml(t().close)}">✕</button>
-          <h2>${escapeHtml(title ?? s.entity_id)}</h2><div class="state">${escapeHtml(formatState(s))}</div>
+          <h2 id="info-title">${escapeHtml(title ?? s.entity_id)}</h2><div class="state">${escapeHtml(formatState(s))}</div>
           <div class="cardtype"><code>${escapeHtml(s.entity_id)}</code></div>
           ${Object.keys(attributes).length ? `<pre>${escapeHtml(yaml(attributes).trimStart())}</pre>` : ""}`;
         dialog.querySelector("button").addEventListener("click", () => dialog.close());
@@ -1015,88 +989,6 @@
         );
       }
 
-      function nowSection() {
-        const tx = t();
-        const live = data.live;
-        const rows = data.today;
-        const since = live.activity_since ? tx.since(timeFmt(live.activity_since)) : "";
-        return `
-          <section class="section">
-            <div class="heading">${icon("heat-pump")}<span>${tx.now}</span></div>
-            <div class="subtitle">${escapeHtml(tx.sourceDevice(data.device))}</div>
-            <div class="grid">
-              ${tile("heat-pump", tx.activityName, `${escapeHtml(tx.activity[live.activity])} · ${escapeHtml(since)}`, "c12")}
-              ${sensorCard(tx.speed, "fan", live.speed_hz, 0, "Hz", rows, "speed", "c12")}
-              ${gauge(tx.elecPower, live.elec_w, 3000, "W")}
-              ${gauge(tx.heatPower, live.heat_w, 9000, "W")}
-              ${sensorCard(tx.flow, "thermometer", live.flow, 1, "°C", rows, "flow")}
-              ${sensorCard(tx.ret, "thermometer", live.return, 1, "°C", rows, "ret")}
-              ${sensorCard(tx.dhwTemp, "water-thermometer", live.dhw, 1, "°C", rows, "dhw", "c12")}
-              ${tile("thermometer-water", tx.dhwSet, `${num(live.dhw_set, 1)} °C`, "c12")}
-              <div class="card c12"><div class="card-title">${tx.todayTitle}</div>${todayChart(rows)}
-                ${legend([["var(--s-heat-heating)", tx.heatKw], ["var(--s-elec-heating)", tx.elecKw], ["var(--band-dhw)", tx.activity.dhw], ["var(--band-defrost)", tx.activity.defrost]])}
-                <div class="footnote">${tx.todayNote}</div></div>
-            </div>
-          </section>`;
-      }
-
-      function ratiosSection() {
-        const tx = t();
-        const periods = [["today", tx.today], ["month", tx.month], ["season", tx.season], ["total", tx.total]];
-        const cell = (key) => {
-          const entity = sensor(key);
-          return entity && entity.s !== null && entity.s !== undefined ? escapeHtml(value(key)) : "–";
-        };
-        const head = `<tr><th></th>${periods.map(([, label]) => `<th>${label}</th>`).join("")}</tr>`;
-        const lines = ["heating", "dhw", "combined"]
-          .map((s) => {
-            const label = s === "combined" ? `<b>${tx.ratioRows[s]}</b>` : tx.ratioRows[s];
-            return `<tr><td>${label}</td>${periods.map(([p]) => `<td>${cell(`ratio_${s}_${p}`)}</td>`).join("")}</tr>`;
-          })
-          .join("");
-        const blocks = `<div class="card"><div class="table-wrap"><table class="figures">${head}${lines}</table></div>
-            <div class="footnote">${tx.ratiosNote}</div></div>`;
-        const keys = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
-        const labels = Object.fromEntries(keys.map((k) => [k, name(k)]));
-        const groups = data.months.map((m) => ({
-          title: m.month,
-          label: dateFmt(`${m.month}-15`, { month: "short" }),
-          values: m,
-        }));
-        return `
-          <section class="section double">
-            <div class="heading">${icon("speedometer")}<span>${tx.ratios}</span></div>
-            ${blocks}
-            <div class="subheading">${tx.costs}</div>
-            <div class="grid">${["cost_month", "cost_season", "heat_cost_season", "gas_savings_season"].map((k) => entityTile(k)).join("")}</div>
-            <div class="card"><div class="card-title">${tx.monthsTitle}</div>${barChart(groups, keys, labels, "kWh")}
-              ${legend(keys.map((k) => [SERIES[k], labels[k]]))}<div class="footnote">${tx.monthsNote}</div></div>
-          </section>`;
-      }
-
-      function cyclesSection() {
-        const tx = t();
-        const season = sensor("starts_season");
-        const seasonTile = season
-          ? tile(ICONS.starts_season, name("starts_season"), `${escapeHtml(value("starts_season"))} · ${escapeHtml(tx.perDay(num(season.a.per_day, 1)))}`)
-          : "";
-        const d = sensor("defrosts_today").a;
-        const standby = sensor("standby");
-        return `
-          <section class="section">
-            <div class="heading">${icon("sync")}<span>${tx.cycles}</span></div>
-            <div class="subheading">${tx.cyclesToday}</div>
-            <div class="grid">${["starts_today", "runtime_today", "run_minutes_today", "shortest_pause_today", "short_runs_today", "defrosts_today", "spread_today", "flow_temp_today"].map((k) => entityTile(k)).join("")}</div>
-            <div class="subheading">${tx.cyclesMore}</div>
-            <div class="grid">
-              ${entityTile("starts_yesterday")}${entityTile("run_minutes_week")}${seasonTile}${entityTile("spread_7d")}
-              ${tile(ICONS.defrosts_today, tx.defrosts7d, `${fmtAttr(d.defrosts_7d, 0)} · Ø ${fmtAttr(d.mean_minutes_7d, 1, " min")}`)}
-              ${tile(ICONS.standby, tx.standby7d, `${escapeHtml(value("standby"))} · ${standby.a.mean_power_w_7d === null ? reasonText(standby.a.reason) : fmtAttr(standby.a.mean_power_w_7d, 0, " W")}`)}
-              ${entityTile("starts_total", "c12")}
-            </div>
-          </section>`;
-      }
-
       function healthNotes() {
         const tx = t();
         const b = data.binary;
@@ -1113,40 +1005,6 @@
         }
         notes.push("</ul>");
         return notes.join("");
-      }
-
-      function healthSection() {
-        const tx = t();
-        const b = data.binary;
-        return `
-          <section class="section">
-            <div class="heading">${icon("stethoscope")}<span>${tx.health}</span></div>
-            <div class="grid">${["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem"].map(problemTile).join("")}
-              <div class="card c12 markdown">${healthNotes()}</div></div>
-          </section>`;
-      }
-
-      function dhwSection() {
-        const tx = t();
-        const last = sensor("ratio_dhw_last_charge").a;
-        const charges = sensor("ratio_dhw_charges_30d").a;
-        const row = (label, v) => `<div class="row"><span>${escapeHtml(label)}</span><span class="value">${v}</span></div>`;
-        const rows = [
-          row(tx.chargeRows.start, `${dateFmt(last.start, { day: "numeric", month: "short" })}, ${timeFmt(last.start)}`),
-          row(tx.chargeRows.minutes, `${num(last.minutes, 0)} min`),
-          row(tx.chargeRows.heat_kwh, `${num(last.heat_kwh, 2)} kWh`),
-          row(tx.chargeRows.electricity_kwh, `${num(last.electricity_kwh, 2)} kWh`),
-          row(tx.dhwTemp, `${num(last.start_temp, 1)} → ${num(last.max_temp, 1)} °C`),
-        ];
-        return `
-          <section class="section">
-            <div class="heading">${icon("water-boiler")}<span>${tx.dhw}</span></div>
-            <div class="grid">
-              ${entityTile("ratio_dhw_last_charge", "c12", ` · ${escapeHtml(tx.lastCharge({ ...last, start_temp: num(last.start_temp, 1), max_temp: num(last.max_temp, 1) }))}`)}
-              ${entityTile("ratio_dhw_charges_30d", "c12", ` · ${escapeHtml(tx.charges30({ ...charges, mean_lift: num(charges.mean_lift, 1) }))}`)}
-              <div class="card c12"><div class="card-title">${tx.chargeTitle}</div><div class="rows">${rows.join("")}</div></div>
-            </div>
-          </section>`;
       }
 
       function signatureChart(a, gas = false) {
@@ -1173,40 +1031,6 @@
         return `<div class="card"><div class="card-title">${tx.signatureTitle}</div>${chart}
           ${legend([["var(--s-previous)", tx.weeks, "dot"], ["var(--s-current)", tx.measured], ["var(--s-current)", tx.standard, "dash"]])}
           <div class="footnote">${escapeHtml(note)}</div></div>`;
-      }
-
-      function analysisSection() {
-        const tx = t();
-        const curve = sensor("performance_curve_heating").a;
-        const pts = (rows) => rows.filter((c) => c.ratio !== null).map((c) => [(c.lower + c.upper) / 2, c.ratio, `${c.lower}…${c.upper} °C: ${num(c.ratio, 2)} (${c.days} d)`]);
-        const all = [...curve.current, ...curve.previous].map((c) => c.ratio).filter((r) => r !== null);
-        const curveChart = scatter({
-          series: [
-            { color: "var(--s-previous)", points: pts(curve.previous), line: true },
-            { color: "var(--s-current)", points: pts(curve.current), line: true },
-          ],
-          xMin: -15, xMax: 20,
-          yMin: Math.max(0, Math.floor(Math.min(...all) - 0.5)), yMax: Math.ceil(Math.max(...all) + 0.3),
-          yLabel: tx.cop,
-        });
-        const zero = sensor("flow_at_zero").a;
-        const perDegree = sensor("heat_per_degree_day_season").a;
-        return `
-          <section class="section double">
-            <div class="heading">${icon("chart-bell-curve-cumulative")}<span>${tx.analysis}</span></div>
-            <div class="card"><div class="card-title">${tx.curveTitle}</div>${curveChart}
-              ${legend([["var(--s-previous)", tx.previous, "dot"], ["var(--s-current)", tx.current, "dot"]])}
-              <div class="footnote">${tx.curveNote}</div></div>
-            ${signatureChart(sensor("heat_load_per_kelvin").a)}
-            <div class="grid">
-              ${entityTile("heat_load_per_kelvin")}${entityTile("heat_load_design")}
-              ${entityTile("heating_limit")}${tile(ICONS.performance_curve_heating, `${name("performance_curve_heating")}`, `${tx.computed} ${escapeHtml(value("performance_curve_heating"))}`)}
-              ${entityTile("degree_days_season")}
-              ${entityTile("heat_per_degree_day_season", "c6", ` · ${escapeHtml(tx.previous)} ${fmtAttr(perDegree.previous_season, 2)}`)}
-              ${entityTile("flow_at_zero", "c6", ` · ${escapeHtml(tx.previous)} ${fmtAttr(zero.previous_season, 1, " °C")}`)}
-              ${entityTile("oversize_factor")}
-            </div>
-          </section>`;
       }
 
       function plantSection() {

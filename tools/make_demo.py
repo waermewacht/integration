@@ -99,6 +99,7 @@ from custom_components.waermewacht.health import (  # noqa: E402
     aux_mild_weather,
     dhw_efficiency_drop,
     efficiency_drop,
+    status,
     window_days,
 )
 from custom_components.waermewacht.health_extra import (  # noqa: E402
@@ -1267,6 +1268,11 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "aux_dhw_charges": dhw_charges,
         "dhw_efficiency_drop": _finding(a["dhw_efficiency_drop"]),
     }
+    # One status sensor per check in words (sensor.HealthStatus).
+    for key, entity in binary.items():
+        reason = None if key == "cycling_problem" else entity["a"].get("reason")
+        known = entity["s"] in ("on", "off")
+        put(f"{key}_status", status(entity["s"] == "on" if known else None, reason))
     return result, binary
 
 
@@ -1318,8 +1324,13 @@ def report(sim: Sim) -> dict[str, Any]:
     ]
     first = start.astimezone(TZ).date()
     last = (now - timedelta(microseconds=1)).astimezone(TZ).date()
+    # Heat per degree day describes the building: with the boiler's heat.
     days, _, _ = daily_degree_days(
-        hours, sim.outdoor_hours(start, now), TZ, first, last + DAY
+        building_hours(hours, BOILER_EFFICIENCY_HS, ()),
+        sim.outdoor_hours(start, now),
+        TZ,
+        first,
+        last + DAY,
     )
     per_month = degree_days_by_month(days)
     for row in rows:
@@ -1332,7 +1343,10 @@ def report(sim: Sim) -> dict[str, Any]:
         if start < switch
         else None,
         **figures(total, MIN_ELECTRICITY, modes, modes),
-        "degree_days": degree_day_figures(days),
+        "degree_days": {
+            **degree_day_figures(days),
+            **({"includes_boiler_heat": True} if sim.sc.bivalent is not None else {}),
+        },
         "months": rows,
     }
 
@@ -1355,6 +1369,16 @@ def live(sim: Sim) -> dict[str, Any]:
         "outdoor": round(sim.outdoor, 1),
         "flow_rate": PUMP_LPH if sim.on and sim.mode is Mode.HEATING else 0,
     }
+
+
+def state_names(keys: list[str]) -> dict[str, dict[str, dict[str, str]]]:
+    """Translated states of enum sensors: {lang: {key: {state: text}}}."""
+    result = {}
+    for lang in ("de", "en"):
+        data = json.loads((TRANSLATIONS / f"{lang}.json").read_text(encoding="utf-8"))
+        sensors = data["entity"]["sensor"]
+        result[lang] = {k: sensors[k]["state"] for k in keys if "state" in sensors[k]}
+    return result
 
 
 def names(keys: dict[str, list[str]]) -> dict[str, dict[str, str]]:
@@ -1553,6 +1577,7 @@ def heat_pump_scenario(scenario: Scenario, w: Weather) -> dict[str, Any]:
         "months": months(sim),
         "report": report(sim),
         "names": names({"sensor": list(values), "binary_sensor": list(binary)}),
+        "states": state_names(list(values)),
     }
     s = values
     week = sim.diary[-7:]
