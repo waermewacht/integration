@@ -1262,8 +1262,8 @@ GAS_FIELD_HELP = {
         "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
     ),
     "manual_unit": (
-        'Instead of a counter: the unit of your gas meter. You enter its reading with the entity "Enter meter reading" or the action "Add gas meter reading" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.',
-        "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Gas-Zählerstand eintragen“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+        'Instead of a counter: the unit of your gas meter. You enter its reading with the entity "Enter meter reading" or the action "Add meter reading (gas, oil)" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.',
+        "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
     ),
     "calorific_value": (
         "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
@@ -1353,8 +1353,8 @@ MANUAL_UNIT_OPTIONS = {
 GAS_READING = ("Enter meter reading", "Zählerstand eintragen")
 READING_EXCEPTIONS = {
     "reading_not_rising": (
-        "The reading {value} does not fit: a gas meter only counts up, so it must lie between the readings before and after it.",
-        "Der Zählerstand {value} passt nicht: Ein Gaszähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen.",
+        "The reading {value} does not fit: a meter only counts up, so it must lie between the readings before and after it.",
+        "Der Zählerstand {value} passt nicht: Ein Zähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen.",
     ),
     "reading_negative": (
         "A meter reading cannot be negative.",
@@ -1369,8 +1369,8 @@ READING_EXCEPTIONS = {
         "Zu diesem Zeitpunkt (auf die Minute) gibt es keinen Zählerstand.",
     ),
     "not_manual_gas": (
-        "This entry is no gas boiler with readings by hand.",
-        "Dieser Eintrag ist keine Gasheizung mit Ablesung von Hand.",
+        "This entry is no gas or oil boiler with readings by hand.",
+        "Dieser Eintrag ist keine Gas- oder Ölheizung mit Ablesung von Hand.",
     ),
     "no_calorific_value": (
         "Readings in m³ need the calorific value and the Z-number (settings of the entry).",
@@ -1378,7 +1378,7 @@ READING_EXCEPTIONS = {
     ),
 }
 ENTRY_FIELD = {
-    "name": ("Gas boiler", "Gasheizung"),
+    "name": ("Gas or oil boiler", "Gas- oder Ölheizung"),
     "description": (
         "The Wärmewacht entry with readings by hand.",
         "Der Wärmewacht-Eintrag mit Ablesung von Hand.",
@@ -1386,17 +1386,17 @@ ENTRY_FIELD = {
 }
 READING_SERVICES = {
     "add_gas_reading": {
-        "name": ("Add gas meter reading", "Gas-Zählerstand eintragen"),
+        "name": ("Add meter reading (gas, oil)", "Zählerstand eintragen (Gas, Öl)"),
         "description": (
-            "Adds a reading of the gas meter, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
-            "Trägt einen Stand des Gaszählers ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
+            "Adds a reading of the gas or oil meter or the oil tank level, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
+            "Trägt einen Stand des Gas- oder Ölzählers oder den Tankstand ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
         ),
         "fields": {
             "reading": (
                 ("Reading", "Zählerstand"),
                 (
-                    "In the unit of the meter (m³ or kWh).",
-                    "In der Einheit des Zählers (m³ oder kWh).",
+                    "In the unit of the meter (m³, kWh or litres).",
+                    "In der Einheit des Zählers (m³, kWh oder Liter).",
                 ),
             ),
             "time": (
@@ -1409,7 +1409,7 @@ READING_SERVICES = {
         },
     },
     "remove_gas_reading": {
-        "name": ("Remove gas meter reading", "Gas-Zählerstand löschen"),
+        "name": ("Remove meter reading (gas, oil)", "Zählerstand löschen (Gas, Öl)"),
         "description": (
             "Removes the reading at this time (to the minute), e.g. a typo.",
             "Löscht den Stand zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
@@ -1426,12 +1426,12 @@ READING_SERVICES = {
     },
 }
 NOT_FOR_GAS = (
-    "This action is for heat pumps; a gas boiler has the heat load only.",
-    "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast.",
+    "This action is for heat pumps; a gas or oil boiler has the heat load only.",
+    "Diese Aktion gilt für Wärmepumpen; eine Gas- oder Ölheizung hat nur die Heizlast.",
 )
 HEAT_LOAD_START = (
-    "Without: the last complete season (gas boiler: the last 365 days).",
-    "Ohne: die letzte vollständige Saison (Gasheizung: die letzten 365 Tage).",
+    "Without: the last complete season (gas or oil boiler: the last 365 days).",
+    "Ohne: die letzte vollständige Saison (Gas- oder Ölheizung: die letzten 365 Tage).",
 )
 
 
@@ -1475,6 +1475,269 @@ def _add_gas(data: dict, lang: int) -> None:
     data["exceptions"]["not_for_gas"] = {"message": NOT_FOR_GAS[lang]}
     fields = data["services"]["heat_load"]["fields"]
     fields["start"]["description"] = HEAT_LOAD_START[lang]
+
+
+# Oil boiler (config_flow.async_step_oil, options, actions; oil.py).
+OIL_STEP = {
+    "title": ("Set up an oil boiler", "Ölheizung einrichten"),
+    "description": (
+        'Before switching to a heat pump: heat load, heating limit and hot water share from the oil consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter. No counter in Home Assistant? Choose "Readings by hand" (oil meter or tank level) and enter it now and then, weekly is best.',
+        "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Ölverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen. Kein Zähler in Home Assistant? Wähle „Ablesung von Hand“ (Ölzähler oder Tankstand) und trag den Stand ab und zu ein, am besten wöchentlich.",
+    ),
+}
+OIL_FIELDS = {
+    "gas_total": (
+        "Oil total (heating and hot water)",
+        "Öl gesamt (Heizen und Warmwasser)",
+    ),
+    "gas_heating": ("Oil heating only", "Öl nur Heizen"),
+    "gas_dhw": ("Oil hot water", "Öl Warmwasser"),
+    "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
+    "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
+    "manual_unit": ("Readings by hand", "Ablesung von Hand"),
+    "boiler_type": ("Boiler type", "Kesselart"),
+    "boiler_efficiency": ("Own efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
+}
+BOILER_TYPE_HELP = (
+    "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
+    "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
+)
+OWN_EFFICIENCY_HELP = (
+    'Only for "Own value": the share of the oil that becomes heat, on the gross calorific value.',
+    "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert.",
+)
+OIL_FIELD_HELP = {
+    "gas_total": (
+        "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+        "Ein Ölzähler in Litern oder ein Zähler in kWh, etwa der Brennstoffzähler des Kessels (EMS-ESP: boiler_gasmeterheat, heißt auch bei Öl so), mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
+    ),
+    "gas_heating": (
+        'Only if the boiler counts heating and hot water apart; then add the hot water counter as well. Leave "Oil total" empty.',
+        "Nur wenn der Kessel Heizen und Warmwasser getrennt zählt; dann auch den Warmwasser-Zähler eintragen. „Öl gesamt“ bleibt leer.",
+    ),
+    "gas_dhw": (
+        "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter).",
+        "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter).",
+    ),
+    "outdoor_temp": (
+        "With long-term statistics (state class measurement). A nearby weather station is fine.",
+        "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+    ),
+    "flow_temp": (
+        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+        "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+    ),
+    "manual_unit": (
+        'Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity "Enter meter reading" or "Enter tank level", or the action "Add meter reading (gas, oil)". With the tank level, enter a refill with "Enter refill" before the level after it. Each period between two readings of 5 to 35 days is one point of the energy signature.',
+        "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand das Nachfüllen über „Nachfüllen eintragen“ eintragen, vor dem Stand danach. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+    ),
+    "boiler_type": BOILER_TYPE_HELP,
+    "boiler_efficiency": OWN_EFFICIENCY_HELP,
+}
+OIL_ERRORS = {
+    "oil_none": (
+        "Choose an oil counter (total, or heating) or readings by hand.",
+        "Wähle einen Ölzähler (gesamt oder nur Heizen) oder die Ablesung von Hand.",
+    ),
+    "oil_twice": (
+        'Either "Oil total" or "Oil heating only", not both.',
+        "Entweder „Öl gesamt“ oder „Öl nur Heizen“, nicht beides.",
+    ),
+    "oil_unit": (
+        "A counter has no unit Wh, kWh, MWh or L.",
+        "Ein Zähler hat keine Einheit Wh, kWh, MWh oder L.",
+    ),
+    "oil_no_statistics": (
+        "A counter has no long-term statistics (state class total or total_increasing).",
+        "Ein Zähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
+    ),
+}
+EFFICIENCY_MISSING = (
+    'For "Own value", enter the efficiency.',
+    "Für „Eigener Wert“ den Nutzungsgrad eintragen.",
+)
+OIL_ABORT = (
+    'This counter already has the entry "{title}". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure).',
+    "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren).",
+)
+OIL_OPTIONS = {
+    "boiler_type": (("Boiler type", "Kesselart"), BOILER_TYPE_HELP),
+    "kwh_per_litre": (
+        ("Energy per litre (Hs)", "Energie je Liter (Hs)"),
+        (
+            "Gross calorific value of heating oil EL: 10.66 kWh/l (net 10 kWh/l after HeizkostenV, ratio 0.938 after the KfW/BAFA infosheet). Change it only if your dealer names another value.",
+            "Brennwert von Heizöl EL: 10,66 kWh/l (Heizwert 10 kWh/l nach HeizkostenV, Umrechnung 0,938 nach KfW/BAFA-Infoblatt). Nur ändern, wenn dein Händler einen anderen Wert nennt.",
+        ),
+    ),
+    "boiler_efficiency": (
+        ("Own efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
+        OWN_EFFICIENCY_HELP,
+    ),
+    "design_outdoor_temp": (
+        ("Design outdoor temperature", "Normaußentemperatur"),
+        (
+            "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+            "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+        ),
+    ),
+    "oil_price": (
+        ("Oil price", "Ölpreis"),
+        (
+            "Gross per 100 litres, as dealers quote it (e.g. for 3000 l).",
+            "Brutto je 100 Liter, wie bei Händlern üblich (z. B. bei 3000 l Abnahme).",
+        ),
+    ),
+}
+OIL_SOURCE = ("Oil boiler (before switching)", "Ölheizung (vor dem Umstieg)")
+OIL_MANUAL_UNIT_OPTIONS = {
+    "l": ("Oil meter in litres", "Ölzähler in Litern"),
+    "tank": ("Tank level in litres", "Tankstand in Litern"),
+}
+BOILER_TYPE_OPTIONS = {
+    "condensing": ("Condensing boiler (0.87)", "Brennwertkessel (0,87)"),
+    "low_temperature": (
+        "Low temperature boiler (0.79)",
+        "Niedertemperaturkessel (0,79)",
+    ),
+    "constant_temperature": (
+        "Constant temperature boiler (0.70)",
+        "Konstanttemperaturkessel (0,70)",
+    ),
+    "custom": ("Own value", "Eigener Wert"),
+}
+# Number entities of a tank level read by hand: (en, de, icon).
+OIL_NUMBERS = {
+    "tank_level": (
+        "Enter tank level",
+        "Tankstand eintragen",
+        "mdi:storage-tank-outline",
+    ),
+    "oil_refill": ("Enter refill", "Nachfüllen eintragen", "mdi:tanker-truck"),
+}
+# Sensors with a name of their own for oil (gas_sensor.OIL_NAMES): (en, de, icon).
+OIL_SENSORS = {
+    "oil_consumption_year": ("Heating oil 365 days", "Heizöl 365 Tage", "mdi:oil"),
+    "oil_cost_year": ("Oil cost 365 days", "Ölkosten 365 Tage", "mdi:cash"),
+}
+TANK_EXCEPTIONS = {
+    "tank_rising": (
+        "The tank levels do not fit the refills: the level rises without enough refilled in between. Enter the refill first (at a time before the level after it), then the level.",
+        "Die Tankstände passen nicht zu den Nachfüllungen: Der Stand steigt, ohne dass dazwischen genug nachgefüllt wurde. Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand.",
+    ),
+    "refill_not_positive": (
+        "A refill needs more than 0 litres.",
+        "Eine Nachfüllung braucht mehr als 0 Liter.",
+    ),
+    "refill_not_found": (
+        "There is no refill at this time (to the minute).",
+        "Zu diesem Zeitpunkt (auf die Minute) gibt es keine Nachfüllung.",
+    ),
+    "not_tank": (
+        "This entry is no oil boiler with the tank level read by hand.",
+        "Dieser Eintrag ist keine Ölheizung mit Tankstand von Hand.",
+    ),
+}
+TANK_ENTRY_FIELD = {
+    "name": ("Oil boiler", "Ölheizung"),
+    "description": (
+        "The Wärmewacht entry with the tank level read by hand.",
+        "Der Wärmewacht-Eintrag mit Tankstand von Hand.",
+    ),
+}
+REFILL_SERVICES = {
+    "add_oil_refill": {
+        "name": ("Add oil refill", "Öl-Nachfüllung eintragen"),
+        "description": (
+            "Adds a refill of the oil tank, now or at a time in the past (e.g. from the delivery note). A refill at the same minute replaces the old one; a tank level at the same minute counts as read after the refill.",
+            "Trägt eine Nachfüllung des Öltanks ein, jetzt oder zu einem früheren Zeitpunkt (z. B. vom Lieferschein). Eine Nachfüllung zur selben Minute ersetzt die alte; ein Tankstand zur selben Minute gilt als nach dem Nachfüllen abgelesen.",
+        ),
+        "fields": {
+            "litres": (
+                ("Litres", "Liter"),
+                (
+                    "Amount filled in, as on the delivery note.",
+                    "Getankte Menge, wie auf dem Lieferschein.",
+                ),
+            ),
+            "time": (
+                ("Time", "Zeitpunkt"),
+                (
+                    "Without: now. Times without zone are local time.",
+                    "Ohne: jetzt. Zeiten ohne Zone sind Ortszeit.",
+                ),
+            ),
+        },
+    },
+    "remove_oil_refill": {
+        "name": ("Remove oil refill", "Öl-Nachfüllung löschen"),
+        "description": (
+            "Removes the refill at this time (to the minute), e.g. a typo.",
+            "Löscht die Nachfüllung zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
+        ),
+        "fields": {
+            "time": (
+                ("Time", "Zeitpunkt"),
+                (
+                    "The time of the refill, as shown in the attribute last_refill or the history.",
+                    "Zeitpunkt der Nachfüllung, wie im Attribut last_refill oder im Verlauf.",
+                ),
+            ),
+        },
+    },
+}
+
+
+def _add_oil(data: dict, lang: int) -> None:
+    """The oil boiler's texts (after the gas boiler's)."""
+    data["config"]["step"]["oil"] = {
+        "title": OIL_STEP["title"][lang],
+        "description": OIL_STEP["description"][lang],
+        "data": {k: v[lang] for k, v in OIL_FIELDS.items()},
+        "data_description": {k: v[lang] for k, v in OIL_FIELD_HELP.items()},
+    }
+    data["config"]["error"].update({k: v[lang] for k, v in OIL_ERRORS.items()})
+    data["config"]["error"]["boiler_efficiency_missing"] = EFFICIENCY_MISSING[lang]
+    data["config"]["abort"]["oil_already_configured"] = OIL_ABORT[lang]
+    data["options"]["step"]["oil"] = {
+        "title": ("Settings", "Einstellungen")[lang],
+        "description": data["options"]["step"]["init"]["description"],
+        "data": {k: v[0][lang] for k, v in OIL_OPTIONS.items()},
+        "data_description": {k: v[1][lang] for k, v in OIL_OPTIONS.items()},
+    }
+    data["options"].setdefault("error", {})["boiler_efficiency_missing"] = (
+        EFFICIENCY_MISSING[lang]
+    )
+    data["selector"]["source"]["options"]["oil"] = OIL_SOURCE[lang]
+    data["selector"]["manual_unit"]["options"].update(
+        {k: v[lang] for k, v in OIL_MANUAL_UNIT_OPTIONS.items()}
+    )
+    data["selector"]["boiler_type"] = {
+        "options": {k: v[lang] for k, v in BOILER_TYPE_OPTIONS.items()}
+    }
+    data["entity"]["number"].update(
+        {k: {"name": v[lang]} for k, v in OIL_NUMBERS.items()}
+    )
+    data["entity"]["sensor"].update(
+        {k: {"name": v[lang]} for k, v in OIL_SENSORS.items()}
+    )
+    data["exceptions"].update(
+        {k: {"message": v[lang]} for k, v in TANK_EXCEPTIONS.items()}
+    )
+    for key, service in REFILL_SERVICES.items():
+        data["services"][key] = {
+            "name": service["name"][lang],
+            "description": service["description"][lang],
+            "fields": {
+                "config_entry": {
+                    "name": TANK_ENTRY_FIELD["name"][lang],
+                    "description": TANK_ENTRY_FIELD["description"][lang],
+                },
+                **{
+                    field: {"name": name[lang], "description": help_[lang]}
+                    for field, (name, help_) in service["fields"].items()
+                },
+            },
+        }
 
 
 # Single texts: {dotted path: (en, de)}.
@@ -1539,6 +1802,8 @@ def build(lang: int) -> dict:
     _add_gas(data, lang)
     for path, texts in TEXTS.items():
         _set(data, path, texts[lang])
+    # After the single texts: the oil step reuses the options description.
+    _add_oil(data, lang)
     return data
 
 
@@ -1550,11 +1815,15 @@ def icons() -> dict:
     sensor.update({k: {"default": v[2]} for k, v in SENSORS.items()})
     sensor.update({k: {"default": v[2]} for k, v in HYBRID_SENSORS.items()})
     sensor.update({f"{k}_status": {"default": v[2]} for k, v in STATUS.items()})
+    sensor.update({k: {"default": v[2]} for k, v in OIL_SENSORS.items()})
     return {
         "entity": {
             "binary_sensor": {k: {"default": v[2]} for k, v in BINARY.items()},
             "button": {k: {"default": v[2]} for k, v in BUTTONS.items()},
-            "number": {"gas_reading": {"default": "mdi:counter"}},
+            "number": {
+                "gas_reading": {"default": "mdi:counter"},
+                **{k: {"default": v[2]} for k, v in OIL_NUMBERS.items()},
+            },
             "sensor": sensor,
         },
         "services": {
@@ -1563,6 +1832,8 @@ def icons() -> dict:
             "heat_load": {"service": "mdi:home-thermometer"},
             "add_gas_reading": {"service": "mdi:counter"},
             "remove_gas_reading": {"service": "mdi:delete-outline"},
+            "add_oil_refill": {"service": "mdi:tanker-truck"},
+            "remove_oil_refill": {"service": "mdi:delete-outline"},
         },
     }
 

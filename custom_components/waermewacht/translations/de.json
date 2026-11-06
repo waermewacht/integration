@@ -197,9 +197,33 @@
           "gas_dhw": "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
           "flow_temp": "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
-          "manual_unit": "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Gas-Zählerstand eintragen“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+          "manual_unit": "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
           "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
+        }
+      },
+      "oil": {
+        "title": "Ölheizung einrichten",
+        "description": "Vor dem Umstieg auf eine Wärmepumpe: Heizlast, Heizgrenze und Warmwasseranteil aus dem Ölverbrauch der letzten 365 Tage. Wärmewacht liest die Langzeitstatistik der Zähler; ein Zähler mit langer Statistik liefert sofort Ergebnisse. Wähle entweder einen Gesamtzähler (Heizen und Warmwasser) oder einen Zähler nur fürs Heizen. Kein Zähler in Home Assistant? Wähle „Ablesung von Hand“ (Ölzähler oder Tankstand) und trag den Stand ab und zu ein, am besten wöchentlich.",
+        "data": {
+          "gas_total": "Öl gesamt (Heizen und Warmwasser)",
+          "gas_heating": "Öl nur Heizen",
+          "gas_dhw": "Öl Warmwasser",
+          "outdoor_temp": "Außentemperatur",
+          "flow_temp": "Vorlauftemperatur",
+          "manual_unit": "Ablesung von Hand",
+          "boiler_type": "Kesselart",
+          "boiler_efficiency": "Eigener Nutzungsgrad (Hs)"
+        },
+        "data_description": {
+          "gas_total": "Ein Ölzähler in Litern oder ein Zähler in kWh, etwa der Brennstoffzähler des Kessels (EMS-ESP: boiler_gasmeterheat, heißt auch bei Öl so), mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
+          "gas_heating": "Nur wenn der Kessel Heizen und Warmwasser getrennt zählt; dann auch den Warmwasser-Zähler eintragen. „Öl gesamt“ bleibt leer.",
+          "gas_dhw": "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter).",
+          "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
+          "flow_temp": "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+          "manual_unit": "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand das Nachfüllen über „Nachfüllen eintragen“ eintragen, vor dem Stand danach. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
+          "boiler_type": "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
+          "boiler_efficiency": "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert."
         }
       }
     },
@@ -218,12 +242,18 @@
       "gas_calorific_value": "Zähler in m³ brauchen Brennwert und Zustandszahl aus der Gasrechnung.",
       "gas_flow_no_statistics": "Die Vorlauftemperatur hat keine Langzeitstatistik (Zustandsklasse measurement).",
       "own_entity": "Als Quelle ist ein Sensor von Wärmewacht selbst gewählt: Der Eintrag würde seine eigenen Ergebnisse lesen. Bitte die Entitäten der Wärmepumpe bzw. der Therme wählen.",
-      "boiler_without_heat_pump": "Der Kessel braucht den Wärmezähler Heizen der Wärmepumpe: Seine Wärme wird mit der der Wärmepumpe verglichen."
+      "boiler_without_heat_pump": "Der Kessel braucht den Wärmezähler Heizen der Wärmepumpe: Seine Wärme wird mit der der Wärmepumpe verglichen.",
+      "oil_none": "Wähle einen Ölzähler (gesamt oder nur Heizen) oder die Ablesung von Hand.",
+      "oil_twice": "Entweder „Öl gesamt“ oder „Öl nur Heizen“, nicht beides.",
+      "oil_unit": "Ein Zähler hat keine Einheit Wh, kWh, MWh oder L.",
+      "oil_no_statistics": "Ein Zähler hat keine Langzeitstatistik (Zustandsklasse total oder total_increasing).",
+      "boiler_efficiency_missing": "Für „Eigener Wert“ den Nutzungsgrad eintragen."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits eingerichtet. Ihre Entitäten änderst du dort unter ⋮ → Neu konfigurieren.",
       "reconfigure_successful": "Entitäten gespeichert.",
-      "gas_already_configured": "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren)."
+      "gas_already_configured": "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren).",
+      "oil_already_configured": "Für diesen Zähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preis unter dem Zahnrad (Konfigurieren)."
     }
   },
   "options": {
@@ -301,14 +331,36 @@
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
         },
         "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+      },
+      "oil": {
+        "title": "Einstellungen",
+        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+        "data": {
+          "boiler_type": "Kesselart",
+          "kwh_per_litre": "Energie je Liter (Hs)",
+          "boiler_efficiency": "Eigener Nutzungsgrad (Hs)",
+          "design_outdoor_temp": "Normaußentemperatur",
+          "oil_price": "Ölpreis"
+        },
+        "data_description": {
+          "boiler_type": "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
+          "kwh_per_litre": "Brennwert von Heizöl EL: 10,66 kWh/l (Heizwert 10 kWh/l nach HeizkostenV, Umrechnung 0,938 nach KfW/BAFA-Infoblatt). Nur ändern, wenn dein Händler einen anderen Wert nennt.",
+          "boiler_efficiency": "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert.",
+          "design_outdoor_temp": "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+          "oil_price": "Brutto je 100 Liter, wie bei Händlern üblich (z. B. bei 3000 l Abnahme)."
+        }
       }
+    },
+    "error": {
+      "boiler_efficiency_missing": "Für „Eigener Wert“ den Nutzungsgrad eintragen."
     }
   },
   "selector": {
     "source": {
       "options": {
         "manual": "Manuell",
-        "gas": "Gasheizung (vor dem Umstieg)"
+        "gas": "Gasheizung (vor dem Umstieg)",
+        "oil": "Ölheizung (vor dem Umstieg)"
       }
     },
     "curve_scope": {
@@ -336,7 +388,17 @@
     "manual_unit": {
       "options": {
         "m3": "Zähler in m³",
-        "kwh": "Zähler in kWh"
+        "kwh": "Zähler in kWh",
+        "l": "Ölzähler in Litern",
+        "tank": "Tankstand in Litern"
+      }
+    },
+    "boiler_type": {
+      "options": {
+        "condensing": "Brennwertkessel (0,87)",
+        "low_temperature": "Niedertemperaturkessel (0,79)",
+        "constant_temperature": "Konstanttemperaturkessel (0,70)",
+        "custom": "Eigener Wert"
       }
     }
   },
@@ -688,11 +750,23 @@
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
+      },
+      "oil_consumption_year": {
+        "name": "Heizöl 365 Tage"
+      },
+      "oil_cost_year": {
+        "name": "Ölkosten 365 Tage"
       }
     },
     "number": {
       "gas_reading": {
         "name": "Zählerstand eintragen"
+      },
+      "tank_level": {
+        "name": "Tankstand eintragen"
+      },
+      "oil_refill": {
+        "name": "Nachfüllen eintragen"
       }
     }
   },
@@ -713,7 +787,7 @@
       "message": "Die Statistik ließ sich nicht lesen; Details im Protokoll."
     },
     "reading_not_rising": {
-      "message": "Der Zählerstand {value} passt nicht: Ein Gaszähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen."
+      "message": "Der Zählerstand {value} passt nicht: Ein Zähler zählt nur aufwärts, der Stand muss zwischen dem davor und dem danach liegen."
     },
     "reading_negative": {
       "message": "Ein Zählerstand kann nicht negativ sein."
@@ -725,13 +799,25 @@
       "message": "Zu diesem Zeitpunkt (auf die Minute) gibt es keinen Zählerstand."
     },
     "not_manual_gas": {
-      "message": "Dieser Eintrag ist keine Gasheizung mit Ablesung von Hand."
+      "message": "Dieser Eintrag ist keine Gas- oder Ölheizung mit Ablesung von Hand."
     },
     "no_calorific_value": {
       "message": "Zählerstände in m³ brauchen Brennwert und Zustandszahl (Einstellungen des Eintrags)."
     },
     "not_for_gas": {
-      "message": "Diese Aktion gilt für Wärmepumpen; eine Gasheizung hat nur die Heizlast."
+      "message": "Diese Aktion gilt für Wärmepumpen; eine Gas- oder Ölheizung hat nur die Heizlast."
+    },
+    "tank_rising": {
+      "message": "Die Tankstände passen nicht zu den Nachfüllungen: Der Stand steigt, ohne dass dazwischen genug nachgefüllt wurde. Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand."
+    },
+    "refill_not_positive": {
+      "message": "Eine Nachfüllung braucht mehr als 0 Liter."
+    },
+    "refill_not_found": {
+      "message": "Zu diesem Zeitpunkt (auf die Minute) gibt es keine Nachfüllung."
+    },
+    "not_tank": {
+      "message": "Dieser Eintrag ist keine Ölheizung mit Tankstand von Hand."
     }
   },
   "issues": {
@@ -847,7 +933,7 @@
         },
         "start": {
           "name": "Beginn",
-          "description": "Ohne: die letzte vollständige Saison (Gasheizung: die letzten 365 Tage)."
+          "description": "Ohne: die letzte vollständige Saison (Gas- oder Ölheizung: die letzten 365 Tage)."
         },
         "end": {
           "name": "Ende",
@@ -860,16 +946,16 @@
       }
     },
     "add_gas_reading": {
-      "name": "Gas-Zählerstand eintragen",
-      "description": "Trägt einen Stand des Gaszählers ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
+      "name": "Zählerstand eintragen (Gas, Öl)",
+      "description": "Trägt einen Stand des Gas- oder Ölzählers oder den Tankstand ein, jetzt oder zu einem früheren Zeitpunkt (z. B. aus einer Rechnung). Ein Stand zur selben Minute ersetzt den alten.",
       "fields": {
         "config_entry": {
-          "name": "Gasheizung",
+          "name": "Gas- oder Ölheizung",
           "description": "Der Wärmewacht-Eintrag mit Ablesung von Hand."
         },
         "reading": {
           "name": "Zählerstand",
-          "description": "In der Einheit des Zählers (m³ oder kWh)."
+          "description": "In der Einheit des Zählers (m³, kWh oder Liter)."
         },
         "time": {
           "name": "Zeitpunkt",
@@ -878,16 +964,48 @@
       }
     },
     "remove_gas_reading": {
-      "name": "Gas-Zählerstand löschen",
+      "name": "Zählerstand löschen (Gas, Öl)",
       "description": "Löscht den Stand zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
       "fields": {
         "config_entry": {
-          "name": "Gasheizung",
+          "name": "Gas- oder Ölheizung",
           "description": "Der Wärmewacht-Eintrag mit Ablesung von Hand."
         },
         "time": {
           "name": "Zeitpunkt",
           "description": "Zeitpunkt des Stands, wie im Attribut last_reading oder im Verlauf."
+        }
+      }
+    },
+    "add_oil_refill": {
+      "name": "Öl-Nachfüllung eintragen",
+      "description": "Trägt eine Nachfüllung des Öltanks ein, jetzt oder zu einem früheren Zeitpunkt (z. B. vom Lieferschein). Eine Nachfüllung zur selben Minute ersetzt die alte; ein Tankstand zur selben Minute gilt als nach dem Nachfüllen abgelesen.",
+      "fields": {
+        "config_entry": {
+          "name": "Ölheizung",
+          "description": "Der Wärmewacht-Eintrag mit Tankstand von Hand."
+        },
+        "litres": {
+          "name": "Liter",
+          "description": "Getankte Menge, wie auf dem Lieferschein."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Ohne: jetzt. Zeiten ohne Zone sind Ortszeit."
+        }
+      }
+    },
+    "remove_oil_refill": {
+      "name": "Öl-Nachfüllung löschen",
+      "description": "Löscht die Nachfüllung zu diesem Zeitpunkt (auf die Minute), z. B. einen Tippfehler.",
+      "fields": {
+        "config_entry": {
+          "name": "Ölheizung",
+          "description": "Der Wärmewacht-Eintrag mit Tankstand von Hand."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Zeitpunkt der Nachfüllung, wie im Attribut last_refill oder im Verlauf."
         }
       }
     }

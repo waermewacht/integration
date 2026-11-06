@@ -110,12 +110,16 @@ def _gas_lines(
     entry: WaermewachtConfigEntry, runtime: GasRuntime
 ) -> list[tuple[str, str]]:
     lines = [
-        ("kind", "gas boiler"),
+        ("kind", "oil boiler" if runtime.oil else "gas boiler"),
         ("readings by hand", str(entry.data.get(CONF_MANUAL_UNIT) or "no")),
         ("problem", str(runtime.problem or "none")),
     ]
     if runtime.manual:
         lines.append(("readings", str(len(runtime.readings))))
+    if runtime.tank:
+        lines.append(("refills", str(len(runtime.refills))))
+    if runtime.oil:
+        lines.append(("efficiency", f"{runtime.efficiency:.2f}"))
     if (analysis := runtime.analysis) is not None:
         load = analysis.heat_load
         lines += [

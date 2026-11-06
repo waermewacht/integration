@@ -37,6 +37,9 @@ SERVICE_CURVE = "performance_curve"
 SERVICE_HEAT_LOAD = "heat_load"
 SERVICE_ADD_READING = "add_gas_reading"
 SERVICE_REMOVE_READING = "remove_gas_reading"
+SERVICE_ADD_REFILL = "add_oil_refill"
+SERVICE_REMOVE_REFILL = "remove_oil_refill"
+ATTR_LITRES = "litres"
 ATTR_CONFIG_ENTRY = "config_entry"
 ATTR_START = "start"
 ATTR_END = "end"
@@ -70,6 +73,13 @@ REMOVE_READING_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_CONFIG_ENTRY): ConfigEntrySelector({"integration": DOMAIN}),
         vol.Required(ATTR_TIME): cv.datetime,
+    }
+)
+ADD_REFILL_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_CONFIG_ENTRY): ConfigEntrySelector({"integration": DOMAIN}),
+        vol.Required(ATTR_LITRES): vol.All(vol.Coerce(float), vol.Range(min=0)),
+        vol.Optional(ATTR_TIME): cv.datetime,
     }
 )
 HEAT_LOAD_SCHEMA = REPORT_SCHEMA.extend(
@@ -253,9 +263,34 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def remove_reading(call: ServiceCall) -> None:
         await _manual_gas(call).async_remove_reading(_as_utc(call.data[ATTR_TIME]))
 
+    def _tank(call: ServiceCall) -> GasRuntime:
+        runtime = _manual_gas(call)
+        if not runtime.tank:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="not_tank"
+            )
+        return runtime
+
+    async def add_refill(call: ServiceCall) -> None:
+        at = (
+            _as_utc(call.data[ATTR_TIME])
+            if ATTR_TIME in call.data
+            else dt_util.utcnow()
+        )
+        await _tank(call).async_add_refill(at, call.data[ATTR_LITRES])
+
+    async def remove_refill(call: ServiceCall) -> None:
+        await _tank(call).async_remove_refill(_as_utc(call.data[ATTR_TIME]))
+
     hass.services.async_register(
         DOMAIN, SERVICE_ADD_READING, add_reading, schema=ADD_READING_SCHEMA
     )
     hass.services.async_register(
         DOMAIN, SERVICE_REMOVE_READING, remove_reading, schema=REMOVE_READING_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_ADD_REFILL, add_refill, schema=ADD_REFILL_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REMOVE_REFILL, remove_refill, schema=REMOVE_READING_SCHEMA
     )

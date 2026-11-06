@@ -31,6 +31,12 @@
     "number": {
       "gas_reading": {
         "default": "mdi:counter"
+      },
+      "tank_level": {
+        "default": "mdi:storage-tank-outline"
+      },
+      "oil_refill": {
+        "default": "mdi:tanker-truck"
       }
     },
     "sensor": {
@@ -282,6 +288,12 @@
       },
       "dhw_efficiency_drop_status": {
         "default": "mdi:water-thermometer-outline"
+      },
+      "oil_consumption_year": {
+        "default": "mdi:oil"
+      },
+      "oil_cost_year": {
+        "default": "mdi:cash"
       }
     }
   },
@@ -299,6 +311,12 @@
       "service": "mdi:counter"
     },
     "remove_gas_reading": {
+      "service": "mdi:delete-outline"
+    },
+    "add_oil_refill": {
+      "service": "mdi:tanker-truck"
+    },
+    "remove_oil_refill": {
       "service": "mdi:delete-outline"
     }
   }

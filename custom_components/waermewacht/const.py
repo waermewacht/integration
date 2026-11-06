@@ -30,7 +30,19 @@ VOLUME_UNIT: Final = "m³"  # gas meters; anything else must be energy
 # Gas readings by hand (readings.py): the meter's unit, VOLUME_UNIT or "kWh".
 CONF_MANUAL_UNIT: Final = "manual_unit"
 # Form value -> unit (selector keys must be plain lower case).
-MANUAL_UNITS: Final = {"m3": VOLUME_UNIT, "kwh": "kWh"}
+LITRE_UNIT: Final = "L"  # oil meters and tank levels
+TANK: Final = "tank"  # readings by hand of a tank level (oil.py)
+MANUAL_UNITS: Final = {"m3": VOLUME_UNIT, "kwh": "kWh", "l": LITRE_UNIT, "tank": TANK}
+GAS_MANUAL_UNITS: Final = ("m3", "kwh")
+OIL_MANUAL_UNITS: Final = ("l", "tank", "kwh")
+# Oil boiler (oil.py): a gas boiler entry with data.fuel = "oil".
+CONF_FUEL: Final = "fuel"  # absent: gas
+FUEL_GAS: Final = "gas"
+FUEL_OIL: Final = "oil"
+SOURCE_OIL: Final = "oil"  # setup choice
+CONF_BOILER_TYPE: Final = "boiler_type"  # oil.BOILER_TYPES or oil.CUSTOM
+CONF_OIL_PRICE: Final = "oil_price"  # EUR per 100 l, gross
+CONF_KWH_PER_LITRE: Final = "kwh_per_litre"  # kWh (Hs) per litre of oil
 
 # Options.
 CONF_MIN_ELECTRICITY: Final = "min_electricity"

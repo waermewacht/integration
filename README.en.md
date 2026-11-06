@@ -16,7 +16,7 @@
 
 **Try it without installing:** the [demo](https://waermewacht.github.io/integration/?lang=en) shows performance factors, cycling, health check, hot water, the COP curve and the energy signature for a cold January week, a mild autumn with a cycling unit and a gas boiler before switching – with made-up values, but computed by the integration's own code.
 
-**Still on gas?** Wärmewacht also computes your house's heat load from the gas consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
+**Still on gas or oil?** Wärmewacht also computes your house's heat load from the gas or oil consumption, as a basis for sizing a heat pump: [Gas boiler before switching](#gas-boiler-before-switching).
 
 > **A guide, not an expert diagnosis.** The figures depend on what your heat pump's meters measure. See [System boundary and limits](#system-boundary-and-limits).
 
@@ -44,7 +44,7 @@ The user interface is available in German and English and follows the language o
 - **Health check:** reports a dropped efficiency at the same weather, a dropped hot water efficiency against last year and the backup heater on mild days or in hot water charges. Repair issues when a meter stands still, a source fails, the outdoor temperature is stuck or flow rate, flow and return do not add up.
 - **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
-- **Gas boiler before switching:** heat load, heating limit and hot water share from the gas consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
+- **Gas or oil boiler before switching:** heat load, heating limit and hot water share from the gas or oil consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
 - **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), Lambda, iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and EMS-ESP hybrid systems (HM200); tested as well: Daikin Altherma (P1P2MQTT). Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
@@ -289,13 +289,25 @@ The counters need long-term statistics (state class `total` or `total_increasing
 No gas counter in Home Assistant? Then choose **Readings by hand** with your meter's unit instead of a counter in the setup (m³ needs the calorific value and Z-number). You enter the reading like this:
 
 - **Entity "Enter meter reading"** (number): type the value, it counts for now. Easiest as a tile on the dashboard. Its state is the last reading, attributes `last_reading` and `readings` (count).
-- **Action "Add gas meter reading"** (`waermewacht.add_gas_reading`, fields `config_entry`, `reading`, optional `time`): also for older readings, e.g. from bills or photos. A reading at the same minute replaces the old one; "Remove gas meter reading" (`remove_gas_reading`) removes a typo.
+- **Action "Add meter reading (gas, oil)"** (`waermewacht.add_gas_reading`, fields `config_entry`, `reading`, optional `time`): also for older readings, e.g. from bills or photos. A reading at the same minute replaces the old one; "Remove meter reading (gas, oil)" (`remove_gas_reading`) removes a typo.
 
 A meter only counts up: a reading that does not fit between the ones before and after is refused. Each period between two readings of **5 to 35 days** is one point of the energy signature (instead of a week), weighted with its length. It needs at least 4 such periods covering 8 weeks, otherwise the usual rules apply (spread, frost days). **Reading weekly is best**, for example every Sunday: monthly works too, but monthly means lie closer together and the line tends to stay preliminary. Hot water comes from periods with a mean of at least 15 °C (14 days in total), the gas of the last 365 days from the readings around it (linear). There is no flow temperature with readings by hand.
 
+### Oil boiler
+
+For an oil boiler, choose **Oil boiler (before switching)** in the setup. It is computed just like gas, with three differences:
+
+- **Consumption:** a counter in kWh (e.g. the boiler's fuel counter, with EMS-ESP `boiler_gasmeterheat`, named so for oil as well), an oil meter in litres, or read by hand: **oil meter** (counts up) or **tank level** (counts down). A litre of heating oil EL is **10.66 kWh** on the gross calorific value (net 10 kWh/l after HeizkostenV § 9, ratio 0.938 after the KfW/BAFA infosheet on CO₂ factors), adjustable.
+- **Efficiency by boiler type:** condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, each on the gross calorific value. The values come from the generator expenditure factors of DIN V 4701-10 (IWU 2005, one- and two-family houses: condensing and low temperature 1987–1994, constant temperature up to 1986). If you know better, choose "Own value". The heat load changes in proportion.
+- **Price** in € per 100 litres, as dealers quote it. There is no base price.
+
+**Tank level by hand:** Enter the level with the entity **"Enter tank level"** (or the action "Add meter reading (gas, oil)" with a time). After filling up, first **"Enter refill"** with the amount (delivery note; or the action "Add oil refill", `waermewacht.add_oil_refill`, with a time), then the new level. Wärmewacht computes the consumption from it: level before − level after + refilled. A level that rises without enough refilled in between is refused. A refill at the same minute as a level counts before that level. Tank gauges are imprecise and oil expands with temperature: read weekly, at the same time of day.
+
+For oil the sensors are named "Heating oil 365 days" (with the attribute `litres`) and "Oil cost 365 days", all others as for gas. Wärmewacht does not evaluate a tank level sensor (ultrasonic, OilFox level) yet; a consumption counter in kWh or litres already works.
+
 **Flow temperature:** Besides the heat load, the second question before switching is whether the radiators manage with a low flow temperature. As for the heat pump ([flow temperature at 0 °C](#performance-curve-and-heat-load)), Wärmewacht fits a line through the days: hours with heating heat and no hot water, the flow weighted with the heat, against the daily outdoor mean. It needs at least 14 days spanning 6 K. A hot water charge lifts the boiler's flow well above that of the heating, so Wärmewacht computes the flow only with a hot water counter of its own or with "Gas heating only" without hot water (if the boiler does make hot water, add the hot water counter). With the summer base it stays unknown (`flow_needs_dhw_counter`). Gas boilers often run a steeper heating curve than needed: the value is an **upper bound** of what a heat pump would have to deliver, not a verdict. Whether less will do only shows in a trial with a lowered heating curve on cold days.
 
-If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, with readings by hand `too_few_periods`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
+If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, with readings by hand `too_few_periods`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas or oil boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
 
 **Limits:**
 

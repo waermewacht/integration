@@ -197,9 +197,33 @@
           "gas_dhw": "Optional: gas for hot water, if counted apart.",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
           "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
-          "manual_unit": "Instead of a counter: the unit of your gas meter. You enter its reading with the entity \"Enter meter reading\" or the action \"Add gas meter reading\" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.",
+          "manual_unit": "Instead of a counter: the unit of your gas meter. You enter its reading with the entity \"Enter meter reading\" or the action \"Add meter reading (gas, oil)\" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.",
           "calorific_value": "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
           "z_number": "Only for counters in m³: from the gas bill (Zustandszahl)."
+        }
+      },
+      "oil": {
+        "title": "Set up an oil boiler",
+        "description": "Before switching to a heat pump: heat load, heating limit and hot water share from the oil consumption of the last 365 days. Wärmewacht reads the long-term statistics of the counters, so a counter with a long history gives results at once. Choose either a total counter (heating and hot water) or a heating counter. No counter in Home Assistant? Choose \"Readings by hand\" (oil meter or tank level) and enter it now and then, weekly is best.",
+        "data": {
+          "gas_total": "Oil total (heating and hot water)",
+          "gas_heating": "Oil heating only",
+          "gas_dhw": "Oil hot water",
+          "outdoor_temp": "Outdoor temperature",
+          "flow_temp": "Flow temperature",
+          "manual_unit": "Readings by hand",
+          "boiler_type": "Boiler type",
+          "boiler_efficiency": "Own efficiency (Hs)"
+        },
+        "data_description": {
+          "gas_total": "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+          "gas_heating": "Only if the boiler counts heating and hot water apart; then add the hot water counter as well. Leave \"Oil total\" empty.",
+          "gas_dhw": "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter).",
+          "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
+          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+          "manual_unit": "Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity \"Enter meter reading\" or \"Enter tank level\", or the action \"Add meter reading (gas, oil)\". With the tank level, enter a refill with \"Enter refill\" before the level after it. Each period between two readings of 5 to 35 days is one point of the energy signature.",
+          "boiler_type": "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
+          "boiler_efficiency": "Only for \"Own value\": the share of the oil that becomes heat, on the gross calorific value."
         }
       }
     },
@@ -218,12 +242,18 @@
       "gas_calorific_value": "Counters in m³ need the calorific value and the Z-number from the gas bill.",
       "gas_flow_no_statistics": "The flow temperature has no long-term statistics (state class measurement).",
       "own_entity": "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
-      "boiler_without_heat_pump": "The boiler needs the heat pump's heating meter (heat heating): its heat is compared with the heat pump's."
+      "boiler_without_heat_pump": "The boiler needs the heat pump's heating meter (heat heating): its heat is compared with the heat pump's.",
+      "oil_none": "Choose an oil counter (total, or heating) or readings by hand.",
+      "oil_twice": "Either \"Oil total\" or \"Oil heating only\", not both.",
+      "oil_unit": "A counter has no unit Wh, kWh, MWh or L.",
+      "oil_no_statistics": "A counter has no long-term statistics (state class total or total_increasing).",
+      "boiler_efficiency_missing": "For \"Own value\", enter the efficiency."
     },
     "abort": {
       "already_configured": "This heat pump is already set up. To change its entities, open it and use ⋮ → Reconfigure.",
       "reconfigure_successful": "Entities saved.",
-      "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure)."
+      "gas_already_configured": "This gas meter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and prices under the gear (Configure).",
+      "oil_already_configured": "This counter already has the entry \"{title}\". A second entry is not needed: add entities (flow temperature, hot water counter) there under ⋮ → Reconfigure, the design outdoor temperature and the price under the gear (Configure)."
     }
   },
   "options": {
@@ -301,14 +331,36 @@
           "z_number": "Only for counters in m³: from the gas bill."
         },
         "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+      },
+      "oil": {
+        "title": "Settings",
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "data": {
+          "boiler_type": "Boiler type",
+          "kwh_per_litre": "Energy per litre (Hs)",
+          "boiler_efficiency": "Own efficiency (Hs)",
+          "design_outdoor_temp": "Design outdoor temperature",
+          "oil_price": "Oil price"
+        },
+        "data_description": {
+          "boiler_type": "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
+          "kwh_per_litre": "Gross calorific value of heating oil EL: 10.66 kWh/l (net 10 kWh/l after HeizkostenV, ratio 0.938 after the KfW/BAFA infosheet). Change it only if your dealer names another value.",
+          "boiler_efficiency": "Only for \"Own value\": the share of the oil that becomes heat, on the gross calorific value.",
+          "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+          "oil_price": "Gross per 100 litres, as dealers quote it (e.g. for 3000 l)."
+        }
       }
+    },
+    "error": {
+      "boiler_efficiency_missing": "For \"Own value\", enter the efficiency."
     }
   },
   "selector": {
     "source": {
       "options": {
         "manual": "Manual",
-        "gas": "Gas boiler (before switching)"
+        "gas": "Gas boiler (before switching)",
+        "oil": "Oil boiler (before switching)"
       }
     },
     "curve_scope": {
@@ -336,7 +388,17 @@
     "manual_unit": {
       "options": {
         "m3": "Meter in m³",
-        "kwh": "Meter in kWh"
+        "kwh": "Meter in kWh",
+        "l": "Oil meter in litres",
+        "tank": "Tank level in litres"
+      }
+    },
+    "boiler_type": {
+      "options": {
+        "condensing": "Condensing boiler (0.87)",
+        "low_temperature": "Low temperature boiler (0.79)",
+        "constant_temperature": "Constant temperature boiler (0.70)",
+        "custom": "Own value"
       }
     }
   },
@@ -688,11 +750,23 @@
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
+      },
+      "oil_consumption_year": {
+        "name": "Heating oil 365 days"
+      },
+      "oil_cost_year": {
+        "name": "Oil cost 365 days"
       }
     },
     "number": {
       "gas_reading": {
         "name": "Enter meter reading"
+      },
+      "tank_level": {
+        "name": "Enter tank level"
+      },
+      "oil_refill": {
+        "name": "Enter refill"
       }
     }
   },
@@ -713,7 +787,7 @@
       "message": "Reading the statistics failed; see the log."
     },
     "reading_not_rising": {
-      "message": "The reading {value} does not fit: a gas meter only counts up, so it must lie between the readings before and after it."
+      "message": "The reading {value} does not fit: a meter only counts up, so it must lie between the readings before and after it."
     },
     "reading_negative": {
       "message": "A meter reading cannot be negative."
@@ -725,13 +799,25 @@
       "message": "There is no reading at this time (to the minute)."
     },
     "not_manual_gas": {
-      "message": "This entry is no gas boiler with readings by hand."
+      "message": "This entry is no gas or oil boiler with readings by hand."
     },
     "no_calorific_value": {
       "message": "Readings in m³ need the calorific value and the Z-number (settings of the entry)."
     },
     "not_for_gas": {
-      "message": "This action is for heat pumps; a gas boiler has the heat load only."
+      "message": "This action is for heat pumps; a gas or oil boiler has the heat load only."
+    },
+    "tank_rising": {
+      "message": "The tank levels do not fit the refills: the level rises without enough refilled in between. Enter the refill first (at a time before the level after it), then the level."
+    },
+    "refill_not_positive": {
+      "message": "A refill needs more than 0 litres."
+    },
+    "refill_not_found": {
+      "message": "There is no refill at this time (to the minute)."
+    },
+    "not_tank": {
+      "message": "This entry is no oil boiler with the tank level read by hand."
     }
   },
   "issues": {
@@ -847,7 +933,7 @@
         },
         "start": {
           "name": "Start",
-          "description": "Without: the last complete season (gas boiler: the last 365 days)."
+          "description": "Without: the last complete season (gas or oil boiler: the last 365 days)."
         },
         "end": {
           "name": "End",
@@ -860,16 +946,16 @@
       }
     },
     "add_gas_reading": {
-      "name": "Add gas meter reading",
-      "description": "Adds a reading of the gas meter, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
+      "name": "Add meter reading (gas, oil)",
+      "description": "Adds a reading of the gas or oil meter or the oil tank level, now or at a time in the past (e.g. from a bill). A reading at the same minute replaces the old one.",
       "fields": {
         "config_entry": {
-          "name": "Gas boiler",
+          "name": "Gas or oil boiler",
           "description": "The Wärmewacht entry with readings by hand."
         },
         "reading": {
           "name": "Reading",
-          "description": "In the unit of the meter (m³ or kWh)."
+          "description": "In the unit of the meter (m³, kWh or litres)."
         },
         "time": {
           "name": "Time",
@@ -878,16 +964,48 @@
       }
     },
     "remove_gas_reading": {
-      "name": "Remove gas meter reading",
+      "name": "Remove meter reading (gas, oil)",
       "description": "Removes the reading at this time (to the minute), e.g. a typo.",
       "fields": {
         "config_entry": {
-          "name": "Gas boiler",
+          "name": "Gas or oil boiler",
           "description": "The Wärmewacht entry with readings by hand."
         },
         "time": {
           "name": "Time",
           "description": "The time of the reading, as shown in the attribute last_reading or the history."
+        }
+      }
+    },
+    "add_oil_refill": {
+      "name": "Add oil refill",
+      "description": "Adds a refill of the oil tank, now or at a time in the past (e.g. from the delivery note). A refill at the same minute replaces the old one; a tank level at the same minute counts as read after the refill.",
+      "fields": {
+        "config_entry": {
+          "name": "Oil boiler",
+          "description": "The Wärmewacht entry with the tank level read by hand."
+        },
+        "litres": {
+          "name": "Litres",
+          "description": "Amount filled in, as on the delivery note."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Without: now. Times without zone are local time."
+        }
+      }
+    },
+    "remove_oil_refill": {
+      "name": "Remove oil refill",
+      "description": "Removes the refill at this time (to the minute), e.g. a typo.",
+      "fields": {
+        "config_entry": {
+          "name": "Oil boiler",
+          "description": "The Wärmewacht entry with the tank level read by hand."
+        },
+        "time": {
+          "name": "Time",
+          "description": "The time of the refill, as shown in the attribute last_refill or the history."
         }
       }
     }

@@ -122,6 +122,7 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
     return {
         "config": {
             "kind": "gas",
+            "fuel": runtime.fuel,
             "entities": {k: mask(v) for k, v in configured.items()},
             "options": dict(entry.options),
         },
@@ -134,6 +135,7 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
             "count": len(runtime.readings),
             "first": runtime.readings[0].at.isoformat() if runtime.readings else None,
             "last": runtime.readings[-1].at.isoformat() if runtime.readings else None,
+            "refills": len(runtime.refills),
         }
         if runtime.manual
         else None,

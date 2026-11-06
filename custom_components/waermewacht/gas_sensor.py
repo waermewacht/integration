@@ -28,6 +28,11 @@ if TYPE_CHECKING:
     from .gas_runtime import GasRuntime
 
 EURO = "EUR"
+# Sensors with a name of their own for an oil boiler (translation keys).
+OIL_NAMES = {
+    "gas_consumption_year": "oil_consumption_year",
+    "gas_cost_year": "oil_cost_year",
+}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -90,6 +95,11 @@ def _gas_attributes(runtime: GasRuntime, analysis: GasAnalysis) -> dict[str, Any
         "complete": analysis.gas_days >= (analysis.end - analysis.start).days,
         "heat_kwh": round(analysis.heat_kwh, 1),
         "boiler_efficiency": analysis.efficiency,
+        **(
+            {"litres": round(analysis.gas_kwh / runtime.kwh_per_litre)}
+            if runtime.oil
+            else {}
+        ),
     }
 
 
@@ -211,6 +221,8 @@ class GasSensor(HeatPumpEntity, SensorEntity):
     ) -> None:
         super().__init__(entry, description.key)  # type: ignore[arg-type]
         self.entity_description = description
+        if self.runtime.oil and description.key in OIL_NAMES:
+            self._attr_translation_key = OIL_NAMES[description.key]
 
     @property
     def native_value(self) -> StateType:

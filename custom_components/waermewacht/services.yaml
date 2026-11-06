@@ -82,3 +82,33 @@ remove_gas_reading:
       required: true
       selector:
         datetime:
+add_oil_refill:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    litres:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 1
+          unit_of_measurement: "L"
+          mode: box
+    time:
+      selector:
+        datetime:
+remove_oil_refill:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: waermewacht
+    time:
+      required: true
+      selector:
+        datetime:

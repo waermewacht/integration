@@ -8,7 +8,7 @@ from pathlib import Path
 
 from custom_components.waermewacht.config_flow import FORM_SIGNALS, MORE, SECTIONS
 from custom_components.waermewacht.const import DOMAIN, VERSION
-from custom_components.waermewacht.gas_sensor import GAS_DESCRIPTIONS
+from custom_components.waermewacht.gas_sensor import GAS_DESCRIPTIONS, OIL_NAMES
 from custom_components.waermewacht.sensor import DESCRIPTIONS
 
 ROOT = Path(__file__).parent.parent
@@ -74,6 +74,8 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
     }
     # Each check also has a status sensor (sensor.HealthStatus).
     keys |= {f"{check}_status" for check in checks}
+    # Names of their own for an oil boiler (gas_sensor.OIL_NAMES).
+    keys |= set(OIL_NAMES.values())
     assert set(strings["sensor"]) == keys
     assert set(icons["sensor"]) == keys
     assert set(strings["binary_sensor"]) == set(icons["binary_sensor"]) == checks
@@ -98,6 +100,8 @@ def test_action_translated_and_has_an_icon() -> None:
         "heat_load",
         "add_gas_reading",
         "remove_gas_reading",
+        "add_oil_refill",
+        "remove_oil_refill",
     }
     assert set(strings["services"]) == set(icons["services"]) == actions
     for action in actions:
