@@ -1,8 +1,8 @@
 """The Lovelace cards (frontend/waermewacht-card.js).
 
-The integration serves the file itself and registers it with the frontend,
-so nobody has to add a Lovelace resource; a new version busts the cache by
-its query string. The cards read Wärmewacht's own entities through the
+The integration serves the file itself and registers it with the frontend
+as a dashboard resource (frontend_resource.py), so nobody has to add one; a
+new version busts the cache by its query string. The cards read Wärmewacht's own entities through the
 entity registry (device and translation key); the card "Now" also shows the
 source's activity and temperatures, which only the entry knows: the
 websocket command "waermewacht/sources" hands them out.
@@ -24,6 +24,8 @@ from .model import Signal
 
 CARD_FILE = "waermewacht-card.js"
 CARD_URL = f"/{DOMAIN}/{CARD_FILE}"
+# The URL the frontend loads: a new version is a new URL (no stale cache).
+CARD_RESOURCE_URL = f"{CARD_URL}?v={VERSION}"
 # Source signals the card "Now" shows.
 NOW_SIGNALS = (
     Signal.ACTIVITY,
@@ -36,8 +38,9 @@ NOW_SIGNALS = (
 
 
 async def async_setup_cards(hass: HomeAssistant) -> None:
-    """Serve and register the cards; without http/frontend (tests) only the
-    websocket command."""
+    """Serve the cards and register the websocket command; without http
+    (tests) only the command. The frontend learns of the cards per entry
+    (frontend_resource.async_register_card)."""
     websocket_api.async_register_command(hass, ws_sources)
     if getattr(hass, "http", None) is None:
         return
@@ -47,10 +50,6 @@ async def async_setup_cards(hass: HomeAssistant) -> None:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(CARD_URL, str(path), True)]
     )
-    if "frontend" in hass.config.components:
-        from homeassistant.components.frontend import add_extra_js_url
-
-        add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}")
 
 
 def source_entities(hass: HomeAssistant, device_id: str) -> dict[str, str] | None:

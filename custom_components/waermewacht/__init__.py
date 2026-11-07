@@ -34,6 +34,7 @@ from .const import (
     DOMAIN,
     KIND_GAS,
 )
+from .frontend_resource import async_register_card, async_unregister_card
 from .gas_runtime import GasRuntime
 from .model import Signal
 from .profiles import RegistryEntry, find
@@ -178,6 +179,10 @@ def _async_follow_renames(hass: HomeAssistant) -> None:
 
 async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) -> bool:
     """Set up one heat pump or gas boiler."""
+    # Here rather than in async_setup: after removing and adding the
+    # integration again, async_setup does not run before the next restart.
+    if getattr(hass, "http", None) is not None:
+        await async_register_card(hass)
     if is_gas(entry):
         return await _async_setup_gas(hass, entry)
     moved = _adopt_new_signals(hass, entry)
@@ -333,7 +338,13 @@ async def async_unload_entry(
 async def async_remove_entry(
     hass: HomeAssistant, entry: WaermewachtConfigEntry
 ) -> None:
-    """Delete the stored books and the repair issues of the entry."""
+    """Delete the stored books and the repair issues of the entry; with the
+    last entry the card resource, too."""
+    if not any(
+        other.entry_id != entry.entry_id
+        for other in hass.config_entries.async_entries(DOMAIN)
+    ):
+        await async_unregister_card(hass)
     if is_gas(entry):
         # Only the readings by hand are stored; no repair issues.
         await GasRuntime(hass, entry).async_remove()

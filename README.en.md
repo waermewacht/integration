@@ -665,9 +665,9 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 ## Cards
 
-Wärmewacht ships its own cards, without any extra card from HACS and without adding a resource: *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. A [gas or oil boiler](#gas-boiler-before-switching) has a card of its own, the other cards show heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
+Wärmewacht ships its own cards, without any extra card from HACS. It adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the cards directly instead): *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. A [gas or oil boiler](#gas-boiler-before-switching) has a card of its own, the other cards show heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
 
-**The cards don't show up in the search?** Home Assistant loads them with the integration, so only after the restart and with a Wärmewacht entry set up. The dashboard picks them up when the page loads: reload it once (Ctrl+F5), and in the companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/waermewacht/waermewacht-card.js`.
+**The cards don't show up in the search, or only spin?** Home Assistant loads them with the integration, so only after the restart and with a Wärmewacht entry set up. Up to Wärmewacht 0.4.2, Home Assistant before 2026.11 could also say “Custom element not found” although the file was loaded (a frontend bug, fixed in HA 2026.11): update Home Assistant, or use Wärmewacht from the next version on. The dashboard picks them up when the page loads: reload it once (Ctrl+F5), and in the companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/waermewacht/waermewacht-card.js`.
 
 | Card | Shows |
 | --- | --- |
