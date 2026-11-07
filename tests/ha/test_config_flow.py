@@ -135,23 +135,20 @@ def test_sections_carry_no_default_over_their_prefill() -> None:
     hybrid stayed empty on a reconfigure, and OK dropped its counters
     (forum 07.11.). As sent to the frontend, no section has a default and
     the boiler's fields carry their entities."""
-    import voluptuous_serialize
-    from homeassistant.helpers import config_validation as cv
-
     values = {
         "heat_heating": "sensor.heat",
         "elec_heating": "sensor.elec",
         "boiler_heat_heating": "sensor.boiler_heat",
         "fuel_dhw": "sensor.boiler_gas_dhw",
     }
-    serialized = voluptuous_serialize.convert(
-        entities_schema(values, set(values)), custom_serializer=cv.custom_serializer
-    )
-    sections = {field["name"]: field for field in serialized}
-    assert all("default" not in field for field in serialized)
+    schema = entities_schema(values, set(values)).schema
+    # No default: as a new marker of the same kind (HA swaps voluptuous for
+    # probatio, each with its own UNDEFINED).
+    assert all(key.default is type(key)("x").default for key in schema)
+    (boiler_key,) = (key for key in schema if str(key) == "boiler")
     boiler = {
-        field["name"]: field.get("description", {}).get("suggested_value")
-        for field in sections["boiler"]["schema"]
+        str(key): (key.description or {}).get("suggested_value")
+        for key in schema[boiler_key].schema.schema
     }
     assert boiler == {
         "boiler_heat_heating": "sensor.boiler_heat",
