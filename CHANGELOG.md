@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.3 – 2026-11-07
 
 - **Karten: „Custom element not found“ behoben.** Vor Home Assistant 2026.11 konnte die Kartenauswahl bei manchen Nutzern nur Ladekreise zeigen, obwohl die Kartendatei geladen war: Das Frontend registrierte Karten, die eine Integration per Zusatzmodul mitbringt, manchmal im falschen Register (Frontend-PR #54444, in HA 2026.11 behoben). Außerdem fehlten die Karten auf Seiten, die während des HA-Starts geöffnet wurden (vor allem Companion-App). Wärmewacht trägt die Karten jetzt selbst als **Dashboard-Ressource** ein, hält die Version aktuell und entfernt sie mit dem letzten Eintrag wieder – wie Streckenwacht seit 0.7.1. Bei Ressourcen im YAML-Modus bleibt es beim Zusatzmodul. Anlass: zwei Rückmeldungen aus dem simon42-Forum.
 - **Wärme je Gradtag: Vergleich mit dem Vorjahr bis heute.** Der Sensor „Wärme je Gradtag Saison“ verglich die laufende Saison bisher nur mit der *ganzen* Vorsaison. Die enthält aber auch die dunklen Wintermonate, die je Gradtag mehr Wärme brauchen; im Herbst sah das Haus dadurch besser aus, als es ist. Neu sind die Attribute `previous_same_period` (Vorsaison bis zum selben Tag des Vorjahrs), `previous_same_period_until` und `change_percent`, und die Karte „Kennlinie und Heizlast“ zeigt in der Kachel „Vorjahr bis heute 2,31 (−7 %)“. So sieht man witterungsbereinigt, ob das Haus diese Saison mehr oder weniger braucht, etwa nach einer geänderten Heizkurve. Ohne Vorjahresdaten bleibt es bei der Vorsaison.
