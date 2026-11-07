@@ -2,8 +2,11 @@
 
 ## Unveröffentlicht
 
+## 0.4.0 – 2026-11-07
+
 - **Neu: Ölheizung vor dem Umstieg.** In der Einrichtung gibt es neben der Gasheizung jetzt **Ölheizung (vor dem Umstieg)**: Heizlast, Heizgrenze, Warmwasseranteil und Vorlauf wie beim Gas, aus einem Zähler in kWh oder Litern oder von Hand abgelesen – Ölzähler oder **Tankstand mit Nachfüllen** (eigene Entität „Nachfüllen eintragen“ und Aktion „Öl-Nachfüllung eintragen“). Ein Stand bis 100 Liter über dem erwarteten (ungenau abgelesen) wird angenommen und mit dem nächsten Rückgang verrechnet; liegt er mehr darüber, fehlt meist eine Nachfüllung. Ein Liter sind 10,66 kWh auf den Brennwert (einstellbar). Den Nutzungsgrad wählst du über die **Kesselart** (Brennwert 0,87, Niedertemperatur 0,79, Konstanttemperatur 0,70) oder trägst einen eigenen ein; den Preis in € je 100 Liter. Die Sensoren heißen „Heizöl 365 Tage“ und „Ölkosten 365 Tage“.
 - Die Aktionen zum Zählerstand heißen jetzt „Zählerstand eintragen (Gas, Öl)“ und „Zählerstand löschen (Gas, Öl)“; die Aktions-IDs bleiben (`add_gas_reading`, `remove_gas_reading`).
+- **Demo mit den echten Karten:** Die [Demo](https://waermewacht.github.io/integration/) zeigt jetzt die Karten von Wärmewacht selbst (mit erfundenen Daten), ein Klick auf einen Wert öffnet seine Attribute wie in Home Assistant. Neu ist eine Hybridanlage im Januar, bei der unter −3 °C der Kessel heizt.
 
 ## 0.3.2 – 2026-11-06
 
