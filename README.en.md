@@ -667,6 +667,8 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 Wärmewacht ships its own cards, without any extra card from HACS and without adding a resource: *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
 
+**The cards don't show up in the search?** Home Assistant loads them with the integration, so only after the restart and with a Wärmewacht entry set up. The dashboard picks them up when the page loads: reload it once (Ctrl+F5), and in the companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/waermewacht/waermewacht-card.js`.
+
 | Card | Shows |
 | --- | --- |
 | Wärmewacht Now (`custom:waermewacht-now-card`) | activity (since when), compressor, outdoor, flow, return and storage temperature of the source; heat and electric power if you pick them in the editor |

@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **README, Karten:** Was zu tun ist, wenn die Karten in der Suche nicht auftauchen (Neustart, Eintrag einrichten, Seite neu laden bzw. Frontend-Cache der App zurücksetzen), dazu ein Test über die Adresse der Kartendatei. Anlass: zwei Rückmeldungen aus dem simon42-Forum.
 - **Lambda nicht mehr Beta, dazu der Volumenstrom.** Die Vorlage ordnet jetzt auch den Volumenstrom der Wärmesenke zu (`volume_flow_heat_sink`, L/h), den bisher nur die manuelle Zuordnung kannte; damit gibt es die Durchfluss-Prüfung ohne Handarbeit. Bestehende Lambda-Einträge ohne Volumenstrom übernehmen ihn beim nächsten Start selbst. Geprüft am Bericht einer echten EU13L (lambda_heat_pumps 3.6.1): Alle Zuordnungen stimmen, die Arbeitszahl passt zu der der Lambda (Dank an den Nutzer aus dem simon42-Forum). In der Einrichtung steht sie deshalb jetzt ohne „(beta)“.
 
 ## 0.4.0 – 2026-11-07

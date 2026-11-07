@@ -667,6 +667,8 @@ AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeo
 
 Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS und ohne Ressource eintragen: *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
 
+**Die Karten tauchen in der Suche nicht auf?** Home Assistant lädt sie mit der Integration, also erst nach dem Neustart und mit einem eingerichteten Wärmewacht-Eintrag. Ins Dashboard kommen sie beim Laden der Seite: danach einmal neu laden (Strg+F5), in der Companion-App den Frontend-Cache zurücksetzen. Ob die Datei da ist, zeigt `http://<HA-Adresse>:8123/waermewacht/waermewacht-card.js`.
+
 | Karte | Zeigt |
 | --- | --- |
 | Wärmewacht Jetzt (`custom:waermewacht-now-card`) | Betriebsart (seit wann), Kompressor, Außen-, Vor-, Rücklauf- und Speichertemperatur der Quelle; Wärme- und Stromleistung, wenn du sie im Editor wählst |
