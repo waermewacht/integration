@@ -129,6 +129,36 @@ def test_manual_form_shows_every_section() -> None:
     assert {str(k) for k in entities_schema({}).schema} == set(SECTIONS)
 
 
+def test_sections_carry_no_default_over_their_prefill() -> None:
+    """The frontend (computeInitialHaFormData) takes a section's default over
+    the suggested values of its fields: with `default={}` the boiler of a
+    hybrid stayed empty on a reconfigure, and OK dropped its counters
+    (forum 07.11.). As sent to the frontend, no section has a default and
+    the boiler's fields carry their entities."""
+    import voluptuous_serialize
+    from homeassistant.helpers import config_validation as cv
+
+    values = {
+        "heat_heating": "sensor.heat",
+        "elec_heating": "sensor.elec",
+        "boiler_heat_heating": "sensor.boiler_heat",
+        "fuel_dhw": "sensor.boiler_gas_dhw",
+    }
+    serialized = voluptuous_serialize.convert(
+        entities_schema(values, set(values)), custom_serializer=cv.custom_serializer
+    )
+    sections = {field["name"]: field for field in serialized}
+    assert all("default" not in field for field in serialized)
+    boiler = {
+        field["name"]: field.get("description", {}).get("suggested_value")
+        for field in sections["boiler"]["schema"]
+    }
+    assert boiler == {
+        "boiler_heat_heating": "sensor.boiler_heat",
+        "fuel_dhw": "sensor.boiler_gas_dhw",
+    }
+
+
 def add_homecom(hass: HomeAssistant, *, enabled: bool) -> None:
     """Registry entries as bosch_homecom creates them (gateway id made up);
     the energy per mode is disabled by default."""
