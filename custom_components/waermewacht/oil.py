@@ -11,14 +11,16 @@ An oil boiler is a gas boiler entry (gas.py, readings.py) with another fuel
 - Price in € per 100 l as quoted by dealers, converted to €/kWh Hs.
 - Readings by hand: an oil meter counts up like a gas meter (readings.py
   as is). A tank level counts down and jumps at a refill; `consumed` turns
-  levels and refills into a counter of the oil used.
+  levels and refills into a counter of the oil used. A level up to
+  TANK_TOLERANCE_LITRES above what the refills explain (gauge read badly,
+  oil warmer) is netted against the next drop; more is refused.
 """
 
 from __future__ import annotations
 
 import bisect
-import itertools
 from collections.abc import Sequence
+from datetime import datetime
 
 from .readings import NEGATIVE, Reading
 
@@ -41,6 +43,12 @@ BOILER_TYPES: dict[str, float] = {
 
 # Errors when adding a tank level or removing a refill (translation keys).
 TANK_RISING = "tank_rising"
+
+# Litres a tank level may lie above the counter so far without a refill.
+# Gauges and dipsticks read tens of litres off, and in summer a week uses
+# about as much; a delivery is far more (dealers deliver from about 500 l).
+# Own choice (Andy 07.11.2026), no source: docs/ENTWICKLUNG.md, Ölheizung.
+TANK_TOLERANCE_LITRES = 100.0
 REFILL_NOT_POSITIVE = "refill_not_positive"
 
 
@@ -70,10 +78,22 @@ def consumed(levels: Sequence[Reading], refills: Sequence[Reading]) -> list[Read
     drop of the level plus every refill in between: a refill at the very
     minute of a level counts before that level (the level is read after
     filling up). Refills before the first level do not count.
+
+    The counter never falls: a level above what the refills explain keeps
+    it where it is, and the next drop counts only beyond that (the rise is
+    netted). Over several levels the oil used stays right.
     """
+    return [Reading(at, peak) for at, _, peak in _running(levels, refills)]
+
+
+def _running(
+    levels: Sequence[Reading], refills: Sequence[Reading]
+) -> list[tuple[datetime, float, float]]:
+    """Per level its time, the plain sum (not netted) and the highest sum
+    so far."""
     times = [r.at for r in refills]
-    result: list[Reading] = []
-    total = 0.0
+    result: list[tuple[datetime, float, float]] = []
+    total = peak = 0.0
     for i, level in enumerate(levels):
         if i:
             before = levels[i - 1]
@@ -81,18 +101,20 @@ def consumed(levels: Sequence[Reading], refills: Sequence[Reading]) -> list[Read
             hi = bisect.bisect_right(times, level.at)
             added = sum(r.value for r in refills[lo:hi])
             total += before.value - level.value + added
-        result.append(Reading(level.at, total))
+        peak = max(peak, total)
+        result.append((level.at, total, peak))
     return result
 
 
 def check_tank(levels: Sequence[Reading], refills: Sequence[Reading]) -> str | None:
-    """Error key if the levels rise anywhere more than the refills explain."""
+    """Error key if a level lies more than TANK_TOLERANCE_LITRES above what
+    the levels before and the refills explain."""
     if any(r.value < 0 for r in levels):
         return NEGATIVE
     if any(r.value <= 0 for r in refills):
         return REFILL_NOT_POSITIVE
-    used = consumed(levels, refills)
-    # Tolerance for float sums: 1000.3 - 1500.1 + 499.8 is not exactly 0.
-    if any(b.value < a.value - 1e-6 for a, b in itertools.pairwise(used)):
+    # 1e-6 for float sums: 1000.3 - 1500.1 + 499.8 is not exactly 0.
+    limit = TANK_TOLERANCE_LITRES + 1e-6
+    if any(peak - total > limit for _, total, peak in _running(levels, refills)):
         return TANK_RISING
     return None

@@ -2,7 +2,7 @@
 
 ## Unveröffentlicht
 
-- **Neu: Ölheizung vor dem Umstieg.** In der Einrichtung gibt es neben der Gasheizung jetzt **Ölheizung (vor dem Umstieg)**: Heizlast, Heizgrenze, Warmwasseranteil und Vorlauf wie beim Gas, aus einem Zähler in kWh oder Litern oder von Hand abgelesen – Ölzähler oder **Tankstand mit Nachfüllen** (eigene Entität „Nachfüllen eintragen“ und Aktion „Öl-Nachfüllung eintragen“). Ein Liter sind 10,66 kWh auf den Brennwert (einstellbar). Den Nutzungsgrad wählst du über die **Kesselart** (Brennwert 0,87, Niedertemperatur 0,79, Konstanttemperatur 0,70) oder trägst einen eigenen ein; den Preis in € je 100 Liter. Die Sensoren heißen „Heizöl 365 Tage“ und „Ölkosten 365 Tage“.
+- **Neu: Ölheizung vor dem Umstieg.** In der Einrichtung gibt es neben der Gasheizung jetzt **Ölheizung (vor dem Umstieg)**: Heizlast, Heizgrenze, Warmwasseranteil und Vorlauf wie beim Gas, aus einem Zähler in kWh oder Litern oder von Hand abgelesen – Ölzähler oder **Tankstand mit Nachfüllen** (eigene Entität „Nachfüllen eintragen“ und Aktion „Öl-Nachfüllung eintragen“). Ein Stand bis 100 Liter über dem erwarteten (ungenau abgelesen) wird angenommen und mit dem nächsten Rückgang verrechnet; steigt er mehr, fehlt meist eine Nachfüllung. Ein Liter sind 10,66 kWh auf den Brennwert (einstellbar). Den Nutzungsgrad wählst du über die **Kesselart** (Brennwert 0,87, Niedertemperatur 0,79, Konstanttemperatur 0,70) oder trägst einen eigenen ein; den Preis in € je 100 Liter. Die Sensoren heißen „Heizöl 365 Tage“ und „Ölkosten 365 Tage“.
 - Die Aktionen zum Zählerstand heißen jetzt „Zählerstand eintragen (Gas, Öl)“ und „Zählerstand löschen (Gas, Öl)“; die Aktions-IDs bleiben (`add_gas_reading`, `remove_gas_reading`).
 
 ## 0.3.2 – 2026-11-06

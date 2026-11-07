@@ -13,6 +13,7 @@ from custom_components.waermewacht.oil import (
     LOW_TEMPERATURE,
     REFILL_NOT_POSITIVE,
     TANK_RISING,
+    TANK_TOLERANCE_LITRES,
     check_tank,
     consumed,
     efficiency,
@@ -70,7 +71,7 @@ def test_refill_at_the_minute_of_a_level_counts_before_it() -> None:
     levels = [Reading(at(0), 500), Reading(at(7), 2400)]
     assert consumed(levels, [Reading(at(7), 2000)])[-1].value == 100
     # A refill at the first level is before the counter starts.
-    assert consumed(levels, [Reading(at(0), 2000)])[-1].value == -1900
+    assert consumed(levels, [Reading(at(0), 2000)])[-1].value == 0
     assert check_tank(levels, [Reading(at(0), 2000)]) == TANK_RISING
 
 
@@ -80,8 +81,30 @@ def test_refills_before_the_first_or_after_the_last_level_do_not_count() -> None
     assert [r.value for r in consumed(levels, refills)] == [0, 100]
 
 
+def test_small_rise_is_netted() -> None:
+    # Summer: 2000 l, read 2030 l a week later (gauge), then 1990 l.
+    levels = [Reading(at(0), 2000), Reading(at(7), 2030), Reading(at(14), 1990)]
+    assert check_tank(levels, []) is None
+    # The counter stays at 0 and counts only beyond the rise: 10 l in all.
+    assert [r.value for r in consumed(levels, [])] == [0, 0, 10]
+
+
+def test_rises_add_up_against_the_highest_count() -> None:
+    # 60 l up, then another 60 l up: 120 l above the counter so far.
+    levels = [Reading(at(0), 2000), Reading(at(7), 2060), Reading(at(14), 2120)]
+    assert check_tank(levels, []) == TANK_RISING
+    # After a drop the counter so far is higher: 150 l used, then 80 l up.
+    levels = [Reading(at(0), 2000), Reading(at(7), 1850), Reading(at(14), 1930)]
+    assert check_tank(levels, []) is None
+    assert [r.value for r in consumed(levels, [])] == [0, 150, 150]
+
+
 def test_check_tank() -> None:
-    levels = [Reading(at(0), 1000), Reading(at(7), 1100)]
+    limit = TANK_TOLERANCE_LITRES
+    assert limit == 100
+    rise = [Reading(at(0), 1000), Reading(at(7), 1000 + limit)]
+    assert check_tank(rise, []) is None
+    levels = [Reading(at(0), 1000), Reading(at(7), 1101)]
     assert check_tank(levels, []) == TANK_RISING
     assert check_tank(levels, [Reading(at(3), 150)]) is None
     assert check_tank(levels, [Reading(at(3), 0)]) == REFILL_NOT_POSITIVE

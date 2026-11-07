@@ -809,7 +809,7 @@
       "message": "Diese Aktion gilt für Wärmepumpen; eine Gas- oder Ölheizung hat nur die Heizlast."
     },
     "tank_rising": {
-      "message": "Die Tankstände passen nicht zu den Nachfüllungen: Der Stand steigt, ohne dass dazwischen genug nachgefüllt wurde. Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand."
+      "message": "Die Tankstände passen nicht zu den Nachfüllungen: Der Stand steigt um mehr als 100 Liter, ohne dass dazwischen genug nachgefüllt wurde. Nachfüllen vergessen? Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand."
     },
     "refill_not_positive": {
       "message": "Eine Nachfüllung braucht mehr als 0 Liter."
