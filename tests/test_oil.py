@@ -99,6 +99,27 @@ def test_rises_add_up_against_the_highest_count() -> None:
     assert [r.value for r in consumed(levels, [])] == [0, 150, 150]
 
 
+def test_small_rise_after_a_refill_is_netted() -> None:
+    # 800 l + 2000 l refilled = 2800 l expected, read 2850 l, then 2780 l.
+    levels = [
+        Reading(at(0), 1000),
+        Reading(at(7), 800),
+        Reading(at(14), 2850),
+        Reading(at(21), 2780),
+    ]
+    refills = [Reading(at(9), 2000)]
+    assert check_tank(levels, refills) is None
+    assert [r.value for r in consumed(levels, refills)] == [0, 200, 200, 220]
+
+
+def test_removing_a_small_refill_is_accepted() -> None:
+    # Without the 80 l refill the level lies only 50 l above: netted.
+    levels = [Reading(at(0), 1000), Reading(at(7), 1050)]
+    assert check_tank(levels, [Reading(at(3), 80)]) is None
+    assert check_tank(levels, []) is None
+    assert [r.value for r in consumed(levels, [])] == [0, 0]
+
+
 def test_check_tank() -> None:
     limit = TANK_TOLERANCE_LITRES
     assert limit == 100

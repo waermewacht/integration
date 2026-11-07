@@ -809,7 +809,7 @@
       "message": "This action is for heat pumps; a gas or oil boiler has the heat load only."
     },
     "tank_rising": {
-      "message": "The tank levels do not fit the refills: the level rises by more than 100 litres without enough refilled in between. A refill not entered? Enter the refill first (at a time before the level after it), then the level."
+      "message": "The tank levels do not fit the refills: a level lies more than 100 litres above what the earlier levels and the refills explain. A refill not entered? Enter the refill first (at a time before the level after it), then the level."
     },
     "refill_not_positive": {
       "message": "A refill needs more than 0 litres."

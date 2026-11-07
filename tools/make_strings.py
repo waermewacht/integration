@@ -1625,8 +1625,8 @@ OIL_SENSORS = {
 }
 TANK_EXCEPTIONS = {
     "tank_rising": (
-        "The tank levels do not fit the refills: the level rises by more than 100 litres without enough refilled in between. A refill not entered? Enter the refill first (at a time before the level after it), then the level.",
-        "Die Tankstände passen nicht zu den Nachfüllungen: Der Stand steigt um mehr als 100 Liter, ohne dass dazwischen genug nachgefüllt wurde. Nachfüllen vergessen? Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand.",
+        "The tank levels do not fit the refills: a level lies more than 100 litres above what the earlier levels and the refills explain. A refill not entered? Enter the refill first (at a time before the level after it), then the level.",
+        "Die Tankstände passen nicht zu den Nachfüllungen: Ein Stand liegt mehr als 100 Liter über dem, was die Stände davor und die Nachfüllungen erklären. Nachfüllen vergessen? Erst das Nachfüllen eintragen (Zeitpunkt vor dem Stand danach), dann den Stand.",
     ),
     "refill_not_positive": (
         "A refill needs more than 0 litres.",
