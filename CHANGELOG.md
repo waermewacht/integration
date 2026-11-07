@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Lambda: Volumenstrom und Prüfung an einer echten Anlage.** Die Vorlage ordnet jetzt auch den Volumenstrom der Wärmesenke zu (`volume_flow_heat_sink`, L/h), den bisher nur die manuelle Zuordnung kannte; damit gibt es Spreizung und Durchfluss-Prüfung ohne Handarbeit. Geprüft am Bericht einer echten EU13L (lambda_heat_pumps 3.6.1): Alle Zuordnungen stimmen, die Arbeitszahl passt zu der der Lambda (Dank an Peter aus dem simon42-Forum). Die Vorlage bleibt vorerst Beta.
+
 ## 0.4.0 – 2026-11-07
 
 - **Neu: Ölheizung vor dem Umstieg.** In der Einrichtung gibt es neben der Gasheizung jetzt **Ölheizung (vor dem Umstieg)**: Heizlast, Heizgrenze, Warmwasseranteil und Vorlauf wie beim Gas, aus einem Zähler in kWh oder Litern oder von Hand abgelesen – Ölzähler oder **Tankstand mit Nachfüllen** (eigene Entität „Nachfüllen eintragen“ und Aktion „Öl-Nachfüllung eintragen“). Ein Stand bis 100 Liter über dem erwarteten (ungenau abgelesen) wird angenommen und mit dem nächsten Rückgang verrechnet; liegt er mehr darüber, fehlt meist eine Nachfüllung. Ein Liter sind 10,66 kWh auf den Brennwert (einstellbar). Den Nutzungsgrad wählst du über die **Kesselart** (Brennwert 0,87, Niedertemperatur 0,79, Konstanttemperatur 0,70) oder trägst einen eigenen ein; den Preis in € je 100 Liter. Die Sensoren heißen „Heizöl 365 Tage“ und „Ölkosten 365 Tage“.

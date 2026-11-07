@@ -34,6 +34,11 @@
     "real": "unique id and entity id format (legacy names, entry name 'EU08L'), keys, units, device and state classes, register attributes and option lists as the code builds them; all entities enabled by default.",
     "made_up": "every state value; the selection of entities (a subset of one heat pump, plus hc1/boil1 decoys)."
   },
+  "lambda_eu13l_real.json": {
+    "source": "Wärmewacht report (button 'Report for a bug report', section source) of a forum user's installation (Lambda EU13L, firmware V0.0.9-3K, lambda_heat_pumps 3.6.1, Home Assistant 2026.10.4, template lambda), sent to the maintainer on 2026-11-07.",
+    "real": "every entity of the integration with entity id, unique id (legacy names, entry name 'EU13L'), device and state class, unit, the entities the user disabled (hot water, cooling and a few more; no unit then), the text states ('CH', 'REGULATION', 'AUTOMATIK', 'NONE', 'Off', 'OFF', 'unknown').",
+    "made_up": "every number (counters, temperatures, powers, rates, cycles), replaced; 0 and the error number -1 kept; the device block is reduced to manufacturer, model and version; enum options and register attributes are not in the report."
+  },
   "idm_navigator20.json": {
     "source": "Derived from the source code of Xerolux/idm-heatpump-hass 0.23.2-b4 (commit 385f8cc, 2026-10-26) and idm-heatpump-api 2.14.5b2: iDM Navigator 2.0 with Modbus TCP and web interface (PIN). Not read from a real installation.",
     "real": "unique id format '<entry_id>_<key>' and keys, platform idm_heatpump, units and state classes as the integration sets them, enum labels of hp_operating_mode.",

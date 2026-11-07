@@ -2,8 +2,10 @@
 
 Pure Python, no Home Assistant imports. Derived from the source code of
 GuidoJeuken-6512/lambda_heat_pumps 2.8.6 (commit 5ad6cd0, 2026-10-17) on
-2026-10-27, not from a real installation: experimental until a recorded
-fixture exists.
+2026-10-27; checked on 2026-11-07 against the registry of one real
+installation (EU13L, lambda_heat_pumps 3.6.1, tests/fixtures/
+lambda_eu13l_real.json): every signal found, performance factor as Lambda's
+own. Still beta (experimental) until more installations confirm it.
 
 Unique ids (utils.py, `generate_sensor_names`): "<name>_hp<N>_<key>" for the
 sensors of heat pump N and "<name>_<key>" for those of the main device
@@ -21,7 +23,8 @@ their increments itself by the operating state at each poll (coordinator.py,
 `_track_hp_energy_type_consumption`: CH heating, DHW hot water, CC cooling,
 DEFROST defrost, everything else "stby") into restored lifetime sensors
 "<mode>_energy_total" (electricity, total_increasing) and
-"<mode>_thermal_energy_total" (heat, state class total) in kWh that never
+"<mode>_thermal_energy_total" (heat, state class total; total_increasing
+in 3.6.1) in kWh that never
 step back (`set_energy_value`). Those are the counters used here. Defrost
 and standby have counters of their own: their electricity is taken (defrost
 to the mode running, standby as standby); the defrost heat is left out, as
@@ -137,8 +140,9 @@ LAMBDA = LambdaTemplate(
         ),
         Signal.FLOW_TEMP: ((_S, "flow_line_temperature"),),
         Signal.RETURN_TEMP: ((_S, "return_line_temperature"),),
-        # The heat sink flow ("l/h") has no device class volume_flow_rate, the
-        # entity form would not offer it: left out.
+        # Heat sink flow (register 1006) in "l/h" (2.8.6) or "L/h" (3.6.1),
+        # without device class; the entity form offers it by its unit.
+        Signal.FLOW_RATE: ((_S, "volume_flow_heat_sink"),),
     },
     required=(Signal.COMPRESSOR, Signal.HEAT_HEATING, Signal.ELEC_HEATING),
     activity_values=LAMBDA_ACTIVITY,

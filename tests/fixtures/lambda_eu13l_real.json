@@ -1,0 +1,1285 @@
+{
+  "name_prefix": "eu13l",
+  "device": {
+    "manufacturer": "Lambda",
+    "model": "V0.0.9-3K",
+    "sw_version": "V0.0.9-3K"
+  },
+  "entities": [
+    {
+      "entity_id": "sensor.eu13l_ambient_error_number",
+      "unique_id": "eu13l_ambient_error_number",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_ambient_operating_state",
+      "unique_id": "eu13l_ambient_operating_state",
+      "state": "AUTOMATIK",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_ambient_temperature",
+      "unique_id": "eu13l_ambient_temperature",
+      "state": "1.4",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_ambient_temperature_1h",
+      "unique_id": "eu13l_ambient_temperature_1h",
+      "state": "1.6",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_ambient_temperature_calculated",
+      "unique_id": "eu13l_ambient_temperature_calculated",
+      "state": "4.9",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_emgr_actual_power",
+      "unique_id": "eu13l_emgr_actual_power",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_emgr_actual_power_consumption",
+      "unique_id": "eu13l_emgr_actual_power_consumption",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_emgr_error_number",
+      "unique_id": "eu13l_emgr_error_number",
+      "state": "-1",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_emgr_operating_state",
+      "unique_id": "eu13l_emgr_operating_state",
+      "state": "OFF",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_emgr_power_consumption_setpoint",
+      "unique_id": "eu13l_emgr_power_consumption_setpoint",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_actual_heating_capacity",
+      "unique_id": "eu13l_hp1_actual_heating_capacity",
+      "state": "7.1",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_power_consumption_accumulated",
+      "unique_id": "eu13l_hp1_compressor_power_consumption_accumulated",
+      "state": "10132187",
+      "attributes": {
+        "unit_of_measurement": "Wh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_2h",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_2h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_4h",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_4h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_daily",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_daily",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_monthly",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_monthly",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_total",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_total",
+      "state": "1226",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_start_cycling_yesterday",
+      "unique_id": "eu13l_hp1_compressor_start_cycling_yesterday",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_thermal_energy_output_accumulated",
+      "unique_id": "eu13l_hp1_compressor_thermal_energy_output_accumulated",
+      "state": "93673694",
+      "attributes": {
+        "unit_of_measurement": "Wh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_compressor_unit_rating",
+      "unique_id": "eu13l_hp1_compressor_unit_rating",
+      "state": "35.82",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_condensation_temperature",
+      "unique_id": "eu13l_hp1_condensation_temperature",
+      "state": "42.55",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_config_parameter_24",
+      "unique_id": "eu13l_hp1_config_parameter_24",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_config_parameter_33",
+      "unique_id": "eu13l_hp1_config_parameter_33",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_config_parameter_50",
+      "unique_id": "eu13l_hp1_config_parameter_50",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_config_parameter_60",
+      "unique_id": "eu13l_hp1_config_parameter_60",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cop_daily",
+      "unique_id": "eu13l_hp1_cooling_cop_daily",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cop_monthly",
+      "unique_id": "eu13l_hp1_cooling_cop_monthly",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cop_total",
+      "unique_id": "eu13l_hp1_cooling_cop_total",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cop_yearly",
+      "unique_id": "eu13l_hp1_cooling_cop_yearly",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cycling_2h",
+      "unique_id": "eu13l_hp1_cooling_cycling_2h",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cycling_4h",
+      "unique_id": "eu13l_hp1_cooling_cycling_4h",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cycling_daily",
+      "unique_id": "eu13l_hp1_cooling_cycling_daily",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cycling_total",
+      "unique_id": "eu13l_hp1_cooling_cycling_total",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_cycling_yesterday",
+      "unique_id": "eu13l_hp1_cooling_cycling_yesterday",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_energy_daily",
+      "unique_id": "eu13l_hp1_cooling_energy_daily",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_energy_monthly",
+      "unique_id": "eu13l_hp1_cooling_energy_monthly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_energy_total",
+      "unique_id": "eu13l_hp1_cooling_energy_total",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_energy_yearly",
+      "unique_id": "eu13l_hp1_cooling_energy_yearly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_max_output_power",
+      "unique_id": "eu13l_hp1_cooling_max_output_power",
+      "state": null,
+      "attributes": {
+        "device_class": "power"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_min_output_power",
+      "unique_id": "eu13l_hp1_cooling_min_output_power",
+      "state": null,
+      "attributes": {
+        "device_class": "power"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_thermal_energy_daily",
+      "unique_id": "eu13l_hp1_cooling_thermal_energy_daily",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_thermal_energy_monthly",
+      "unique_id": "eu13l_hp1_cooling_thermal_energy_monthly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_thermal_energy_total",
+      "unique_id": "eu13l_hp1_cooling_thermal_energy_total",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cooling_thermal_energy_yearly",
+      "unique_id": "eu13l_hp1_cooling_thermal_energy_yearly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_cop",
+      "unique_id": "eu13l_hp1_cop",
+      "state": "4.42",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_cycling_2h",
+      "unique_id": "eu13l_hp1_defrost_cycling_2h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_cycling_4h",
+      "unique_id": "eu13l_hp1_defrost_cycling_4h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_cycling_daily",
+      "unique_id": "eu13l_hp1_defrost_cycling_daily",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_cycling_total",
+      "unique_id": "eu13l_hp1_defrost_cycling_total",
+      "state": "1481",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_cycling_yesterday",
+      "unique_id": "eu13l_hp1_defrost_cycling_yesterday",
+      "state": "2",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_energy_daily",
+      "unique_id": "eu13l_hp1_defrost_energy_daily",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_energy_monthly",
+      "unique_id": "eu13l_hp1_defrost_energy_monthly",
+      "state": "0.11",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_energy_total",
+      "unique_id": "eu13l_hp1_defrost_energy_total",
+      "state": "172.97",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_energy_yearly",
+      "unique_id": "eu13l_hp1_defrost_energy_yearly",
+      "state": "0.09",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_thermal_energy_daily",
+      "unique_id": "eu13l_hp1_defrost_thermal_energy_daily",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_thermal_energy_monthly",
+      "unique_id": "eu13l_hp1_defrost_thermal_energy_monthly",
+      "state": "0.84",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_thermal_energy_total",
+      "unique_id": "eu13l_hp1_defrost_thermal_energy_total",
+      "state": "1686.15",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_defrost_thermal_energy_yearly",
+      "unique_id": "eu13l_hp1_defrost_thermal_energy_yearly",
+      "state": "0.59",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_dhw_output_power_15c",
+      "unique_id": "eu13l_hp1_dhw_output_power_15c",
+      "state": null,
+      "attributes": {
+        "device_class": "power"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_energy_source_inlet_temperature",
+      "unique_id": "eu13l_hp1_energy_source_inlet_temperature",
+      "state": "2.24",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_energy_source_outlet_temperature",
+      "unique_id": "eu13l_hp1_energy_source_outlet_temperature",
+      "state": "unknown",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_eqm_rating",
+      "unique_id": "eu13l_hp1_eqm_rating",
+      "state": "65.71",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_error_number",
+      "unique_id": "eu13l_hp1_error_number",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_error_state",
+      "unique_id": "eu13l_hp1_error_state",
+      "state": "NONE",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_evaporation_temperature",
+      "unique_id": "eu13l_hp1_evaporation_temperature",
+      "state": "-4.11",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_expansion_valve_opening_angle",
+      "unique_id": "eu13l_hp1_expansion_valve_opening_angle",
+      "state": "26.7",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_flow_line_temperature",
+      "unique_id": "eu13l_hp1_flow_line_temperature",
+      "state": "32.94",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cop_daily",
+      "unique_id": "eu13l_hp1_heating_cop_daily",
+      "state": "5.56",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cop_hourly",
+      "unique_id": "eu13l_hp1_heating_cop_hourly",
+      "state": "5.22",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cop_monthly",
+      "unique_id": "eu13l_hp1_heating_cop_monthly",
+      "state": "5.61",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cop_total",
+      "unique_id": "eu13l_hp1_heating_cop_total",
+      "state": "4.31",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cop_yearly",
+      "unique_id": "eu13l_hp1_heating_cop_yearly",
+      "state": "6.07",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cycling_2h",
+      "unique_id": "eu13l_hp1_heating_cycling_2h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cycling_4h",
+      "unique_id": "eu13l_hp1_heating_cycling_4h",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cycling_daily",
+      "unique_id": "eu13l_hp1_heating_cycling_daily",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cycling_total",
+      "unique_id": "eu13l_hp1_heating_cycling_total",
+      "state": "2753",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_cycling_yesterday",
+      "unique_id": "eu13l_hp1_heating_cycling_yesterday",
+      "state": "4",
+      "attributes": {
+        "unit_of_measurement": "cycles",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_energy_daily",
+      "unique_id": "eu13l_hp1_heating_energy_daily",
+      "state": "9.06",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_energy_hourly",
+      "unique_id": "eu13l_hp1_heating_energy_hourly",
+      "state": "0.5",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_energy_monthly",
+      "unique_id": "eu13l_hp1_heating_energy_monthly",
+      "state": "84.79",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_energy_total",
+      "unique_id": "eu13l_hp1_heating_energy_total",
+      "state": "9535.30",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_energy_yearly",
+      "unique_id": "eu13l_hp1_heating_energy_yearly",
+      "state": "531.81",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_max_output_power_0c",
+      "unique_id": "eu13l_hp1_heating_max_output_power_0c",
+      "state": "7.6",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_max_output_power_15c",
+      "unique_id": "eu13l_hp1_heating_max_output_power_15c",
+      "state": "3.1",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_max_output_power_minus15c",
+      "unique_id": "eu13l_hp1_heating_max_output_power_minus15c",
+      "state": "9.0",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_min_output_power_0c",
+      "unique_id": "eu13l_hp1_heating_min_output_power_0c",
+      "state": "2.8",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_min_output_power_15c",
+      "unique_id": "eu13l_hp1_heating_min_output_power_15c",
+      "state": "1.2",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_min_output_power_minus15c",
+      "unique_id": "eu13l_hp1_heating_min_output_power_minus15c",
+      "state": "4.5",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_thermal_energy_daily",
+      "unique_id": "eu13l_hp1_heating_thermal_energy_daily",
+      "state": "31.38",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_thermal_energy_hourly",
+      "unique_id": "eu13l_hp1_heating_thermal_energy_hourly",
+      "state": "2.92",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_thermal_energy_monthly",
+      "unique_id": "eu13l_hp1_heating_thermal_energy_monthly",
+      "state": "1075.80",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_thermal_energy_total",
+      "unique_id": "eu13l_hp1_heating_thermal_energy_total",
+      "state": "51295.14",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_heating_thermal_energy_yearly",
+      "unique_id": "eu13l_hp1_heating_thermal_energy_yearly",
+      "state": "3937.28",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_gas_temperature",
+      "unique_id": "eu13l_hp1_hot_gas_temperature",
+      "state": "67.01",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cop_daily",
+      "unique_id": "eu13l_hp1_hot_water_cop_daily",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cop_monthly",
+      "unique_id": "eu13l_hp1_hot_water_cop_monthly",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cop_total",
+      "unique_id": "eu13l_hp1_hot_water_cop_total",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cop_yearly",
+      "unique_id": "eu13l_hp1_hot_water_cop_yearly",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cycling_2h",
+      "unique_id": "eu13l_hp1_hot_water_cycling_2h",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cycling_4h",
+      "unique_id": "eu13l_hp1_hot_water_cycling_4h",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cycling_daily",
+      "unique_id": "eu13l_hp1_hot_water_cycling_daily",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cycling_total",
+      "unique_id": "eu13l_hp1_hot_water_cycling_total",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_cycling_yesterday",
+      "unique_id": "eu13l_hp1_hot_water_cycling_yesterday",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_energy_daily",
+      "unique_id": "eu13l_hp1_hot_water_energy_daily",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_energy_monthly",
+      "unique_id": "eu13l_hp1_hot_water_energy_monthly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_energy_total",
+      "unique_id": "eu13l_hp1_hot_water_energy_total",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_energy_yearly",
+      "unique_id": "eu13l_hp1_hot_water_energy_yearly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_thermal_energy_daily",
+      "unique_id": "eu13l_hp1_hot_water_thermal_energy_daily",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_thermal_energy_monthly",
+      "unique_id": "eu13l_hp1_hot_water_thermal_energy_monthly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_thermal_energy_total",
+      "unique_id": "eu13l_hp1_hot_water_thermal_energy_total",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_hot_water_thermal_energy_yearly",
+      "unique_id": "eu13l_hp1_hot_water_thermal_energy_yearly",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_inverter_power_consumption",
+      "unique_id": "eu13l_hp1_inverter_power_consumption",
+      "state": "1176",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_operating_state",
+      "unique_id": "eu13l_hp1_operating_state",
+      "state": "CH",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_relais_state_2nd_heating_stage",
+      "unique_id": "eu13l_hp1_relais_state_2nd_heating_stage",
+      "state": "Off",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_request_type",
+      "unique_id": "eu13l_hp1_request_type",
+      "state": "0",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_requested_flow_line_temperature",
+      "unique_id": "eu13l_hp1_requested_flow_line_temperature",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_requested_flow_to_return_line_temperature_difference",
+      "unique_id": "eu13l_hp1_requested_flow_to_return_line_temperature_difference",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_requested_return_line_temperature",
+      "unique_id": "eu13l_hp1_requested_return_line_temperature",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_return_line_temperature",
+      "unique_id": "eu13l_hp1_return_line_temperature",
+      "state": "36.93",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_state",
+      "unique_id": "eu13l_hp1_state",
+      "state": "REGULATION",
+      "attributes": {
+        "device_class": "enum"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_stby_energy_daily",
+      "unique_id": "eu13l_hp1_stby_energy_daily",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_stby_energy_monthly",
+      "unique_id": "eu13l_hp1_stby_energy_monthly",
+      "state": "0.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_stby_energy_total",
+      "unique_id": "eu13l_hp1_stby_energy_total",
+      "state": "0.36",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_stby_energy_yearly",
+      "unique_id": "eu13l_hp1_stby_energy_yearly",
+      "state": "0.38",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_subcooling_temperature",
+      "unique_id": "eu13l_hp1_subcooling_temperature",
+      "state": "36.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_suction_gas_temperature",
+      "unique_id": "eu13l_hp1_suction_gas_temperature",
+      "state": "-2.20",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_vda_rating",
+      "unique_id": "eu13l_hp1_vda_rating",
+      "state": "31.72",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_volume_flow_energy_source",
+      "unique_id": "eu13l_hp1_volume_flow_energy_source",
+      "state": null,
+      "attributes": {},
+      "disabled_by_default": false,
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.eu13l_hp1_volume_flow_heat_sink",
+      "unique_id": "eu13l_hp1_volume_flow_heat_sink",
+      "state": "685",
+      "attributes": {
+        "unit_of_measurement": "L/h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.eu13l_warmepumpe1_cop_berechnet",
+      "unique_id": "eu13l_hp1_cop_calc",
+      "state": "3.07",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    }
+  ]
+}

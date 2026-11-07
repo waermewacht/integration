@@ -18,13 +18,19 @@ from custom_components.waermewacht.profiles_lambda import LAMBDA
 from .conftest import load_fixture
 
 FIXTURE = "lambda_eu08l.json"
+REAL = "lambda_eu13l_real.json"
 PLATFORM = "lambda_heat_pumps"
 
 
-def entries() -> list[RegistryEntry]:
+def entries(fixture: str = FIXTURE) -> list[RegistryEntry]:
     return [
-        RegistryEntry(e["entity_id"], PLATFORM, e["unique_id"])
-        for e in load_fixture(FIXTURE)["entities"]
+        RegistryEntry(
+            e["entity_id"],
+            PLATFORM,
+            e["unique_id"],
+            usable=e.get("disabled_by") is None,
+        )
+        for e in load_fixture(fixture)["entities"]
     ]
 
 
@@ -51,15 +57,53 @@ def test_template_finds_every_signal() -> None:
         Signal.OUTDOOR_TEMP: "sensor.eu08l_ambient_temperature",
         Signal.FLOW_TEMP: hp + "flow_line_temperature",  # not hc1_…
         Signal.RETURN_TEMP: hp + "return_line_temperature",
+        Signal.FLOW_RATE: hp + "volume_flow_heat_sink",
     }
     assert match.missing == []
-    # No backup heater energy, flow rate left out (no volume_flow_rate class).
-    assert not {
-        Signal.AUX_HEATING,
-        Signal.AUX_DHW,
-        Signal.AUX_TOTAL,
-        Signal.FLOW_RATE,
-    } & set(LAMBDA.signals)
+    # No backup heater energy.
+    assert not {Signal.AUX_HEATING, Signal.AUX_DHW, Signal.AUX_TOTAL} & set(
+        LAMBDA.signals
+    )
+
+
+def test_real_installation() -> None:
+    """Registry of a real installation (forum user, EU13L, lambda_heat_pumps
+    3.6.1, heating only): hot water and cooling sensors disabled by the user
+    are left out, everything else is found."""
+    (match,) = find(LAMBDA, entries(REAL))
+    assert match.prefix == "eu13l_hp1"
+    hp = "sensor.eu13l_hp1_"
+    assert match.entities == {
+        Signal.HEAT_HEATING: hp + "heating_thermal_energy_total",
+        Signal.ELEC_HEATING: hp + "heating_energy_total",
+        Signal.ELEC_DEFROST: hp + "defrost_energy_total",
+        Signal.ELEC_STANDBY: hp + "stby_energy_total",
+        Signal.COMPRESSOR: hp + "compressor_unit_rating",
+        Signal.ACTIVITY: hp + "operating_state",
+        Signal.STARTS_TOTAL: hp + "compressor_start_cycling_total",
+        Signal.OUTDOOR_TEMP: "sensor.eu13l_ambient_temperature",
+        Signal.FLOW_TEMP: hp + "flow_line_temperature",
+        Signal.RETURN_TEMP: hp + "return_line_temperature",
+        Signal.FLOW_RATE: hp + "volume_flow_heat_sink",
+    }
+    rows = {e["entity_id"]: e for e in load_fixture(REAL)["entities"]}
+    for signal, entity_id in match.entities.items():
+        attributes = rows[entity_id]["attributes"]
+        if signal in ENERGY_SIGNALS:
+            # 3.6.1: heat and electricity both total_increasing, in kWh.
+            assert attributes == {
+                "unit_of_measurement": "kWh",
+                "device_class": "energy",
+                "state_class": "total_increasing",
+            }, entity_id
+    assert rows[hp + "volume_flow_heat_sink"]["attributes"] == {
+        "unit_of_measurement": "L/h",
+        "state_class": "measurement",
+    }
+    assert LAMBDA.parse_activity(rows[hp + "operating_state"]["state"]) is (
+        Activity.HEATING
+    )
+    assert parse_compressor(rows[hp + "compressor_unit_rating"]["state"])
 
 
 def test_energy_entities_are_lifetime_counters_in_kwh() -> None:
