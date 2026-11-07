@@ -647,7 +647,7 @@
     {
       "entity_id": "sensor.eu13l_hp1_flow_line_temperature",
       "unique_id": "eu13l_hp1_flow_line_temperature",
-      "state": "32.94",
+      "state": "36.93",
       "attributes": {
         "unit_of_measurement": "°C",
         "device_class": "temperature",
@@ -1161,7 +1161,7 @@
     {
       "entity_id": "sensor.eu13l_hp1_return_line_temperature",
       "unique_id": "eu13l_hp1_return_line_temperature",
-      "state": "36.93",
+      "state": "32.94",
       "attributes": {
         "unit_of_measurement": "°C",
         "device_class": "temperature",
