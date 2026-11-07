@@ -2,7 +2,7 @@
 
 ## Unveröffentlicht
 
-- **Lambda: Volumenstrom und Prüfung an einer echten Anlage.** Die Vorlage ordnet jetzt auch den Volumenstrom der Wärmesenke zu (`volume_flow_heat_sink`, L/h), den bisher nur die manuelle Zuordnung kannte; damit gibt es die Durchfluss-Prüfung ohne Handarbeit. Bestehende Lambda-Einträge ohne Volumenstrom übernehmen ihn beim nächsten Start selbst. Geprüft am Bericht einer echten EU13L (lambda_heat_pumps 3.6.1): Alle Zuordnungen stimmen, die Arbeitszahl passt zu der der Lambda (Dank an den Nutzer aus dem simon42-Forum). Die Vorlage bleibt vorerst Beta.
+- **Lambda nicht mehr Beta, dazu der Volumenstrom.** Die Vorlage ordnet jetzt auch den Volumenstrom der Wärmesenke zu (`volume_flow_heat_sink`, L/h), den bisher nur die manuelle Zuordnung kannte; damit gibt es die Durchfluss-Prüfung ohne Handarbeit. Bestehende Lambda-Einträge ohne Volumenstrom übernehmen ihn beim nächsten Start selbst. Geprüft am Bericht einer echten EU13L (lambda_heat_pumps 3.6.1): Alle Zuordnungen stimmen, die Arbeitszahl passt zu der der Lambda (Dank an den Nutzer aus dem simon42-Forum). In der Einrichtung steht sie deshalb jetzt ohne „(beta)“.
 
 ## 0.4.0 – 2026-11-07
 

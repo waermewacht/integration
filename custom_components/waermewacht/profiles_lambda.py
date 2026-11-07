@@ -5,7 +5,7 @@ GuidoJeuken-6512/lambda_heat_pumps 2.8.6 (commit 5ad6cd0, 2026-10-17) on
 2026-10-27; checked on 2026-11-07 against the registry of one real
 installation (EU13L, lambda_heat_pumps 3.6.1, tests/fixtures/
 lambda_eu13l_real.json): every signal found, performance factor as Lambda's
-own. Still beta (experimental) until more installations confirm it.
+own. Confirmed since then (not experimental; owner's decision 2026-11-07).
 
 Unique ids (utils.py, `generate_sensor_names`): "<name>_hp<N>_<key>" for the
 sensors of heat pump N and "<name>_<key>" for those of the main device
@@ -114,7 +114,7 @@ LAMBDA_ACTIVITY: dict[str, Activity] = {
 
 _S = "sensor"
 LAMBDA = LambdaTemplate(
-    experimental=True,
+    experimental=False,
     key="lambda",
     label="Lambda",
     platform="lambda_heat_pumps",
