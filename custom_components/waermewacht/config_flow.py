@@ -232,9 +232,7 @@ def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.
             # takes a section's default over its fields' suggested values
             # and left the boiler empty on a reconfigure (forum 07.11.).
             (
-                vol.Optional(name)
-                if name in LATER_SECTIONS
-                else vol.Required(name)
+                vol.Optional(name) if name in LATER_SECTIONS else vol.Required(name)
             ): section(
                 vol.Schema(
                     {
