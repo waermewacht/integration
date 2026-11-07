@@ -14,6 +14,7 @@ FIXTURES = {
     "ems_esp_cs6800i.json": "ems_esp",
     "ems_esp_long_names.json": "ems_esp",
     "ems_esp_hm200_hybrid.json": "ems_esp_heatpump",
+    "ems_esp_hm200_hybrid_real.json": "ems_esp_heatpump",
     "bosch_homecom_k40.json": "bosch_homecom",
     "luxtronik_lwd70a.json": "luxtronik",
     "stiebel_isg_wpmsystem.json": "stiebel_isg",

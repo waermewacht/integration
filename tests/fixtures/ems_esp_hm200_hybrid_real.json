@@ -1,0 +1,1224 @@
+{
+  "devices": [
+    {
+      "manufacturer": "Buderus",
+      "model": "Logano GB125/KB195i, Logamatic MC110"
+    },
+    {
+      "manufacturer": "",
+      "model": "HM200.2/Hybrid Manager HM200"
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_dhw_3_way_valve_active",
+      "unique_id": "boiler_dhw_3-way_valve_active",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_dhw_charging",
+      "unique_id": "boiler_dhw_charging",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_dhw_recharging",
+      "unique_id": "boiler_dhw_recharging",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_dhw_temperature_ok",
+      "unique_id": "boiler_dhw_temperature_ok",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_fan",
+      "unique_id": "boiler_fan",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_gas",
+      "unique_id": "boiler_gas",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_heating_active",
+      "unique_id": "boiler_heating_active",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_heating_pump",
+      "unique_id": "boiler_heating_pump",
+      "state": "on",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_ignition",
+      "unique_id": "boiler_ignition",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_pc1",
+      "unique_id": "boiler_pc1",
+      "state": "unavailable",
+      "attributes": {}
+    },
+    {
+      "entity_id": "binary_sensor.ems_esp_boiler_tapwater_active",
+      "unique_id": "boiler_tapwater_active",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "number.boiler_heatingcurve_base",
+      "unique_id": "boiler_heatingcurve_base",
+      "state": "21",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.boiler_heatingcurve_end",
+      "unique_id": "boiler_heatingcurve_end",
+      "state": "63",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.boiler_hysteresis_off_temperature",
+      "unique_id": "boiler_hysteresis_off_temperature",
+      "state": "2",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.boiler_hysteresis_on_temperature",
+      "unique_id": "boiler_hysteresis_on_temperature",
+      "state": "-2.2",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_boiler_pump_max_power",
+      "unique_id": "boiler_boiler_pump_max_power",
+      "state": "109",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_boiler_pump_min_power",
+      "unique_id": "boiler_boiler_pump_min_power",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_burner_max_power",
+      "unique_id": "boiler_burner_max_power",
+      "state": "80",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_burner_min_period",
+      "unique_id": "boiler_burner_min_period",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_burner_min_power",
+      "unique_id": "boiler_burner_min_power",
+      "state": "unavailable",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "device_class": "power_factor"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_burner_selected_max_power",
+      "unique_id": "boiler_burner_selected_max_power",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_disinfection_temperature",
+      "unique_id": "boiler_dhw_disinfection_temperature",
+      "state": "50",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_flow_temperature_offset",
+      "unique_id": "boiler_dhw_flow_temperature_offset",
+      "state": "10",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_hysteresis_off_temperature",
+      "unique_id": "boiler_dhw_hysteresis_off_temperature",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_hysteresis_on_temperature",
+      "unique_id": "boiler_dhw_hysteresis_on_temperature",
+      "state": "-3.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_maximum_temperature",
+      "unique_id": "boiler_dhw_maximum_temperature",
+      "state": "49",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_selected_lower_temperature",
+      "unique_id": "boiler_dhw_selected_lower_temperature",
+      "state": "29",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_selected_temperature",
+      "unique_id": "boiler_dhw_selected_temperature",
+      "state": "26",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_dhw_single_charge_temperature",
+      "unique_id": "boiler_dhw_single_charge_temperature",
+      "state": "67",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_emergency_temperature",
+      "unique_id": "boiler_emergency_temperature",
+      "state": "22",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_heating_temperature",
+      "unique_id": "boiler_heating_temperature",
+      "state": "66",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_nofrost_temperature",
+      "unique_id": "boiler_nofrost_temperature",
+      "state": "2",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_nominal_power",
+      "unique_id": "boiler_nominal_power",
+      "state": "12",
+      "attributes": {
+        "unit_of_measurement": "kW",
+        "device_class": "power"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_selected_flow_temperature",
+      "unique_id": "boiler_selected_flow_temperature",
+      "state": "10",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_summer_temperature",
+      "unique_id": "boiler_summer_temperature",
+      "state": "17",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_boiler_time_to_next_maintenance",
+      "unique_id": "boiler_time_to_next_maintenance",
+      "state": "6621",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "device_class": "duration"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_compressor_start_modulation",
+      "unique_id": "heatpump_compressor_start_modulation",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_energy_price_electric",
+      "unique_id": "heatpump_energy_price_electric",
+      "state": "44",
+      "attributes": {
+        "unit_of_measurement": "ct/kWh",
+        "device_class": "monetary"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_energy_price_gas",
+      "unique_id": "heatpump_energy_price_gas",
+      "state": "20",
+      "attributes": {
+        "unit_of_measurement": "ct/kWh",
+        "device_class": "monetary"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_feed_in_pv",
+      "unique_id": "heatpump_feed_in_pv",
+      "state": "10",
+      "attributes": {
+        "unit_of_measurement": "ct/kWh",
+        "device_class": "monetary"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_heatpump_output",
+      "unique_id": "heatpump_heatpump_output",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_low_noise_starttime",
+      "unique_id": "heatpump_low_noise_starttime",
+      "state": "15",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "device_class": "duration"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_low_noise_stoptime",
+      "unique_id": "heatpump_low_noise_stoptime",
+      "state": "7",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "device_class": "duration"
+      }
+    },
+    {
+      "entity_id": "number.ems_esp_heatpump_outside_switchover_temperature",
+      "unique_id": "heatpump_outside_switchover_temperature",
+      "state": "2",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      }
+    },
+    {
+      "entity_id": "select.boiler_chimney_sweeper",
+      "unique_id": "boiler_chimney_sweeper",
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_abschalten",
+      "unique_id": "boiler_shutdown",
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_boiler_pump_characteristic",
+      "unique_id": "boiler_boiler_pump_characteristic",
+      "state": "proportional",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_dhw_circulation_pump_mode",
+      "unique_id": "boiler_dhw_circulation_pump_mode",
+      "state": "4x3min",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_dhw_comfort_mode",
+      "unique_id": "boiler_dhw_comfort_mode",
+      "state": "gehobener Komfort",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_maintenance_scheduled",
+      "unique_id": "boiler_maintenance_scheduled",
+      "state": "Datum",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_boiler_reset",
+      "unique_id": "boiler_reset",
+      "state": "unknown",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_heatpump_dhw_hybrid_dhw",
+      "unique_id": "heatpump_dhw_hybrid_dhw",
+      "state": "gehobener Komfort",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_heatpump_hybrid_control_strategy",
+      "unique_id": "heatpump_hybrid_control_strategy",
+      "state": "kostenoptimiert",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_heatpump_hybrid_dhw",
+      "unique_id": "heatpump_hybrid_dhw",
+      "state": "unavailable",
+      "attributes": {}
+    },
+    {
+      "entity_id": "select.ems_esp_heatpump_low_noise_mode",
+      "unique_id": "heatpump_low_noise_mode",
+      "state": "aus",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_burner_current_power",
+      "unique_id": "boiler_burner_current_power",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_burner_current_power_absolute",
+      "unique_id": "boiler_burner_current_power_(absolute)",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_burner_stage_2_operating_time",
+      "unique_id": "boiler_burner_stage_2_operating_time",
+      "state": "117039",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_burner_starts",
+      "unique_id": "boiler_burner_starts",
+      "state": "8314",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_burner_starts_heating",
+      "unique_id": "boiler_burner_starts_heating",
+      "state": "4155",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_current_flow_temperature",
+      "unique_id": "boiler_current_flow_temperature",
+      "state": "32.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_active_time",
+      "unique_id": "boiler_dhw_active_time",
+      "state": "9554",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_current_extern_temperature",
+      "unique_id": "boiler_dhw_current_extern_temperature",
+      "state": "33.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_current_intern_temperature",
+      "unique_id": "boiler_dhw_current_intern_temperature",
+      "state": "25.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_current_tap_water_flow",
+      "unique_id": "boiler_dhw_current_tap_water_flow",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "L/min",
+        "device_class": "volume_flow_rate",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_energy",
+      "unique_id": "boiler_dhw_energy",
+      "state": "3086.11",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_energy_2",
+      "unique_id": "boiler_dhw_energy_2",
+      "state": "1590",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_gas_meter",
+      "unique_id": "boiler_dhw_gas_meter",
+      "state": "2421.3",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_meter",
+      "unique_id": "boiler_dhw_meter",
+      "state": "5.1",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_set_temperature",
+      "unique_id": "boiler_dhw_set_temperature",
+      "state": "9",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_dhw_starts",
+      "unique_id": "boiler_dhw_starts",
+      "state": "371",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_energy_heating",
+      "unique_id": "boiler_energy_heating",
+      "state": "27310.9",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_energy_heating_2",
+      "unique_id": "boiler_energy_heating_2",
+      "state": "19510.2",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_exhaust_temperature",
+      "unique_id": "boiler_exhaust_temperature",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_flame_current",
+      "unique_id": "boiler_flame_current",
+      "state": "0.1",
+      "attributes": {
+        "unit_of_measurement": "µA",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_flow_pc0",
+      "unique_id": "boiler_flow_pc0",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "L/h",
+        "device_class": "volume_flow_rate",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_gas_meter_heating",
+      "unique_id": "boiler_gas_meter_heating",
+      "state": "25913",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_heating_block",
+      "unique_id": "boiler_heating_block",
+      "state": "37.4",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_heating_pump_modulation",
+      "unique_id": "boiler_heating_pump_modulation",
+      "state": "76",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_last_error_code",
+      "unique_id": "boiler_last_error_code",
+      "state": "5L(543) 01.01.1001 00:00 - 01.01.1001 00:10",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_maintenance_message",
+      "unique_id": "boiler_maintenance_message",
+      "state": "H20",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_meter_heating",
+      "unique_id": "boiler_meter_heating",
+      "state": "16.8",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_outside_temperature",
+      "unique_id": "boiler_outside_temperature",
+      "state": "6.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_return_temperature",
+      "unique_id": "boiler_return_temperature",
+      "state": "23.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_service_code",
+      "unique_id": "boiler_service_code",
+      "state": "0H",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_service_code_number",
+      "unique_id": "boiler_service_code_number",
+      "state": "164",
+      "attributes": {
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_system_pressure",
+      "unique_id": "boiler_system_pressure",
+      "state": "2.0",
+      "attributes": {
+        "unit_of_measurement": "bar",
+        "device_class": "pressure",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_total_burner_operating_time",
+      "unique_id": "boiler_total_burner_operating_time",
+      "state": "132216",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_total_energy",
+      "unique_id": "boiler_total_energy",
+      "state": "23491.11",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_total_heat_operating_time",
+      "unique_id": "boiler_total_heat_operating_time",
+      "state": "198117",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_boiler_total_uba_operating_time",
+      "unique_id": "boiler_total_uba_operating_time",
+      "state": "731148",
+      "attributes": {
+        "unit_of_measurement": "min",
+        "device_class": "duration",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_air_inlet_temperature_tl2",
+      "unique_id": "heatpump_air_inlet_temperature_(tl2)",
+      "state": "4.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_compressor_inlet_temperature_tr5",
+      "unique_id": "heatpump_compressor_inlet_temperature_(tr5)",
+      "state": "2.7",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_compressor_outlet_temperature_tr6",
+      "unique_id": "heatpump_compressor_outlet_temperature_(tr6)",
+      "state": "37",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_compressor_speed",
+      "unique_id": "heatpump_compressor_speed",
+      "state": "21",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_compressor_temperature_tr1",
+      "unique_id": "heatpump_compressor_temperature_(tr1)",
+      "state": "67.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_current_flow_temperature",
+      "unique_id": "heatpump_current_flow_temperature",
+      "state": "38.6",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_el_consumption",
+      "unique_id": "heatpump_dhw_el._consumption",
+      "state": "310.3",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_el_generation",
+      "unique_id": "heatpump_dhw_el_generation",
+      "state": "1637.6",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_energy",
+      "unique_id": "heatpump_dhw_energy",
+      "state": null,
+      "attributes": {
+        "device_class": "energy"
+      },
+      "disabled_by": "user"
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_fuel_consumption",
+      "unique_id": "heatpump_dhw_fuel_consumption",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_meter",
+      "unique_id": "heatpump_dhw_meter",
+      "state": "493.01",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_dhw_starts_hp",
+      "unique_id": "heatpump_dhw_starts_hp",
+      "state": "134",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_drain_pan_temp_ta4",
+      "unique_id": "heatpump_drain_pan_temp_(ta4)",
+      "state": "9.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_el_consumption_heating",
+      "unique_id": "heatpump_el._consumption_heating",
+      "state": "2152.9",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_el_generation_heating",
+      "unique_id": "heatpump_el._generation_heating",
+      "state": "9463.3",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_energy_heating",
+      "unique_id": "heatpump_energy_heating",
+      "state": "4714.10",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_evaporator_inlet_temperature_tr4",
+      "unique_id": "heatpump_evaporator_inlet_temperature_(tr4)",
+      "state": "0.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_fuel_consumption_heating",
+      "unique_id": "heatpump_fuel_consumption_heating",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_heating_control_starts",
+      "unique_id": "heatpump_heating_control_starts",
+      "state": "1620",
+      "attributes": {
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_heating_pump_modulation",
+      "unique_id": "heatpump_heating_pump_modulation",
+      "state": "109",
+      "attributes": {
+        "unit_of_measurement": "%",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_high_pressure_side_temperature_ph1",
+      "unique_id": "heatpump_high_pressure_side_temperature_(ph1)",
+      "state": "30.1",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_low_pressure_side_temperature_pl1",
+      "unique_id": "heatpump_low_pressure_side_temperature_(pl1)",
+      "state": "-0.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_meter_compressor",
+      "unique_id": "heatpump_meter_compressor",
+      "state": "3954.50",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_meter_e_heater",
+      "unique_id": "heatpump_meter_e-heater",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_meter_heating",
+      "unique_id": "heatpump_meter_heating",
+      "state": "3657.5",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_meter_total",
+      "unique_id": "heatpump_meter_total",
+      "state": "2067.16",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_refrigerant_temperature_liquid_side_condenser_output_tr3",
+      "unique_id": "heatpump_refrigerant_temperature_liquid_side_(condenser_output)_(tr3",
+      "state": "32",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_return_temperature",
+      "unique_id": "heatpump_return_temperature",
+      "state": "25.6",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.ems_esp_heatpump_system_return_temperature",
+      "unique_id": "heatpump_system_return_temperature",
+      "state": "45.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_compressor_activity",
+      "unique_id": "heatpump_compressor_activity",
+      "state": "Heizen",
+      "attributes": {}
+    },
+    {
+      "entity_id": "sensor.heatpump_compressor_current_power",
+      "unique_id": "heatpump_compressor_current_power",
+      "state": "1043",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_compressor_power_output",
+      "unique_id": "heatpump_compressor_power_output",
+      "state": "3275",
+      "attributes": {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_el_consuption",
+      "unique_id": "heatpump_dhw_el_consuption",
+      "state": "unavailable",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_dhw_fuel_consuption",
+      "unique_id": "heatpump_dhw_fuel_consuption",
+      "state": "unavailable",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_el_consuption_heating",
+      "unique_id": "heatpump_el._consuption_heating",
+      "state": "unavailable",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "sensor.heatpump_fuel_consuption_heating",
+      "unique_id": "heatpump_fuel_consuption_heating",
+      "state": "unavailable",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      }
+    },
+    {
+      "entity_id": "switch.boiler_dhw_dhw_priority",
+      "unique_id": "boiler_dhw_dhw_priority",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_activated",
+      "unique_id": "boiler_dhw_activated",
+      "state": "on",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_charge_optimization",
+      "unique_id": "boiler_dhw_charge_optimization",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_circulation_active",
+      "unique_id": "boiler_dhw_circulation_active",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_circulation_pump_available",
+      "unique_id": "boiler_dhw_circulation_pump_available",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_disinfecting",
+      "unique_id": "boiler_dhw_disinfecting",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_dhw_one_time_charging",
+      "unique_id": "boiler_dhw_one_time_charging",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_emergency_operation",
+      "unique_id": "boiler_emergency_operation",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_force_heating_off",
+      "unique_id": "boiler_force_heating_off",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_heating_activated",
+      "unique_id": "boiler_heating_activated",
+      "state": "on",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_heatingcurve_on",
+      "unique_id": "boiler_heatingcurve_on",
+      "state": "on",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_boiler_nofrost_mode",
+      "unique_id": "boiler_nofrost_mode",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_heatpump_air_purge_mode",
+      "unique_id": "heatpump_air_purge_mode",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_heatpump_cooling_circuit",
+      "unique_id": "heatpump_cooling_circuit",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_heatpump_heat_drain_pan",
+      "unique_id": "heatpump_heat_drain_pan",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "switch.ems_esp_heatpump_heating_cable",
+      "unique_id": "heatpump_heating_cable",
+      "state": "off",
+      "attributes": {}
+    },
+    {
+      "entity_id": "text.boiler_next_maintenance_date",
+      "unique_id": "boiler_next_maintenance_date",
+      "state": "01.01.1002",
+      "attributes": {}
+    }
+  ]
+}

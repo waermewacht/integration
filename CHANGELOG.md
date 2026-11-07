@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Hybridanlage (EMS-ESP mit langen Namen): Vorlauf und Rücklauf.** Die Vorlage „EMS-ESP Heatpump (HM200, HP Module)“ kannte für Vor- und Rücklauf nur die kurzen MQTT-Namen (`curflowtemp`, `rettemp`). Bei EMS-ESP mit langen Namen (`…heatpump_current_flow_temperature`, `…heatpump_return_temperature`) blieben beide leer und damit Spreizung und Vorlauf je Tag. Bestehende Einträge: unter *Neu konfigurieren* nachtragen. Geprüft an der Diagnose einer echten Anlage (Logano GB125 + HM200.2, Dank an den Nutzer aus dem simon42-Forum).
 - **Bericht für Fehlermeldung lesbarer:** Einstellungen ohne Python-Schreibweise – `yes`/`no` statt `True`/`False`, `none` statt `None`, Listen ohne Klammern, Zeitpunkte als `2026-11-07 12:39 UTC`. Auch „beta template“, „day values“ und „previous day“.
 - **Vorbereitet auf Home Assistant 2027.10:** Die Karte „Jetzt“ liest das Gerät über `config_entry_id` statt des seit 2026.11 abgekündigten `config_entries` (HA schrieb dazu eine Warnung ins Protokoll).
 

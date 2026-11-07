@@ -442,8 +442,16 @@ EMS_ESP_HEATPUMP = Template(
             (_S, "heatpump_hpactivity"),
             (_S, "heatpump_compressor_activity"),
         ),
-        Signal.FLOW_TEMP: ((_S, "heatpump_curflowtemp"),),
-        Signal.RETURN_TEMP: ((_S, "heatpump_rettemp"),),
+        # Short name (MQTT format "short names") and long name ("long
+        # names", unique id from the English full name), as in Signal.HEAT_*.
+        Signal.FLOW_TEMP: (
+            (_S, "heatpump_curflowtemp"),
+            (_S, "heatpump_current_flow_temperature"),
+        ),
+        Signal.RETURN_TEMP: (
+            (_S, "heatpump_rettemp"),
+            (_S, "heatpump_return_temperature"),
+        ),
         Signal.OUTDOOR_TEMP: (
             (_S, "boiler_outdoortemp"),
             (_S, "boiler_outside_temperature"),

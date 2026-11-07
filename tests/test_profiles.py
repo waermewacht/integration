@@ -298,6 +298,42 @@ def test_hybrid_manager_is_the_heat_pump_and_the_boiler_is_not() -> None:
     }
 
 
+def test_hybrid_real_installation_long_names() -> None:
+    """A real hybrid (forum user, GB125 + HM200.2, EMS-ESP with long names):
+    flow and return under their long names too (the first release knew only
+    curflowtemp/rettemp and left them empty); the heat pump's DHW energy is
+    disabled by the user and left out."""
+    rows = load_fixture("ems_esp_hm200_hybrid_real.json")["entities"]
+    entries = [
+        RegistryEntry(
+            r["entity_id"], "mqtt", r["unique_id"], usable=r.get("disabled_by") is None
+        )
+        for r in rows
+    ]
+    assert find(EMS_ESP, entries) == []
+    (match,) = find(EMS_ESP_HEATPUMP, entries)
+    hp = "sensor.ems_esp_heatpump_"
+    boiler = "sensor.ems_esp_boiler_"
+    assert match.entities == {
+        Signal.HEAT_HEATING: hp + "energy_heating",
+        Signal.ELEC_HEATING: hp + "meter_heating",
+        Signal.ELEC_DHW: hp + "dhw_meter",
+        Signal.AUX_TOTAL: hp + "meter_e_heater",
+        Signal.COMPRESSOR: hp + "compressor_speed",
+        # An entity of an older discovery, without the "ems_esp_" prefix.
+        Signal.ACTIVITY: "sensor.heatpump_compressor_activity",
+        Signal.FLOW_TEMP: hp + "current_flow_temperature",
+        Signal.RETURN_TEMP: hp + "return_temperature",
+        Signal.OUTDOOR_TEMP: boiler + "outside_temperature",
+        Signal.DHW_TEMP: boiler + "dhw_current_intern_temperature",
+        Signal.BOILER_HEAT_HEATING: boiler + "energy_heating_2",
+        Signal.BOILER_HEAT_DHW: boiler + "dhw_energy_2",
+        Signal.FUEL_HEATING: boiler + "gas_meter_heating",
+        Signal.FUEL_DHW: boiler + "dhw_gas_meter",
+    }
+    assert match.missing == [Signal.HEAT_DHW]
+
+
 @pytest.mark.parametrize(
     ("state", "activity"),
     [
