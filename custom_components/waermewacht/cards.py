@@ -59,7 +59,13 @@ def source_entities(hass: HomeAssistant, device_id: str) -> dict[str, str] | Non
     device = dr.async_get(hass).async_get(device_id)
     if device is None:
         return None
-    for entry_id in device.config_entries:
+    # Since HA 2026.11 a device belongs to one entry (`config_entry_id`);
+    # `config_entries` warns and goes in 2027.10. Older versions only have it.
+    if hasattr(device, "config_entry_id"):
+        entry_ids = [device.config_entry_id] if device.config_entry_id else []
+    else:
+        entry_ids = list(device.config_entries)
+    for entry_id in entry_ids:
         entry = hass.config_entries.async_get_entry(entry_id)
         if (
             entry is None

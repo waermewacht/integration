@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Bericht für Fehlermeldung lesbarer:** Einstellungen ohne Python-Schreibweise – `yes`/`no` statt `True`/`False`, `none` statt `None`, Listen ohne Klammern, Zeitpunkte als `2026-11-07 12:39 UTC`. Auch „beta template“, „day values“ und „previous day“.
+- **Vorbereitet auf Home Assistant 2027.10:** Die Karte „Jetzt“ liest das Gerät über `config_entry_id` statt des seit 2026.11 abgekündigten `config_entries` (HA schrieb dazu eine Warnung ins Protokoll).
+
 ## 0.4.1 – 2026-11-07
 
 - **Neu: Karte „Wärmewacht Gas- und Ölheizung“** (`custom:waermewacht-boiler-card`) für den Eintrag einer Gas- oder Ölheizung vor dem Umstieg: Energiesignatur als Diagramm (auch die vorläufige Gerade), Heizlast je Kelvin und nach Norm, Heizgrenze, Wärme je Gradtag, Vorlauf, Warmwasseranteil, Verbrauch (bei Öl mit Litern) und Kosten der letzten 365 Tage. Fehlt ein Wert, steht der Grund in der Kachel; bei der Heizlast auch, was den Daten noch fehlt (etwa „2 von 8 Wochen · 0 von 5 Frosttagen“). Die Sammelkarte `custom:waermewacht-card` zeigt sie, wenn ein Gas- oder Öl-Gerät gewählt ist. Anlass: Rückmeldung aus dem simon42-Forum.

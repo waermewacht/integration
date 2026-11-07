@@ -14,7 +14,7 @@ from .binary_sensor import _heating
 from .const import CONF_ENTITIES, CONF_MANUAL_UNIT, CONF_TEMPLATE, DOMAIN, VERSION
 from .entity import HeatPumpEntity
 from .gas_runtime import GasRuntime
-from .issue_report import build, show
+from .issue_report import build, show, text
 from .runtime import HeatPumpRuntime
 
 NAME = "Wärmewacht"
@@ -94,9 +94,9 @@ def _heat_pump_lines(
     return [
         ("kind", "heat pump"),
         ("template", str(entry.data.get(CONF_TEMPLATE) or "own mapping")),
-        ("beta template", str(template.experimental)),
-        ("day values", str(template.day_values)),
-        ("previous day", str(template.previous_day)),
+        ("beta template", text(template.experimental)),
+        ("day values", text(template.day_values)),
+        ("previous day", text(template.previous_day)),
         ("since", runtime.since.date().isoformat() if runtime.since else "-"),
         (
             "counter events",
