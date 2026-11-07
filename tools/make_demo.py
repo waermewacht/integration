@@ -79,8 +79,10 @@ from custom_components.waermewacht.cycling import (  # noqa: E402
     prune,
 )
 from custom_components.waermewacht.degree_days import (  # noqa: E402
+    change_percent,
     daily_degree_days,
     degree_days,
+    year_before,
 )
 from custom_components.waermewacht.energy import (  # noqa: E402
     Kind,
@@ -860,6 +862,12 @@ class Sim:
             "degree_days_previous": degree_days(
                 *last_building, TZ, previous.astimezone(TZ).date(), first
             ),
+            "degree_days_same_period": degree_days(
+                *last_building,
+                TZ,
+                previous.astimezone(TZ).date(),
+                max(previous.astimezone(TZ).date(), year_before(today)),
+            ),
             "flow_curves": flow_curves,
             "efficiency_drop": efficiency_drop(
                 curves["current"], curves["previous"], threshold=DROP_THRESHOLD
@@ -1182,6 +1190,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         previous_slope=_r(flow_before.slope, 2),
     )
     dd, ddp = a["degree_days"], a["degree_days_previous"]
+    dds = a["degree_days_same_period"]
     put(
         "degree_days_season",
         round(dd.degree_days, 1),
@@ -1199,6 +1208,11 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "kWh/K·d",
         2,
         previous_season=_r(ddp.kwh_per_degree_day),
+        previous_same_period=_r(dds.kwh_per_degree_day),
+        previous_same_period_until=None
+        if dds.end <= dds.start
+        else (dds.end - DAY).isoformat(),
+        change_percent=change_percent(dd.kwh_per_degree_day, dds.kwh_per_degree_day),
     )
 
     # Hot water (no thermal disinfection on this page).

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -34,6 +35,7 @@ from . import WaermewachtConfigEntry, is_gas
 from .binary_sensor import health_checks
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_with_gas
+from .degree_days import change_percent
 from .energy import (
     SEASONAL_MODES,
     Kind,
@@ -667,10 +669,23 @@ def _per_degree_day(runtime: HeatPumpRuntime) -> float | None:
 
 def _per_degree_day_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     previous = runtime.degree_days_previous
+    same = runtime.degree_days_same_period
+    current = runtime.degree_days
+    previous_same = None if same is None else _round(same.kwh_per_degree_day)
     return {
         "previous_season": None
         if previous is None
-        else _round(previous.kwh_per_degree_day)
+        else _round(previous.kwh_per_degree_day),
+        # The previous season up to the same day (fair against a season so
+        # far), its last day and the change of this season against it.
+        "previous_same_period": previous_same,
+        "previous_same_period_until": None
+        if same is None or same.end <= same.start
+        else (same.end - timedelta(days=1)).isoformat(),
+        "change_percent": change_percent(
+            None if current is None else current.kwh_per_degree_day,
+            None if same is None else same.kwh_per_degree_day,
+        ),
     }
 
 

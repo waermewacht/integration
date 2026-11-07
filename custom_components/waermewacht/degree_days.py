@@ -115,6 +115,22 @@ class DegreeDays:
         return len(self.missing_days)
 
 
+def year_before(day: date) -> date:
+    """The same calendar day a year earlier; 29 February becomes the 28th."""
+    try:
+        return day.replace(year=day.year - 1)
+    except ValueError:
+        return day.replace(year=day.year - 1, day=28)
+
+
+def change_percent(current: float | None, previous: float | None) -> float | None:
+    """Change of `current` against `previous` in percent, rounded to whole
+    percent; None without both values."""
+    if current is None or previous is None or previous <= 0:
+        return None
+    return round((current / previous - 1) * 100)
+
+
 def valid_outdoor(value: float | None) -> bool:
     """An hourly outdoor mean inside the plausible range."""
     return (

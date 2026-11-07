@@ -111,7 +111,7 @@ from .cycling import (
     season_starts_baseline,
 )
 from .day_counters import async_wrong_counters, wrong_kind
-from .degree_days import DegreeDays, daily_degree_days, degree_days
+from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
 from .energy import Kind, Totals, building_hours, replace_boiler
 from .entity import own_entities
 from .health import (
@@ -402,6 +402,7 @@ class HeatPumpRuntime:
         # current and the previous season.
         self.flow_curves: dict[str, FlowCurve] = {}
         self.degree_days_previous: DegreeDays | None = None
+        self.degree_days_same_period: DegreeDays | None = None
         self.analysed_at: datetime | None = None
         self._analysis_day: date | None = None
         self._counter_check_day: date | None = None  # last check of counter kinds
@@ -970,6 +971,15 @@ class HeatPumpRuntime:
             self.degree_days = degree_days(*this_building, self.tz, first, today)
             self.degree_days_previous = degree_days(
                 *last_building, self.tz, previous.astimezone(self.tz).date(), first
+            )
+            # The previous season up to the same day: the whole previous
+            # season holds the darker winter months, so heat per degree day
+            # of a season so far compares fairly only with this window.
+            self.degree_days_same_period = degree_days(
+                *last_building,
+                self.tz,
+                previous.astimezone(self.tz).date(),
+                max(previous.astimezone(self.tz).date(), year_before(today)),
             )
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)

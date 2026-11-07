@@ -131,6 +131,7 @@ const TEXT = {
     charges: (n, m) => `${n}× · Ø ${m} min`,
     withDhw: (v) => `mit Warmwasser ${v} %`,
     previous: "Vorsaison",
+    sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
     signature: "Energiesignatur",
     current: "Laufende Saison",
@@ -286,6 +287,7 @@ const TEXT = {
     charges: (n, m) => `${n}× · mean ${m} min`,
     withDhw: (v) => `with hot water ${v} %`,
     previous: "previous season",
+    sameLastYear: "last year to date",
     curve: "Performance curve heating",
     signature: "Energy signature",
     current: "Current season",
@@ -719,6 +721,18 @@ class WaermewachtCard extends HTMLElement {
     return this._tile(this._entities[key], label, extra);
   }
 
+  /** "last year to date 2.31 (−7 %)": the previous season up to the same
+   * day; empty without it (then the whole previous season is shown). */
+  _sameLastYear(t, attributes) {
+    const value = attributes.previous_same_period;
+    if (value === undefined || value === null) return "";
+    const change = attributes.change_percent;
+    const percent = change === undefined || change === null
+      ? ""
+      : ` (${change > 0 ? "+" : change < 0 ? "−" : "±"}${this._num(Math.abs(change), 0)} %)`;
+    return `${t.sameLastYear} ${this._num(value, 2)}${percent}`;
+  }
+
   _grid(tiles) {
     const shown = tiles.filter(Boolean);
     return shown.length ? `<div class="grid">${shown.join("")}</div>` : "";
@@ -874,7 +888,8 @@ class WaermewachtCard extends HTMLElement {
       this._own("heat_load_per_kelvin", t.tiles.heat_load_per_kelvin),
       this._own("heat_load_design", t.tiles.heat_load_design),
       this._own("heating_limit", t.tiles.heating_limit),
-      this._own("heat_per_degree_day_season", t.tiles.heat_per_degree_day_season, previous(perDegree.previous_season, 2)),
+      this._own("heat_per_degree_day_season", t.tiles.heat_per_degree_day_season, this._sameLastYear(t, perDegree)
+        || previous(perDegree.previous_season, 2)),
       this._own("flow_at_zero", t.tiles.flow_at_zero, previous(flow.previous_season, 1, " °C")),
       this._own("oversize_factor", t.tiles.oversize_factor),
     ]);

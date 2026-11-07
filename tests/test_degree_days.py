@@ -13,8 +13,10 @@ import pytest
 from custom_components.waermewacht.degree_days import (
     G20_15,
     DegreeDayBase,
+    change_percent,
     daily_degree_days,
     degree_days,
+    year_before,
 )
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.model import Mode
@@ -203,3 +205,33 @@ def test_hours_outside_the_period_are_ignored() -> None:
     assert result.days_counted == 1
     assert result.degree_days == pytest.approx(15.0)
     assert result.heating_kwh == pytest.approx(24.0)
+
+
+def test_year_before_keeps_the_calendar_day() -> None:
+    assert year_before(date(2026, 11, 7)) == date(2025, 11, 7)
+    assert year_before(date(2028, 2, 29)) == date(2027, 2, 28)
+
+
+def test_change_percent() -> None:
+    assert change_percent(2.17, 2.33) == -7
+    assert change_percent(2.5, 2.0) == 25
+    assert change_percent(None, 2.0) is None
+    assert change_percent(2.0, None) is None
+    assert change_percent(2.0, 0.0) is None
+
+
+def test_same_period_last_year_leaves_out_the_later_months() -> None:
+    """A season so far against the previous season up to the same day: the
+    darker months after it (here a January needing more heat per degree
+    day) do not count."""
+    hours, outdoor = build(
+        {
+            date(2025, 10, 20): (5.0, 1.0),  # 15 Kd, 24 kWh: 1.6 kWh/K·d
+            date(2026, 1, 10): (-5.0, 2.5),  # 25 Kd, 60 kWh: 2.4 kWh/K·d
+        }
+    )
+    season = date(2025, 9, 1)
+    whole = degree_days(hours, outdoor, BERLIN, season, date(2026, 9, 1))
+    same = degree_days(hours, outdoor, BERLIN, season, year_before(date(2026, 11, 7)))
+    assert same.kwh_per_degree_day == pytest.approx(1.6)
+    assert whole.kwh_per_degree_day > same.kwh_per_degree_day

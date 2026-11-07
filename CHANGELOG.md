@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Wärme je Gradtag: Vergleich mit dem Vorjahr bis heute.** Der Sensor „Wärme je Gradtag Saison“ verglich die laufende Saison bisher nur mit der *ganzen* Vorsaison. Die enthält aber auch die dunklen Wintermonate, die je Gradtag mehr Wärme brauchen; im Herbst sah das Haus dadurch besser aus, als es ist. Neu sind die Attribute `previous_same_period` (Vorsaison bis zum selben Tag des Vorjahrs), `previous_same_period_until` und `change_percent`, und die Karte „Kennlinie und Heizlast“ zeigt in der Kachel „Vorjahr bis heute 2,31 (−7 %)“. So sieht man witterungsbereinigt, ob das Haus diese Saison mehr oder weniger braucht, etwa nach einer geänderten Heizkurve. Ohne Vorjahresdaten bleibt es bei der Vorsaison.
 - **Einrichtung: Kompressorstarts auch aus einem Zähler-Helfer.** Das Feld „Kompressorstarts gesamt“ bietet jetzt auch Helfer vom Typ *Zähler* (`counter.…`) an, nicht nur Sensoren. Ein solcher Helfer hat keine Langzeitstatistik; „Starts Saison“ beginnt dann mit dem ersten gesehenen Stand. Anlass: Rückmeldung aus dem simon42-Forum.
 
 ## 0.4.2 – 2026-11-07
