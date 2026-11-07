@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Einrichtung: Kompressorstarts auch aus einem Zähler-Helfer.** Das Feld „Kompressorstarts gesamt“ bietet jetzt auch Helfer vom Typ *Zähler* (`counter.…`) an, nicht nur Sensoren. Ein solcher Helfer hat keine Langzeitstatistik; „Starts Saison“ beginnt dann mit dem ersten gesehenen Stand. Anlass: Rückmeldung aus dem simon42-Forum.
+
 ## 0.4.2 – 2026-11-07
 
 - **Hybridanlage: Kessel beim Neu konfigurieren vorbelegt.** Der Abschnitt „Kessel (Hybridanlage)“ stand beim *Neu konfigurieren* immer leer da, obwohl die Zähler gespeichert waren (das Frontend ließ seinen leeren Standardwert vor der Vorbelegung gelten); wer dann OK drückte, verlor die Kessel-Zähler. Auch die Funde der Vorlage für den Kessel erschienen bei der Einrichtung nicht. Jetzt ist der Abschnitt vorbelegt wie die anderen. Wer schon einmal OK gedrückt hat: Kessel-Zähler unter *Neu konfigurieren* wieder eintragen. Anlass: Rückmeldung aus dem simon42-Forum.

@@ -226,6 +226,35 @@ async def test_homecom_is_found_and_prefilled(hass: HomeAssistant) -> None:
     assert result["data"][CONF_TEMPLATE] == "bosch_homecom"
 
 
+def test_starts_total_offers_counter_helpers() -> None:
+    """A counter helper counting the compressor starts (forum 07.11.)."""
+    (only,) = _selector(Signal.STARTS_TOTAL).config["filter"]
+    assert set(only["domain"]) == {"sensor", "counter"}
+
+
+async def test_starts_total_from_counter_helper(hass: HomeAssistant) -> None:
+    """The form takes a counter helper as the starts total."""
+    hass.states.async_set("sensor.heat", "1.0", ENERGY)
+    hass.states.async_set("sensor.elec", "1.0", ENERGY)
+    hass.states.async_set("counter.wp_starts", "1503")
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            **EMPTY_SECTIONS,
+            "heating": {"heat_heating": "sensor.heat", "elec_heating": "sensor.elec"},
+            "operation": {"starts_total": "counter.wp_starts"},
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_ENTITIES]["starts_total"] == "counter.wp_starts"
+
+
 def test_flow_rate_without_device_class_is_offered() -> None:
     """P1P2MQTT and others give L/min without device class volume_flow_rate."""
     filters = _selector(Signal.FLOW_RATE).config["filter"]

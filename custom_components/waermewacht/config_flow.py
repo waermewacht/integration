@@ -172,6 +172,10 @@ def _selector(signal: Signal) -> selector.EntitySelector:
         )
     elif signal is Signal.COOLING_MODE:
         filters = selector.EntityFilterSelectorConfig(domain=["select", "sensor"])
+    elif signal is Signal.STARTS_TOTAL:
+        # Also a counter helper counting the starts (forum 07.11.); its state
+        # is a whole number like a sensor's.
+        filters = selector.EntityFilterSelectorConfig(domain=["sensor", "counter"])
     elif signal is Signal.COMPRESSOR:
         # On/off, or a speed or modulation in % (Bosch HomeCom).
         filters = selector.EntityFilterSelectorConfig(
