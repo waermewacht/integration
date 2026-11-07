@@ -424,7 +424,15 @@ EMS_ESP_HEATPUMP = Template(
             (_S, "heatpump_nrgheat"),
             (_S, "heatpump_energy_heating"),
         ),
-        Signal.HEAT_DHW: ((_S, "heatpump_dhw_nrg"), (_S, "heatpump_dhw_energy")),
+        # Last: "el. Erzeugung" (0x13B), equal to the heat on a real HM200
+        # (1313.5 to 1313.4 kWh, heating 7843.5 to 7843.6), for when the
+        # user disabled dhw_energy (forum 07.11.). Long name only, its short
+        # name is unknown.
+        Signal.HEAT_DHW: (
+            (_S, "heatpump_dhw_nrg"),
+            (_S, "heatpump_dhw_energy"),
+            (_S, "heatpump_dhw_el_generation"),
+        ),
         Signal.ELEC_HEATING: (
             (_S, "heatpump_meterheat"),
             (_S, "heatpump_meter_heating"),

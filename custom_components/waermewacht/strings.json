@@ -59,10 +59,10 @@
             },
             "description": "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
             "data_description": {
-              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
-              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
-              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter."
+              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
+              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
+              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",
+              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter."
             }
           },
           "operation": {
@@ -149,10 +149,10 @@
               "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
               "aux_heating": "Electricity of the backup heater for heating, if it is metered apart.",
               "dhw_temp": "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections.",
-              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2.",
-              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
-              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter.",
+              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
+              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
+              "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",
+              "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter.",
               "compressor": "An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as \"heating\": that belongs under Activity.",
               "activity": "What the heat pump is doing (heating, hot water, defrost, ...), e.g. EMS-ESP \"hpactivity\". Gives defrosts and the mode of each run; without it runs are counted without a mode.",
               "starts_total": "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
@@ -216,9 +216,9 @@
           "boiler_efficiency": "Custom efficiency (Hs)"
         },
         "data_description": {
-          "gas_total": "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+          "gas_total": "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
           "gas_heating": "Only if the boiler counts heating and hot water apart; then add the hot water counter as well. Leave \"Oil total\" empty.",
-          "gas_dhw": "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter).",
+          "gas_dhw": "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter).",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
           "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
           "manual_unit": "Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity \"Enter meter reading\" or \"Enter tank level\", or the action \"Add meter reading (gas, oil)\". With the tank level, after filling up first \"Enter refill\", then the new level. Each period between two readings of 5 to 35 days is one point of the energy signature.",
@@ -232,6 +232,7 @@
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
       "aux_twice": "Backup heater either per mode or as total, not both.",
       "elec_twice": "Compressor electricity either per mode or as total, not both.",
+      "counter_twice": "The same counter is in two fields (e.g. as heat and as electricity). Each counter belongs in exactly one field.",
       "lifetime_counter": "An energy meter rose on several days without starting anew: it looks like a total counter. This source delivers day values (energy today); choose those here. If it is a day counter after all, submit again unchanged.",
       "day_counter": "An energy meter fell back at the same time of day on several days: it looks like a day counter (energy today). Choose lifetime counters (total energy) here. If it is a total counter after all, submit again unchanged.",
       "gas_none": "Choose a gas counter (total, or heating) or readings by hand.",

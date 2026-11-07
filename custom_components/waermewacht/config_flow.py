@@ -284,6 +284,11 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         s.value in entities for s in ELEC_SIGNALS.values()
     ):
         return "elec_twice"
+    # One counter in two fields books it twice, as heat and electricity
+    # even at a COP of 1 (forum 07.11.: the DHW electricity meter as heat).
+    counters = [entities[s.value] for s in ENERGY_SIGNALS if s.value in entities]
+    if len(counters) != len(set(counters)):
+        return "counter_twice"
     # The boiler only counts next to the heat pump's heating (its share,
     # the building's heat).
     if has_boiler(signals) and Signal.HEAT_HEATING not in signals:

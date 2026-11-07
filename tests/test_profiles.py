@@ -302,7 +302,7 @@ def test_hybrid_real_installation_long_names() -> None:
     """A real hybrid (forum user, GB125 + HM200.2, EMS-ESP with long names):
     flow and return under their long names too (the first release knew only
     curflowtemp/rettemp and left them empty); the heat pump's DHW energy is
-    disabled by the user and left out."""
+    disabled by the user, its "el. Erzeugung" stands in (the same heat)."""
     rows = load_fixture("ems_esp_hm200_hybrid_real.json")["entities"]
     entries = [
         RegistryEntry(
@@ -316,6 +316,7 @@ def test_hybrid_real_installation_long_names() -> None:
     boiler = "sensor.ems_esp_boiler_"
     assert match.entities == {
         Signal.HEAT_HEATING: hp + "energy_heating",
+        Signal.HEAT_DHW: hp + "dhw_el_generation",
         Signal.ELEC_HEATING: hp + "meter_heating",
         Signal.ELEC_DHW: hp + "dhw_meter",
         Signal.AUX_TOTAL: hp + "meter_e_heater",
@@ -331,7 +332,7 @@ def test_hybrid_real_installation_long_names() -> None:
         Signal.FUEL_HEATING: boiler + "gas_meter_heating",
         Signal.FUEL_DHW: boiler + "dhw_gas_meter",
     }
-    assert match.missing == [Signal.HEAT_DHW]
+    assert match.missing == []
 
 
 @pytest.mark.parametrize(

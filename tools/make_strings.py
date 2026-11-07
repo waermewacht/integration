@@ -386,20 +386,20 @@ FIELDS = {
 # Help below a field of the setup form (data_description).
 FIELD_HELP = {
     "boiler_heat_heating": (
-        "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat: that one is only modulation × nominal power.",
-        "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat: Das ist nur Modulation × Nennleistung.",
+        "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
+        "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, in HA meist …boiler_energy_heating_2; Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat (…boiler_energy_heating): Das ist nur Modulation × Nennleistung.",
     ),
     "boiler_heat_dhw": (
-        "EMS-ESP: boiler_dhw_nrg2.",
-        "EMS-ESP: boiler_dhw_nrg2.",
+        "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
+        "EMS-ESP: boiler_dhw_nrg2, in HA meist …boiler_dhw_energy_2.",
     ),
     "fuel_heating": (
-        "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, also for oil). Used for the heat only without a heat counter.",
-        "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
+        "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",
+        "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, in HA meist …boiler_gas_meter_heating, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
     ),
     "fuel_dhw": (
-        "EMS-ESP: boiler_dhw_gasmeter.",
-        "EMS-ESP: boiler_dhw_gasmeter.",
+        "EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter.",
+        "EMS-ESP: boiler_dhw_gasmeter, in HA meist …boiler_dhw_gas_meter.",
     ),
     "elec_heating": (
         "Electricity of the compressor for heating, without the backup heater.",
@@ -645,6 +645,12 @@ def _build(lang: int) -> dict:
                     (
                         "Compressor electricity either per mode or as total, not both.",
                         "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
+                    )
+                ),
+                "counter_twice": t(
+                    (
+                        "The same counter is in two fields (e.g. as heat and as electricity). Each counter belongs in exactly one field.",
+                        "Derselbe Zähler steht in zwei Feldern (z. B. als Wärme und als Strom). Jeder Zähler gehört in genau ein Feld.",
                     )
                 ),
                 "lifetime_counter": t(
@@ -1508,16 +1514,16 @@ OWN_EFFICIENCY_HELP = (
 )
 OIL_FIELD_HELP = {
     "gas_total": (
-        "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
-        "Ein Ölzähler in Litern oder ein Zähler in kWh, etwa der Brennstoffzähler des Kessels (EMS-ESP: boiler_gasmeterheat, heißt auch bei Öl so), mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
+        "An oil meter in litres or a counter in kWh, e.g. the fuel counter of the boiler (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, named so for oil as well), with statistics. Hot water is estimated from summer days unless you choose a hot water counter.",
+        "Ein Ölzähler in Litern oder ein Zähler in kWh, etwa der Brennstoffzähler des Kessels (EMS-ESP: boiler_gasmeterheat, in HA meist …boiler_gas_meter_heating, heißt auch bei Öl so), mit Langzeitstatistik. Warmwasser schätzt Wärmewacht aus Sommertagen, wenn du keinen Warmwasser-Zähler wählst.",
     ),
     "gas_heating": (
         'Only if the boiler counts heating and hot water apart; then add the hot water counter as well. Leave "Oil total" empty.',
         "Nur wenn der Kessel Heizen und Warmwasser getrennt zählt; dann auch den Warmwasser-Zähler eintragen. „Öl gesamt“ bleibt leer.",
     ),
     "gas_dhw": (
-        "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter).",
-        "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter).",
+        "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter).",
+        "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter, in HA meist …boiler_dhw_gas_meter).",
     ),
     "outdoor_temp": (
         "With long-term statistics (state class measurement). A nearby weather station is fine.",
