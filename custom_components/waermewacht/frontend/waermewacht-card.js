@@ -343,6 +343,8 @@ const TEXT = {
 };
 
 const CHECKS = ["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem"];
+// Backup heater checks (binary_sensor.AUX_CHECKS).
+const AUX_CHECKS = new Set(["aux_mild_weather", "aux_dhw_charges"]);
 const RATIO_SCOPES = ["heating", "dhw", "combined", "cooling"];
 const RATIO_PERIODS = ["today", "month", "season", "total"];
 const ICONS = {
@@ -759,12 +761,16 @@ class WaermewachtCard extends HTMLElement {
   }
 
   _health(t) {
+    // A hybrid's boiler often defrosts: a heater counter that never moved
+    // since setup means no heater, and its checks would only say "fine".
+    const hybrid = Boolean(this._entities.heat_pump_share_season || this._entities.heat_pump_share_month);
     const rows = CHECKS.map((check) => {
       const problemId = this._entities[check];
       const statusId = this._entities[`${check}_status`];
       const binary = this._stateOf(problemId);
       const status = this._stateOf(statusId);
       if (!binary && !status) return "";
+      if (hybrid && AUX_CHECKS.has(check) && binary?.attributes.aux_used === false) return "";
       const attrs = binary?.attributes || {};
       const reason = attrs.reason;
       let cls = "";

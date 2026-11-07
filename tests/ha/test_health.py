@@ -17,6 +17,8 @@ from custom_components.waermewacht.const import DOMAIN
 from custom_components.waermewacht.diagnostics import (
     async_get_config_entry_diagnostics,
 )
+from custom_components.waermewacht.energy import Kind
+from custom_components.waermewacht.model import Mode
 
 from .conftest import (
     ACTIVITY,
@@ -155,6 +157,12 @@ async def test_unknown_with_reason_and_restart(hass: HomeAssistant) -> None:
         state = hass.states.get(found)
         assert state.state == "unknown"
         assert state.attributes["reason"] == "not_analysed_yet"
+    # Whether the heater counted at all (the card leaves the heater checks of
+    # a hybrid out while it has not); only on the heater checks.
+    assert hass.states.get(aux).attributes["aux_used"] is False
+    assert "aux_used" not in hass.states.get(drop).attributes
+    entry.runtime_data.totals.add(Kind.AUX, Mode.HEATING, 0.4)
+    assert entry.runtime_data.aux_used is True
     # The status sensors say the same in words (translated by HA).
     drop_status = entity_id(hass, entry, "sensor", "efficiency_drop_status")
     for check in ("efficiency_drop", "aux_mild_weather"):

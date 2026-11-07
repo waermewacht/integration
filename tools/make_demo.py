@@ -1268,6 +1268,11 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "aux_dhw_charges": dhw_charges,
         "dhw_efficiency_drop": _finding(a["dhw_efficiency_drop"]),
     }
+    # binary_sensor.HealthProblem: whether the heater counted at all
+    # (runtime.aux_used); the card leaves a hybrid's heater checks out without.
+    aux_used = any(sim.totals.get(Kind.AUX, mode) > 0 for mode in Mode)
+    for key in ("aux_mild_weather", "aux_dhw_charges"):
+        binary[key]["a"]["aux_used"] = aux_used
     # One status sensor per check in words (sensor.HealthStatus).
     for key, entity in binary.items():
         reason = None if key == "cycling_problem" else entity["a"].get("reason")

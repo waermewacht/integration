@@ -21,6 +21,9 @@ from .entity import HeatPumpEntity
 from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
 from .runtime import HeatPumpRuntime
 
+# Checks of the backup heater: they say whether the heater has counted at all.
+AUX_CHECKS = ("aux_mild_weather", "aux_dhw_charges")
+
 
 def _heating(runtime: HeatPumpRuntime) -> bool:
     return (
@@ -99,4 +102,7 @@ class HealthProblem(HeatPumpEntity, BinarySensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return self.runtime.findings[self._key].as_attributes()
+        attributes = self.runtime.findings[self._key].as_attributes()
+        if self._key in AUX_CHECKS:
+            attributes["aux_used"] = self.runtime.aux_used
+        return attributes

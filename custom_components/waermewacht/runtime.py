@@ -1596,6 +1596,13 @@ class HeatPumpRuntime:
         """Modes with a heat counter and electricity."""
         return [m for m in self.elec_modes if HEAT_SIGNALS[m] in self.entities]
 
+    @property
+    def aux_used(self) -> bool:
+        """Whether the backup heater counted anything since setup (backfill
+        included). A hybrid whose boiler defrosts often has a heater counter
+        that never moves; the card leaves the heater checks out then."""
+        return any(self.totals.get(Kind.AUX, mode) > 0 for mode in Mode)
+
     async def async_report(self, start: datetime, end: datetime) -> dict[str, Any]:
         """Figures for [start, end) from the long-term statistics.
 
