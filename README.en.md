@@ -307,7 +307,7 @@ For oil the sensors are named "Heating oil 365 days" (with the attribute `litres
 
 **Flow temperature:** Besides the heat load, the second question before switching is whether the radiators manage with a low flow temperature. As for the heat pump ([flow temperature at 0 °C](#performance-curve-and-heat-load)), Wärmewacht fits a line through the days: hours with heating heat and no hot water, the flow weighted with the heat, against the daily outdoor mean. It needs at least 14 days spanning 6 K. A hot water charge lifts the boiler's flow well above that of the heating, so Wärmewacht computes the flow only with a hot water counter of its own or with "Gas heating only" without hot water (if the boiler does make hot water, add the hot water counter). With the summer base it stays unknown (`flow_needs_dhw_counter`). Gas boilers often run a steeper heating curve than needed: the value is an **upper bound** of what a heat pump would have to deliver, not a verdict. Whether less will do only shows in a trial with a lowered heating curve on cold days.
 
-If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, with readings by hand `too_few_periods`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas or oil boiler too; it then defaults to the last 365 days. The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
+If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, with readings by hand `too_few_periods`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas or oil boiler too; it then defaults to the last 365 days. Everything at a glance shows the card **Wärmewacht Gas and oil boiler** (`custom:waermewacht-boiler-card`, see [Cards](#cards)). The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
 
 **Limits:**
 
@@ -665,7 +665,7 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 ## Cards
 
-Wärmewacht ships its own cards, without any extra card from HACS and without adding a resource: *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
+Wärmewacht ships its own cards, without any extra card from HACS and without adding a resource: *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. A [gas or oil boiler](#gas-boiler-before-switching) has a card of its own, the other cards show heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
 
 **The cards don't show up in the search?** Home Assistant loads them with the integration, so only after the restart and with a Wärmewacht entry set up. The dashboard picks them up when the page loads: reload it once (Ctrl+F5), and in the companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/waermewacht/waermewacht-card.js`.
 
@@ -680,6 +680,7 @@ Wärmewacht ships its own cards, without any extra card from HACS and without ad
 | Wärmewacht Hybrid system (`…-hybrid-card`) | heat pump share, boiler heat |
 | Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C |
 | Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor |
+| Wärmewacht Gas and oil boiler (`…-boiler-card`) | energy signature as a chart (also the preliminary line), heat load, heating limit, heat per degree day, flow, hot water share, consumption and cost of the last 365 days; a missing value says why, the heat load also what the data still lack (e.g. "2 of 8 weeks") |
 
 ```yaml
 type: custom:waermewacht-health-card

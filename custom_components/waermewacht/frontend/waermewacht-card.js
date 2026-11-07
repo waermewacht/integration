@@ -11,19 +11,29 @@
  *   device_id: <optional: the only Wärmewacht device otherwise>
  *   title: <optional; a single space hides the heading>
  *
+ *   type: custom:waermewacht-boiler-card  (a gas or oil boiler entry)
+ *
  *   type: custom:waermewacht-card        (all topics in one card)
  *   sections: [now, ratios, health, cycling, dhw, costs, hybrid, analysis, months]
+ *
+ * Two kinds of devices: heat pumps (all topics but "boiler") and gas or oil
+ * boilers before the switch (only "boiler"). A card shows the kind its
+ * topics are for; the card with all topics follows the chosen device.
  */
 
 // The integration loads the file with "?v=<version>" (cards.py).
 const CARD_VERSION = new URL(import.meta.url).searchParams.get("v") || "dev";
 const DOMAIN = "waermewacht";
-const TOPICS = ["now", "ratios", "health", "cycling", "dhw", "costs", "hybrid", "analysis", "months"];
-const WIDE = new Set(["ratios", "analysis", "months"]);
+const TOPICS = ["now", "ratios", "health", "cycling", "dhw", "costs", "hybrid", "analysis", "months", "boiler"];
+const WIDE = new Set(["ratios", "analysis", "months", "boiler"]);
+// Thresholds of the energy signature (heat_load.py), for "2 of 8 weeks".
+const SIGNATURE_NEEDS = { weeks: 8, spread: 10, frost_days: 5 };
 
 const TEXT = {
   de: {
     noDevice: "Kein Wärmewacht-Gerät gefunden.",
+    onlyBoiler: "Diese Karte zeigt Wärmepumpen. Für eine Gas- oder Ölheizung gibt es die Karte „Wärmewacht Gas- und Ölheizung“.",
+    onlyPump: "Diese Karte zeigt eine Gas- oder Ölheizung. Für Wärmepumpen gibt es die übrigen Wärmewacht-Karten.",
     nothing: "Keine Daten für diese Karte.",
     topics: {
       now: "Jetzt",
@@ -35,6 +45,7 @@ const TEXT = {
       hybrid: "Hybridanlage",
       analysis: "Kennlinie und Heizlast",
       months: "Wärme und Strom je Monat",
+      boiler: "Gas- und Ölheizung",
     },
     describe: {
       now: "Betriebsart, Kompressor und Temperaturen der Wärmepumpe.",
@@ -46,6 +57,7 @@ const TEXT = {
       hybrid: "Anteil der Wärmepumpe und Wärme des Kessels (Hybridanlage).",
       analysis: "AZ-Kennlinie, Energiesignatur und Heizlast.",
       months: "Wärme und Strom je Monat mit Arbeitszahl, aus der Langzeitstatistik.",
+      boiler: "Heizlast, Heizgrenze, Energiesignatur und Kosten einer Gas- oder Ölheizung vor dem Umstieg.",
       all: "Alle Themen in einer Karte.",
     },
     periods: { today: "Heute", month: "Monat", season: "Saison", total: "Gesamt" },
@@ -92,7 +104,27 @@ const TEXT = {
       heat_per_degree_day_season: "Wärme je Gradtag",
       flow_at_zero: "Vorlauf bei 0 °C",
       oversize_factor: "Leistung/Heizlast",
+      gas_heat_load_per_kelvin: "Heizlast je Kelvin",
+      gas_heat_load_design: "Heizlast Norm",
+      gas_heating_limit: "Heizgrenze",
+      gas_heat_per_degree_day: "Wärme je Gradtag",
+      gas_flow_at_zero: "Vorlauf bei 0 °C",
+      gas_flow_at_design: "Vorlauf Normaußentemp.",
+      gas_dhw_share: "Warmwasseranteil",
+      gas_consumption_year: "Gas 365 Tage",
+      oil_consumption_year: "Heizöl 365 Tage",
+      gas_cost_year: "Gaskosten",
+      oil_cost_year: "Ölkosten",
     },
+    progress: {
+      weeks: (have, need) => `${have} von ${need} Wochen`,
+      spread: (have, need) => `Spanne ${have} von ${need} K`,
+      frost_days: (have, need) => `${have} von ${need} Frosttagen`,
+    },
+    preliminaryLine: "Gerade (vorläufig)",
+    preliminaryValue: (v) => `vorläufig ${v}`,
+    litres: (v) => `${v} Liter`,
+    days: (n) => `erst ${n} Tage`,
     since: (v) => `seit ${v}`,
     perDay: (v) => `${v} je Tag`,
     times: (n, m) => `${n}-mal · Ø ${m} min`,
@@ -131,9 +163,22 @@ const TEXT = {
       comparison_restarted: "Vergleich neu gestartet",
       no_aux_counter: "Kein Heizstab-Zähler",
       no_outdoor_temp: "Keine Außentemperatur",
+      too_few_weeks: "Zu wenige kalte Wochen",
+      spread_too_small: "Zu wenig Temperaturspanne",
+      too_few_frost_days: "Zu wenige Frosttage",
+      slope_not_negative: "Kein Zusammenhang mit draußen",
+      no_summer_days: "Noch keine Sommertage",
+      heating_only: "Zähler nur Heizen",
+      flow_needs_dhw_counter: "Braucht Warmwasser-Zähler",
+      no_recorder: "Recorder fehlt",
+      gas_unit: "Einheit des Zählers",
+      no_calorific_value: "Brennwert fehlt",
+      too_few_periods: "Zu wenige Ablesungen",
     },
     editor: {
       device_id: "Wärmepumpe (Wärmewacht-Gerät)",
+      device_boiler: "Heizung (Wärmewacht-Gerät)",
+      device_any: "Wärmewacht-Gerät",
       title: "Überschrift (leer: Thema, nur ein Leerzeichen: keine)",
       sections: "Themen (leer: alle)",
       heat_power: "Wärmeleistung (optional)",
@@ -142,6 +187,8 @@ const TEXT = {
   },
   en: {
     noDevice: "No Wärmewacht device found.",
+    onlyBoiler: "This card shows heat pumps. For a gas or oil boiler there is the card “Wärmewacht gas and oil boiler”.",
+    onlyPump: "This card shows a gas or oil boiler. For heat pumps there are the other Wärmewacht cards.",
     nothing: "No data for this card.",
     topics: {
       now: "Now",
@@ -153,6 +200,7 @@ const TEXT = {
       hybrid: "Hybrid system",
       analysis: "Performance curve and heat load",
       months: "Heat and electricity per month",
+      boiler: "Gas and oil boiler",
     },
     describe: {
       now: "Activity, compressor and temperatures of the heat pump.",
@@ -164,6 +212,7 @@ const TEXT = {
       hybrid: "Heat pump share and boiler heat (hybrid system).",
       analysis: "Performance curve, energy signature and heat load.",
       months: "Heat and electricity per month with performance factor, from the long-term statistics.",
+      boiler: "Heat load, heating limit, energy signature and costs of a gas or oil boiler before the switch.",
       all: "All topics in one card.",
     },
     periods: { today: "Today", month: "Month", season: "Season", total: "Total" },
@@ -210,7 +259,27 @@ const TEXT = {
       heat_per_degree_day_season: "Heat per degree day",
       flow_at_zero: "Flow at 0 °C",
       oversize_factor: "Power/heat load",
+      gas_heat_load_per_kelvin: "Heat load per kelvin",
+      gas_heat_load_design: "Design heat load",
+      gas_heating_limit: "Heating limit",
+      gas_heat_per_degree_day: "Heat per degree day",
+      gas_flow_at_zero: "Flow at 0 °C",
+      gas_flow_at_design: "Flow at design temp.",
+      gas_dhw_share: "Hot water share",
+      gas_consumption_year: "Gas 365 days",
+      oil_consumption_year: "Heating oil 365 days",
+      gas_cost_year: "Gas cost",
+      oil_cost_year: "Oil cost",
     },
+    progress: {
+      weeks: (have, need) => `${have} of ${need} weeks`,
+      spread: (have, need) => `spread ${have} of ${need} K`,
+      frost_days: (have, need) => `${have} of ${need} frost days`,
+    },
+    preliminaryLine: "Line (preliminary)",
+    preliminaryValue: (v) => `preliminary ${v}`,
+    litres: (v) => `${v} litres`,
+    days: (n) => `only ${n} days`,
     since: (v) => `since ${v}`,
     perDay: (v) => `${v} per day`,
     times: (n, m) => `${n} times · mean ${m} min`,
@@ -249,9 +318,22 @@ const TEXT = {
       comparison_restarted: "Comparison restarted",
       no_aux_counter: "No backup heater meter",
       no_outdoor_temp: "No outdoor temperature",
+      too_few_weeks: "Too few cold weeks",
+      spread_too_small: "Too little temperature spread",
+      too_few_frost_days: "Too few frost days",
+      slope_not_negative: "No link to the outdoor temperature",
+      no_summer_days: "No summer days yet",
+      heating_only: "Heating-only meter",
+      flow_needs_dhw_counter: "Needs a hot water meter",
+      no_recorder: "No recorder",
+      gas_unit: "Unit of the meter",
+      no_calorific_value: "Calorific value missing",
+      too_few_periods: "Too few readings",
     },
     editor: {
       device_id: "Heat pump (Wärmewacht device)",
+      device_boiler: "Boiler (Wärmewacht device)",
+      device_any: "Wärmewacht device",
       title: "Heading (empty: topic, a single space: none)",
       sections: "Topics (empty: all)",
       heat_power: "Heat power (optional)",
@@ -273,6 +355,7 @@ const ICONS = {
   hybrid: "mdi:fire",
   analysis: "mdi:chart-bell-curve-cumulative",
   months: "mdi:chart-bar",
+  boiler: "mdi:radiator",
 };
 const COLORS = {
   current: "#DE5E32",
@@ -345,10 +428,12 @@ function stepDigits(step) {
   return Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
 }
 
-// {device id: {translation key: entity id}} of Wärmewacht's heat pumps (gas
-// entries left out), computed once per registry object.
+// {pump: {device id: {translation key: entity id}}, boiler: {…}}: Wärmewacht's
+// heat pumps and its gas or oil boiler entries, computed once per registry
+// object.
 const INDEX = new WeakMap();
 const HEAT_PUMP_KEY = /^(ratio_|starts_|heat_heating$|electricity_heating$)/;
+const BOILER_KEY = /^(gas|oil)_consumption_year$/;
 function index(hass) {
   const entities = hass.entities || {};
   let found = INDEX.get(entities);
@@ -359,19 +444,36 @@ function index(hass) {
         (byDevice[entry.device_id] ||= {})[entry.translation_key] = entry.entity_id;
       }
     }
-    found = Object.fromEntries(Object.entries(byDevice).filter(([, keys]) => Object.keys(keys).some((k) => HEAT_PUMP_KEY.test(k))));
+    found = { pump: {}, boiler: {} };
+    for (const [deviceId, keys] of Object.entries(byDevice)) {
+      const names = Object.keys(keys);
+      if (names.some((k) => HEAT_PUMP_KEY.test(k))) found.pump[deviceId] = keys;
+      else if (names.some((k) => BOILER_KEY.test(k))) found.boiler[deviceId] = keys;
+    }
     INDEX.set(entities, found);
   }
   return found;
 }
 
-/** Entities of one Wärmewacht heat pump: {translation key: entity id}. */
+/** Entities of one Wärmewacht device: {translation key: entity id}. */
 function deviceEntities(hass, deviceId) {
-  return index(hass)[deviceId] || {};
+  const found = index(hass);
+  return found.pump[deviceId] || found.boiler[deviceId] || {};
 }
 
-function wwDevices(hass) {
-  return Object.keys(index(hass));
+/** "pump", "boiler" or undefined (no Wärmewacht device, or still starting). */
+function deviceKind(hass, deviceId) {
+  const found = index(hass);
+  return found.pump[deviceId] ? "pump" : found.boiler[deviceId] ? "boiler" : undefined;
+}
+
+function wwDevices(hass, kind = "pump") {
+  return Object.keys(index(hass)[kind]);
+}
+
+/** The kind of device a topic is for. */
+function topicKind(topic) {
+  return topic === "boiler" ? "boiler" : "pump";
 }
 
 // Cards on the page: re-rendered when data they wait for arrive.
@@ -409,10 +511,31 @@ class WaermewachtCard extends HTMLElement {
     CARDS.delete(this);
   }
 
-  /** The topics of this card (a subclass: one). */
+  /** The one topic of a topic card (subclass); null for the card with all. */
+  _fixedTopic() {
+    return null;
+  }
+
+  /** The kind of device this card shows: a topic card its topic's, the card
+   * with all topics the chosen device's (else heat pumps, if there are). */
+  _kind() {
+    const topic = this._fixedTopic();
+    if (topic) return topicKind(topic);
+    if (!this._hass) return "pump";
+    const chosen = this._config?.device_id && deviceKind(this._hass, this._config.device_id);
+    if (chosen) return chosen;
+    return wwDevices(this._hass, "pump").length || !wwDevices(this._hass, "boiler").length ? "pump" : "boiler";
+  }
+
+  /** The topics of this card: a topic card its one, the card with all the
+   * chosen ones (or all) for its kind of device. */
   _topics() {
-    const wanted = this._config.sections;
-    return Array.isArray(wanted) && wanted.length ? wanted.filter((s) => TOPICS.includes(s)) : TOPICS;
+    const topic = this._fixedTopic();
+    if (topic) return [topic];
+    const wanted = this._config?.sections;
+    const chosen = Array.isArray(wanted) && wanted.length ? wanted.filter((s) => TOPICS.includes(s)) : TOPICS;
+    const kind = this._kind();
+    return chosen.filter((s) => topicKind(s) === kind);
   }
 
   setConfig(config) {
@@ -440,7 +563,7 @@ class WaermewachtCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 4 * this._topics().length;
+    return 4 * Math.max(1, this._topics().length);
   }
 
   getGridOptions() {
@@ -454,12 +577,12 @@ class WaermewachtCard extends HTMLElement {
   }
 
   static getStubConfig(hass) {
-    const devices = wwDevices(hass);
+    const devices = [...wwDevices(hass, "pump"), ...wwDevices(hass, "boiler")];
     return devices.length > 1 ? { device_id: devices[0] } : {};
   }
 
   _deviceId() {
-    return this._config?.device_id || wwDevices(this._hass)[0];
+    return this._config?.device_id || wwDevices(this._hass, this._kind())[0];
   }
 
   _watched() {
@@ -541,11 +664,18 @@ class WaermewachtCard extends HTMLElement {
     }
     const t = this._t();
     const deviceId = this._deviceId();
-    this._entities = deviceId ? deviceEntities(this._hass, deviceId) : {};
+    const kind = this._kind();
+    const actual = deviceId ? deviceKind(this._hass, deviceId) : undefined;
+    this._entities = actual === kind ? deviceEntities(this._hass, deviceId) : {};
     const topics = this._topics();
     let body;
-    if (!deviceId || !Object.keys(this._entities).length) {
-      body = `<div class="empty">${escapeHtml(t.noDevice)}</div>`;
+    if (!Object.keys(this._entities).length) {
+      // The other kind of device chosen, or only that kind there: say which
+      // card fits instead of "no device".
+      const other = kind === "pump" ? "boiler" : "pump";
+      const hint = actual === other || (!actual && !this._config.device_id && wwDevices(this._hass, other).length);
+      const text = !hint ? t.noDevice : kind === "pump" ? t.onlyBoiler : t.onlyPump;
+      body = `<div class="empty">${escapeHtml(text)}</div>`;
     } else {
       const single = topics.length === 1;
       body = topics
@@ -568,7 +698,7 @@ class WaermewachtCard extends HTMLElement {
     let device = "";
     // The device only where it is not clear: several heat pumps and none
     // chosen, or asked for (show_device).
-    if (card && (this._config.show_device || (!this._config.device_id && wwDevices(this._hass).length > 1))) {
+    if (card && (this._config.show_device || (!this._config.device_id && wwDevices(this._hass, this._kind()).length > 1))) {
       const entry = this._hass.devices?.[this._deviceId()];
       device = `<span class="device">${escapeHtml(entry?.name_by_user || entry?.name || "")}</span>`;
     }
@@ -729,24 +859,8 @@ class WaermewachtCard extends HTMLElement {
         charts.push(this._xyChart(t.curve, "", series, this._entities.performance_curve_heating, undefined, 2));
       }
     }
-    const load = this._state("heat_load_per_kelvin");
-    if (load) {
-      const a = load.attributes;
-      const weeks = (a.weeks || []).map((w) => [w.mean_outdoor, w.power_kw]).sort((x, y) => x[0] - y[0]);
-      const series = [];
-      if (weeks.length) series.push({ color: COLORS.previous, label: t.weeks, line: false, points: weeks });
-      if (a.intercept_kw !== null && a.intercept_kw !== undefined && a.slope_kw_per_k !== null && a.slope_kw_per_k !== undefined) {
-        const lo = a.design_temp ?? Math.min(-12, ...weeks.map((w) => w[0]));
-        const hi = a.heating_limit ?? 15;
-        series.push({
-          color: COLORS.current,
-          label: t.line,
-          line: true,
-          points: [[lo, a.intercept_kw + a.slope_kw_per_k * lo], [hi, Math.max(0, a.intercept_kw + a.slope_kw_per_k * hi)]],
-        });
-      }
-      if (series.length) charts.push(this._xyChart(t.signature, "kW", series, this._entities.heat_load_per_kelvin, 0, 2));
-    }
+    const signature = this._signature(t, "heat_load_per_kelvin");
+    if (signature) charts.push(signature);
     const flow = this._state("flow_at_zero")?.attributes || {};
     const perDegree = this._state("heat_per_degree_day_season")?.attributes || {};
     const previous = (v, digits, unit = "") => (v !== undefined && v !== null ? `${t.previous} ${this._num(v, digits)}${unit}` : "");
@@ -759,6 +873,73 @@ class WaermewachtCard extends HTMLElement {
       this._own("oversize_factor", t.tiles.oversize_factor),
     ]);
     return (charts.length ? `<div class="charts">${charts.join("")}</div>` : "") + tiles;
+  }
+
+  /** Energy signature of a heat load sensor (attributes of heat_load.py):
+   * the weeks and the line, also a preliminary one. */
+  _signature(t, key) {
+    const load = this._state(key);
+    if (!load) return "";
+    const a = load.attributes;
+    const weeks = (a.weeks || []).map((w) => [w.mean_outdoor, w.power_kw]).sort((x, y) => x[0] - y[0]);
+    const series = [];
+    if (weeks.length) series.push({ color: COLORS.previous, label: t.weeks, line: false, points: weeks });
+    if (a.intercept_kw !== null && a.intercept_kw !== undefined && a.slope_kw_per_k !== null && a.slope_kw_per_k !== undefined) {
+      const lo = a.design_temp ?? Math.min(-12, ...weeks.map((w) => w[0]));
+      const hi = a.heating_limit ?? 15;
+      series.push({
+        color: COLORS.current,
+        label: a.sufficient === false ? t.preliminaryLine : t.line,
+        line: true,
+        points: [[lo, a.intercept_kw + a.slope_kw_per_k * lo], [hi, Math.max(0, a.intercept_kw + a.slope_kw_per_k * hi)]],
+      });
+    }
+    return series.length ? this._xyChart(t.signature, "kW", series, this._entities[key], 0, 2) : "";
+  }
+
+  /** A tile of the boiler: an unknown value says why. */
+  _boilerTile(t, key, extra = "") {
+    const state = this._state(key);
+    if (!state) return "";
+    const reason = state.attributes.reason;
+    const unknown = ["unknown", "unavailable"].includes(state.state);
+    const why = unknown && reason ? t.reasons[reason] || reason : "";
+    return this._own(key, t.tiles[key], extra || why);
+  }
+
+  _boiler(t) {
+    const load = this._state("gas_heat_load_per_kelvin")?.attributes || {};
+    const n = (v, d) => this._num(v, d);
+    // Heat load still unknown: what the data still lack (weeks, spread, frost).
+    const progress = this._state("gas_heat_load_per_kelvin")?.state === "unknown" && load.week_count !== undefined
+      ? [
+        ["weeks", load.week_count, SIGNATURE_NEEDS.weeks, 0],
+        ["spread", load.spread ?? 0, SIGNATURE_NEEDS.spread, 1],
+        ["frost_days", load.frost_days ?? 0, SIGNATURE_NEEDS.frost_days, 0],
+      ].filter(([, have, need]) => have < need).map(([key, have, need, digits]) => t.progress[key](n(have, digits), need)).join(" · ")
+      : "";
+    const limit = this._state("gas_heating_limit");
+    const preliminaryLimit = limit?.state === "unknown" && load.preliminary && load.heating_limit !== null && load.heating_limit !== undefined
+      ? t.preliminaryValue(`${n(load.heating_limit, 1)} °C`) : "";
+    const fuel = this._entities.oil_consumption_year ? "oil" : "gas";
+    const used = this._state(`${fuel}_consumption_year`)?.attributes || {};
+    const usedExtra = [
+      used.litres !== undefined && used.litres !== null ? t.litres(n(used.litres, 0)) : "",
+      used.complete === false && used.days !== undefined ? t.days(used.days) : "",
+    ].filter(Boolean).join(" · ");
+    const signature = this._signature(t, "gas_heat_load_per_kelvin");
+    const tiles = this._grid([
+      this._boilerTile(t, "gas_heat_load_per_kelvin", progress),
+      this._boilerTile(t, "gas_heat_load_design"),
+      this._boilerTile(t, "gas_heating_limit", preliminaryLimit),
+      this._boilerTile(t, "gas_heat_per_degree_day"),
+      this._boilerTile(t, "gas_flow_at_zero"),
+      this._boilerTile(t, "gas_flow_at_design"),
+      this._boilerTile(t, "gas_dhw_share"),
+      this._boilerTile(t, `${fuel}_consumption_year`, usedExtra),
+      this._boilerTile(t, `${fuel}_cost_year`),
+    ]);
+    return (signature ? `<div class="charts">${signature}</div>` : "") + tiles;
   }
 
   _months(t, deviceId) {
@@ -920,9 +1101,16 @@ class WaermewachtCardEditor extends HTMLElement {
     const t = TEXT[lang] || TEXT.en;
     const type = String(this._config.type || "");
     const topic = TOPICS.find((x) => type === `custom:waermewacht-${x}-card`);
+    // Only devices the card can show: heat pumps, boilers, or (the card with
+    // all topics) both.
+    const kinds = topic ? [topicKind(topic)] : ["pump", "boiler"];
+    const deviceLabel = topic ? t.editor[topicKind(topic) === "boiler" ? "device_boiler" : "device_id"] : t.editor.device_any;
+    const devices = kinds.flatMap((kind) => wwDevices(this._hass, kind)).map((id) => {
+      const entry = this._hass.devices?.[id];
+      return { value: id, label: entry?.name_by_user || entry?.name || id };
+    });
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (schema) => t.editor[schema.name] || schema.name;
       this._form.addEventListener("value-changed", (event) => {
         const value = { ...event.detail.value };
         for (const key of Object.keys(value)) {
@@ -933,14 +1121,22 @@ class WaermewachtCardEditor extends HTMLElement {
       });
       this.appendChild(this._form);
     }
+    this._form.computeLabel = (schema) => (schema.name === "device_id" ? deviceLabel : t.editor[schema.name] || schema.name);
     const schema = [
-      { name: "device_id", selector: { device: { filter: { integration: DOMAIN } } } },
+      { name: "device_id", selector: { select: { mode: "dropdown", options: devices } } },
       { name: "title", selector: { text: {} } },
     ];
     if (!topic) {
+      // Topics for the chosen device's kind (all when none is chosen).
+      const chosen = this._config.device_id && deviceKind(this._hass, this._config.device_id);
       schema.push({
         name: "sections",
-        selector: { select: { multiple: true, options: TOPICS.map((s) => ({ value: s, label: t.topics[s] })) } },
+        selector: {
+          select: {
+            multiple: true,
+            options: TOPICS.filter((s) => !chosen || topicKind(s) === chosen).map((s) => ({ value: s, label: t.topics[s] })),
+          },
+        },
       });
     }
     if (!topic || topic === "now") {
@@ -958,8 +1154,13 @@ class WaermewachtCardEditor extends HTMLElement {
 /** One topic per card type: waermewacht-<topic>-card. */
 function topicCard(topic) {
   return class extends WaermewachtCard {
-    _topics() {
-      return [topic];
+    _fixedTopic() {
+      return topic;
+    }
+
+    static getStubConfig(hass) {
+      const devices = wwDevices(hass, topicKind(topic));
+      return devices.length > 1 ? { device_id: devices[0] } : {};
     }
   };
 }

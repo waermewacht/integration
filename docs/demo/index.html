@@ -361,13 +361,8 @@
           curveTitle: "AZ-Kennlinie Heizen (x: Außentemperatur Tagesmittel)",
           curveNote: "Arbeitszahl Heizen je 2-K-Klasse, ohne Stillstand; eine Klasse braucht 7 Tage.",
           previous: "Vorige Saison", current: "Laufende Saison",
-          signatureTitle: "Energiesignatur (x: Außentemperatur Wochenmittel)",
-          signatureNote: (a, gas) =>
-            `Wochen ${gas ? "der letzten 365 Tage" : "der letzten vollständigen Saison"} (${a.week_count}, R² ${a.r_squared}). Heizgrenze ${a.heating_limit} °C, ` +
-            `normgerecht ${a.standard_kw} kW bei ${a.design_temp} °C.`,
-          signaturePreliminary: (a) => `Noch keine Heizlast: ${a.reasons.join(", ")}.`,
-          weeks: "Wochen", measured: "Gerade (gemessen)", standard: "normgerecht (durch 0 bei 20 °C)",
-          kw: "Heizleistung kW", cop: "Arbeitszahl",
+          weeks: "Wochen",
+          cop: "Arbeitszahl",
           computed: "Berechnet",
           plant: "Anlage",
           ownDevice: (d) => `Gerät „${d}“ (Wärmewacht)`,
@@ -514,13 +509,8 @@
           curveTitle: "Performance curve heating (x: daily mean outdoor temperature)",
           curveNote: "COP heating per 2 K class, without standby; a class needs 7 days.",
           previous: "Previous season", current: "Current season",
-          signatureTitle: "Energy signature (x: weekly mean outdoor temperature)",
-          signatureNote: (a, gas) =>
-            `Weeks of ${gas ? "the last 365 days" : "the last complete season"} (${a.week_count}, R² ${a.r_squared}). Heating limit ${a.heating_limit} °C, ` +
-            `standard ${a.standard_kw} kW at ${a.design_temp} °C.`,
-          signaturePreliminary: (a) => `No heat load yet: ${a.reasons.join(", ")}.`,
-          weeks: "Weeks", measured: "Line (measured)", standard: "standard (through 0 at 20 °C)",
-          kw: "Heating power kW", cop: "COP",
+          weeks: "Weeks",
+          cop: "COP",
           computed: "Computed",
           plant: "Installation",
           ownDevice: (d) => `Device “${d}” (Wärmewacht)`,
@@ -646,7 +636,6 @@
       const tile = (mdi, title, secondary, cls = "c6") =>
         `<div class="card tile ${cls}"><div class="shape">${icon(mdi)}</div><div><b>${escapeHtml(title)}</b><small>${secondary}</small></div></div>`;
       const iconOf = (key) => ICONS[key] ?? ICONS[key.replace(/_(today|yesterday|month|season|total)$/, "")] ?? "information-outline";
-      const entityTile = (key, cls = "c6", extra = "") => tile(iconOf(key), name(key), escapeHtml(value(key)) + extra, cls);
 
       function reasonText(code) {
         if (!code) return "";
@@ -694,40 +683,6 @@
           });
           svg += `<text x="${x0 + (bar * keys.length) / 2}" y="${H - 6}" text-anchor="middle">${g.label}</text>`;
         });
-        return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
-      }
-
-      function scatter({ series, lines = [], xMin = -15, xMax = 20, yMin, yMax, yLabel, marks = [], W = narrow() ? 420 : 640, H = narrow() ? 260 : 280 }) {
-        const L = 40, R = 12, T = 16, B = 26;
-        const x = (v) => L + ((v - xMin) / (xMax - xMin)) * (W - L - R);
-        const y = (v) => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B);
-        let svg = "";
-        const yStep = niceStep(yMax - yMin);
-        for (let v = yMin; v <= yMax + 1e-9; v += yStep) {
-          svg += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" />
-            <text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${num(v, yStep < 1 ? 1 : 0)}</text>`;
-        }
-        for (let v = Math.ceil(xMin / 5) * 5; v <= xMax; v += 5) {
-          svg += `<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H - B}" />
-            <text x="${x(v)}" y="${H - 8}" text-anchor="middle">${num(v, 0)} °C</text>`;
-        }
-        svg += `<text x="${L}" y="${T - 4}">${escapeHtml(yLabel)}</text>`;
-        for (const m of marks) {
-          svg += `<line class="mark" x1="${x(m.x)}" x2="${x(m.x)}" y1="${T}" y2="${H - B}" />
-            <text x="${x(m.x) + 4}" y="${T + 24}">${escapeHtml(m.label)}</text>`;
-        }
-        for (const l of lines) {
-          svg += `<line x1="${x(l.x1)}" y1="${y(l.y1)}" x2="${x(l.x2)}" y2="${y(l.y2)}" stroke="${l.color}" stroke-width="2" ${l.dash ? 'stroke-dasharray="6 4"' : ""} />`;
-        }
-        for (const s of series) {
-          const pts = s.points.filter((p) => p[1] !== null && p[1] !== undefined).sort((a, b) => a[0] - b[0]);
-          if (s.line && pts.length > 1) {
-            svg += `<path d="${pts.map((p, i) => `${i ? "L" : "M"}${x(p[0])},${y(p[1])}`).join("")}" fill="none" stroke="${s.color}" stroke-width="2" />`;
-          }
-          for (const p of pts) {
-            svg += `<circle cx="${x(p[0])}" cy="${y(p[1])}" r="${s.r ?? 4.5}" fill="${s.color}"><title>${escapeHtml(p[2] ?? "")}</title></circle>`;
-          }
-        }
         return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
       }
 
@@ -840,12 +795,13 @@
           const extra = key === "performance_curve_heating" ? { device_class: "timestamp" } : {};
           add(id, key, e.s, { ...e.a, ...extra, ...(e.u ? { unit_of_measurement: e.u } : {}), friendly_name: name(key) });
         }
-        for (const [key, e] of Object.entries(data.binary)) {
+        for (const [key, e] of Object.entries(data.binary || {})) {
           add(`binary_sensor.waermepumpe_${key}`, key, e.s, { ...e.a, friendly_name: name(key) });
         }
-        // The source integration's entities ("Now" card).
+        // The source integration's entities ("Now" card); a gas boiler has none.
         const live = data.live;
-        sourceIds = {
+        sourceIds = {};
+        if (live) sourceIds = {
           activity: "sensor.source_activity",
           compressor: "binary_sensor.source_compressor",
           outdoor_temp: "sensor.source_outdoor_temp",
@@ -853,16 +809,18 @@
           return_temp: "sensor.source_return_temp",
           dhw_temp: "sensor.source_dhw_temp",
         };
-        add(sourceIds.activity, null, live.activity, { friendly_name: tx.activityName }, live.activity_since);
-        add(sourceIds.compressor, null, live.compressor ? "on" : "off", { friendly_name: tx.compressor });
-        for (const [role, value, label] of [
-          ["outdoor_temp", live.outdoor, tx.outdoor],
-          ["flow_temp", live.flow, tx.flow],
-          ["return_temp", live.return, tx.ret],
-          ["dhw_temp", live.dhw, tx.dhwTemp],
-        ]) {
-          precision[sourceIds[role]] = 1;
-          add(sourceIds[role], null, value, { unit_of_measurement: "°C", device_class: "temperature", friendly_name: label });
+        if (live) {
+          add(sourceIds.activity, null, live.activity, { friendly_name: tx.activityName }, live.activity_since);
+          add(sourceIds.compressor, null, live.compressor ? "on" : "off", { friendly_name: tx.compressor });
+          for (const [role, value, label] of [
+            ["outdoor_temp", live.outdoor, tx.outdoor],
+            ["flow_temp", live.flow, tx.flow],
+            ["return_temp", live.return, tx.ret],
+            ["dhw_temp", live.dhw, tx.dhwTemp],
+          ]) {
+            precision[sourceIds[role]] = 1;
+            add(sourceIds[role], null, value, { unit_of_measurement: "°C", device_class: "temperature", friendly_name: label });
+          }
         }
         return {
           entities,
@@ -1007,32 +965,6 @@
         return notes.join("");
       }
 
-      function signatureChart(a, gas = false) {
-        const tx = t();
-        const weeks = a.weeks ?? [];
-        const maxKw = Math.max(1, ...weeks.map((w) => w.power_kw), a.standard_kw ?? 0, a.measured_kw ?? 0);
-        const lines = [];
-        const lo = a.design_temp ?? -12;
-        if (a.intercept_kw !== null) {
-          const hi = a.heating_limit ?? 15;
-          lines.push({ x1: lo, y1: a.intercept_kw + a.slope_kw_per_k * lo, x2: hi, y2: 0, color: "var(--s-current)" });
-          if (a.standard_kw !== null) lines.push({ x1: lo, y1: a.standard_kw, x2: 20, y2: 0, color: "var(--s-current)", dash: true });
-        }
-        const top = Math.ceil((maxKw * 1.1) / 1) * 1;
-        const chart = scatter({
-          series: [{ color: "var(--s-previous)", points: weeks.map((w) => [w.mean_outdoor, w.power_kw, `${w.start}: ${num(w.mean_outdoor, 1)} °C, ${num(w.power_kw, 2)} kW`]) }],
-          lines,
-          xMin: -15, xMax: 20, yMin: 0, yMax: top, yLabel: tx.kw,
-          marks: a.design_temp !== null ? [{ x: a.design_temp, label: `${num(a.design_temp, 0)} °C` }] : [],
-        });
-        const note = a.sufficient
-          ? tx.signatureNote({ ...a, r_squared: num(a.r_squared, 2), heating_limit: num(a.heating_limit, 1), standard_kw: num(a.standard_kw, 1), design_temp: num(a.design_temp, 0) }, gas)
-          : tx.signaturePreliminary(a);
-        return `<div class="card"><div class="card-title">${tx.signatureTitle}</div>${chart}
-          ${legend([["var(--s-previous)", tx.weeks, "dot"], ["var(--s-current)", tx.measured], ["var(--s-current)", tx.standard, "dash"]])}
-          <div class="footnote">${escapeHtml(note)}</div></div>`;
-      }
-
       function plantSection() {
         const tx = t();
         const live = data.live;
@@ -1087,19 +1019,10 @@
         const groups = data.months.map((m) => ({ title: m.month, label: dateFmt(`${m.month}-15`, { month: "short" }), values: m }));
         const response = data.response;
         return `
-          <section class="section">
-            <div class="heading">${icon("fire")}<span>${tx.gas}</span></div>
-            <div class="grid">
-              ${entityTile("gas_heat_load_per_kelvin")}${entityTile("gas_heat_load_design")}
-              ${entityTile("gas_heating_limit")}${entityTile("gas_heat_per_degree_day")}
-              ${entityTile("gas_dhw_share")}${entityTile("gas_consumption_year")}
-              ${entityTile("gas_cost_year", "c12")}
-            </div>
-          </section>
+          ${cardSlot("boiler", "section double")}
           <section class="section double">
-            <div class="heading">${icon("chart-bell-curve-cumulative")}<span>${tx.analysis}</span></div>
-            ${signatureChart(sensor("gas_heat_load_per_kelvin").a, true)}
-            <div class="card"><div class="card-title">${tx.gasMonths}</div>${barChart(groups, keys, labels, "kWh")}
+            <div class="heading">${icon("chart-bar")}<span>${tx.gasMonths}</span></div>
+            <div class="card">${barChart(groups, keys, labels, "kWh")}
               ${legend(keys.map((k) => [SERIES[k], labels[k]]))}<div class="footnote">${tx.gasMonthsNote}</div></div>
           </section>
           <section class="section wide">
@@ -1128,7 +1051,7 @@
         document.getElementById("banner").innerHTML = `${icon("information-outline")}<span>${escapeHtml(tx.banner(clock))}</span>`;
         document.getElementById("story").textContent = tx.stories[state.scenario];
         document.getElementById("dashboard").innerHTML = data.kind === "gas" ? gasSections() : cardSections();
-        if (data.kind !== "gas") mountCards();
+        mountCards();
         document.getElementById("plant").innerHTML = (data.kind === "gas" ? tx.plantGas(data) : tx.plantHp(data))
           .map((line) => `<li>${escapeHtml(line)}</li>`)
           .join("");

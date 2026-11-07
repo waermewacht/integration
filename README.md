@@ -307,7 +307,7 @@ Die Sensoren heißen bei Öl „Heizöl 365 Tage“ (mit Attribut `litres`) und 
 
 **Vorlauf:** Neben der Heizlast ist die zweite Frage vor dem Umstieg, ob die Heizkörper mit niedrigem Vorlauf auskommen. Wärmewacht legt dafür wie bei der Wärmepumpe ([Vorlauf bei 0 °C](#kennlinie-und-heizlast)) eine Gerade durch die Tage: Stunden mit Heizwärme und ohne Warmwasser, Vorlauf gewichtet mit der Wärme, gegen das Tagesmittel draußen. Es braucht mindestens 14 Tage, die zusammen 6 K auseinanderliegen. Eine Warmwasserladung hebt den Vorlauf der Therme deutlich über den der Heizung, deshalb rechnet Wärmewacht den Vorlauf nur mit einem eigenen Warmwasser-Zähler oder mit „Gas nur Heizen“ ohne Warmwasser (macht die Therme doch Warmwasser, trag den Warmwasser-Zähler ein). Mit dem Sommersockel bleibt er unbekannt (`flow_needs_dhw_counter`). Gasthermen laufen oft mit einer steileren Heizkurve als nötig: Der Wert ist eine **Obergrenze** dessen, was eine Wärmepumpe liefern müsste, kein Urteil. Ob es mit weniger geht, zeigt erst ein Versuch mit abgesenkter Heizkurve an kalten Tagen.
 
-Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, bei der Ablesung von Hand `too_few_periods`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gas- oder Ölheizung, vorgegeben sind dann die letzten 365 Tage. Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
+Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, bei der Ablesung von Hand `too_few_periods`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gas- oder Ölheizung, vorgegeben sind dann die letzten 365 Tage. Alles auf einen Blick zeigt die Karte **Wärmewacht Gas- und Ölheizung** (`custom:waermewacht-boiler-card`, siehe [Karten](#karten)). Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
 
 **Grenzen:**
 
@@ -665,7 +665,7 @@ AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeo
 
 ## Karten
 
-Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS und ohne Ressource eintragen: *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
+Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS und ohne Ressource eintragen: *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Für eine [Gas- oder Ölheizung](#gasheizung-vor-dem-umstieg) gibt es eine eigene Karte, die übrigen Karten zeigen Wärmepumpen. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
 
 **Die Karten tauchen in der Suche nicht auf?** Home Assistant lädt sie mit der Integration, also erst nach dem Neustart und mit einem eingerichteten Wärmewacht-Eintrag. Ins Dashboard kommen sie beim Laden der Seite: danach einmal neu laden (Strg+F5), in der Companion-App den Frontend-Cache zurücksetzen. Ob die Datei da ist, zeigt `http://<HA-Adresse>:8123/waermewacht/waermewacht-card.js`.
 
@@ -680,6 +680,7 @@ Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS und ohne R
 | Wärmewacht Hybridanlage (`…-hybrid-card`) | Anteil der Wärmepumpe, Wärme des Kessels |
 | Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C |
 | Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl |
+| Wärmewacht Gas- und Ölheizung (`…-boiler-card`) | Energiesignatur als Diagramm (auch die vorläufige Gerade), Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf, Warmwasseranteil, Verbrauch und Kosten der letzten 365 Tage; fehlt ein Wert, steht der Grund dabei, bei der Heizlast auch, was den Daten noch fehlt (etwa „2 von 8 Wochen“) |
 
 ```yaml
 type: custom:waermewacht-health-card
