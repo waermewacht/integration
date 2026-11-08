@@ -388,7 +388,11 @@ async def test_gaps_of_older_imports_are_filled_once(
     rows = await hourly_rows(hass, heat)
     assert rows[DEC_31] == pytest.approx(-6.60)  # unchanged
     assert rows[JAN_1] == pytest.approx(0.0)
-    assert len(rows) == 24
+    # Every hour from 31.12. 04:00 to 01.01. 04:00 (Home Assistant may
+    # have compiled rows of its own after the setup: not counted here).
+    between = {h: v for h, v in rows.items() if DEC_31 <= h <= JAN_1}
+    assert len(between) == 25, sorted(rows)
+    assert all(v == pytest.approx(-6.60) for h, v in between.items() if h < JAN_1)
     assert rows[JANUARY - timedelta(hours=1)] == pytest.approx(-6.60)
     assert await month_change(hass, heat) == pytest.approx(6.60)
 
@@ -396,4 +400,4 @@ async def test_gaps_of_older_imports_are_filled_once(
     await runtime._async_fill_history_gaps()
     await settle(hass)
     assert runtime.history_gaps_filled == {}
-    assert len(await hourly_rows(hass, heat)) == 24
+    assert len(await hourly_rows(hass, heat)) == len(rows)
