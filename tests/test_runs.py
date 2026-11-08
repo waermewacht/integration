@@ -233,3 +233,38 @@ def test_defrost_heater_per_local_day() -> None:
     ]
     assert defrost_aux_by_day(defrosts, Mode.HEATING, tz) == {date(2026, 1, 15): 0.5}
     assert defrost_aux_by_day(defrosts, Mode.DHW, tz) == {date(2026, 1, 15): 0.5}
+
+
+def test_gaps_and_observation_start() -> None:
+    """The first known state starts the observation; an outage longer than
+    the tolerance is a gap, a restart of seconds is none."""
+    tracker = RunTracker()
+    tracker.set_compressor(None, at(0))
+    assert tracker.observed_since is None
+    tracker.set_compressor(False, at(1))
+    assert tracker.observed_since == at(1)
+    tracker.set_compressor(None, at(10))
+    tracker.set_compressor(False, at(10.5))  # 30 s: a restart
+    tracker.set_compressor(None, at(20))
+    tracker.set_compressor(True, at(80))
+    assert tracker.take_gaps() == [(at(20), at(80))]
+    assert tracker.take_gaps() == []
+
+
+def test_downtime_after_restore_is_a_gap() -> None:
+    tracker = started(RunTracker())
+    data = tracker.as_dict()
+    restored = RunTracker()
+    restored.restore(data, saved_at=at(5))
+    assert restored.observed_since == at(0)
+    restored.set_compressor(False, at(125))
+    assert restored.take_gaps() == [(at(5), at(125))]
+
+
+def test_books_without_observation_start() -> None:
+    """Books of 0.4.5 and older have no observation start."""
+    data = started(RunTracker()).as_dict()
+    del data["observed_since"]
+    restored = RunTracker()
+    restored.restore(data, saved_at=at(5))
+    assert restored.observed_since is None

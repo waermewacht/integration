@@ -28,6 +28,8 @@ const TOPICS = ["now", "ratios", "health", "cycling", "dhw", "costs", "hybrid", 
 const WIDE = new Set(["ratios", "analysis", "months", "boiler"]);
 // Thresholds of the energy signature (heat_load.py), for "2 of 8 weeks".
 const SIGNATURE_NEEDS = { weeks: 8, spread: 10, frost_days: 5 };
+// Complete days the projection of starts per year needs (cycling.py).
+const PROJECTION_DAYS = 7;
 
 const TEXT = {
   de: {
@@ -86,6 +88,7 @@ const TEXT = {
       defrosts_today: "Abtauungen heute",
       spread_7d: "Spreizung 7 Tage",
       starts_season: "Starts Saison",
+      starts_per_year: "Starts pro Jahr",
       run_minutes_week: "Lauf/Start 7 Tage",
       standby_power_7d: "Stillstand 7 Tage",
       ratio_dhw_last_charge: "Letzte Ladung",
@@ -125,6 +128,11 @@ const TEXT = {
     preliminaryValue: (v) => `vorläufig ${v}`,
     litres: (v) => `${v} Liter`,
     days: (n) => `erst ${n} Tage`,
+    // Starts per year: a projection from 7 days, placed in the Fraunhofer
+    // field test (WP-QS 2024) - an orientation, not a check.
+    projected: (cls) => `aus 7 Tagen hochgerechnet${cls ? ` · Feldtest: ${cls}` : ""}`,
+    projectionDays: (have, need) => `erst ${have} von ${need} Tagen`,
+    fieldClasses: { low_third: "unteres Drittel", typical: "üblich", top_10_percent: "obere 10 %" },
     since: (v) => `seit ${v}`,
     perDay: (v) => `${v} je Tag`,
     times: (n, m) => `${n}-mal · Ø ${m} min`,
@@ -175,6 +183,7 @@ const TEXT = {
       gas_unit: "Einheit des Zählers",
       no_calorific_value: "Brennwert fehlt",
       too_few_periods: "Zu wenige Ablesungen",
+      observation_gap: "Lücke in den Daten",
     },
     editor: {
       device_id: "Wärmepumpe (Wärmewacht-Gerät)",
@@ -242,6 +251,7 @@ const TEXT = {
       defrosts_today: "Defrosts today",
       spread_7d: "Spread 7 days",
       starts_season: "Starts season",
+      starts_per_year: "Starts per year",
       run_minutes_week: "Run/start 7 days",
       standby_power_7d: "Standby 7 days",
       ratio_dhw_last_charge: "Last charge",
@@ -281,6 +291,9 @@ const TEXT = {
     preliminaryValue: (v) => `preliminary ${v}`,
     litres: (v) => `${v} litres`,
     days: (n) => `only ${n} days`,
+    projected: (cls) => `projected from 7 days${cls ? ` · field test: ${cls}` : ""}`,
+    projectionDays: (have, need) => `only ${have} of ${need} days`,
+    fieldClasses: { low_third: "lowest third", typical: "typical", top_10_percent: "top 10 %" },
     since: (v) => `since ${v}`,
     perDay: (v) => `${v} per day`,
     times: (n, m) => `${n} times · mean ${m} min`,
@@ -331,6 +344,7 @@ const TEXT = {
       gas_unit: "Unit of the meter",
       no_calorific_value: "Calorific value missing",
       too_few_periods: "Too few readings",
+      observation_gap: "Gap in the data",
     },
     editor: {
       device_id: "Heat pump (Wärmewacht device)",
@@ -826,10 +840,27 @@ class WaermewachtCard extends HTMLElement {
         d.defrosts_7d !== undefined ? t.times(d.defrosts_7d, this._num(d.mean_minutes_7d, 1)) : ""),
       this._own("run_minutes_week", t.tiles.run_minutes_week),
       this._own("spread_7d", t.tiles.spread_7d),
+      this._startsPerYear(t),
       this._own("starts_season", t.tiles.starts_season,
         season.per_day !== undefined ? t.perDay(this._num(season.per_day, 1)) : ""),
       this._own("standby_power_7d", t.tiles.standby_power_7d),
     ]);
+  }
+
+  /** Starts per year projected from the last 7 days (attributes of "starts
+   * today"), with its place in the Fraunhofer field test. */
+  _startsPerYear(t) {
+    const a = this._state("starts_today")?.attributes || {};
+    if (!("starts_7d_days" in a)) return "";
+    const perYear = a.starts_per_year_projected;
+    if (perYear === null || perYear === undefined) {
+      const why = a.starts_7d_reason === "too_few_days"
+        ? t.projectionDays(a.starts_7d_days ?? 0, PROJECTION_DAYS)
+        : (t.reasons[a.starts_7d_reason] || t.unknown);
+      return this._tile(this._entities.starts_today, t.tiles.starts_per_year, why, "–");
+    }
+    return this._tile(this._entities.starts_today, t.tiles.starts_per_year,
+      t.projected(t.fieldClasses[a.starts_field_class] || ""), `≈ ${this._num(perYear, 0)}`);
   }
 
   _dhw(t) {

@@ -103,12 +103,15 @@ from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS, Counter, CounterEvent, to_kwh
 from .curve import curve_as_dicts, daily_samples, performance_curve
 from .cycling import (
+    PROJECTION_DAYS,
     CycleStats,
+    StartsProjection,
     activity_seconds,
     cycle_stats,
     max_starts_per_hour,
     prune,
     season_starts_baseline,
+    starts_projection,
 )
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
@@ -454,6 +457,9 @@ class HeatPumpRuntime:
         )
         self.runs: list[Run] = []
         self.defrosts: list[Defrost] = []
+        # Times without a known compressor state longer than the gap
+        # tolerance (start, end), kept as long as the runs.
+        self.gaps: list[tuple[datetime, datetime]] = []
         self.own_starts = 0  # observed starts since setup
         self.spread = Mean()  # flow minus return, compressor heating, today
         self.flow = Mean()  # flow temperature, compressor heating, today
@@ -531,6 +537,11 @@ class HeatPumpRuntime:
             self._dirty = True
         if history is not None:
             self._restore_history(history)
+            if self.tracker.observed_since is None and self.runs:
+                # Books of 0.4.5 and older: observed at least since the
+                # earliest run kept.
+                self.tracker.observed_since = min(r.start for r in self.runs)
+                self._dirty = True
         else:
             # First setup, or an update from 0.1.0b1 (runs in the live file):
             # rebuild runs and defrosts from the recorded states.
@@ -723,6 +734,7 @@ class HeatPumpRuntime:
         if not events:
             return False
         self.tracker, self.runs, self.defrosts = replay(events)
+        self.gaps = self.tracker.take_gaps()
         return True
 
     async def async_import_history(self) -> None:
@@ -2058,6 +2070,9 @@ class HeatPumpRuntime:
             on = parse_compressor(state.state)
             had_open = self.tracker.open_run is not None
             run = self.tracker.set_compressor(on, at)
+            if gaps := self.tracker.take_gaps():
+                self.gaps.extend(gaps)
+                self._history_dirty = True
             if not had_open and self.tracker.open_run and self.tracker.open_run.counted:
                 self.own_starts += 1
             if run is not None:
@@ -2361,7 +2376,9 @@ class HeatPumpRuntime:
                 self._judge_flow()
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             self.flow_rate = Mean()
-            prune(self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS))
+            prune(
+                self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS), self.gaps
+            )
             prune_charges(self.charges, now - timedelta(days=HISTORY_DAYS))
             if self.has_charges:
                 self._update_charge_finding(now)
@@ -2509,6 +2526,23 @@ class HeatPumpRuntime:
             now,
             short_seconds=self.short_seconds,
             critical_seconds=self.critical_seconds,
+        )
+
+    def starts_projection(self, now: datetime | None = None) -> StartsProjection:
+        """Starts per day of the last 7 complete local days, projected to a
+        year (orientation against the Fraunhofer field test, no check)."""
+        now = now or dt_util.utcnow()
+        days = [self._local_day(now, -k) for k in range(PROJECTION_DAYS, 0, -1)]
+        gaps = list(self.gaps)
+        if self.tracker.unknown_since is not None:
+            gaps.append((self.tracker.unknown_since, now))
+        return starts_projection(
+            self.runs,
+            self.tracker.open_run,
+            days,
+            self._local_day(now),
+            self.tracker.observed_since,
+            gaps,
         )
 
     def starts_total(self) -> tuple[int | None, str]:
@@ -2704,6 +2738,7 @@ class HeatPumpRuntime:
         return {
             "runs": [r.as_dict() for r in self.runs],
             "defrosts": [d.as_dict() for d in self.defrosts],
+            "gaps": [[lo.isoformat(), hi.isoformat()] for lo, hi in self.gaps],
             "diary": self.diary,
             "charges": [c.as_dict() for c in self.charges],
         }
@@ -2711,6 +2746,10 @@ class HeatPumpRuntime:
     def _restore_history(self, data: dict[str, Any]) -> None:
         self.runs = [Run.from_dict(r) for r in data.get("runs", [])]
         self.defrosts = [Defrost.from_dict(d) for d in data.get("defrosts", [])]
+        self.gaps = [
+            (datetime.fromisoformat(lo), datetime.fromisoformat(hi))
+            for lo, hi in data.get("gaps", [])
+        ]
         self.diary = list(data.get("diary", []))
         self.charges = [Charge.from_dict(c) for c in data.get("charges", [])]
 

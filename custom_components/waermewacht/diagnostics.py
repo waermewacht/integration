@@ -214,6 +214,10 @@ async def async_get_config_entry_diagnostics(
         "diary_days": len(runtime.diary),
         "runs_kept": len(runtime.runs),
         "defrosts_kept": len(runtime.defrosts),
+        "observation_gaps": [
+            [lo.isoformat(), hi.isoformat()] for lo, hi in runtime.gaps
+        ],
+        "starts_projection": runtime.starts_projection(now).as_attributes(),
         "today": runtime.cycles("today", now).__dict__,
         "totals": runtime.totals.as_dict(),
         "month": month.as_dict() if month else None,

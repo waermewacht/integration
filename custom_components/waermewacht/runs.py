@@ -125,6 +125,11 @@ class RunTracker:
     last_mode: Mode | None = None  # latest heating/DHW/cooling activity
     open_run: Run | None = None
     open_defrost: Defrost | None = None
+    # First known compressor state: runs and starts are complete from here.
+    observed_since: datetime | None = None
+    # Gaps longer than the tolerance (start, end) since they were last taken
+    # (take_gaps); not stored here, the runtime keeps them with the runs.
+    gaps: list[tuple[datetime, datetime]] = field(default_factory=list)
     # The latest ended defrost, for late backup heater energy (not stored:
     # after a restart DEFROST_LATE has passed anyway).
     last_defrost: Defrost | None = None
@@ -149,8 +154,12 @@ class RunTracker:
                 self.unknown_since = at
             return None
         gap = (at - self.unknown_since).total_seconds() if self.unknown_since else 0.0
-        self.unknown_since = None
         long_gap = gap > self.gap_tolerance
+        if long_gap and self.unknown_since is not None:
+            self.gaps.append((self.unknown_since, at))
+        self.unknown_since = None
+        if self.observed_since is None:
+            self.observed_since = at
         if on:
             if self.open_run is not None:
                 self.open_run.uncertain |= long_gap
@@ -206,6 +215,11 @@ class RunTracker:
             return last
         return None
 
+    def take_gaps(self) -> list[tuple[datetime, datetime]]:
+        """The gaps found since the last call (and forget them here)."""
+        gaps, self.gaps = self.gaps, []
+        return gaps
+
     def tick(self, at: datetime) -> None:
         """Bring the activity time of the open run up to `at`."""
         self._accumulate(at)
@@ -249,6 +263,7 @@ class RunTracker:
             "last_mode": self.last_mode.value if self.last_mode else None,
             "open_run": self.open_run.as_dict() if self.open_run else None,
             "open_defrost": self.open_defrost.as_dict() if self.open_defrost else None,
+            "observed_since": _iso(self.observed_since),
         }
 
     def restore(self, data: dict[str, Any], saved_at: datetime) -> None:
@@ -266,6 +281,8 @@ class RunTracker:
         self.open_run = Run.from_dict(run) if run else None
         defrost = data.get("open_defrost")
         self.open_defrost = Defrost.from_dict(defrost) if defrost else None
+        # Missing in books of 0.4.5 and older (the runtime estimates it).
+        self.observed_since = _dt(data.get("observed_since"))
 
 
 COMPRESSOR = "compressor"

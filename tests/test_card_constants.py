@@ -7,7 +7,7 @@ and names the sensors it reads by translation key.
 import re
 from pathlib import Path
 
-from custom_components.waermewacht import heat_load
+from custom_components.waermewacht import cycling, heat_load
 from custom_components.waermewacht.gas_sensor import GAS_DESCRIPTIONS, OIL_NAMES
 
 CARD = (
@@ -43,3 +43,16 @@ def test_card_knows_the_heat_load_seasons() -> None:
     assert f'season === "{heat_load.CURRENT_SEASON}"' in CARD
     assert f"{{ {heat_load.CURRENT_SEASON}: t.current, " in CARD
     assert f"{heat_load.PREVIOUS_SEASON}: t.previousSeason }}[a.season]" in CARD
+
+
+def test_card_knows_the_starts_projection() -> None:
+    """The cycling card shows the projection of starts per year from the
+    attributes of "starts today", with a text for every field class."""
+    assert f"const PROJECTION_DAYS = {cycling.PROJECTION_DAYS};" in CARD
+    texts = re.findall(r"fieldClasses: \{([^}]*)\}", CARD)
+    assert len(texts) == 2, "one per language"
+    for found in texts:
+        for key in cycling.FIELD_CLASSES:
+            assert f"{key}:" in found, key
+    assert f'{cycling.OBSERVATION_GAP}: "' in CARD
+    assert f'"{cycling.TOO_FEW_DAYS}"' in CARD

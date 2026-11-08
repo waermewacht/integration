@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from custom_components.waermewacht.cycling import (
     activity_seconds,
     cycle_stats,
+    field_class,
     max_starts_per_hour,
     prune,
     season_starts_baseline,
+    starts_projection,
+    unobserved_seconds,
 )
+from custom_components.waermewacht.periods import local_midnight
 from custom_components.waermewacht.runs import Defrost, Run
 
 DAY = datetime(2026, 1, 15, 0, 0, tzinfo=UTC)
@@ -150,3 +155,113 @@ def test_season_starts_without_statistics() -> None:
     )
     # No value yet (unavailable): nothing.
     assert season_starts_baseline(None, None, None, SEASON, first) == (None, None)
+
+
+# Starts per year projected from the last 7 complete days (Fraunhofer field).
+MINUTE = timedelta(minutes=1)
+BERLIN_DAYS = [DAY + timedelta(days=k) for k in range(7)]  # UTC midnights
+END = DAY + timedelta(days=7)
+
+
+def every(minutes: float, days: int = 7) -> list[Run]:
+    """Runs of 10 minutes, one starting every `minutes` from DAY on."""
+    count = int(days * 24 * 60 / minutes)
+    return [run(i * minutes, i * minutes + 10) for i in range(count)]
+
+
+def projection(runs: list[Run], **kwargs):
+    args = {
+        "open_run": None,
+        "day_starts": BERLIN_DAYS,
+        "end": END,
+        "observed_since": DAY - timedelta(days=1),
+        "gaps": [],
+        **kwargs,
+    }
+    return starts_projection(runs, **args)
+
+
+def test_projection_per_day_and_year() -> None:
+    result = projection(every(120))  # 12 starts a day
+    assert result.starts == 84
+    assert result.per_day == pytest.approx(12)
+    assert result.per_year == 4380
+    assert result.field_class == "typical"
+    assert result.reason is None
+    assert result.as_attributes() == {
+        "starts_per_day_7d": 12.0,
+        "starts_per_year_projected": 4380,
+        "starts_field_class": "typical",
+        "starts_7d_days": 7,
+        "starts_7d_reason": None,
+    }
+
+
+def test_projection_ignores_today_and_uncounted_runs() -> None:
+    runs = [
+        *every(24 * 60),  # one a day
+        run(-60, -50),  # the day before the window
+        run(7 * 24 * 60 + 5, 7 * 24 * 60 + 15),  # today
+        Run(start=at(30), end=at(40), counted=False),  # first seen running
+    ]
+    open_run = Run(start=at(7 * 24 * 60 + 30))  # running now, today
+    result = projection(runs, open_run=open_run)
+    assert result.starts == 7
+    assert result.per_year == 365
+    assert result.field_class == "low_third"
+
+
+@pytest.mark.parametrize(
+    ("per_year", "expected"),
+    [
+        (2000, "low_third"),
+        (2001, "typical"),
+        (5500, "typical"),
+        (5501, "top_10_percent"),
+    ],
+)
+def test_field_classes(per_year: int, expected: str) -> None:
+    assert field_class(per_year) == expected
+
+
+def test_projection_needs_seven_observed_days() -> None:
+    result = projection(every(60), observed_since=DAY + timedelta(days=3, hours=2))
+    assert result.days == 3  # the days starting at or after the start
+    assert result.per_year is None and result.field_class is None
+    assert result.reason == "too_few_days"
+    assert projection(every(60), observed_since=None).reason == "too_few_days"
+    assert projection(every(60), observed_since=DAY).days == 7
+
+
+def test_projection_with_a_gap() -> None:
+    hour = timedelta(hours=1)
+    ok = projection(every(60), gaps=[(DAY + 5 * hour, DAY + 6 * hour)])
+    assert ok.reason is None
+    gap = projection(every(60), gaps=[(DAY + 5 * hour, DAY + 6 * hour + MINUTE)])
+    assert gap.reason == "observation_gap"
+    assert gap.days == 7 and gap.per_year is None
+    # Gaps outside the window do not count; overlapping ones only once.
+    before = projection(every(60), gaps=[(DAY - 5 * hour, DAY)])
+    assert before.reason is None
+    assert unobserved_seconds(
+        [(DAY, DAY + hour), (DAY + 30 * MINUTE, DAY + 90 * MINUTE)], DAY, END
+    ) == pytest.approx(90 * 60)
+
+
+def test_projection_over_a_dst_change() -> None:
+    """A local day of 23 hours is still one day."""
+    berlin = ZoneInfo("Europe/Berlin")
+    days = [
+        local_midnight(date(2026, 3, 25) + timedelta(days=k), berlin) for k in range(7)
+    ]
+    end = local_midnight(date(2026, 4, 1), berlin)
+    assert (end - days[0]) == timedelta(days=7, hours=-1)
+    runs = [Run(start=d + timedelta(hours=1), end=d + timedelta(hours=2)) for d in days]
+    result = starts_projection(runs, None, days, end, days[0], [])
+    assert result.per_day == pytest.approx(1)
+
+
+def test_prune_drops_old_gaps() -> None:
+    gaps = [(at(0), at(10)), (at(100), at(200))]
+    prune([], [], at(50), gaps)
+    assert gaps == [(at(100), at(200))]

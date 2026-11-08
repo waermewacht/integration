@@ -237,6 +237,10 @@ CYCLING = [
         key="starts_today",
         value=lambda r: r.cycles("today").starts,
         needs=HAS_COMPRESSOR,
+        # Starts per day of the last 7 complete days and the projection to a
+        # year against the Fraunhofer field test: an orientation only, the
+        # binary sensor "cycling" does not use it.
+        attributes=lambda r: r.starts_projection().as_attributes(),
     ),
     HeatPumpSensorDescription(
         key="starts_yesterday",
