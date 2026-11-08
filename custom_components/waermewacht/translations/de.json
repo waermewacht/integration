@@ -366,7 +366,7 @@
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
         },
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
       },
       "gas": {
         "title": "Einstellungen",
@@ -386,7 +386,7 @@
           "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung.",
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
         },
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
       },
       "init_tarifwacht": {
         "title": "Einstellungen",
@@ -471,7 +471,7 @@
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
         },
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
       },
       "init_einspeisewacht": {
         "title": "Einstellungen",
@@ -556,7 +556,7 @@
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
         },
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
       },
       "init_tip": {
         "title": "Einstellungen",
@@ -641,11 +641,11 @@
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
         },
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
       },
       "oil": {
         "title": "Einstellungen",
-        "description": "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+        "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
         "data": {
           "boiler_type": "Kesselart",
           "kwh_per_litre": "Energie je Liter (Hs)",

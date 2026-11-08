@@ -209,7 +209,7 @@ Several heat pumps: add one entry each.
 
 ### Settings
 
-*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry. On top only the electricity price and the design outdoor temperature, everything else in sections that start collapsed (open when an error or a suggestion from Tarifwacht/Einspeisewacht concerns them). Saving without opening a section keeps its values. The fields in the order of the form:
+*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry. On top only the electricity price and the design outdoor temperature, everything else in sections that start collapsed (open when an error or a suggestion from Tarifwacht/Einspeisewacht concerns them). Saving without opening a section keeps its values. At the very top the form sums up the entry (template or own mapping, meters per mode, activity and compressor, measurements, electricity price, PV split, limits) and says under “Missing” what a missing meter costs, e.g. “No hot water heat meter: no hot water performance factor”; likewise for gas and oil boilers. The fields in the order of the form:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |

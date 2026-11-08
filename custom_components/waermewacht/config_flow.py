@@ -120,6 +120,7 @@ from .oil import efficiency as boiler_type_efficiency
 from .prices import ACCEPTED_UNITS, price_factor
 from .profiles import Match, RegistryEntry, drop_foreign_activity, find
 from .sisters import suggestions
+from .summary import boiler_summary, heat_pump_summary
 from .templates import TEMPLATES
 
 # Form sections and the signals in them.
@@ -1179,12 +1180,31 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     )
                 }
             )
+        template = TEMPLATES.get(self.config_entry.data.get(CONF_TEMPLATE) or "")
+        placeholders["summary"] = heat_pump_summary(
+            self.config_entry.data.get(CONF_ENTITIES, {}),
+            self.config_entry.options,
+            template.label if template else None,
+            self.hass.config.language,
+        )
         return self.async_show_form(
             step_id=step_id,
             data_schema=schema,
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    def _boiler_summary(self, *, oil: bool) -> dict[str, str]:
+        entry = self.config_entry
+        return {
+            "summary": boiler_summary(
+                entry.data,
+                entry.data.get(CONF_ENTITIES, {}),
+                entry.options,
+                oil=oil,
+                language=self.hass.config.language,
+            )
+        }
 
     # The same form with a hint in the costs section (texts of a form are
     # per step; its placeholders are not translated).
@@ -1234,7 +1254,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 },
             }
         )
-        return self.async_show_form(step_id="gas", data_schema=schema)
+        return self.async_show_form(
+            step_id="gas",
+            data_schema=schema,
+            description_placeholders=self._boiler_summary(oil=False),
+        )
 
     async def async_step_oil(
         self, user_input: dict[str, Any] | None = None
@@ -1277,4 +1301,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 },
             }
         )
-        return self.async_show_form(step_id="oil", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="oil",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders=self._boiler_summary(oil=True),
+        )

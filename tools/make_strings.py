@@ -1873,8 +1873,8 @@ TEXTS = {
         "Für diesen Gaszähler gibt es schon den Eintrag „{title}“. Ein zweiter ist nicht nötig: Entitäten (Vorlauftemperatur, Warmwasser-Zähler) dort unter ⋮ → Neu konfigurieren nachtragen, Normaußentemperatur und Preise unter dem Zahnrad (Konfigurieren).",
     ),
     "options.step.init.description": (
-        "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
-        "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+        "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
     ),
     "options.step.init.data.boiler_efficiency": (
         "Boiler efficiency",
@@ -1885,8 +1885,8 @@ TEXTS = {
         "Nur für Kesselwärme aus dem Brennstoff: Wärme = Brennstoff × Nutzungsgrad, auf den Brennwert (Hs) bezogen wie der Brennstoffzähler des Kessels. 0,87: Feldwert von Gas-Brennwertkesseln (DBU 2004), für Öl übernommen; ein Kessel, der in einer Hybridanlage kurz und gestückelt läuft, erreicht weniger.",
     ),
     "options.step.gas.description": (
-        "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
-        "Zähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
+        "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren.",
     ),
     "issues.own_entity.title": (
         "Wärmewacht: own sensor as a source",

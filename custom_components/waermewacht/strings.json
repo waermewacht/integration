@@ -366,7 +366,7 @@
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
         },
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "gas": {
         "title": "Settings",
@@ -386,7 +386,7 @@
           "calorific_value": "Only for counters in m³: from the gas bill.",
           "z_number": "Only for counters in m³: from the gas bill."
         },
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "init_tarifwacht": {
         "title": "Settings",
@@ -471,7 +471,7 @@
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
         },
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "init_einspeisewacht": {
         "title": "Settings",
@@ -556,7 +556,7 @@
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
         },
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "init_tip": {
         "title": "Settings",
@@ -641,11 +641,11 @@
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
         },
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
       "oil": {
         "title": "Settings",
-        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
+        "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure.",
         "data": {
           "boiler_type": "Boiler type",
           "kwh_per_litre": "Energy per litre (Hs)",

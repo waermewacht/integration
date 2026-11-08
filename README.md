@@ -209,7 +209,7 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 
 ### Einstellungen
 
-*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu. Oben stehen nur Strompreis und Normaußentemperatur, alles Weitere in Abschnitten, die eingeklappt beginnen (aufgeklappt, wenn eine Fehlermeldung oder ein Vorschlag aus Tarifwacht/Einspeisewacht sie betrifft). Speichern, ohne einen Abschnitt aufzuklappen, lässt seine Werte, wie sie sind. Die Felder in der Reihenfolge des Formulars:
+*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu. Oben stehen nur Strompreis und Normaußentemperatur, alles Weitere in Abschnitten, die eingeklappt beginnen (aufgeklappt, wenn eine Fehlermeldung oder ein Vorschlag aus Tarifwacht/Einspeisewacht sie betrifft). Speichern, ohne einen Abschnitt aufzuklappen, lässt seine Werte, wie sie sind. Ganz oben fasst das Formular den Eintrag zusammen (Vorlage oder eigene Zuordnung, Zähler je Betriebsart, Betriebsart und Kompressor, Messwerte, Strompreis, PV-Aufteilung, Grenzen) und nennt unter „Was fehlt“, was ein fehlender Zähler kostet, etwa „Kein Warmwasser-Wärmezähler: keine Arbeitszahl Warmwasser“; bei Gas- und Ölheizungen ebenso. Die Felder in der Reihenfolge des Formulars:
 
 | Einstellung | Vorgabe | Bedeutung |
 | --- | --- | --- |

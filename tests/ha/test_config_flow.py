@@ -483,6 +483,11 @@ async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
         for key, value in schema.items()
         if isinstance(value, section)
     )
+    # The summary of the entry on top of the form.
+    summary = result["description_placeholders"]["summary"]
+    assert summary.startswith("- **Source:** Template EMS-ESP\n")
+    assert "- **Electricity price:** sensor (else 27.75 ct/kWh)" in summary
+    assert "- **PV split:** heat pump first" in summary
     sent = unchanged_input(result)
     assert sent["limits"]["short_run_minutes"] == 12
     assert sent["limits"]["starts_per_day"] == 30
@@ -661,7 +666,7 @@ async def test_options_suggest_meters_and_price_from_tarifwacht(
     entry.add_to_hass(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["step_id"] == "init_tarifwacht"
-    assert result["description_placeholders"] == {"entry": "Haus"}
+    assert result["description_placeholders"]["entry"] == "Haus"
     suggested = suggested_costs(result)
     assert suggested["electricity_price_entity"] == "sensor.tibber_price"
     assert suggested["feed_in_entity"] == "sensor.feed_in"
@@ -702,7 +707,7 @@ async def test_options_suggest_from_einspeisewacht_once(hass: HomeAssistant) -> 
     entry.add_to_hass(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["step_id"] == "init_einspeisewacht"
-    assert result["description_placeholders"] == {"entry": "PV Dach"}
+    assert result["description_placeholders"]["entry"] == "PV Dach"
     assert suggested_costs(result)["feed_in_entity"] == "sensor.feed_in"
     # Saved without the suggestion (fields cleared): not suggested again.
     result = await hass.config_entries.options.async_configure(
@@ -757,7 +762,7 @@ async def test_options_house_meters(hass: HomeAssistant) -> None:
         },
     )
     assert result["errors"] == {"base": "meter_unit"}
-    assert result["description_placeholders"] == {"entity": "sensor.pv_power"}
+    assert result["description_placeholders"]["entity"] == "sensor.pv_power"
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {
