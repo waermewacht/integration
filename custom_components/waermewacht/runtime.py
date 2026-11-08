@@ -178,6 +178,9 @@ from .model import (
     fuel_modes,
     has_boiler,
     has_elec,
+    has_heat,
+    heat_signal,
+    total_heat_modes,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .plausible import plausible_hours
@@ -395,9 +398,10 @@ class HeatPumpRuntime:
         self._activity_configured = {
             s for s in (Signal.ACTIVITY, *ACTIVITY_PARTS) if s in self.entities
         }
-        # Modes with a heat counter; without one (ViCare) there are no ratios
-        # and no standby can be told, the electricity counts as running.
-        self.heat_modes = frozenset(m for m in Mode if HEAT_SIGNALS[m] in self.entities)
+        # Modes with a heat counter (own or the common one); without one
+        # (ViCare) there are no ratios and no standby can be told, the
+        # electricity counts as running.
+        self.heat_modes = frozenset(m for m in Mode if has_heat(self.entities, m))
         # The activity entity showed a value that carries no activity here.
         self._activity_foreign = False
         # Health check: daily findings (memory only), their state across
@@ -1662,23 +1666,20 @@ class HeatPumpRuntime:
             if self.has_activity and mode is not None:
                 keys = [
                     s.value
-                    for s in (HEAT_SIGNALS[mode], ELEC_SIGNALS[mode], Signal.ELEC_TOTAL)
+                    for s in (
+                        heat_signal(self.entities, mode),
+                        ELEC_SIGNALS[mode],
+                        Signal.ELEC_TOTAL,
+                    )
                     if s in self.counters
                 ]
             else:
-                keys = (
-                    ["heat"]
-                    if any(s in self.counters for s in HEAT_SIGNALS.values())
-                    else []
-                )
+                keys = ["heat"] if self._heat_counters() else []
             for key in keys:
                 self._stuck_seconds[key] = self._stuck_seconds.get(key, 0.0) + elapsed
         stuck = []
         for key, seconds in sorted(self._stuck_seconds.items()):
-            if key == "heat":
-                signals = [s for s in HEAT_SIGNALS.values() if s in self.counters]
-            else:
-                signals = [Signal(key)]
+            signals = self._heat_counters() if key == "heat" else [Signal(key)]
             coarse = self.template.day_values or any(
                 s not in self.decimal for s in signals
             )
@@ -1699,6 +1700,12 @@ class HeatPumpRuntime:
             unavailable,
             minutes=str(int(UNAVAILABLE_LIMIT.total_seconds() // 60)),
         )
+
+    def _heat_counters(self) -> list[Signal]:
+        """The heat counters of the heat pump (per mode and the common one)."""
+        return [
+            s for s in (*HEAT_SIGNALS.values(), Signal.HEAT_TOTAL) if s in self.counters
+        ]
 
     def _write_diary(self, now: datetime) -> None:
         """One entry for the day that just ended (health check, Stufe 3)."""
@@ -1954,7 +1961,7 @@ class HeatPumpRuntime:
     @property
     def modes(self) -> list[Mode]:
         """Modes with a heat counter and electricity."""
-        return [m for m in self.elec_modes if HEAT_SIGNALS[m] in self.entities]
+        return [m for m in self.elec_modes if has_heat(self.entities, m)]
 
     @property
     def aux_used(self) -> bool:
@@ -2119,7 +2126,7 @@ class HeatPumpRuntime:
             self.has_activity
             and not self.template.day_values
             and not self.hourly
-            and HEAT_SIGNALS[Mode.DHW] in self.entities
+            and has_heat(self.entities, Mode.DHW)
             and has_elec(self.entities, Mode.DHW)
         )
 
@@ -2292,7 +2299,7 @@ class HeatPumpRuntime:
             self._note_jump(signal, before, kwh, previous, at)
         if rose or update.event is CounterEvent.RESET:
             self._stuck_seconds.pop(signal.value, None)
-            if signal in HEAT_SIGNALS.values():
+            if signal in HEAT_SIGNALS.values() or signal is Signal.HEAT_TOTAL:
                 self._stuck_seconds.pop("heat", None)
         if update.event not in (None, CounterEvent.FIRST):
             self._count(f"{update.event}:{signal}")
@@ -2335,6 +2342,17 @@ class HeatPumpRuntime:
             if mode is None or not has_elec(self.entities, mode):
                 mode = Mode.HEATING
             kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
+        elif signal is Signal.HEAT_TOTAL:
+            # One heat meter for heating and hot water: the mode running or
+            # (defrost, pump overrun, standby) the mode that ran last, else
+            # heating. While cooling it books nothing: a heat meter counts
+            # no heat then, cooling has a meter of its own if any.
+            mode = self.tracker.mode or Mode.HEATING
+            if mode not in total_heat_modes(self.entities):
+                self._count(f"heat_total_not_booked:{mode}")
+                return
+            kind = Kind.HEAT
+            self._heat_at[mode] = at
         elif signal is Signal.ELEC_DEFROST:
             # A defrost serves the mode that ran (Lambda, iDM count it apart).
             mode = self.tracker.mode or Mode.HEATING
@@ -2430,7 +2448,7 @@ class HeatPumpRuntime:
         if self._heat_moved(mode, previous):
             return True
         if Signal.COMPRESSOR not in self.entities:
-            return HEAT_SIGNALS[mode] not in self.entities
+            return not has_heat(self.entities, mode)
         if not self.tracker.was_running_since(previous):
             return False
         if Signal.ACTIVITY not in self.entities:
@@ -2441,10 +2459,13 @@ class HeatPumpRuntime:
     def _heat_moved(self, mode: Mode, previous: datetime | None) -> bool:
         if (at := self._heat_at.get(mode)) and previous and at > previous:
             return True
-        # The heat counter may report its increase a moment later.
-        heat_signal = HEAT_SIGNALS[mode]
-        counter = self.counters.get(heat_signal)
-        state = self.hass.states.get(self.entities.get(heat_signal, ""))
+        # The heat counter may report its increase a moment later; the
+        # common one only for the mode it books to now.
+        signal = heat_signal(self.entities, mode)
+        if signal is Signal.HEAT_TOTAL and (self.tracker.mode or Mode.HEATING) != mode:
+            return False
+        counter = self.counters.get(signal)
+        state = self.hass.states.get(self.entities.get(signal, ""))
         if counter is None or counter.last_value is None or state is None:
             return False
         if (value := _float(state)) is None:
@@ -2680,7 +2701,7 @@ class HeatPumpRuntime:
         signals = [
             s
             for m in modes
-            for s in (HEAT_SIGNALS[m], ELEC_SIGNALS[m], Signal.ELEC_TOTAL)
+            for s in (heat_signal(self.entities, m), ELEC_SIGNALS[m], Signal.ELEC_TOTAL)
         ]
         coarse = any(s in self.entities and s not in self.decimal for s in signals)
         return 1.0 if coarse else 0.01

@@ -367,6 +367,10 @@ FIELDS = {
     ),
     "activity": ("Activity", "Betriebsart (Aktivität)"),
     "starts_total": ("Compressor starts total", "Kompressorstarts gesamt"),
+    "heat_total": (
+        "Heat produced total (meter, only without per mode)",
+        "Erzeugte Wärme gesamt (Zähler, nur ohne Aufteilung je Modus)",
+    ),
     "elec_total": (
         "Compressor electricity total (only without per mode)",
         "Strom Kompressor gesamt (nur ohne Aufteilung je Modus)",
@@ -436,6 +440,10 @@ FIELD_HELP = {
         "The heat pump's own counter of compressor starts. Without it Wärmewacht counts starts from the setup on.",
         "Zähler der Kompressorstarts der Wärmepumpe selbst. Ohne ihn zählt Wärmewacht die Starts ab der Einrichtung.",
     ),
+    "heat_total": (
+        "One heat meter for heating and hot water (e.g. between heat pump and buffer tank). Wärmewacht books it to the mode running; needs the activity for hot water. Then leave the heat per mode empty; cooling keeps a meter of its own.",
+        "Ein Wärmemengenzähler für Heizen und Warmwasser (z. B. zwischen Wärmepumpe und Pufferspeicher). Wärmewacht bucht ihn auf die laufende Betriebsart; für Warmwasser braucht es die Betriebsart. Dann die Wärme je Betriebsart leer lassen; Kühlen behält einen eigenen Zähler.",
+    ),
     "elec_total": (
         "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",
         "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
@@ -490,6 +498,7 @@ SECTIONS = {
             "compressor",
             "activity",
             "starts_total",
+            "heat_total",
             "elec_total",
             "aux_total",
             "elec_defrost",
@@ -656,6 +665,12 @@ def _build(lang: int) -> dict:
                     (
                         "Compressor electricity either per mode or as total, not both.",
                         "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
+                    )
+                ),
+                "heat_twice": t(
+                    (
+                        "Heat either per mode or as one meter for all modes (heat produced total), not both.",
+                        "Wärme entweder je Betriebsart oder als ein Zähler für alle (Erzeugte Wärme gesamt), nicht beides.",
                     )
                 ),
                 "counter_twice": t(

@@ -12,6 +12,14 @@ the electricity of one run step in different hours: a step of electricity
 counts as running when its mode delivered heat within COARSE_WINDOW hours.
 Standby of some 30 W makes such a counter step about once a day; hardly any
 of it is lost that way.
+
+One heat meter for heating and hot water (Signal.HEAT_TOTAL): live it goes
+to the mode running, but the long-term statistics hold no activity (the
+recorder keeps its states some 10 days, used for the runs only). Before the
+setup an hour's heat of that meter is split by the electricity per mode of
+the same hour; without electricity per mode (one meter for both) it is
+heating. A pure hour (only heating or only hot water) is exact, an hour with
+both gets the same ratio for both.
 """
 
 from __future__ import annotations
@@ -26,6 +34,7 @@ from .model import (
     ELEC_SIGNALS,
     FUEL_SIGNALS,
     HEAT_SIGNALS,
+    TOTAL_HEAT_MODES,
     Mode,
     Signal,
 )
@@ -61,8 +70,9 @@ def hour_totals(
     """
     totals = Totals()
     heat_by_mode: dict[Mode, float] = {}
+    common = split_heat_total(changes, heat_modes)
     for mode in Mode:
-        heat = changes.get(HEAT_SIGNALS[mode], 0.0)
+        heat = changes.get(HEAT_SIGNALS[mode], 0.0) + common.get(mode, 0.0)
         elec = changes.get(ELEC_SIGNALS[mode], 0.0)
         if mode not in heat_modes:
             standby = False
@@ -114,6 +124,26 @@ def hour_totals(
             mode = Mode.HEATING
         totals.add(Kind.AUX, mode, aux_total)
     return totals
+
+
+def split_heat_total(
+    changes: Mapping[Signal, float], heat_modes: Collection[Mode] = tuple(Mode)
+) -> dict[Mode, float]:
+    """The hour's heat of the common heat meter per mode: by the electricity
+    per mode of the hour among the modes it covers, else heating."""
+    heat = changes.get(Signal.HEAT_TOTAL, 0.0)
+    if not heat:
+        return {}
+    modes = [
+        m
+        for m in TOTAL_HEAT_MODES
+        if m in heat_modes and HEAT_SIGNALS[m] not in changes
+    ]
+    weights = {m: max(changes.get(ELEC_SIGNALS[m], 0.0), 0.0) for m in modes}
+    total = sum(weights.values())
+    if total <= 0:
+        return {Mode.HEATING: heat}
+    return {m: heat * w / total for m, w in weights.items() if w > 0}
 
 
 def boiler_hours(hourly: HourlyChanges) -> dict[datetime, Totals]:
@@ -178,7 +208,10 @@ def near_heat_hours(
     of an hour with heat."""
     near: dict[Mode, set[datetime]] = {}
     for mode in heat_modes:
-        heat = hourly.get(HEAT_SIGNALS[mode], {})
+        heat = hourly.get(HEAT_SIGNALS[mode])
+        if heat is None and mode in TOTAL_HEAT_MODES:
+            heat = hourly.get(Signal.HEAT_TOTAL)
+        heat = heat or {}
         elec = hourly.get(ELEC_SIGNALS[mode], {})
         if not (coarse(heat) or coarse(elec)):
             continue

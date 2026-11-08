@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WaermewachtConfigEntry
 from .entity import HeatPumpEntity
-from .model import AUX_SIGNALS, HEAT_SIGNALS, Mode, Signal, has_elec
+from .model import AUX_SIGNALS, Mode, Signal, has_elec, has_heat
 from .runtime import HeatPumpRuntime
 
 # Checks of the backup heater: they say whether the heater has counted at all.
@@ -27,7 +27,7 @@ AUX_CHECKS = ("aux_mild_weather", "aux_dhw_charges")
 
 def _heating(runtime: HeatPumpRuntime) -> bool:
     return (
-        HEAT_SIGNALS[Mode.HEATING] in runtime.entities
+        has_heat(runtime.entities, Mode.HEATING)
         and has_elec(runtime.entities, Mode.HEATING)
         and Signal.OUTDOOR_TEMP in runtime.entities
     )

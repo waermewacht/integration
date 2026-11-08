@@ -54,10 +54,10 @@ from .model import (
     AUX_SIGNALS,
     BOILER_HEAT_SIGNALS,
     FUEL_SIGNALS,
-    HEAT_SIGNALS,
     Mode,
     Signal,
     has_elec,
+    has_heat,
 )
 from .periods import RATIO_PERIODS, Period
 from .prices import FIXED, price_source
@@ -81,7 +81,7 @@ def _has(*signals: Signal) -> Needs:
 
 
 def _mode_complete(runtime: HeatPumpRuntime, mode: Mode) -> bool:
-    return HEAT_SIGNALS[mode] in runtime.entities and has_elec(runtime.entities, mode)
+    return has_heat(runtime.entities, mode) and has_elec(runtime.entities, mode)
 
 
 # Ratios: scope -> (modes, function).
@@ -169,7 +169,9 @@ def _standby_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
 
 ENERGY = [
     *(
-        _energy_description(f"heat_{m}", Kind.HEAT, m, _has(HEAT_SIGNALS[m]))
+        _energy_description(
+            f"heat_{m}", Kind.HEAT, m, lambda r, m=m: has_heat(r.entities, m)
+        )
         for m in Mode
     ),
     *(
@@ -423,7 +425,7 @@ HYBRID = [
         suggested_display_precision=0,
         value=_share_value(period),
         needs=lambda r: (
-            HEAT_SIGNALS[Mode.HEATING] in r.entities
+            has_heat(r.entities, Mode.HEATING)
             and any(
                 s[Mode.HEATING] in r.entities
                 for s in (BOILER_HEAT_SIGNALS, FUEL_SIGNALS)

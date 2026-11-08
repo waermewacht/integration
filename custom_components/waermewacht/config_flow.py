@@ -108,10 +108,12 @@ from .model import (
     ELEC_SIGNALS,
     ENERGY_SIGNALS,
     HEAT_SIGNALS,
+    Mode,
     Signal,
     fuel_modes,
     has_boiler,
     has_elec,
+    has_heat,
 )
 from .oil import BOILER_TYPES, CUSTOM, KWH_PER_LITRE_HS
 from .oil import efficiency as boiler_type_efficiency
@@ -136,6 +138,7 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.COMPRESSOR,
         Signal.ACTIVITY,
         Signal.STARTS_TOTAL,
+        Signal.HEAT_TOTAL,
         Signal.ELEC_TOTAL,
         Signal.AUX_TOTAL,
         Signal.ELEC_DEFROST,
@@ -284,9 +287,7 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
     if own_entities(hass, entities.values()):
         return "own_entity"
     signals = {Signal(key) for key in entities}
-    complete = any(
-        HEAT_SIGNALS[m] in signals and has_elec(signals, m) for m in HEAT_SIGNALS
-    )
+    complete = any(has_heat(signals, m) and has_elec(signals, m) for m in HEAT_SIGNALS)
     # Without a complete mode: cycling (and electricity) only, which needs
     # the compressor.
     if not complete and Signal.COMPRESSOR.value not in entities:
@@ -299,6 +300,10 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         s.value in entities for s in ELEC_SIGNALS.values()
     ):
         return "elec_twice"
+    if Signal.HEAT_TOTAL.value in entities and any(
+        HEAT_SIGNALS[m].value in entities for m in (Mode.HEATING, Mode.DHW)
+    ):
+        return "heat_twice"  # the heat of heating or hot water twice
     # One counter in two fields books it twice, as heat and electricity
     # even at a COP of 1 (forum 07.11.: the DHW electricity meter as heat).
     counters = [entities[s.value] for s in ENERGY_SIGNALS if s.value in entities]
@@ -306,7 +311,7 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
         return "counter_twice"
     # The boiler only counts next to the heat pump's heating (its share,
     # the building's heat).
-    if has_boiler(signals) and Signal.HEAT_HEATING not in signals:
+    if has_boiler(signals) and not has_heat(signals, Mode.HEATING):
         return "boiler_without_heat_pump"
     for signal in ENERGY_SIGNALS:
         if (entity_id := entities.get(signal.value)) is None:
@@ -896,6 +901,7 @@ def _manual_unique_id(entities: dict[str, str]) -> str:
         entities[s.value]
         for s in (
             *HEAT_SIGNALS.values(),
+            Signal.HEAT_TOTAL,
             *ELEC_SIGNALS.values(),
             Signal.ELEC_TOTAL,
             Signal.COMPRESSOR,

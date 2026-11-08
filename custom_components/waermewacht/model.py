@@ -49,6 +49,10 @@ class Signal(StrEnum):
     # Compressor electricity of all modes in one meter (Waterkotte): booked
     # to the mode running, like AUX_TOTAL.
     ELEC_TOTAL = "elec_total"
+    # Heat of heating and hot water in one meter (a heat meter between the
+    # heat pump and a buffer that also makes the hot water): booked to the
+    # mode running, like ELEC_TOTAL (TOTAL_HEAT_MODES).
+    HEAT_TOTAL = "heat_total"
     # Electricity a source books apart (Lambda, iDM): defrosts belong to the
     # mode running (mostly heating), standby is standby.
     ELEC_DEFROST = "elec_defrost"
@@ -110,6 +114,7 @@ FUEL_SIGNALS: dict[Mode, Signal] = {
 ENERGY_SIGNALS: frozenset[Signal] = frozenset(
     {*HEAT_SIGNALS.values(), *ELEC_SIGNALS.values(), *AUX_SIGNALS.values()}
     | {Signal.AUX_TOTAL, Signal.ELEC_TOTAL, Signal.ELEC_DEFROST, Signal.ELEC_STANDBY}
+    | {Signal.HEAT_TOTAL}
     | set(BOILER_HEAT_SIGNALS.values())
     | set(FUEL_SIGNALS.values())
 )
@@ -136,13 +141,50 @@ def has_boiler(entities: Collection[Signal]) -> bool:
     )
 
 
+# Modes the common heat meter (HEAT_TOTAL) is split to. Hot water only with
+# an activity, which tells it from heating. Cooling needs a meter of its own:
+# a heat meter counts no heat while the heat pump cools (or counts the cold
+# in a register of its own).
+TOTAL_HEAT_MODES: tuple[Mode, ...] = (Mode.HEATING, Mode.DHW)
+
+
+def has_activity(entities: Collection[Signal]) -> bool:
+    """An activity: the activity entity or flags (activity.py)."""
+    return any(s in entities for s in (Signal.ACTIVITY, *ACTIVITY_PARTS))
+
+
+def total_heat_modes(entities: Collection[Signal]) -> tuple[Mode, ...]:
+    """Modes whose heat comes from the common heat meter: heating, and hot
+    water with an activity; none without the meter."""
+    if Signal.HEAT_TOTAL not in entities:
+        return ()
+    return tuple(
+        m
+        for m in TOTAL_HEAT_MODES
+        if HEAT_SIGNALS[m] not in entities
+        and (m is Mode.HEATING or has_activity(entities))
+    )
+
+
+def has_heat(entities: Collection[Signal], mode: Mode) -> bool:
+    """Whether `mode` gets heat: its own meter, or the common one."""
+    return HEAT_SIGNALS[mode] in entities or mode in total_heat_modes(entities)
+
+
+def heat_signal(entities: Collection[Signal], mode: Mode) -> Signal:
+    """The meter that counts the heat of `mode` (its own if not mapped)."""
+    if mode in total_heat_modes(entities):
+        return Signal.HEAT_TOTAL
+    return HEAT_SIGNALS[mode]
+
+
 def has_elec(entities: Collection[Signal], mode: Mode) -> bool:
     """Whether `mode` gets electricity: its own meter, or the common one
-    for the modes with a heat meter (heating always)."""
+    for the modes with heat (heating always)."""
     if ELEC_SIGNALS[mode] in entities:
         return True
     return Signal.ELEC_TOTAL in entities and (
-        mode is Mode.HEATING or HEAT_SIGNALS[mode] in entities
+        mode is Mode.HEATING or has_heat(entities, mode)
     )
 
 

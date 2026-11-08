@@ -22,6 +22,7 @@ from .model import (
     HEAT_SIGNALS,
     Mode,
     Signal,
+    total_heat_modes,
 )
 
 # Scope of the report -> modes; "heating_dhw" includes standby (seasonal ratio).
@@ -195,11 +196,15 @@ def late_import_signals(key: str, entities: Collection[Signal]) -> frozenset[Sig
     boiler heat and fuel (their own meter), and for the electricity of a mode
     with its own meter (with that mode's backup heater; the heat only tells
     standby apart). Empty where the energy was in another sensor: standby
-    (in the electricity of the modes) and the electricity of a mode split off
+    (in the electricity of the modes), the electricity of a mode split off
     a common meter (in the electricity of heating until the mode got its heat
-    meter).
+    meter) and the heat of a mode split off the common heat meter (in the
+    heat of heating until hot water was told apart). With the common heat
+    meter the electricity of a mode reads it and the electricity of the
+    modes it is split by (backfill.split_heat_total).
     """
     present = set(entities)
+    common = total_heat_modes(present)
     for mode in Mode:
         heat, elec = HEAT_SIGNALS[mode], ELEC_SIGNALS[mode]
         if key == f"heat_{mode}" and heat in present:
@@ -210,7 +215,10 @@ def late_import_signals(key: str, entities: Collection[Signal]) -> frozenset[Sig
             and elec in present
             and Signal.ELEC_TOTAL not in present
         ):
-            return frozenset({heat, elec, AUX_SIGNALS.get(mode, elec)} & present)
+            signals = {heat, elec, AUX_SIGNALS.get(mode, elec)}
+            if mode in common:
+                signals |= {Signal.HEAT_TOTAL, *(ELEC_SIGNALS[m] for m in common)}
+            return frozenset(signals & present)
     for prefix, signals in (
         ("boiler_heat", BOILER_HEAT_SIGNALS),
         ("fuel", FUEL_SIGNALS),
