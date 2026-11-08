@@ -74,6 +74,7 @@ async def test_projection_from_stored_runs(
     assert found["starts_per_year_projected"] == 7300
     assert found["starts_field_class"] == "top_10_percent"
     assert found["starts_7d_days"] == 7
+    assert found["starts_7d_observed_hours"] == 168.0
     assert found["starts_7d_reason"] is None
     # An orientation only: the cycling check stays as it was.
     assert state(hass, entry, "cycling_problem") == "off"

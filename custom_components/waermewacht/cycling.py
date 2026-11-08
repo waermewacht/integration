@@ -4,8 +4,9 @@ Definitions (docs/ENTWICKLUNG.md, section 3):
 - A start is a counted run (its start was observed) beginning in the window.
 - Short and critical runs, run time per start and pauses only use finished
   runs without observation gaps; a run counts for the window it ended in.
-- Starts per year are projected from the last 7 complete local days (mean
-  per day x 365) and placed in the field test of Fraunhofer ISE (WP-QS,
+- Starts per year are projected from the last 7 complete local days, over
+  the hours the compressor state was known in them (starts per observed
+  hour x 24 x 365), and placed in the field test of Fraunhofer ISE (WP-QS,
   measuring year 2024, 51 air/water heat pumps): a third at most 2,000
   starts a year, 90 % below 5,500 (docs/ENTWICKLUNG.md, section 3). An
   orientation, not a check: 7 days of autumn are no year.
@@ -142,12 +143,12 @@ FIELD_LOW_THIRD = 2000
 FIELD_TOP_TENTH = 5500
 FIELD_CLASSES = ("low_third", "typical", "top_10_percent")
 PROJECTION_DAYS = 7
-# Unobserved time (Home Assistant or the source down) the 7 days may hold:
-# a restart misses no start worth speaking of, a day offline does (own
-# assumption).
-MAX_UNOBSERVED_SECONDS = 3600.0
+# Hours of the 7 days with a known compressor state the projection needs:
+# a cloud source may be gone for hours, the rest of the week still tells
+# (own assumption: 6 of 7 days).
+MIN_OBSERVED_HOURS = 144.0
 TOO_FEW_DAYS = "too_few_days"
-OBSERVATION_GAP = "observation_gap"
+TOO_FEW_HOURS = "too_few_hours"
 
 
 @dataclass(frozen=True)
@@ -155,6 +156,7 @@ class StartsProjection:
     """Starts per day of the last complete days and the yearly projection."""
 
     days: int  # complete local days observed (at most PROJECTION_DAYS)
+    observed_hours: float | None = None  # with a known compressor state
     starts: int | None = None
     per_day: float | None = None
     per_year: int | None = None
@@ -169,6 +171,9 @@ class StartsProjection:
             "starts_per_year_projected": self.per_year,
             "starts_field_class": self.field_class,
             "starts_7d_days": self.days,
+            "starts_7d_observed_hours": None
+            if self.observed_hours is None
+            else round(self.observed_hours, 1),
             "starts_7d_reason": self.reason,
         }
 
@@ -204,13 +209,16 @@ def starts_projection(
     observed_since: datetime | None,
     gaps: Iterable[tuple[datetime, datetime]],
 ) -> StartsProjection:
-    """Starts per day over the complete days [day_starts[0], end) and the
-    projection to a year.
+    """Starts per observed day over the complete days [day_starts[0], end)
+    and the projection to a year.
 
     `day_starts` are the starts (UTC) of the PROJECTION_DAYS local days
-    before `end` (today's midnight), so days of 23 or 25 hours count as one
-    day each. Unknown before the compressor was observed for all of them,
-    or when more than MAX_UNOBSERVED_SECONDS of them are missing.
+    before `end` (today's midnight). The time without a known compressor
+    state (`gaps`: source unavailable, Home Assistant down) is left out:
+    starts per observed hour x 24 (per day) and x 24 x 365 (per year). A run
+    first seen running after a gap is no start (RunTracker). Unknown before
+    the compressor was observed since the first of the days, or with less
+    than MIN_OBSERVED_HOURS observed.
     """
     days = sum(1 for day in day_starts if observed_since and day >= observed_since)
     if observed_since is None or len(day_starts) < PROJECTION_DAYS:
@@ -218,14 +226,20 @@ def starts_projection(
     if days < len(day_starts):
         return StartsProjection(days=days, reason=TOO_FEW_DAYS)
     start = day_starts[0]
-    if unobserved_seconds(gaps, start, end) > MAX_UNOBSERVED_SECONDS:
-        return StartsProjection(days=days, reason=OBSERVATION_GAP)
+    observed = (
+        (end - start).total_seconds() - unobserved_seconds(gaps, start, end)
+    ) / 3600
+    if observed < MIN_OBSERVED_HOURS:
+        return StartsProjection(
+            days=days, observed_hours=observed, reason=TOO_FEW_HOURS
+        )
     every = [*runs, *([open_run] if open_run else [])]
     starts = sum(1 for r in every if r.counted and start <= r.start < end)
-    per_day = starts / len(day_starts)
+    per_day = starts / observed * 24
     per_year = round(per_day * 365)
     return StartsProjection(
         days=days,
+        observed_hours=observed,
         starts=starts,
         per_day=per_day,
         per_year=per_year,

@@ -194,6 +194,7 @@ def test_projection_per_day_and_year() -> None:
         "starts_per_year_projected": 4380,
         "starts_field_class": "typical",
         "starts_7d_days": 7,
+        "starts_7d_observed_hours": 168.0,
         "starts_7d_reason": None,
     }
 
@@ -234,23 +235,62 @@ def test_projection_needs_seven_observed_days() -> None:
     assert projection(every(60), observed_since=DAY).days == 7
 
 
-def test_projection_with_a_gap() -> None:
+def test_projection_without_a_gap() -> None:
+    result = projection(every(60))
+    assert result.observed_hours == pytest.approx(168)
+    assert result.per_day == pytest.approx(24)
+
+
+def test_projection_over_the_observed_hours() -> None:
+    """A cloud outage of 10 hours: 31 starts in the 158 hours observed."""
     hour = timedelta(hours=1)
-    ok = projection(every(60), gaps=[(DAY + 5 * hour, DAY + 6 * hour)])
-    assert ok.reason is None
-    gap = projection(every(60), gaps=[(DAY + 5 * hour, DAY + 6 * hour + MINUTE)])
-    assert gap.reason == "observation_gap"
-    assert gap.days == 7 and gap.per_year is None
-    # Gaps outside the window do not count; overlapping ones only once.
-    before = projection(every(60), gaps=[(DAY - 5 * hour, DAY)])
-    assert before.reason is None
+    runs = [run(i * 300, i * 300 + 10) for i in range(31)]  # every 5 hours
+    gap = [(DAY + 155 * hour, DAY + 165 * hour)]  # after the last start
+    result = projection(runs, gaps=gap)
+    assert result.reason is None
+    assert result.starts == 31
+    assert result.observed_hours == pytest.approx(158)
+    assert result.per_day == pytest.approx(31 / 158 * 24)
+    assert result.per_year == 1719
+    assert result.as_attributes()["starts_7d_observed_hours"] == 158.0
+
+
+def test_projection_needs_six_observed_days() -> None:
+    hour = timedelta(hours=1)
+    result = projection(every(60), gaps=[(DAY + 50 * hour, DAY + 80 * hour)])
+    assert result.reason == "too_few_hours"
+    assert result.observed_hours == pytest.approx(138)
+    assert result.days == 7 and result.per_year is None
+    assert result.field_class is None
+    # Exactly 6 days observed is enough.
+    enough = projection(every(60), gaps=[(DAY + 50 * hour, DAY + 74 * hour)])
+    assert enough.reason is None
+    assert enough.observed_hours == pytest.approx(144)
+
+
+def test_gap_across_a_day_boundary_and_the_window_edges() -> None:
+    hour = timedelta(hours=1)
+    # 20:00 to 04:00 the next day: 8 hours, both days lose a part.
+    across = projection(every(60), gaps=[(DAY + 44 * hour, DAY + 52 * hour)])
+    assert across.observed_hours == pytest.approx(160)
+    # Gaps reaching beyond the window count only inside it, overlaps once.
+    edges = projection(
+        every(60),
+        gaps=[
+            (DAY - 5 * hour, DAY + 2 * hour),
+            (DAY + hour, DAY + 3 * hour),
+            (END - hour, END + 5 * hour),
+        ],
+    )
+    assert edges.observed_hours == pytest.approx(164)
     assert unobserved_seconds(
         [(DAY, DAY + hour), (DAY + 30 * MINUTE, DAY + 90 * MINUTE)], DAY, END
     ) == pytest.approx(90 * 60)
 
 
 def test_projection_over_a_dst_change() -> None:
-    """A local day of 23 hours is still one day."""
+    """A local day of 23 hours is still one day of the window; per day
+    counts over the 167 hours observed."""
     berlin = ZoneInfo("Europe/Berlin")
     days = [
         local_midnight(date(2026, 3, 25) + timedelta(days=k), berlin) for k in range(7)
@@ -259,7 +299,8 @@ def test_projection_over_a_dst_change() -> None:
     assert (end - days[0]) == timedelta(days=7, hours=-1)
     runs = [Run(start=d + timedelta(hours=1), end=d + timedelta(hours=2)) for d in days]
     result = starts_projection(runs, None, days, end, days[0], [])
-    assert result.per_day == pytest.approx(1)
+    assert result.observed_hours == pytest.approx(167)
+    assert result.per_day == pytest.approx(7 / 167 * 24)
 
 
 def test_prune_drops_old_gaps() -> None:

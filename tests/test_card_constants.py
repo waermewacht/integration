@@ -55,7 +55,7 @@ def test_card_knows_the_starts_projection() -> None:
     for found in texts:
         for key in cycling.FIELD_CLASSES:
             assert f"{key}:" in found, key
-    assert f'{cycling.OBSERVATION_GAP}: "' in CARD
+    assert f'{cycling.TOO_FEW_HOURS}: "' in CARD
     assert f'"{cycling.TOO_FEW_DAYS}"' in CARD
 
 

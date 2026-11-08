@@ -130,7 +130,7 @@ const TEXT = {
     days: (n) => `erst ${n} Tage`,
     // Starts per year: a projection from 7 days, placed in the Fraunhofer
     // field test (WP-QS 2024) - an orientation, not a check.
-    projected: (cls) => `aus 7 Tagen hochgerechnet${cls ? ` · Feldtest: ${cls}` : ""}`,
+    projected: (days, cls) => `aus ${days} Tagen hochgerechnet${cls ? ` · Feldtest: ${cls}` : ""}`,
     projectionDays: (have, need) => `erst ${have} von ${need} Tagen`,
     fieldClasses: { low_third: "unteres Drittel", typical: "üblich", top_10_percent: "obere 10 %" },
     since: (v) => `seit ${v}`,
@@ -186,7 +186,7 @@ const TEXT = {
       gas_unit: "Einheit des Zählers",
       no_calorific_value: "Brennwert fehlt",
       too_few_periods: "Zu wenige Ablesungen",
-      observation_gap: "Lücke in den Daten",
+      too_few_hours: "Zu wenig beobachtet",
     },
     editor: {
       device_id: "Wärmepumpe (Wärmewacht-Gerät)",
@@ -294,7 +294,7 @@ const TEXT = {
     preliminaryValue: (v) => `preliminary ${v}`,
     litres: (v) => `${v} litres`,
     days: (n) => `only ${n} days`,
-    projected: (cls) => `projected from 7 days${cls ? ` · field test: ${cls}` : ""}`,
+    projected: (days, cls) => `projected from ${days} days${cls ? ` · field test: ${cls}` : ""}`,
     projectionDays: (have, need) => `only ${have} of ${need} days`,
     fieldClasses: { low_third: "lowest third", typical: "typical", top_10_percent: "top 10 %" },
     since: (v) => `since ${v}`,
@@ -350,7 +350,7 @@ const TEXT = {
       gas_unit: "Unit of the meter",
       no_calorific_value: "Calorific value missing",
       too_few_periods: "Too few readings",
-      observation_gap: "Gap in the data",
+      too_few_hours: "Too little observed",
     },
     editor: {
       device_id: "Heat pump (Wärmewacht device)",
@@ -870,8 +870,14 @@ class WaermewachtCard extends HTMLElement {
         : (t.reasons[a.starts_7d_reason] || t.unknown);
       return this._tile(this._entities.starts_today, t.tiles.starts_per_year, why, "–");
     }
+    // Projected from the hours with a known compressor state: "7" when the
+    // week was complete (23 or 25 hours on a DST day), else "6,6".
+    const hours = a.starts_7d_observed_hours;
+    const full = PROJECTION_DAYS * 24;
+    const days = hours === null || hours === undefined || Math.abs(hours - full) <= 1
+      ? this._num(PROJECTION_DAYS, 0) : this._num(hours / 24, 1);
     return this._tile(this._entities.starts_today, t.tiles.starts_per_year,
-      t.projected(t.fieldClasses[a.starts_field_class] || ""), `≈ ${this._num(perYear, 0)}`);
+      t.projected(days, t.fieldClasses[a.starts_field_class] || ""), `≈ ${this._num(perYear, 0)}`);
   }
 
   _dhw(t) {
