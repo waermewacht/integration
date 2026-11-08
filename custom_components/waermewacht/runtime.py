@@ -2196,6 +2196,11 @@ class HeatPumpRuntime:
         activity = self._activity_of(current, self.tracker.compressor)
         if changed is None and activity == self.tracker.activity:
             return
+        if (
+            activity is Activity.DEFROST
+            and self.tracker.activity is not Activity.DEFROST
+        ):
+            self._note_defrost_start(at)
         if (defrost := self.tracker.set_activity(activity, at)) is not None:
             self.defrosts.append(defrost)
             self._dirty = self._history_dirty = True
@@ -2271,9 +2276,24 @@ class HeatPumpRuntime:
     def _note_status(self, state: str, at: datetime, other: bool) -> None:
         """A text of the activity entity: count the entry of a text without
         a mode (health check 4.13), saved with the live file."""
-        if self.status.observe(state, at.astimezone(self.tz).date(), other):
+        if self.status.observe(state, at, at.astimezone(self.tz).date(), other):
             self._dirty = True
             self._update_status_finding(at)
+
+    def _note_defrost_start(self, at: datetime) -> None:
+        """A protection text shortly before a defrost belongs to it (4.13)."""
+        counted, dropped = self.status.defrost(at)
+        for _ in range(dropped):
+            self._count("status:before_defrost")
+        if counted:
+            self._dirty = True
+            self._update_status_finding(at)
+
+    def _settle_status(self, now: datetime) -> None:
+        """Count protection texts that no defrost followed (4.13)."""
+        if self.status.settle(now):
+            self._dirty = True
+            self._update_status_finding(now)
 
     def _update_status_finding(self, now: datetime) -> None:
         today = now.astimezone(self.tz).date()
@@ -2533,6 +2553,7 @@ class HeatPumpRuntime:
         self._check_source_gap(now)
         self._set_charge_late()
         self._finish_charge(self.charge_tracker.tick(now))
+        self._settle_status(now)
         # Before a period boundary, book all waiting electricity in the period
         # its heat went to.
         self._resolve_pending(now, final=self.marks.due(now))

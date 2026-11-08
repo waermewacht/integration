@@ -344,6 +344,9 @@ async def test_status_messages_entered_again_and_again(
         await tick(hass, freezer, 1)
     hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
     await tick(hass, freezer, 1)
+    # The last one waits ten minutes for a defrost, then it counts.
+    assert hass.states.get(problem).attributes["most_frequent_count"] == 2
+    await tick(hass, freezer, 10)
     state = hass.states.get(problem)
     assert state.state == "on"
     assert state.attributes["most_frequent"] == "Durchflussüberwachung"
@@ -361,3 +364,38 @@ async def test_status_messages_entered_again_and_again(
     assert hass.states.get(problem).attributes["most_frequent_count"] == 3
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["findings"]["status_messages"]["problem"] is True
+
+
+@pytest.mark.freeze_time(START)
+async def test_status_messages_before_a_defrost(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """The flow monitor directly before each defrost (compressor running) is
+    part of the defrost; the same text amid a cycle counts."""
+    entry = await setup(hass)
+    problem = entity_id(hass, entry, "binary_sensor", "status_messages")
+    hass.states.async_set(COMPRESSOR, "on")
+    for _ in range(4):
+        hass.states.async_set(ACTIVITY, "Heizen")
+        await tick(hass, freezer, 20)
+        hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
+        await tick(hass, freezer, 2)
+        hass.states.async_set(ACTIVITY, "Abtauen")
+        await tick(hass, freezer, 4)
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 30)
+    state = hass.states.get(problem)
+    assert state.attributes["entries_7d"] == 0
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["events"]["status:before_defrost"] == 4
+
+    # Amid the cycle, no defrost within ten minutes: counted.
+    hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 15)
+    hass.states.async_set(ACTIVITY, "Abtauen")
+    await tick(hass, freezer, 4)
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 1)
+    assert hass.states.get(problem).attributes["entries_7d"] == 1

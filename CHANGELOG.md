@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Statusmeldungen: kein Fehlalarm mehr vor dem Abtauen.** Meldet die Betriebsart eine Schutz- oder Störmeldung und beginnt binnen 10 Minuten danach eine Abtauung, zählt die Meldung nicht mehr für den Befund „Auffällige Statusmeldungen“. Manche Regelungen (etwa Dimplex-artige) melden „Durchflussüberwachung“ fast immer direkt vor dem Abtauen, bei laufendem Kompressor – eine normale Schutzphase, die den Befund bei jeder Abtauung auslöste. Dieselbe Meldung mitten im Heiztakt zählt weiter, ebenso eine, nach der die Abtauung erst später beginnt. Eine Schutzmeldung zählt deshalb erst 10 Minuten nach dem Annehmen; eine beim Neustart noch wartende entfällt. In der Diagnose zählt das Ereignis `status:before_defrost`. Anlass: Rückmeldung aus dem simon42-Forum.
+
 ## 0.4.8 – 2026-11-08
 
 - **Neu: Zusammenfassung oben in den Einstellungen.** Das Zahnrad-Formular zeigt zuerst in ein paar Zeilen, was der Eintrag liest und wie er rechnet: Vorlage oder eigene Zuordnung, Wärme- und Stromzähler je Betriebsart (eigener Zähler oder „gesamt“), Kompressor, Betriebsart und Startzähler, Außen-, Vor- und Rücklauftemperatur, Strompreis (fest oder Sensor), PV-Aufteilung (aus, anteilig, Wärmepumpe zuerst) und die Grenzen. Darunter steht unter „Was fehlt“ nur, was eine Folge hat, etwa „Kein Einspeise- und PV-Zähler: die PV-Aufteilung rechnet nur „Wärmepumpe zuerst aus dem Netz““ oder „Keine Betriebsart: keine Abtauungen, keine Spreizung, kein mittlerer Vorlauf“. Bei Gas- und Ölheizungen: Zähler oder Ablesung, Außentemperatur und Vorlauf, Preis, Nutzungsgrad, Normaußentemperatur, und etwa „Gesamtzähler ohne Warmwasserzähler und ohne Haken „Vorlauffühler sitzt im Heizkreis“: kein Vorlauf bei 0 °C“. Keine neuen Felder; die Zusammenfassung ist deutsch oder englisch nach der Sprache von Home Assistant. Anlass: eigene Prüfung.

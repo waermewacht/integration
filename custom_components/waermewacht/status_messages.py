@@ -16,6 +16,14 @@ messages that come back again and again (seen 2026-11: "Durchfluss-
   WINDOW_DAYS days (today included) are kept, at most MAX_TEXTS texts a day
   (more go under OVERFLOW) of at most MAX_LENGTH characters.
 - Only texts that carry no mode (Activity.OTHER) are counted.
+- Before a defrost: a protection entry waits up to BEFORE_DEFROST and is
+  not counted when a defrost starts in that time (seen 2026-11 on a
+  Dimplex-like controller: "Durchflussüberwachung" in about 95 % of the
+  cases directly before "Abtauen", compressor running: a normal phase of
+  the defrost, not a fault). At most one waiting entry per text: entered
+  again before, the first one counts (the status ended without a defrost).
+  Waiting entries live in memory only; one still open at a restart is
+  dropped. Waits and unclassified texts count at once, as before.
 - Kind by words (lower case, umlauts as ae/oe/ue, "-" and "_" as spaces):
   a WAITING word first (utility lock, minimum standstill, flushing: normal
   waits that say "EVU-Abschaltung" must not count as a fault), then a
@@ -32,7 +40,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from .health import TOO_FEW_DAYS, Finding
@@ -41,6 +49,9 @@ WINDOW_DAYS = 7
 MIN_ENTRIES = 3  # own assumption, docs/GESUNDHEITSCHECK.md 4.13
 MAX_TEXTS = 20  # different texts per day
 MAX_LENGTH = 60
+# A protection entry this long before the start of a defrost is part of
+# the defrost (own assumption, docs/GESUNDHEITSCHECK.md 4.13).
+BEFORE_DEFROST = timedelta(minutes=10)
 OVERFLOW = "…"
 
 PROTECTION = "protection"
@@ -167,25 +178,64 @@ class StatusCounter:
     days: dict[str, dict[str, int]] = field(default_factory=dict)
     since: date | None = None  # counting since (first day observed)
     last: str | None = None  # last known text of the activity entity
+    # Protection entries waiting for a defrost (text -> entered, day);
+    # memory only, not saved.
+    pending: dict[str, tuple[datetime, date]] = field(
+        default_factory=dict, compare=False
+    )
 
-    def observe(self, state: str | None, day: date, other: bool) -> bool:
-        """A state of the activity entity; `other`: it carries no mode.
+    def observe(self, state: str | None, at: datetime, day: date, other: bool) -> bool:
+        """A state of the activity entity at `at` (local `day`); `other`: it
+        carries no mode.
 
         True when an entry was counted (to be saved). A new text alone
         waits for the next save of the live file (a stop saves it too)."""
+        counted = self.settle(at)
         if state is None or state.strip() in ("", "unknown", "unavailable"):
-            return False
+            return counted
         text = state.strip()[:MAX_LENGTH]
         if text == self.last:
-            return False
+            return counted
         previous, self.last = self.last, text
         if previous is None or not other:
+            return counted
+        if kind(text) == PROTECTION:
+            if (earlier := self.pending.pop(text, None)) is not None:
+                self._count(text, earlier[1])
+                counted = True
+            self.pending[text] = (at, day)
+            return counted
+        self._count(text, day)
+        return True
+
+    def defrost(self, at: datetime) -> tuple[bool, int]:
+        """A defrost starts at `at`: the waiting protection entries entered
+        at most BEFORE_DEFROST before are dropped, older ones counted.
+        Returns (any counted, number dropped)."""
+        counted = self.settle(at)
+        dropped = len(self.pending)
+        self.pending.clear()
+        return counted, dropped
+
+    def settle(self, now: datetime) -> bool:
+        """Count the waiting entries without a defrost for BEFORE_DEFROST;
+        True if any was counted."""
+        if not self.pending:
             return False
+        due = [
+            t
+            for t, (entered, _) in self.pending.items()
+            if now - entered > BEFORE_DEFROST
+        ]
+        for text in due:
+            self._count(text, self.pending.pop(text)[1])
+        return bool(due)
+
+    def _count(self, text: str, day: date) -> None:
         counts = self.days.setdefault(day.isoformat(), {})
         if text not in counts and len(counts) >= MAX_TEXTS:
             text = OVERFLOW
         counts[text] = counts.get(text, 0) + 1
-        return True
 
     def prune(self, today: date) -> bool:
         """Drop the days before the window; True if any was dropped."""

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
 from custom_components.waermewacht.health import TOO_FEW_DAYS
 from custom_components.waermewacht.status_messages import (
+    BEFORE_DEFROST,
     MAX_TEXTS,
     MIN_ENTRIES,
     OVERFLOW,
@@ -22,6 +23,7 @@ from custom_components.waermewacht.templates import TEMPLATES
 
 TODAY = date(2026, 11, 8)
 WEEK_AGO = TODAY - timedelta(days=6)
+NOON = datetime(2026, 11, 8, 11, tzinfo=UTC)
 
 # A status template of a real heat pump (simon42 forum, 2026-11), its texts
 # as the user's template reports them.
@@ -79,43 +81,152 @@ def test_the_texts_carry_no_mode_in_a_manual_mapping() -> None:
         assert manual.parse_activity(text) is Activity.OTHER
 
 
+def at(minutes: float) -> datetime:
+    return NOON + timedelta(minutes=minutes)
+
+
 def test_an_entry_is_a_change_to_the_text() -> None:
     counter = StatusCounter(since=WEEK_AGO)
     # The first text after the setup: no entry (the one before is unknown),
     # also when it carries no mode.
-    assert not counter.observe("Störung", TODAY, True)
+    assert not counter.observe("Störung", at(0), TODAY, True)
     assert counter.last == "Störung"
-    assert not counter.observe("Heizen", TODAY, False)
-    for _ in range(4):
-        assert counter.observe("Durchflussüberwachung", TODAY, True)
+    assert not counter.observe("Heizen", at(1), TODAY, False)
+    for i in range(4):
+        # A protection entry waits for a defrost, then counts.
+        assert not counter.observe(
+            "Durchflussüberwachung", at(10 + 30 * i), TODAY, True
+        )
         # An attribute change repeats the same text: no entry.
-        assert not counter.observe("Durchflussüberwachung", TODAY, True)
-        assert not counter.observe("Heizen", TODAY, False)
+        assert not counter.observe(
+            "Durchflussüberwachung", at(11 + 30 * i), TODAY, True
+        )
+        assert not counter.observe("Heizen", at(12 + 30 * i), TODAY, False)
+        assert counter.settle(at(21 + 30 * i))
     assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 4}}
+    assert not counter.pending
 
 
 def test_a_restart_is_no_entry() -> None:
     counter = StatusCounter(since=WEEK_AGO)
-    counter.observe("Heizen", TODAY, False)
-    counter.observe("Sperre", TODAY, True)
+    counter.observe("Heizen", at(0), TODAY, False)
+    counter.observe("Sperre", at(1), TODAY, True)
     for state in ("unavailable", "unknown", "", None, "Sperre"):
-        counter.observe(state, TODAY, True)
+        counter.observe(state, at(2), TODAY, True)
     assert counter.days[TODAY.isoformat()] == {"Sperre": 1}
     # Stored and read back (live file), still no entry.
     again = StatusCounter.from_dict(counter.as_dict())
-    assert not again.observe("Sperre", TODAY, True)
+    assert not again.observe("Sperre", at(3), TODAY, True)
     assert again == counter
+
+
+def test_a_waiting_entry_is_dropped_at_a_restart() -> None:
+    counter = StatusCounter(since=WEEK_AGO, last="Heizen")
+    counter.observe("Durchflussüberwachung", at(0), TODAY, True)
+    assert "pending" not in counter.as_dict()
+    again = StatusCounter.from_dict(counter.as_dict())
+    assert not again.pending
+    assert not again.observe("Durchflussüberwachung", at(1), TODAY, True)
+    assert not again.settle(at(60))
+    assert again.days == {}
 
 
 def test_texts_per_day_are_bounded() -> None:
     counter = StatusCounter(since=WEEK_AGO, last="Heizen")
     for i in range(MAX_TEXTS + 5):
-        counter.observe(f"Fehler {i}", TODAY, True)
+        counter.observe(f"Fehler {i}", at(i), TODAY, True)
+    counter.settle(at(60))
     counts = counter.days[TODAY.isoformat()]
     assert len(counts) == MAX_TEXTS + 1
     assert counts[OVERFLOW] == 5
-    counter.observe("x" * 200, TODAY, True)
+    counter.observe("x" * 200, at(61), TODAY, True)
     assert counter.last == "x" * 60
+
+
+def defrost_pattern(counter: StatusCounter, start: float, gap: float) -> None:
+    """Heizen -> Durchflussüberwachung -> (gap) Abtauen -> Heizen, as the
+    activity entity of a Dimplex-like controller reports it (simon42 forum,
+    2026-11; the compressor keeps running)."""
+    counter.observe("Heizen", at(start), TODAY, False)
+    counter.observe("Durchflussüberwachung", at(start + 30), TODAY, True)
+    counter.observe("Abtauen", at(start + 30 + gap), TODAY, False)
+    counter.defrost(at(start + 30 + gap))
+    counter.observe("Heizen", at(start + 35 + gap), TODAY, False)
+    counter.settle(at(start + 60 + gap))
+
+
+def test_the_flow_monitor_before_a_defrost_is_no_entry() -> None:
+    counter = StatusCounter(since=WEEK_AGO)
+    for cycle in range(10):
+        defrost_pattern(counter, 90 * cycle, 2)
+    assert counter.days == {}
+    assert not counter.pending
+    result = counter.finding(TODAY)
+    assert result.problem is False
+    assert result.evidence["entries_7d"] == 0
+
+
+def test_the_flow_monitor_amid_a_cycle_counts() -> None:
+    counter = StatusCounter(since=WEEK_AGO)
+    for cycle in range(3):
+        counter.observe("Heizen", at(60 * cycle), TODAY, False)
+        counter.observe("Durchflussüberwachung", at(60 * cycle + 20), TODAY, True)
+        counter.observe("Heizen", at(60 * cycle + 22), TODAY, False)
+    # Counted once the time passed without a defrost, the last one not yet.
+    assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 2}}
+    minutes = BEFORE_DEFROST.total_seconds() / 60
+    assert not counter.settle(at(140 + minutes))
+    assert counter.settle(at(141 + minutes))
+    assert counter.finding(TODAY).problem is True
+
+
+def test_a_defrost_after_the_time_does_not_excuse() -> None:
+    counter = StatusCounter(since=WEEK_AGO)
+    for cycle in range(3):
+        defrost_pattern(counter, 90 * cycle, 15)
+    assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 3}}
+    assert counter.finding(TODAY).problem is True
+    # Counted at the defrost, also without a settle before.
+    counter = StatusCounter(since=WEEK_AGO, last="Heizen")
+    counter.observe("Durchflussüberwachung", at(0), TODAY, True)
+    assert counter.defrost(at(15)) == (True, 0)
+    assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 1}}
+    # Exactly ten minutes is still before the defrost.
+    counter.observe("Heizen", at(20), TODAY, False)
+    counter.observe("Durchflussüberwachung", at(30), TODAY, True)
+    assert counter.defrost(at(30) + BEFORE_DEFROST) == (False, 1)
+
+
+def test_one_waiting_entry_per_text() -> None:
+    """Entered again before the time is over: the first one ended without a
+    defrost and counts, the second waits."""
+    counter = StatusCounter(since=WEEK_AGO, last="Heizen")
+    assert not counter.observe("Durchflussüberwachung", at(0), TODAY, True)
+    counter.observe("Heizen", at(1), TODAY, False)
+    assert counter.observe("Durchflussüberwachung", at(3), TODAY, True)
+    assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 1}}
+    assert len(counter.pending) == 1
+    counter.observe("Abtauen", at(5), TODAY, False)
+    assert counter.defrost(at(5)) == (False, 1)
+    assert counter.days == {TODAY.isoformat(): {"Durchflussüberwachung": 1}}
+
+
+def test_a_waiting_entry_counts_on_its_day() -> None:
+    counter = StatusCounter(since=WEEK_AGO, last="Heizen")
+    late = datetime(2026, 11, 7, 22, 55, tzinfo=UTC)  # 23:55 local
+    yesterday = TODAY - timedelta(days=1)
+    counter.observe("Hochdrucksicherung", late, yesterday, True)
+    assert counter.settle(late + timedelta(minutes=11))
+    assert counter.days == {yesterday.isoformat(): {"Hochdrucksicherung": 1}}
+
+
+def test_waits_count_at_once() -> None:
+    counter = StatusCounter(since=WEEK_AGO, last="Heizen")
+    assert counter.observe("Schaltspielsperre", at(0), TODAY, True)
+    assert not counter.pending
+    counter.observe("Abtauen", at(2), TODAY, False)
+    assert counter.defrost(at(2)) == (False, 0)
+    assert counter.days == {TODAY.isoformat(): {"Schaltspielsperre": 1}}
 
 
 def test_old_days_are_dropped() -> None:
