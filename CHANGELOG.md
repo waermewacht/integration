@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.4 – 2026-11-08
 
 - **Heizlast auch ohne Vorsaison.** Heizlast je Kelvin, Heizlast bei Normaußentemperatur, Heizgrenze, Leistung je Heizlast und die Wochenpunkte der Energiesignatur kamen bisher nur aus der letzten *vollständigen* Saison. Wer die Statistik erst seit diesem Herbst hat, sah deshalb den ganzen Winter nichts. Jetzt nimmt Wärmewacht in diesem Fall die laufende Saison bis jetzt: Die Karte zeigt die Wochen dieses Winters, sobald sie da sind, in der Kachel, was noch fehlt („3 von 8 Wochen · 0 von 5 Frosttagen“), und die Werte, sobald die Daten reichen (8 Wochen, 10 K Spanne, 5 Frosttage, wie bisher). Reicht die Vorsaison, bleibt alles wie gehabt. Neues Attribut `season` (`previous` oder `current`); `start` und `end` nennen den Zeitraum, die Karte schreibt „Laufende Saison“ dazu. Die Aktion „Heizlast“ rechnet ohne Zeitraum über denselben. Anlass: Rückmeldung eines Nutzers.
 
