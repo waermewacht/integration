@@ -418,6 +418,38 @@ async def test_options(hass: HomeAssistant) -> None:
     assert "costs" not in entry.options
 
 
+async def test_options_price_sensor_unit(hass: HomeAssistant) -> None:
+    """A price sensor in ct/kWh, €/kWh or €/MWh; other units are refused."""
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    required = {
+        "min_electricity": 0.5,
+        "short_run_minutes": 10,
+        "critical_run_minutes": 6,
+        "starts_per_hour": 3,
+        "season_start_month": "7",
+        "heat_load": {},
+    }
+    hass.states.async_set("sensor.price", "0.31", {"unit_of_measurement": "EUR"})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {**required, "costs": {"electricity_price_entity": "sensor.price"}},
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "price_unit"}
+    assert result["description_placeholders"]["unit"] == "EUR"
+
+    hass.states.async_set("sensor.price", "120", {"unit_of_measurement": "EUR/MWh"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {**required, "costs": {"electricity_price_entity": "sensor.price"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["electricity_price_entity"] == "sensor.price"
+    assert "electricity_price" not in entry.options
+
+
 async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:
     """An entry from before the hot water temperature existed gets it."""
     add_ems_esp(hass)

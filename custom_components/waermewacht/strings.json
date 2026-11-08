@@ -259,6 +259,10 @@
     }
   },
   "options": {
+    "error": {
+      "price_unit": "{entity} reports its price in “{unit}”. Possible are {units}.",
+      "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency."
+    },
     "step": {
       "init": {
         "title": "Settings",
@@ -284,15 +288,17 @@
         "sections": {
           "costs": {
             "name": "Costs and gas comparison (optional)",
-            "description": "Every field may stay empty. Without an electricity price there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
+            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
             "data": {
               "electricity_price": "Electricity price",
+              "electricity_price_entity": "Electricity price sensor",
               "electricity_base_price": "Electricity base price",
               "gas_price": "Gas working price",
               "gas_base_price": "Gas base price"
             },
             "data_description": {
-              "electricity_price": "Gross price per kWh of the heat pump's electricity.",
+              "electricity_price": "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
+              "electricity_price_entity": "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
               "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
               "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
               "gas_base_price": "Gross per year; spread over the days of a period."
@@ -352,9 +358,6 @@
           "oil_price": "Gross per 100 litres, as dealers quote it (e.g. for 3000 l)."
         }
       }
-    },
-    "error": {
-      "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency."
     }
   },
   "selector": {

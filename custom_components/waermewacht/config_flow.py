@@ -46,6 +46,7 @@ from .const import (
     CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
+    CONF_ELECTRICITY_PRICE_ENTITY,
     CONF_ENTITIES,
     CONF_FUEL,
     CONF_GAS_BASE_PRICE,
@@ -106,6 +107,7 @@ from .model import (
 )
 from .oil import BOILER_TYPES, CUSTOM, KWH_PER_LITRE_HS
 from .oil import efficiency as boiler_type_efficiency
+from .prices import ACCEPTED_UNITS, price_factor
 from .profiles import Match, RegistryEntry, drop_foreign_activity, find
 from .templates import TEMPLATES
 
@@ -893,12 +895,22 @@ def _known(
 OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
     "costs": (
         CONF_ELECTRICITY_PRICE,
+        CONF_ELECTRICITY_PRICE_ENTITY,
         CONF_ELECTRICITY_BASE_PRICE,
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
     ),
     "heat_load": (CONF_DESIGN_TEMP, CONF_RATED_POWER, CONF_MIN_POWER),
 }
+
+
+def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
+    """Unit of an entity: of its state, else of its registry entry."""
+    state = hass.states.get(entity_id)
+    if state is not None and (unit := state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)):
+        return str(unit)
+    entry = er.async_get(hass).async_get(entity_id)
+    return entry.unit_of_measurement if entry else None
 
 
 class WaermewachtOptionsFlow(OptionsFlow):
@@ -911,14 +923,31 @@ class WaermewachtOptionsFlow(OptionsFlow):
             if self.config_entry.data.get(CONF_FUEL) == FUEL_OIL:
                 return await self.async_step_oil()
             return await self.async_step_gas()
+        errors: dict[str, str] = {}
+        placeholders: dict[str, str] = {}
+        options: dict[str, Any] = dict(self.config_entry.options)
         if user_input is not None:
             data = {k: v for k, v in user_input.items() if k not in OPTIONAL_SECTIONS}
             for name in OPTIONAL_SECTIONS:
                 data.update(
-                    {k: v for k, v in (user_input.get(name) or {}).items() if v != ""}
+                    {
+                        k: v
+                        for k, v in (user_input.get(name) or {}).items()
+                        if v not in ("", None)
+                    }
                 )
-            return self.async_create_entry(data=data)
-        options = self.config_entry.options
+            price_entity = data.get(CONF_ELECTRICITY_PRICE_ENTITY)
+            unit = _unit_of(self.hass, price_entity) if price_entity else None
+            if not price_entity or price_factor(unit) is not None:
+                return self.async_create_entry(data=data)
+            # Prices in other units (currencies, per MWh of gas…) are not guessed.
+            errors["base"] = "price_unit"
+            placeholders = {
+                "entity": price_entity,
+                "unit": unit or "–",
+                "units": ACCEPTED_UNITS,
+            }
+            options = data
 
         def number(
             minimum: float, maximum: float, step: float, unit: str
@@ -1000,6 +1029,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
             )
         optional: dict[str, selector.Selector] = {
             CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
+            CONF_ELECTRICITY_PRICE_ENTITY: selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
             CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
             CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
             CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
@@ -1024,7 +1056,12 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     )
                 }
             )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders=placeholders,
+        )
 
     async def async_step_gas(
         self, user_input: dict[str, Any] | None = None

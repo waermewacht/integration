@@ -77,6 +77,7 @@ from .const import (
     CONF_EFFICIENCY_DROP,
     CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
+    CONF_ELECTRICITY_PRICE_ENTITY,
     CONF_ENTITIES,
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
@@ -171,6 +172,7 @@ from .model import (
     has_elec,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
+from .price_feed import PriceFeed
 from .profiles import EMS_ESP, RegistryEntry, Template, find, parse_compressor
 from .report import (
     OWN_KEYS,
@@ -332,6 +334,21 @@ class HeatPumpRuntime:
             CONF_ELECTRICITY_BASE_PRICE
         )
         self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
+        # Price sensor (dynamic tariff): costs hour by hour from the
+        # statistics, the fixed price for hours without its price. Needs the
+        # recorder; without it the fixed price alone counts.
+        self.price_entity: str | None = options.get(CONF_ELECTRICITY_PRICE_ENTITY)
+        self.prices: PriceFeed | None = (
+            PriceFeed(
+                hass,
+                self.price_entity,
+                self.tz,
+                fixed=self.electricity_price,
+                day_values=self.template.previous_day,
+            )
+            if self.price_entity and "recorder" in hass.config.components
+            else None
+        )
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
         self.aux_mild_from: float = options.get(CONF_AUX_MILD_FROM, MILD_FROM)
         self.drop_threshold: float = options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT)
@@ -2327,6 +2344,22 @@ class HeatPumpRuntime:
     # Minute tick: period boundaries, sensor updates, throttled saving.
 
     @callback
+    async def _async_refresh_prices(self, now: datetime) -> None:
+        """Hourly prices of the price sensor and the season priced with them."""
+        assert self.prices is not None
+        season = self.marks.starts.get(Period.SEASON) or period_start(
+            Period.SEASON, now, self.tz, self.marks.season_month
+        )
+        assert season is not None
+        # Sources with hourly statistics: only the hours booked so far.
+        end = self.booked_until if self.hourly and self.booked_until else now
+        try:
+            await self.prices.async_refresh(min(end, now), season, self._async_hours)
+        except Exception:  # keep running; the costs wait for the next hour
+            _LOGGER.exception("Reading the prices of %s failed", self.price_entity)
+        finally:
+            self._notify()
+
     def _on_tick(self, now: datetime) -> None:
         self._note_mode(now)
         self._sample(now)
@@ -2356,6 +2389,8 @@ class HeatPumpRuntime:
             self.spawn(self._async_book_hours(now), "book_hours")
         if self._analysis_due(now):
             self.spawn(self._async_refresh_analysis(now), "analysis")
+        if self.prices is not None and self.prices.due(now):
+            self.spawn(self._async_refresh_prices(now), "prices")
         if self._counter_check_due(now):
             self._counter_check_day = now.astimezone(self.tz).date()
             self.spawn(self._async_check_counters(), "counter_kinds")

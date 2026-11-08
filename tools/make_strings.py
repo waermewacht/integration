@@ -682,6 +682,14 @@ def _build(lang: int) -> dict:
             },
         },
         "options": {
+            "error": {
+                "price_unit": t(
+                    (
+                        "{entity} reports its price in “{unit}”. Possible are {units}.",
+                        "{entity} meldet seinen Preis in „{unit}“. Möglich sind {units}.",
+                    )
+                ),
+            },
             "step": {
                 "init": {
                     "title": t(("Settings", "Einstellungen")),
@@ -760,13 +768,16 @@ def _build(lang: int) -> dict:
                             ),
                             "description": t(
                                 (
-                                    "Every field may stay empty. Without an electricity price there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
-                                    "Jedes Feld darf leer bleiben. Ohne Strompreis gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
+                                    "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
+                                    "Jedes Feld darf leer bleiben. Ohne Strompreis (fest oder als Sensor) gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
                                 )
                             ),
                             "data": {
                                 "electricity_price": t(
                                     ("Electricity price", "Strompreis")
+                                ),
+                                "electricity_price_entity": t(
+                                    ("Electricity price sensor", "Strompreis-Sensor")
                                 ),
                                 "electricity_base_price": t(
                                     ("Electricity base price", "Strom-Grundpreis")
@@ -781,8 +792,14 @@ def _build(lang: int) -> dict:
                             "data_description": {
                                 "electricity_price": t(
                                     (
-                                        "Gross price per kWh of the heat pump's electricity.",
-                                        "Bruttopreis je kWh für den Strom der Wärmepumpe.",
+                                        "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
+                                        "Bruttopreis je kWh für den Strom der Wärmepumpe. Mit Strompreis-Sensor: für die Stunden ohne dessen Preis.",
+                                    )
+                                ),
+                                "electricity_price_entity": t(
+                                    (
+                                        "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
+                                        "Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template: Jede Stunde wird mit dem Mittel des Sensors in dieser Stunde aus der Langzeitstatistik bewertet (braucht die Zustandsklasse measurement), auch der Rückblick vor der Einrichtung. Einheit ct/kWh, €/kWh oder €/MWh.",
                                     )
                                 ),
                                 "electricity_base_price": t(
@@ -847,7 +864,7 @@ def _build(lang: int) -> dict:
                         },
                     },
                 }
-            }
+            },
         },
         "selector": {
             "source": {"options": {"manual": t(("Manual", "Manuell"))}},

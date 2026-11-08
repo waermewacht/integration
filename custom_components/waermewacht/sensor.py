@@ -34,7 +34,7 @@ from homeassistant.util import dt as dt_util
 from . import WaermewachtConfigEntry, is_gas
 from .binary_sensor import health_checks
 from .charges import Charge, charge_ratio, is_disinfection
-from .costs import CostComparison, compare_with_gas
+from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
 from .energy import (
     SEASONAL_MODES,
@@ -59,6 +59,7 @@ from .model import (
     has_elec,
 )
 from .periods import RATIO_PERIODS, Period
+from .prices import FIXED, price_source
 from .runtime import HeatPumpRuntime
 
 type Value = Callable[[HeatPumpRuntime], StateType]
@@ -497,21 +498,58 @@ DIAGNOSIS = (
 
 
 def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | None:
-    """Costs of the period with the fixed prices of the options."""
+    """Costs of the period: with the fixed price of the options, or hour by
+    hour with the prices of the price sensor (price_feed.py)."""
     totals = runtime.energy(period)
     start = runtime.marks.starts.get(period)
     if totals is None or start is None:
         return None
-    return compare_with_gas(
-        {start: totals},
+    now = dt_util.utcnow()
+    if runtime.prices is None:
+        return compare_with_gas(
+            {start: totals},
+            start,
+            now,
+            runtime.tz,
+            electricity_price=runtime.electricity_price,
+            gas_price=runtime.gas_price,
+            gas_base_price_per_year=runtime.gas_base_price,
+            electricity_base_price_per_year=runtime.electricity_base_price,
+        )
+    priced = runtime.prices.period(start, totals, now)
+    if priced is None:  # prices not read yet (shortly after the start)
+        return None
+    electricity, heat = priced
+    return compare_costs(
+        electricity,
+        heat,
         start,
-        dt_util.utcnow(),
+        now,
         runtime.tz,
-        electricity_price=runtime.electricity_price,
         gas_price=runtime.gas_price,
         gas_base_price_per_year=runtime.gas_base_price,
         electricity_base_price_per_year=runtime.electricity_base_price,
     )
+
+
+def _price_attributes(
+    result: CostComparison | None, runtime: HeatPumpRuntime
+) -> dict[str, Any]:
+    """Where the prices came from: sensor, fixed or mixed (fixed price for
+    hours without one of the sensor), and the hours without any price."""
+    if runtime.prices is None:
+        return {"price_source": FIXED}
+    if result is None:
+        return {"price_source": None, "price_entity": runtime.price_entity}
+    electricity = result.electricity
+    average = electricity.average_price
+    return {
+        "price_source": price_source(electricity),
+        "price_entity": runtime.price_entity,
+        "average_price_eur_per_kwh": None if average is None else round(average, 4),
+        "hours_fixed_price": electricity.fallback_hours,
+        "hours_without_price": electricity.missing_hours,
+    }
 
 
 def _money(value: float | None, digits: int = 2) -> float | None:
@@ -539,12 +577,25 @@ def _period_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, 
     return attributes
 
 
+def _cost_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
+    """Start of the period and where its prices came from."""
+
+    def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+        return {
+            **_period_attributes(period)(runtime),
+            **_price_attributes(_comparison(runtime, period), runtime),
+        }
+
+    return attributes
+
+
 def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     result = _comparison(runtime, Period.SEASON)
     if result is None:
         return {}
     return {
         **_period_attributes(Period.SEASON)(runtime),
+        **_price_attributes(result, runtime),
         "heat_kwh": round(result.heat_kwh, 1),
         "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),
         "electricity_base_cost_eur": _money(result.electricity_base_cost_eur),
@@ -559,10 +610,15 @@ def _heating_or_dhw(runtime: HeatPumpRuntime) -> bool:
     return any(_mode_complete(runtime, m) for m in SEASONAL_MODES)
 
 
-HAS_PRICE: Needs = lambda r: r.electricity_price is not None and _heating_or_dhw(r)  # noqa: E731
+def _priced(runtime: HeatPumpRuntime) -> bool:
+    """A fixed price or a price sensor is set."""
+    return runtime.electricity_price is not None or runtime.price_entity is not None
+
+
+HAS_PRICE: Needs = lambda r: _priced(r) and _heating_or_dhw(r)  # noqa: E731
 # Electricity costs need no heat (ViCare: electricity and cycling only).
 HAS_ELEC_PRICE: Needs = lambda r: (  # noqa: E731
-    r.electricity_price is not None and any(has_elec(r.entities, m) for m in Mode)
+    _priced(r) and any(has_elec(r.entities, m) for m in Mode)
 )
 EURO = "EUR"
 COSTS = [
@@ -574,7 +630,7 @@ COSTS = [
             suggested_display_precision=2,
             value=_cost(period),
             needs=HAS_ELEC_PRICE,
-            attributes=_period_attributes(period),
+            attributes=_cost_attributes(period),
         )
         for period in (Period.MONTH, Period.SEASON)
     ),
@@ -586,7 +642,7 @@ COSTS = [
             (c := _comparison(r, Period.SEASON)) and c.heat_cost_per_kwh, 3
         ),
         needs=HAS_PRICE,
-        attributes=_period_attributes(Period.SEASON),
+        attributes=_cost_attributes(Period.SEASON),
     ),
     HeatPumpSensorDescription(
         key="gas_savings_season",

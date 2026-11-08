@@ -11,6 +11,7 @@ device names and areas are left out.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -218,6 +219,16 @@ async def async_get_config_entry_diagnostics(
             [lo.isoformat(), hi.isoformat()] for lo, hi in runtime.gaps
         ],
         "starts_projection": runtime.starts_projection(now).as_attributes(),
+        # Price sensor: hours read so far, priced days, hours from its states.
+        "prices": None
+        if runtime.prices is None
+        else {
+            "until": _iso(runtime.prices.until),
+            "refreshed_at": _iso(runtime.prices.refreshed_at),
+            "days": None if runtime.prices.days is None else len(runtime.prices.days),
+            "hours_from_states": runtime.prices.hours_from_states,
+            "current": runtime.prices.current(),
+        },
         "today": runtime.cycles("today", now).__dict__,
         "totals": runtime.totals.as_dict(),
         "month": month.as_dict() if month else None,
@@ -227,3 +238,7 @@ async def async_get_config_entry_diagnostics(
             for p, s in runtime.marks.starts.items()
         },
     }
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None

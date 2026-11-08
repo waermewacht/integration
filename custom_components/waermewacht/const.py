@@ -59,6 +59,9 @@ CONF_RATED_POWER: Final = "rated_power_kw"
 CONF_MIN_POWER: Final = "min_power_kw"
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
+# A price sensor (dynamic tariff): ct/kWh, €/kWh or €/MWh (prices.py); hours
+# without its price fall back to the fixed price.
+CONF_ELECTRICITY_PRICE_ENTITY: Final = "electricity_price_entity"
 # EUR per year, only for a separate heat pump meter (heat pump tariff).
 CONF_ELECTRICITY_BASE_PRICE: Final = "electricity_base_price"
 CONF_GAS_PRICE: Final = "gas_price"  # ct/kWh on the gross calorific value (Hs)

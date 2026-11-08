@@ -84,6 +84,25 @@ class ElectricityCost:
     missing_hours: int  # hours with electricity but without any price
     missing_kwh: float
     heat_missing_kwh: float
+    hourly_hours: int = 0  # hours priced with their own hourly price
+
+    def __add__(self, other: ElectricityCost) -> ElectricityCost:
+        """Both parts together; a cost unknown in one is unknown in the sum."""
+        return ElectricityCost(
+            electricity_kwh=self.electricity_kwh + other.electricity_kwh,
+            heat_electricity_kwh=self.heat_electricity_kwh + other.heat_electricity_kwh,
+            cost_eur=None
+            if self.cost_eur is None or other.cost_eur is None
+            else self.cost_eur + other.cost_eur,
+            heat_cost_eur=None
+            if self.heat_cost_eur is None or other.heat_cost_eur is None
+            else self.heat_cost_eur + other.heat_cost_eur,
+            fallback_hours=self.fallback_hours + other.fallback_hours,
+            missing_hours=self.missing_hours + other.missing_hours,
+            missing_kwh=self.missing_kwh + other.missing_kwh,
+            heat_missing_kwh=self.heat_missing_kwh + other.heat_missing_kwh,
+            hourly_hours=self.hourly_hours + other.hourly_hours,
+        )
 
     @property
     def average_price(self) -> float | None:
@@ -120,6 +139,13 @@ class CostComparison:
     savings_co2_kg: float
 
 
+# No electricity cost at all (the neutral element of ElectricityCost +).
+NO_ELECTRICITY = ElectricityCost(0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0)
+# Less than this (kWh) is rounding noise of sums and differences, not energy
+# that would need a price.
+NOISE_KWH = 1e-6
+
+
 def _price(value: float | None) -> float | None:
     """A usable price or None (NaN and infinity count as no price)."""
     return value if value is not None and math.isfinite(value) else None
@@ -138,7 +164,7 @@ def electricity_cost(
     that counts as missing. Without `hourly_prices`, `price` applies to all.
     """
     price = _price(price)
-    fallback = missing = 0
+    fallback = missing = hourly_count = 0
     cost = heat_cost = 0.0
     total = heat_total = missing_kwh = heat_missing = 0.0
     for hour, totals in hours.items():
@@ -148,14 +174,16 @@ def electricity_cost(
         heat_total += heat_side
         hourly = None if hourly_prices is None else _price(hourly_prices.get(hour))
         rate = hourly if hourly is not None else price
-        if kwh == 0:
+        if abs(kwh) < NOISE_KWH:
             continue
         if rate is None:
             missing += 1
             missing_kwh += kwh
             heat_missing += heat_side
             continue
-        if hourly_prices is not None and hourly is None:
+        if hourly is not None:
+            hourly_count += 1
+        elif hourly_prices is not None:
             fallback += 1
         cost += kwh * rate
         heat_cost += heat_side * rate
@@ -168,6 +196,7 @@ def electricity_cost(
         missing_hours=missing,
         missing_kwh=missing_kwh,
         heat_missing_kwh=heat_missing,
+        hourly_hours=hourly_count,
     )
 
 
@@ -239,6 +268,35 @@ def compare_with_gas(
         period, price=electricity_price, hourly_prices=hourly_prices
     )
     heat = sum(t.heat(*SEASONAL_MODES) for t in period.values())
+    return compare_costs(
+        electricity,
+        heat,
+        start,
+        end,
+        tz,
+        gas_price=gas_price,
+        gas_base_price_per_year=gas_base_price_per_year,
+        electricity_base_price_per_year=electricity_base_price_per_year,
+        boiler_efficiency=boiler_efficiency,
+        factors=factors,
+    )
+
+
+def compare_costs(
+    electricity: ElectricityCost,
+    heat: float,
+    start: datetime,
+    end: datetime,
+    tz: tzinfo,
+    *,
+    gas_price: float | None,
+    gas_base_price_per_year: float | None = None,
+    electricity_base_price_per_year: float | None = None,
+    boiler_efficiency: float = BOILER_EFFICIENCY_HS,
+    factors: EmissionFactors = WITH_UPSTREAM,
+) -> CostComparison:
+    """As compare_with_gas, from the electricity cost of [start, end) and the
+    heat of heating and hot water in it (priced elsewhere, prices.py)."""
     gas = gas_for_heat(heat, boiler_efficiency)
 
     gas_price = _price(gas_price)
