@@ -64,6 +64,7 @@ from .const import (
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_SOURCE,
+    CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
     CONF_Z_NUMBER,
@@ -927,7 +928,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
         placeholders: dict[str, str] = {}
         options: dict[str, Any] = dict(self.config_entry.options)
         if user_input is not None:
-            data = {k: v for k, v in user_input.items() if k not in OPTIONAL_SECTIONS}
+            data = {
+                k: v
+                for k, v in user_input.items()
+                if k not in OPTIONAL_SECTIONS and v not in ("", None)
+            }
             for name in OPTIONAL_SECTIONS:
                 data.update(
                     {
@@ -984,6 +989,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     CONF_STARTS_PER_HOUR,
                     default=options.get(CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR),
                 ): number(1, 12, 1, "/h"),
+                # Optional (empty: off), for on/off heat pumps.
+                vol.Optional(
+                    CONF_STARTS_PER_DAY,
+                    description={"suggested_value": options.get(CONF_STARTS_PER_DAY)},
+                ): number(1, 200, 1, "/d"),
                 vol.Required(
                     CONF_AUX_MILD_FROM,
                     default=options.get(CONF_AUX_MILD_FROM, MILD_FROM),

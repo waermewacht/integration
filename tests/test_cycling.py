@@ -10,6 +10,7 @@ import pytest
 from custom_components.waermewacht.cycling import (
     activity_seconds,
     cycle_stats,
+    cycling_triggers,
     field_class,
     max_starts_per_hour,
     prune,
@@ -265,3 +266,27 @@ def test_prune_drops_old_gaps() -> None:
     gaps = [(at(0), at(10)), (at(100), at(200))]
     prune([], [], at(50), gaps)
     assert gaps == [(at(100), at(200))]
+
+
+def test_cycling_triggers() -> None:
+    def triggers(per_hour: int, critical: int, starts: int, per_day=None):
+        return cycling_triggers(
+            per_hour,
+            critical,
+            starts,
+            starts_per_hour=3,
+            critical_per_day=3,
+            starts_per_day=per_day,
+        )
+
+    assert triggers(3, 2, 30) == []  # no limit per day: 30 starts are fine
+    assert triggers(4, 0, 4) == ["starts_per_hour"]
+    assert triggers(1, 3, 5) == ["critical_runs"]
+    # The limit per day, for an on/off heat pump: more than 4 starts in 24 h.
+    assert triggers(1, 0, 4, per_day=4) == []
+    assert triggers(1, 0, 5, per_day=4) == ["starts_per_day"]
+    assert triggers(4, 3, 5, per_day=4) == [
+        "starts_per_hour",
+        "critical_runs",
+        "starts_per_day",
+    ]

@@ -49,6 +49,8 @@ CONF_MIN_ELECTRICITY: Final = "min_electricity"
 CONF_SHORT_RUN: Final = "short_run_minutes"
 CONF_CRITICAL_RUN: Final = "critical_run_minutes"
 CONF_STARTS_PER_HOUR: Final = "starts_per_hour"
+# Optional: more starts within 24 hours count as conspicuous (unset: off).
+CONF_STARTS_PER_DAY: Final = "starts_per_day"
 CONF_SEASON_START: Final = "season_start_month"
 # Health check (docs/GESUNDHEITSCHECK.md), own assumptions.
 CONF_AUX_MILD_FROM: Final = "aux_mild_from"  # °C day mean

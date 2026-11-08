@@ -1,5 +1,6 @@
 """Starts per year projected from 7 days, against the Fraunhofer field test:
-attributes of "Starts today", never a reason for "cycling"."""
+attributes of "Starts today", never a reason for "cycling". And the optional
+limit of starts per day, which is one."""
 
 from __future__ import annotations
 
@@ -9,11 +10,13 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.waermewacht.const import DOMAIN
 from custom_components.waermewacht.runs import Run
 
-from .test_init import START, entity_id, setup, state, tick
+from .conftest import ACTIVITY, COMPRESSOR, entry_data
+from .test_init import START, entity_id, set_counters, setup, state, tick
 
 
 def attributes(hass: HomeAssistant, entry) -> dict:
@@ -78,3 +81,31 @@ async def test_projection_from_stored_runs(
     assert await hass.config_entries.async_unload(entry.entry_id)
     live = hass_storage[f"{DOMAIN}.{entry.entry_id}"]["data"]
     assert live["tracker"]["observed_since"] is not None
+
+
+@pytest.mark.freeze_time(START)
+async def test_limit_of_starts_per_day(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Optional: more starts in 24 hours than the limit is conspicuous."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    set_counters(hass, 1000.0, 300.0)
+    hass.states.async_set(COMPRESSOR, "off")
+    hass.states.async_set(ACTIVITY, "aus")
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(), options={"starts_per_day": 2}
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    for _ in range(3):  # three runs of 30 min, two hours apart
+        hass.states.async_set(COMPRESSOR, "on")
+        await tick(hass, freezer, 30)
+        hass.states.async_set(COMPRESSOR, "off")
+        await tick(hass, freezer, 90)
+    assert state(hass, entry, "cycling_problem") == "on"
+    assert state(hass, entry, "cycling_problem_status") == "problem"
+    found = hass.states.get(entity_id(hass, entry, "cycling_problem")).attributes
+    assert found["triggers"] == ["starts_per_day"]
+    assert found["starts_24h"] == 3
+    assert found["starts_per_day_limit"] == 2

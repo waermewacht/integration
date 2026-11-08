@@ -710,6 +710,12 @@ def _build(lang: int) -> dict:
                                 "Auffällig ab Starts pro Stunde über",
                             )
                         ),
+                        "starts_per_day": t(
+                            (
+                                "Conspicuous above starts per day",
+                                "Auffällig ab Starts pro Tag über",
+                            )
+                        ),
                         "season_start_month": t(
                             ("Season starts in", "Saison beginnt im")
                         ),
@@ -727,6 +733,12 @@ def _build(lang: int) -> dict:
                         ),
                     },
                     "data_description": {
+                        "starts_per_day": t(
+                            (
+                                "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
+                                "Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden machen das Takten auffällig. Leer: aus.",
+                            )
+                        ),
                         "min_electricity": t(
                             (
                                 "Below it the ratio is unknown instead of a random value.",

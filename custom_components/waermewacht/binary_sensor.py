@@ -66,7 +66,8 @@ async def async_setup_entry(
 
 
 class CyclingProblem(HeatPumpEntity, BinarySensorEntity):
-    """On with more starts per hour than allowed or several critical runs."""
+    """On with more starts per hour than allowed, several critical runs or
+    (when set) more starts in 24 hours than allowed; `triggers` says which."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
@@ -82,6 +83,7 @@ class CyclingProblem(HeatPumpEntity, BinarySensorEntity):
         result = self.runtime.cycling_problem()
         result.pop("problem")
         result["starts_per_hour_limit"] = self.runtime.starts_per_hour
+        result["starts_per_day_limit"] = self.runtime.starts_per_day
         return result
 
 

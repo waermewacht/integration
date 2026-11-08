@@ -233,6 +233,34 @@ def starts_projection(
     )
 
 
+# Why cycling counts as conspicuous (attribute triggers).
+TRIGGER_PER_HOUR = "starts_per_hour"
+TRIGGER_CRITICAL = "critical_runs"
+TRIGGER_PER_DAY = "starts_per_day"
+
+
+def cycling_triggers(
+    max_per_hour: int,
+    critical_runs: int,
+    starts_24h: int,
+    *,
+    starts_per_hour: float,
+    critical_per_day: int,
+    starts_per_day: float | None,
+) -> list[str]:
+    """What makes the last 24 hours conspicuous: more starts within one hour
+    than `starts_per_hour`, at least `critical_per_day` critical runs, or
+    (only when set) more starts in 24 hours than `starts_per_day`."""
+    triggers = []
+    if max_per_hour > starts_per_hour:
+        triggers.append(TRIGGER_PER_HOUR)
+    if critical_runs >= critical_per_day:
+        triggers.append(TRIGGER_CRITICAL)
+    if starts_per_day is not None and starts_24h > starts_per_day:
+        triggers.append(TRIGGER_PER_DAY)
+    return triggers
+
+
 type Baseline = tuple[int, datetime]
 
 

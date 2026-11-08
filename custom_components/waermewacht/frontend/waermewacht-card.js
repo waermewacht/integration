@@ -156,7 +156,8 @@ const TEXT = {
       aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 Tagen${a.aux_kwh_defrost_7d > 0 ? ` · beim Abtauen ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
       aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 Tagen${a.aux_kwh_defrost > 0 ? ` · beim Abtauen ${n(a.aux_kwh_defrost, 2)} kWh` : ""}`,
       dhw_efficiency_drop: (a, n) => `AZ ${n(a.ratio, 2)} statt ${n(a.previous_ratio, 2)}`,
-      cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} Starts/h · ${n(a.short_runs_24h, 0)} Kurzläufe`,
+      cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} Starts/h · ${n(a.short_runs_24h, 0)} Kurzläufe`
+        + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} Starts in 24 h (Grenze ${n(a.starts_per_day_limit, 0)})` : ""),
     },
     fine: "In Ordnung",
     problem: "Auffällig",
@@ -317,7 +318,8 @@ const TEXT = {
       aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 days${a.aux_kwh_defrost_7d > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
       aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 days${a.aux_kwh_defrost > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost, 2)} kWh` : ""}`,
       dhw_efficiency_drop: (a, n) => `COP ${n(a.ratio, 2)} instead of ${n(a.previous_ratio, 2)}`,
-      cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`,
+      cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
+        + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),
     },
     fine: "Fine",
     problem: "Conspicuous",

@@ -271,6 +271,7 @@
           "short_run_minutes": "Short run below",
           "critical_run_minutes": "Critical run below",
           "starts_per_hour": "Conspicuous above starts per hour",
+          "starts_per_day": "Conspicuous above starts per day",
           "season_start_month": "Season starts in",
           "aux_mild_from": "Backup heater: mild weather from",
           "efficiency_drop_percent": "Efficiency dropped from",
@@ -278,6 +279,7 @@
           "boiler_efficiency": "Boiler efficiency"
         },
         "data_description": {
+          "starts_per_day": "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
           "min_electricity": "Below it the ratio is unknown instead of a random value.",
           "season_start_month": "The current season is recomputed from the statistics.",
           "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",

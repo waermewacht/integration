@@ -271,6 +271,7 @@
           "short_run_minutes": "Kurzlauf unter",
           "critical_run_minutes": "Kritischer Lauf unter",
           "starts_per_hour": "Auffällig ab Starts pro Stunde über",
+          "starts_per_day": "Auffällig ab Starts pro Tag über",
           "season_start_month": "Saison beginnt im",
           "aux_mild_from": "Heizstab: milde Witterung ab",
           "efficiency_drop_percent": "Effizienz gesunken ab",
@@ -278,6 +279,7 @@
           "boiler_efficiency": "Kesselnutzungsgrad"
         },
         "data_description": {
+          "starts_per_day": "Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden machen das Takten auffällig. Leer: aus.",
           "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
           "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
           "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
