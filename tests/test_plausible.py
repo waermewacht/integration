@@ -62,6 +62,38 @@ def test_another_channel_and_negative_hours() -> None:
     assert left_out == [H0 + timedelta(hours=1), H0 + timedelta(hours=3)]
 
 
+def test_the_first_row_after_home_assistant_was_off_stays() -> None:
+    """No rows while Home Assistant was off (48 hours): the first row
+    afterwards holds the whole gap, the bound grows with the hours since the
+    previous row. One hour later the bound is 75 kWh again."""
+    data = [
+        (H0, 0.5, 100.0),
+        (H0 + timedelta(hours=48), 160.0, 260.0),
+        (H0 + timedelta(hours=49), 80.0, 340.0),
+        (H0 + timedelta(hours=50), -1.0, 339.0),
+        (H0 + timedelta(hours=51), 0.4, 339.4),
+    ]
+    kept, left_out = plausible_hours(data, 75.0)
+    assert left_out == [H0 + timedelta(hours=49), H0 + timedelta(hours=50)]
+    assert kept == {
+        H0: 0.5,
+        H0 + timedelta(hours=48): 160.0,
+        H0 + timedelta(hours=51): 0.4,
+    }
+    # The first row of the series counts as one hour.
+    assert plausible_hours(data[1:2], 75.0)[1] == [H0 + timedelta(hours=48)]
+    # The glitch and its fall back right after a gap are still left out.
+    data = [
+        (H0, 0.5, 107.0),
+        (H0 + timedelta(hours=48), 109744.5, 109851.5),
+        (H0 + timedelta(hours=49), 110.131, 110.131),
+        (H0 + timedelta(hours=50), 0.4, 110.531),
+    ]
+    kept, left_out = plausible_hours(data, 150.0)
+    assert left_out == [H0 + timedelta(hours=48), H0 + timedelta(hours=49)]
+    assert kept == {H0: 0.5, H0 + timedelta(hours=50): 0.4}
+
+
 def test_a_day_counter_reset_stays() -> None:
     """A day counter falls every midnight: without a jump before, it is no
     glitch (Home Assistant books the new day's first reading)."""
