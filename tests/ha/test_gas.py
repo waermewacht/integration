@@ -13,7 +13,7 @@ from homeassistant.components.recorder.models import (
     StatisticMetaData,
 )
 from homeassistant.components.recorder.statistics import async_import_statistics
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
@@ -538,7 +538,9 @@ async def test_gas_flow_sensor_in_the_heating_circuit(hass: HomeAssistant) -> No
     assert at_zero.attributes["days"] == 63
 
     # Reconfigure shows the box ticked; unticked, the old rule applies.
-    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
     assert result["step_id"] == "gas"
     schema = result["data_schema"].schema
     (key,) = (k for k in schema if k == CONF_FLOW_IN_CIRCUIT)
