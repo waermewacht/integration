@@ -56,12 +56,13 @@ from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .energy import Totals
 from .entity import own_entities
-from .gas import GasAnalysis, analyse, heat_hours, split_dhw, volume_to_kwh, window
+from .gas import GasAnalysis, analyse, heat_hours, split_dhw, window
 from .heat_load import HeatLoad
 from .model import Signal
 from .oil import KWH_PER_LITRE_HS, check_tank, consumed, price_per_kwh
 from .oil import efficiency as boiler_type_efficiency
 from .periods import local_midnight
+from .plausible import plausible_hours
 from .readings import (
     Reading,
     add_reading,
@@ -158,6 +159,8 @@ class GasRuntime:
             self.gas_base_price = options.get(CONF_GAS_BASE_PRICE)
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
         self.analysis: GasAnalysis | None = None
+        # Hours of the counters' statistics left out (plausible.py), last read.
+        self.hours_implausible = 0
         self.analysed_at: datetime | None = None
         self.problem: str | None = NOT_ANALYSED
         self._analysing = False
@@ -462,27 +465,31 @@ class GasRuntime:
             set(ids),
             "hour",
             {"energy": "kWh", "volume": LITRE_UNIT if self.oil else VOLUME_UNIT},
-            {"change"},
+            {"change", "state"},
         )
         hourly: dict[str, dict[datetime, float]] = {}
+        implausible = 0
         for entity_id in ids:
-            values: dict[datetime, float] = {}
+            factor = 1.0
+            if units[entity_id] == LITRE_UNIT:
+                factor = self.kwh_per_litre
+            elif units[entity_id] == VOLUME_UNIT:
+                assert self.calorific_value and self.z_number
+                factor = self.calorific_value * self.z_number
+            changes = []
             for row in rows.get(entity_id, []):
                 change = row.get("change")
-                if change is None or not change >= 0:
+                if change is None or change != change:  # NaN
                     continue
                 hour = row["start"]
                 if not isinstance(hour, datetime):
                     hour = dt_util.utc_from_timestamp(hour)
-                values[hour] = change
-            if units[entity_id] == LITRE_UNIT:
-                values = volume_to_kwh(values, self.kwh_per_litre, 1.0)
-            elif units[entity_id] == VOLUME_UNIT:
-                assert self.calorific_value and self.z_number
-                values = volume_to_kwh(values, self.calorific_value, self.z_number)
-            hourly[entity_id] = {
-                h: kwh for h, kwh in values.items() if kwh <= MAX_KWH_PER_HOUR
-            }
+                changes.append((hour, change * factor, row.get("state")))
+            # Above MAX_KWH_PER_HOUR or below 0 (a unit glitch, a replaced
+            # meter) and the fall back after such a jump are left out.
+            hourly[entity_id], left_out = plausible_hours(changes, MAX_KWH_PER_HOUR)
+            implausible += len(left_out)
+        self.hours_implausible = implausible
         gas = hourly[self.gas_entity]
         dhw = hourly[self.dhw_entity] if self.dhw_entity else None
         return gas, dhw

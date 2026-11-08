@@ -571,6 +571,7 @@ def _allocation_attributes(runtime: HeatPumpRuntime, period: Period) -> dict[str
         "kwh_from_grid": round(found.kwh_grid, 2),
         "kwh_own": round(found.kwh_own, 2),
         "hours_all_grid": found.hours_all_grid,
+        "hours_implausible": feed.hours_implausible(start),
     }
 
 

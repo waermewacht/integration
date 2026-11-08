@@ -214,3 +214,43 @@ async def test_without_grid_meter_no_allocation(
     assert value(hass, entry, "cost_month") == pytest.approx(1.8)
     attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
     assert attributes["allocation"] == "none"
+
+
+@pytest.mark.freeze_time(START)
+async def test_house_meter_glitch_counts_as_grid(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """The PV meter reports Wh as kWh for one reading (107 -> 109851.5 ->
+    110.131): read as it is, the house would have used 110 MWh of PV in that
+    hour and the heat pump's electricity would be own. Both hours are left
+    out and count as grid electricity."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    first = SETUP_HOUR - timedelta(hours=4)
+    # The house takes from the grid exactly what the heat pump uses.
+    source_statistics(hass, "sensor.grid_import", [0.0, 1.0, 3.0, 6.0], first)
+    source_statistics(hass, "sensor.feed_in", [0.0, 0.0, 0.0, 0.0], first)
+    pv_states = [107.0, 107.0, 109851.5, 110.131]
+    source_statistics(
+        hass,
+        "sensor.pv",
+        [0.0, 0.0, 109744.5, 109854.631],
+        first,
+        pv_states,
+    )
+    entry = await setup_entry(
+        hass,
+        {
+            "electricity_price": 30.0,
+            "grid_import_entity": "sensor.grid_import",
+            "feed_in_entity": "sensor.feed_in",
+            "pv_entity": "sensor.pv",
+            "feed_in_tariff": 8.0,
+        },
+    )
+    await tick(hass, freezer, 1)
+    attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
+    assert attributes["allocation"] == "proportional"
+    assert attributes["kwh_own"] == pytest.approx(0.0)
+    assert attributes["kwh_from_grid"] == pytest.approx(6.0)
+    assert attributes["hours_implausible"] == 2
+    assert value(hass, entry, "cost_month") == pytest.approx(1.8)

@@ -180,6 +180,7 @@ from .model import (
     has_elec,
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
+from .plausible import plausible_hours
 from .price_feed import PriceFeed
 from .profiles import EMS_ESP, RegistryEntry, Template, find, parse_compressor
 from .report import (
@@ -1783,6 +1784,16 @@ class HeatPumpRuntime:
         self, entity_ids: set[str], start: datetime, end: datetime
     ) -> dict[str, dict[datetime, float]]:
         """Hourly change (kWh) of energy entities from the long-term statistics."""
+        rows = await self._async_hourly_rows(entity_ids, start, end)
+        return {
+            entity_id: {hour: change for hour, change, _ in values}
+            for entity_id, values in rows.items()
+        }
+
+    async def _async_hourly_rows(
+        self, entity_ids: set[str], start: datetime, end: datetime
+    ) -> dict[str, list[tuple[datetime, float, float | None]]]:
+        """Hourly change and state (kWh) of energy entities, in order."""
         if not entity_ids or start >= end:
             return {}
         rows = await get_instance(self.hass).async_add_executor_job(
@@ -1793,9 +1804,9 @@ class HeatPumpRuntime:
             entity_ids,
             "hour",
             {"energy": "kWh"},
-            {"change"},
+            {"change", "state"},
         )
-        hourly: dict[str, dict[datetime, float]] = {}
+        hourly: dict[str, list[tuple[datetime, float, float | None]]] = {}
         for entity_id, entity_rows in rows.items():
             for row in entity_rows:
                 if (change := row.get("change")) is None:
@@ -1803,7 +1814,9 @@ class HeatPumpRuntime:
                 hour = row["start"]
                 if not isinstance(hour, datetime):
                     hour = dt_util.utc_from_timestamp(hour)
-                hourly.setdefault(entity_id, {})[hour] = change
+                hourly.setdefault(entity_id, []).append(
+                    (hour, change, row.get("state"))
+                )
         return hourly
 
     def _source_statistic_ids(self) -> dict[Signal, str]:
@@ -1897,26 +1910,29 @@ class HeatPumpRuntime:
             for s in self._energy
             if signals is None or s in signals
         }
-        rows = await self.async_hourly(
+        rows = await self._async_hourly_rows(
             {i for group in ids.values() for i in group}, start, end
         )
         result: HourlyChanges = {}
         for signal, (primary, *older) in ids.items():
-            merged: dict[datetime, float] = {}
-            for entity_id in older:
-                merged.update(rows.get(entity_id, {}))
-            merged.update(rows.get(primary, {}))
             # A sum started anew (meter replaced; mypyllant after a week
-            # without a fetch) or more than a heat pump can do in an hour.
-            plausible = {
-                hour: kwh
-                for hour, kwh in merged.items()
-                if 0 <= kwh <= MAX_POWER_KW * HOURLY_MARGIN
-            }
-            if len(plausible) < len(merged):
+            # without a fetch), more than a heat pump can do in an hour (a
+            # unit glitch of the source) or the fall back after such a jump.
+            merged: dict[datetime, float] = {}
+            rejected = False
+            for entity_id in (*older, primary):
+                kept, left_out = plausible_hours(
+                    rows.get(entity_id, []), MAX_POWER_KW * HOURLY_MARGIN
+                )
+                merged.update(kept)
+                for hour in left_out:
+                    if entity_id == primary:
+                        merged.pop(hour, None)  # not filled in from an older id
+                rejected |= bool(left_out)
+            if rejected:
                 self._count(f"hour_rejected:{signal}")
-            if plausible:
-                result[signal] = plausible
+            if merged:
+                result[signal] = merged
         return result
 
     # Report for any period.

@@ -74,18 +74,26 @@ def gas_kwh(mean: float) -> float:
 
 
 def import_statistics(
-    hass: HomeAssistant, days: list[tuple[date, float]] | None = None
+    hass: HomeAssistant,
+    days: list[tuple[date, float]] | None = None,
+    glitch: datetime | None = None,
 ) -> None:
+    """Gas (m³) and outdoor statistics; at `glitch` the meter reports a
+    reading 1000 times too high for one hour (Home Assistant books the fall
+    back as a new cycle, adding the whole reading)."""
     tz = dt_util.get_default_time_zone()
     gas: list[StatisticData] = []
     outdoor: list[StatisticData] = []
-    total = 0.0
+    total = summed = previous = 0.0
     for day, mean in days if days is not None else [*SUMMER, *WINTER]:
         start = datetime.combine(day, datetime.min.time(), tzinfo=tz).astimezone(UTC)
         for hour in range(24):
             at = start + timedelta(hours=hour)
             total += gas_kwh(mean) / HS
-            gas.append(StatisticData(start=at, state=total, sum=total))
+            reading = total * 1000 if at == glitch else total
+            summed += reading if reading < previous * 0.9 else reading - previous
+            previous = reading
+            gas.append(StatisticData(start=at, state=reading, sum=summed))
             outdoor.append(StatisticData(start=at, mean=mean, min=mean, max=mean))
     async_import_statistics(
         hass,
@@ -700,4 +708,24 @@ async def test_gas_boiler_with_readings_by_hand(hass: HomeAssistant) -> None:
             {"config_entry": entry.entry_id, "time": first.isoformat()},
             blocking=True,
         )
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_counter_glitch_is_left_out(hass: HomeAssistant) -> None:
+    """On the second summer day the meter shows 1000 times its reading for
+    an hour: the jump and the fall back (only some 9 kWh, under the bound)
+    are left out; the two hours' real gas is missing, nothing more."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    tz = dt_util.get_default_time_zone()
+    day = datetime.combine(SUMMER[1][0], datetime.min.time(), tzinfo=tz)
+    import_statistics(hass, glitch=(day + timedelta(hours=12)).astimezone(UTC))
+    await async_wait_recording_done(hass)
+    entry = await setup_gas(hass)
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert entry.runtime_data.hours_implausible == 2
+    gas = sum(gas_kwh(mean) * 24 for _, mean in [*SUMMER, *WINTER])
+    year = state(hass, entry, "gas_consumption_year")
+    assert float(year.state) == pytest.approx(gas - 2 * gas_kwh(20.0), abs=0.05)
     assert await hass.config_entries.async_unload(entry.entry_id)

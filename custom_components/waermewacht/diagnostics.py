@@ -132,6 +132,7 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
         "states": states,
         "problem": runtime.problem,
         "analysed_at": runtime.analysed_at.isoformat() if runtime.analysed_at else None,
+        "hours_implausible": runtime.hours_implausible,
         "analysis": result,
         "readings": {
             "unit": runtime.manual_unit,

@@ -4,6 +4,7 @@ sensors, once per sensor: also for a sensor that appears later."""
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from typing import Any
 
 import pytest
@@ -50,9 +51,12 @@ def source_statistics(
     statistic_id: str,
     sums: list[float],
     first: datetime | None = None,
+    states: list[float] | None = None,
 ) -> None:
     """Hourly sums of a source counter from `first`, by default for the
-    hours just before START."""
+    hours just before START; the states are the sums unless given."""
+    if states is None:
+        states = sums
     if first is None:
         first = SETUP_HOUR - timedelta(hours=len(sums))
     async_import_statistics(
@@ -67,8 +71,8 @@ def source_statistics(
             unit_of_measurement="kWh",
         ),
         [
-            StatisticData(start=first + timedelta(hours=i), sum=value, state=value)
-            for i, value in enumerate(sums)
+            StatisticData(start=first + timedelta(hours=i), sum=value, state=state)
+            for i, (value, state) in enumerate(zip(sums, states, strict=True))
         ],
     )
 
@@ -401,3 +405,50 @@ async def test_gaps_of_older_imports_are_filled_once(
     await settle(hass)
     assert runtime.history_gaps_filled == {}
     assert len(await hourly_rows(hass, heat)) == len(rows)
+
+
+def ha_sums(states: list[float], first_sum: float) -> list[float]:
+    """Sums as Home Assistant books a total_increasing meter: a fall by more
+    than 10 % is a new cycle and adds the whole new reading."""
+    result = [first_sum]
+    for before, after in pairwise(states):
+        result.append(result[-1] + (after if after < before * 0.9 else after - before))
+    return result
+
+
+@pytest.mark.freeze_time(START)
+@pytest.mark.parametrize(
+    ("states", "kept"),
+    [
+        # A real meter: Wh as kWh for one reading, back as a "new cycle" of
+        # 110 kWh (above the bound of 75 kWh per hour).
+        ([107.0, 107.5, 109851.5, 110.131, 110.6], 0.25 + 0.5 + 0.469),
+        # The same with a small reading: the fall back adds 7.9 kWh only.
+        ([7.0, 7.5, 7500.0, 7.9, 8.2], 0.25 + 0.5 + 0.3),
+    ],
+)
+async def test_look_back_leaves_out_a_unit_glitch(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    states: list[float],
+    kept: float,
+) -> None:
+    """The jump and the hour falling back are left out of the history."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    first = SETUP_HOUR - timedelta(hours=5)
+    source_statistics(hass, HEAT_HEATING, [1.0, 3.0, 6.0, 9.0, 12.0], first)
+    source_statistics(hass, ELEC_HEATING, ha_sums(states, 0.25), first, states)
+    await async_wait_recording_done(hass)
+    hass.states.async_set(HEAT_HEATING, "12.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, str(states[-1]), ENERGY)
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(entities=HEATING)
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await settle(hass)
+    await shift(hass, freezer)
+    electricity = await sums(hass, entity_id(hass, entry, "electricity_heating"))
+    assert electricity[-1] == pytest.approx(kept)
+    heat = await sums(hass, entity_id(hass, entry, "heat_heating"))
+    assert heat[-1] == pytest.approx(12.0)

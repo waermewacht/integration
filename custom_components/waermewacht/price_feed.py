@@ -31,6 +31,7 @@ from .costs import ElectricityCost
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
 from .periods import local_midnight
+from .plausible import plausible_hours
 from .prices import (
     PricedDay,
     day_mean_prices,
@@ -54,6 +55,11 @@ FLOW_FIELDS = {
 }
 
 _LOGGER = logging.getLogger(__name__)
+
+# The largest plausible change of a house meter in one hour of the
+# long-term statistics: 100 kW (a house connection with margin) x 1.5, the
+# bound of Tarifwacht (lookback.MAX_HOURLY_KWH).
+MAX_HOUSE_KWH = 150.0
 
 # Hours read again on each refresh: sources and the recorder write late.
 RECENT = timedelta(hours=48)
@@ -103,6 +109,8 @@ class PriceFeed:
         self.until: datetime | None = None
         self.refreshed_at: datetime | None = None
         self.hours_from_states = 0  # hours priced from the states (diagnostics)
+        # Hours of the house meters' statistics left out (plausible.py).
+        self.implausible: set[datetime] = set()
         self._start: datetime | None = None
         self._full_day: date | None = None
         self._tried = False
@@ -203,23 +211,34 @@ class PriceFeed:
             set(ids),
             "hour",
             {"energy": "kWh"},
-            {"change"},
+            {"change", "state"},
         )
         per_key: dict[str, dict[datetime, float]] = {}
+        left_out: set[datetime] = set()
         for entity_id, key in ids.items():
-            values = per_key.setdefault(key, {})
+            changes = []
             for row in rows.get(entity_id, []):
                 if (change := row.get("change")) is None:
                     continue
                 hour = row["start"]
                 if not isinstance(hour, datetime):
                     hour = dt_util.utc_from_timestamp(hour)
-                values[hour] = max(0.0, change)  # a meter reset is no energy
+                changes.append((hour, change, row.get("state")))
+            # A meter reset, a unit glitch (Wh as kWh) and the fall back after
+            # it: the hour is missing, so it counts as grid electricity.
+            per_key[key], dropped = plausible_hours(changes, MAX_HOUSE_KWH)
+            left_out.update(dropped)
+        self.implausible = {h for h in self.implausible if not start <= h < end}
+        self.implausible |= left_out
         common = set.intersection(*(set(v) for v in per_key.values()))
         return {
             hour: HourFlows(**{FLOW_FIELDS[k]: v[hour] for k, v in per_key.items()})
             for hour in common
         }
+
+    def hours_implausible(self, start: datetime) -> int:
+        """Hours from `start` left out of the house meters (plausible.py)."""
+        return sum(1 for hour in self.implausible if hour >= start)
 
     def allocation(self, start: datetime, totals: Totals) -> Allocation | None:
         """Grid and own electricity of the period from `start` with the
