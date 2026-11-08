@@ -204,9 +204,9 @@ async def test_glitch_falling_back_is_booked(
     freezer.tick(timedelta(seconds=30))
     hass.states.async_set(HEAT_HEATING, "1000000.0", ENERGY)
     await tick(hass, freezer, 1)
-    hass.states.async_set(HEAT_HEATING, "1000.75", ENERGY)
+    hass.states.async_set(HEAT_HEATING, "1000.5", ENERGY)
     await tick(hass, freezer, 1)
-    assert value(hass, entry, "heat_heating") == pytest.approx(0.75)
+    assert value(hass, entry, "heat_heating") == pytest.approx(0.5)
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["events"]["jump:heat_heating"] == 1
     assert diagnostics["events"]["recovered:heat_heating"] == 1
