@@ -1156,6 +1156,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
             2,
             period_start=start.astimezone(TZ).isoformat(),
             price_source="fixed",
+            allocation="none",
         )
     season = comparison(Period.SEASON)
     season_start = sim.marks.starts[Period.SEASON]
@@ -1167,6 +1168,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         3,
         period_start=season_start.astimezone(TZ).isoformat(),
         price_source="fixed",
+        allocation="none",
     )
     put(
         "gas_savings_season",
@@ -1175,6 +1177,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         0,
         period_start=season_start.astimezone(TZ).isoformat(),
         price_source="fixed",
+        allocation="none",
         heat_kwh=round(season.heat_kwh, 1),
         heat_pump_cost_eur=_r(season.heat_pump_cost_eur),
         electricity_base_cost_eur=_r(season.electricity_base_cost_eur),
