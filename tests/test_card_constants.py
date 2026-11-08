@@ -4,6 +4,7 @@ The boiler card says what the energy signature still lacks ("2 of 8 weeks")
 and names the sensors it reads by translation key.
 """
 
+import json
 import re
 from pathlib import Path
 
@@ -56,3 +57,22 @@ def test_card_knows_the_starts_projection() -> None:
             assert f"{key}:" in found, key
     assert f'{cycling.OBSERVATION_GAP}: "' in CARD
     assert f'"{cycling.TOO_FEW_DAYS}"' in CARD
+
+
+def test_month_chart_reads_season_sensors_that_exist() -> None:
+    """The month chart finds the season start in the attribute period_start
+    of these sensors; each must be a sensor of the integration."""
+    match = re.search(r"const SEASON_KEYS = \[([^\]]*)\];", CARD)
+    assert match, "SEASON_KEYS not found in the card"
+    keys = re.findall(r'"([a-z_]+)"', match.group(1))
+    strings = json.loads(
+        (
+            Path(__file__).parent.parent
+            / "custom_components"
+            / "waermewacht"
+            / "strings.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert keys
+    for key in keys:
+        assert key in strings["entity"]["sensor"], key

@@ -151,6 +151,8 @@ const TEXT = {
     standby: "Stillstand",
     ratio: "AZ",
     noStatistics: "Noch keine Langzeitstatistik.",
+    lastMonths: "letzte 12 Monate",
+    season: "Saison",
     detail: {
       efficiency_drop: (a, n) => `AZ Heizen ${n(a.ratio_current, 2)} statt ${n(a.ratio_previous_same_weather, 2)}`,
       aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 Tagen${a.aux_kwh_defrost_7d > 0 ? ` · beim Abtauen ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
@@ -313,6 +315,8 @@ const TEXT = {
     standby: "Standby",
     ratio: "COP",
     noStatistics: "No long-term statistics yet.",
+    lastMonths: "last 12 months",
+    season: "Season",
     detail: {
       efficiency_drop: (a, n) => `COP heating ${n(a.ratio_current, 2)} instead of ${n(a.ratio_previous_same_weather, 2)}`,
       aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 days${a.aux_kwh_defrost_7d > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
@@ -388,6 +392,9 @@ const COLORS = {
 };
 // Own energy sensors for the months (translation keys).
 const MONTH_KEYS = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
+// Sensors of the season whose attribute period_start says where it began
+// (the season start month is an option of the entry).
+const SEASON_KEYS = ["ratio_combined_season", "ratio_heating_season", "ratio_dhw_season", "cost_season", "heat_cost_season"];
 
 const STYLE = `
   :host { display: block; }
@@ -426,6 +433,8 @@ const STYLE = `
   svg { width: 100%; height: auto; display: block; overflow: visible; }
   svg text { font-size: 10px; fill: var(--secondary-text-color); }
   svg .axis { stroke: var(--divider-color); stroke-width: 1; }
+  svg .season { stroke: var(--secondary-text-color); stroke-width: 1; }
+  svg rect.before { opacity: 0.4; }
   svg .hit { fill: transparent; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--secondary-text-color); margin-top: 4px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
@@ -1056,7 +1065,40 @@ class WaermewachtCard extends HTMLElement {
       }
     }
     if (!months.size) return `<div class="empty">${escapeHtml(t.noStatistics)}</div>`;
-    return this._monthChart(t, [...months.entries()].sort((a, b) => a[0] - b[0]).slice(-12));
+    // Exactly twelve months, as the recorder cuts them (in the server's time
+    // zone): the newest with statistics - this month, the own sensors write
+    // every hour - and the eleven before, gaps included.
+    const byKey = new Map([...months.entries()].map(([start, m]) => [this._monthKey(start), m]));
+    const keys = this._monthsUpTo([...byKey.keys()].sort().at(-1), 12);
+    return this._monthChart(t, keys.map((k) => [k, byKey.get(k) || {}]), this._seasonKey());
+  }
+
+  /** "2026-07" of a time, in the server's time zone. */
+  _monthKey(time) {
+    const parts = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", timeZone: this._hass.config?.time_zone })
+      .formatToParts(new Date(time));
+    const get = (type) => parts.find((p) => p.type === type).value;
+    return `${get("year")}-${get("month")}`;
+  }
+
+  /** Keys of `count` months up to `last` ("2026-11"), oldest first. */
+  _monthsUpTo(last, count) {
+    const [year, month] = last.split("-").map(Number);
+    const keys = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const total = year * 12 + (month - 1) - i;
+      keys.push(`${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`);
+    }
+    return keys;
+  }
+
+  /** Month key of the current season's start (attribute period_start). */
+  _seasonKey() {
+    for (const key of SEASON_KEYS) {
+      const start = this._state(key)?.attributes?.period_start;
+      if (start) return this._monthKey(start);
+    }
+    return undefined;
   }
 
   // ---- Charts -------------------------------------------------------------
@@ -1099,13 +1141,15 @@ class WaermewachtCard extends HTMLElement {
   }
 
   /** Two stacked bars per month: heat (heating, hot water) and electricity
-   * (heating, hot water, standby), the performance factor above. */
-  _monthChart(t, months) {
+   * (heating, hot water, standby), the performance factor above. Months of
+   * the current season (as the figures above) in full colour, those before
+   * paler, a thin line where the season begins. */
+  _monthChart(t, months, seasonKey) {
     const W = 560;
     const H = 200;
     const L = 34;
     const B = 22;
-    const T = 14;
+    const T = 24;
     const sum = (m, keys) => keys.reduce((s, k) => s + Math.max(0, m[k] || 0), 0);
     const heatKeys = ["heat_heating", "heat_dhw"];
     const elecKeys = ["electricity_heating", "electricity_dhw", "standby"];
@@ -1131,16 +1175,28 @@ class WaermewachtCard extends HTMLElement {
       standby: t.standby,
     };
     let bars = "";
-    months.forEach(([start, m], i) => {
-      const date = new Date(start);
-      const label = date.toLocaleDateString(lang, { month: "short", timeZone: this._timeZone() });
+    const first = seasonKey ? months.findIndex(([key]) => key >= seasonKey) : 0;
+    if (first > 0) {
+      // "Saison 26/27"; a season from January is a calendar year.
+      const [year, month] = seasonKey.split("-").map(Number);
+      const name = month === 1 ? `${year}` : `${String(year % 100).padStart(2, "0")}/${String((year + 1) % 100).padStart(2, "0")}`;
+      const xd = (L + first * slot).toFixed(1);
+      bars += `<line class="season" x1="${xd}" x2="${xd}" y1="4" y2="${H - B}"/>`
+        + `<text x="${(L + first * slot + 4).toFixed(1)}" y="12">${escapeHtml(`${t.season} ${name}`)}</text>`;
+    }
+    months.forEach(([key, m], i) => {
+      const [year, month] = key.split("-").map(Number);
+      // Mid-month at noon UTC: the same month in every time zone.
+      const date = new Date(Date.UTC(year, month - 1, 15, 12));
+      const label = date.toLocaleDateString(lang, { month: "short", timeZone: "UTC" });
+      const before = first > 0 && i < first;
       const x0 = L + i * slot + slot / 2 - bar - 1;
       for (const [keys, left] of [[heatKeys, x0], [elecKeys, x0 + bar + 2]]) {
         let base = 0;
         for (const key of keys) {
           const v = Math.max(0, m[key] || 0);
           if (!v) continue;
-          bars += `<rect x="${left.toFixed(1)}" y="${y(base + v).toFixed(1)}" width="${bar.toFixed(1)}" height="${(y(base) - y(base + v)).toFixed(1)}" fill="${colors[key]}">`
+          bars += `<rect x="${left.toFixed(1)}" y="${y(base + v).toFixed(1)}" width="${bar.toFixed(1)}" height="${(y(base) - y(base + v)).toFixed(1)}" fill="${colors[key]}"${before ? ' class="before"' : ""}>`
             + `<title>${escapeHtml(label)} · ${escapeHtml(names[key])}: ${this._num(v, 0)} kWh</title></rect>`;
           base += v;
         }
@@ -1154,7 +1210,7 @@ class WaermewachtCard extends HTMLElement {
     });
     const legend = Object.keys(colors).map((k) => `<span style="--c:${colors[k]}">${escapeHtml(names[k])}</span>`).join("");
     const target = this._entities.heat_heating || this._entities.electricity_heating;
-    return `<div class="chart months" data-entity="${escapeHtml(target)}"><div class="caption">kWh · ${escapeHtml(t.ratio)}</div>`
+    return `<div class="chart months" data-entity="${escapeHtml(target)}"><div class="caption">kWh · ${escapeHtml(t.ratio)} (${escapeHtml(t.lastMonths)})</div>`
       + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(t.topics.months)}">${grid}${bars}</svg>`
       + `<div class="legend">${legend}</div></div>`;
   }
