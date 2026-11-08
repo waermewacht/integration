@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.7 – 2026-11-08
 
 - **Neu: Strom aus eigener PV und Batterie in den Kosten.** In den Einstellungen unter „Kosten und Gasvergleich“ gibt es jetzt Netzbezug-, Einspeise-, PV- und Batteriezähler und die Einspeisevergütung. Mit dem Netzbezug-Zähler kostet Strom, den die Wärmepumpe nicht aus dem Netz nimmt, die Einspeisevergütung statt den Netzpreis – je Stunde aus der Langzeitstatistik, auch im Rückblick. Mit Einspeise- und PV-Zähler rechnet Wärmewacht anteilig (die Wärmepumpe bekommt den Netzanteil des ganzen Hauses), nur mit dem Netzbezug „Wärmepumpe zuerst“ (der Netzbezug der Stunde geht zuerst an die Wärmepumpe). Stunden ohne Statistik eines Zählers zählen als Netzstrom. Die Arbeitszahlen ändern sich nicht. Neue Attribute der Kosten-Sensoren: `allocation`, `grid_share`, `kwh_from_grid`, `kwh_own`, `hours_all_grid`. Die Haus-Formeln stammen aus Tarifwacht. Anlass: Rückmeldung aus dem simon42-Forum.
 - **Einstellungen: Vorschläge aus Tarifwacht und Einspeisewacht.** Gibt es einen Eintrag einer der beiden, schlägt das Formular einmal Einspeise-, PV- und Batteriezähler und die Einspeisevergütung vor, aus Tarifwacht auch den Strompreis-Sensor des aktuellen Tarifs (nur einen Gesamtpreis, nicht „Börsenpreis plus Aufschläge“), und sagt woher („Zähler vorbelegt aus Tarifwacht „Haus“ – bitte prüfen.“). Den Netzbezug-Zähler wählst du selbst, weil er die Aufteilung einschaltet. Ohne beide steht dort ein kurzer Hinweis auf die Schwester-Integrationen.
