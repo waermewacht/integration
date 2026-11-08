@@ -884,10 +884,15 @@ class WaermewachtCard extends HTMLElement {
     const flow = this._state("flow_at_zero")?.attributes || {};
     const perDegree = this._state("heat_per_degree_day_season")?.attributes || {};
     const previous = (v, digits, unit = "") => (v !== undefined && v !== null ? `${t.previous} ${this._num(v, digits)}${unit}` : "");
+    // The heat load comes from the last complete season or, without a
+    // usable one, from the current season so far (attribute season); the
+    // first tile says so once there is a value, before that the progress.
+    const load = this._state("heat_load_per_kelvin")?.attributes || {};
+    const fromCurrent = load.season === "current" && load.sufficient ? t.current : "";
     const tiles = this._grid([
-      this._own("heat_load_per_kelvin", t.tiles.heat_load_per_kelvin),
+      this._own("heat_load_per_kelvin", t.tiles.heat_load_per_kelvin, this._signatureProgress(t, "heat_load_per_kelvin") || fromCurrent),
       this._own("heat_load_design", t.tiles.heat_load_design),
-      this._own("heating_limit", t.tiles.heating_limit),
+      this._own("heating_limit", t.tiles.heating_limit, this._preliminaryLimit(t, "heat_load_per_kelvin", "heating_limit")),
       this._own("heat_per_degree_day_season", t.tiles.heat_per_degree_day_season, this._sameLastYear(t, perDegree)
         || previous(perDegree.previous_season, 2)),
       this._own("flow_at_zero", t.tiles.flow_at_zero, previous(flow.previous_season, 1, " °C")),
@@ -904,7 +909,10 @@ class WaermewachtCard extends HTMLElement {
     const a = load.attributes;
     const weeks = (a.weeks || []).map((w) => [w.mean_outdoor, w.power_kw]).sort((x, y) => x[0] - y[0]);
     const series = [];
-    if (weeks.length) series.push({ color: COLORS.previous, label: t.weeks, line: false, points: weeks });
+    // A heat pump's signature names its season (gas: the last 365 days).
+    const season = { current: t.current, previous: t.previousSeason }[a.season];
+    const label = season ? `${t.weeks} (${season})` : t.weeks;
+    if (weeks.length) series.push({ color: COLORS.previous, label, line: false, points: weeks });
     if (a.intercept_kw !== null && a.intercept_kw !== undefined && a.slope_kw_per_k !== null && a.slope_kw_per_k !== undefined) {
       const lo = a.design_temp ?? Math.min(-12, ...weeks.map((w) => w[0]));
       const hi = a.heating_limit ?? 15;
@@ -918,6 +926,29 @@ class WaermewachtCard extends HTMLElement {
     return series.length ? this._xyChart(t.signature, "kW", series, this._entities[key], 0, 2) : "";
   }
 
+  /** What the signature still lacks while the heat load is unknown, e.g.
+   * "2 of 8 weeks · 0 of 5 frost days"; empty with a value. */
+  _signatureProgress(t, key) {
+    const state = this._state(key);
+    const load = state?.attributes || {};
+    if (state?.state !== "unknown" || load.week_count === undefined) return "";
+    const n = (v, d) => this._num(v, d);
+    return [
+      ["weeks", load.week_count, SIGNATURE_NEEDS.weeks, 0],
+      ["spread", load.spread ?? 0, SIGNATURE_NEEDS.spread, 1],
+      ["frost_days", load.frost_days ?? 0, SIGNATURE_NEEDS.frost_days, 0],
+    ].filter(([, have, need]) => have < need).map(([k, have, need, digits]) => t.progress[k](n(have, digits), need)).join(" · ");
+  }
+
+  /** "preliminary 13.8 °C" while the heating limit is unknown but the
+   * signature has a preliminary line. */
+  _preliminaryLimit(t, loadKey, limitKey) {
+    const load = this._state(loadKey)?.attributes || {};
+    const limit = this._state(limitKey);
+    return limit?.state === "unknown" && load.preliminary && load.heating_limit !== null && load.heating_limit !== undefined
+      ? t.preliminaryValue(`${this._num(load.heating_limit, 1)} °C`) : "";
+  }
+
   /** A tile of the boiler: an unknown value says why. */
   _boilerTile(t, key, extra = "") {
     const state = this._state(key);
@@ -929,19 +960,10 @@ class WaermewachtCard extends HTMLElement {
   }
 
   _boiler(t) {
-    const load = this._state("gas_heat_load_per_kelvin")?.attributes || {};
     const n = (v, d) => this._num(v, d);
     // Heat load still unknown: what the data still lack (weeks, spread, frost).
-    const progress = this._state("gas_heat_load_per_kelvin")?.state === "unknown" && load.week_count !== undefined
-      ? [
-        ["weeks", load.week_count, SIGNATURE_NEEDS.weeks, 0],
-        ["spread", load.spread ?? 0, SIGNATURE_NEEDS.spread, 1],
-        ["frost_days", load.frost_days ?? 0, SIGNATURE_NEEDS.frost_days, 0],
-      ].filter(([, have, need]) => have < need).map(([key, have, need, digits]) => t.progress[key](n(have, digits), need)).join(" · ")
-      : "";
-    const limit = this._state("gas_heating_limit");
-    const preliminaryLimit = limit?.state === "unknown" && load.preliminary && load.heating_limit !== null && load.heating_limit !== undefined
-      ? t.preliminaryValue(`${n(load.heating_limit, 1)} °C`) : "";
+    const progress = this._signatureProgress(t, "gas_heat_load_per_kelvin");
+    const preliminaryLimit = this._preliminaryLimit(t, "gas_heat_load_per_kelvin", "gas_heating_limit");
     const fuel = this._entities.oil_consumption_year ? "oil" : "gas";
     const used = this._state(`${fuel}_consumption_year`)?.attributes || {};
     const usedExtra = [

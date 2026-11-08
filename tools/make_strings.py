@@ -1188,8 +1188,8 @@ def _build(lang: int) -> dict:
                         "name": t(("Start", "Beginn")),
                         "description": t(
                             (
-                                "Without: the last complete season.",
-                                "Ohne: die letzte vollständige Saison.",
+                                "Without: the window of the heat load sensors (the last complete season, without a usable one the current season so far).",
+                                "Ohne: der Zeitraum der Heizlast-Sensoren (die letzte vollständige Saison, ohne verwertbare die laufende bis jetzt).",
                             )
                         ),
                     },
@@ -1197,8 +1197,8 @@ def _build(lang: int) -> dict:
                         "name": t(("End", "Ende")),
                         "description": t(
                             (
-                                "Without: end of the last complete season, or now with a start.",
-                                "Ohne: Ende der letzten vollständigen Saison, mit Beginn: jetzt.",
+                                "Without: end of that window, or now with a start.",
+                                "Ohne: Ende dieses Zeitraums, mit Beginn: jetzt.",
                             )
                         ),
                     },
@@ -1436,8 +1436,8 @@ NOT_FOR_GAS = (
     "Diese Aktion gilt für Wärmepumpen; eine Gas- oder Ölheizung hat nur die Heizlast.",
 )
 HEAT_LOAD_START = (
-    "Without: the last complete season (gas or oil boiler: the last 365 days).",
-    "Ohne: die letzte vollständige Saison (Gas- oder Ölheizung: die letzten 365 Tage).",
+    "Without: the window of the heat load sensors (the last complete season, without a usable one the current season so far; gas or oil boiler: the last 365 days).",
+    "Ohne: der Zeitraum der Heizlast-Sensoren (die letzte vollständige Saison, ohne verwertbare die laufende bis jetzt; Gas- oder Ölheizung: die letzten 365 Tage).",
 )
 
 

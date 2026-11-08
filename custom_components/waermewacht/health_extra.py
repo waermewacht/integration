@@ -347,7 +347,8 @@ class OversizeFigure:
 def oversizing(
     load: HeatLoad | None, rated_kw: float | None, *, min_kw: float | None = None
 ) -> OversizeFigure:
-    """Oversizing factor from the heat load of the last complete season."""
+    """Oversizing factor from the heat load the sensors show (the last
+    complete season, or the current one; heat_load.choose_season)."""
     mild = standard = measured = None
     if load is not None and load.sufficient:
         assert load.intercept_kw is not None and load.slope_kw_per_k is not None

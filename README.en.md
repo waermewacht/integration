@@ -485,7 +485,7 @@ All sensors in this section need the outdoor temperature plus heat and electrici
 | Entity | Unit | Meaning |
 | --- | --- | --- |
 | Performance curve heating | timestamp | When it was last computed. The curve is in the attributes. |
-| Heat load per kelvin | W/K | Slope of the energy signature of the last complete season. |
+| Heat load per kelvin | W/K | Slope of the energy signature of the last complete season; if that is not enough, of the current season so far (see below). |
 | Heating limit | °C | Outdoor temperature from which the house needs no heating: where the energy signature reaches 0 (the same as the attribute `heating_limit` of "Heat load per kelvin"). |
 | Heat load at design temperature | kW | Standard heat load (line through 0 at 20 °C). Only with the setting design outdoor temperature. |
 | Flow-return spread 7 days | K | Spread while heating on cold days (below 5 °C) of the last 7 days, from 10 hours of heating. Also needs flow, return and activity. Attributes `all_days` (every day), `field_reference` and `field_range` (field test WPsmart: 6.8 K, 3.2–9.8 K). No alarm: hydraulics and sensor positions shape the value. |
@@ -514,13 +514,15 @@ Each class has `lower` and `upper` (°C, lower bound included), `days`, `mean_ou
 - A full day has at least 20 hourly outdoor values, no cooling and at least 1 kWh of heating heat. Days with the heating off (summer mode held by hand, a gas boiler not switched on yet in autumn) do not count: they say nothing about the house and would make the line too steep. Values outside −35 to 45 °C are discarded. A frost day has a daily mean below 0 °C.
 - There is a result only with at least 8 weeks, a spread of 10 K between the coldest and the warmest week, 5 frost days and a falling line. Otherwise the value stays empty and `reasons` gives the reason.
 - **Preliminary:** with enough weeks but too small a spread or too few frost days (for example because the statistics only start in late winter), the attributes already show the line with `preliminary: true`: slope, intercept, heating limit and R². The state stays unknown, and the heat load at the design temperature is missing: it would be extrapolated far from mild weeks. The chart card already draws the preliminary line.
+- **Which season:** Wärmewacht takes the last complete season when it is enough for a result. Otherwise the current season so far, as soon as it is the better one: first a result, then a preliminary line, then more valid weeks (on a tie the previous season stays). If your statistics only start this autumn, you see this winter's weeks as they come and the values once they suffice, instead of nothing until next summer. The two seasons are never mixed. The attribute `season` tells which one it is; the card then adds "Current season". The minimum rules stay the same. Power/heat load uses the same heat load.
 - "Measured" (`measured_kw`) is the line at the design outdoor temperature, with internal and solar gains. "Standard" (`standard_kw`) is the line moved in parallel through 0 at 20 °C, without these gains. The sensor "Heat load at design temperature" shows the standard value.
 
 Attributes of "Heat load per kelvin":
 
 | Attribute | Meaning |
 | --- | --- |
-| `start`, `end` | period evaluated (the last complete season) |
+| `start`, `end` | period evaluated (the last complete season, otherwise the current one up to the last calculation) |
+| `season` | `previous` (last complete season) or `current` (current season so far) |
 | `sufficient` | `true` if the data suffice for a result |
 | `preliminary` | `true` if the line is only preliminary (enough weeks, but too small a spread or too few frost days) |
 | `reasons` | reasons if not: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
@@ -655,8 +657,8 @@ data:
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `start` | start of the last complete season (gas boiler: 365 days ago) | |
-| `end` | end of the last complete season; with `start`: now | |
+| `start` | start of the sensors' period: the last complete season or the current one (attribute `season`; gas boiler: 365 days ago) | |
+| `end` | end of that period (current season: now); with `start`: now | |
 | `design_outdoor_temp` | design outdoor temperature from the settings | °C, for `measured_kw` and `standard_kw` |
 
 The response contains the same values as the attributes of "Heat load per kelvin".
@@ -678,7 +680,7 @@ Wärmewacht ships its own cards, without any extra card from HACS. It adds the d
 | Wärmewacht Hot water (`…-dhw-card`) | last charge (duration, temperature lift) and the charges of the last 30 days |
 | Wärmewacht Costs (`…-costs-card`) | electricity month and season, cost per kWh of heat, savings against gas |
 | Wärmewacht Hybrid system (`…-hybrid-card`) | heat pump share, boiler heat |
-| Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C |
+| Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C; while the heat load is still missing, what the data lack (for example "2 of 8 weeks") |
 | Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor |
 | Wärmewacht Gas and oil boiler (`…-boiler-card`) | energy signature as a chart (also the preliminary line), heat load, heating limit, heat per degree day, flow, hot water share, consumption and cost of the last 365 days; a missing value says why, the heat load also what the data still lack (e.g. "2 of 8 weeks") |
 

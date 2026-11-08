@@ -619,6 +619,9 @@ def _heat_load_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     return {
         "start": dt_util.as_local(start).isoformat(),
         "end": dt_util.as_local(end).isoformat(),
+        # "previous" (last complete season) or "current" (so far, when the
+        # previous one gives nothing usable; heat_load.choose_season).
+        "season": runtime.heat_load_season,
         **heat_load_as_dict(result),
     }
 

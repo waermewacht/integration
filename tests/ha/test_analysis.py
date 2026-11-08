@@ -46,9 +46,11 @@ def auto_enable_custom_integrations(
     """The recorder must be set up before `hass` (listed first)."""
 
 
-def import_series(hass: HomeAssistant, statistic_id: str, *, mean: bool) -> None:
+def import_series(
+    hass: HomeAssistant, statistic_id: str, *, mean: bool, hours: int = HOURS
+) -> None:
     rows: list[StatisticData] = []
-    for i in range(HOURS):
+    for i in range(hours):
         start = FIRST_HOUR + timedelta(hours=i)
         if mean:
             rows.append(StatisticData(start=start, mean=1.0, min=0.5, max=1.5))
@@ -121,6 +123,68 @@ async def test_curve_and_heat_load(hass: HomeAssistant) -> None:
     assert report["degree_days"]["degree_days"] == pytest.approx(57.0)
     assert report["degree_days"]["kwh_per_degree_day"] == pytest.approx(1.26)
     assert [m["degree_days"]["days_counted"] for m in report["months"]] == [3]
+
+
+WEEK_HOURS = 7 * 24  # FIRST_HOUR is Monday 12 January, 00:00 local
+
+
+@pytest.mark.freeze_time(FIRST_HOUR + timedelta(hours=WEEK_HOURS + 10))
+async def test_heat_load_from_the_current_season(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Statistics only in this season (a new user): the heat load sensors
+    show the current season so far instead of an empty previous one, and the
+    action heat_load follows them by default."""
+    for statistic_id, mean in (
+        (HEAT_HEATING, False),
+        (ELEC_HEATING, False),
+        (OUTDOOR, True),
+    ):
+        import_series(hass, statistic_id, mean=mean, hours=WEEK_HOURS)
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    # The counters stand where their statistics end.
+    hass.states.async_set(HEAT_HEATING, f"{WEEK_HOURS:.1f}", ENERGY)
+    hass.states.async_set(ELEC_HEATING, f"{WEEK_HOURS / 4:.1f}", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(
+        er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_heat_load_per_kelvin"
+        )
+    )
+    assert state.state == "unknown"  # one week, eight needed
+    assert state.attributes["season"] == "current"
+    assert state.attributes["start"] == "2025-07-01T00:00:00+02:00"
+    assert state.attributes["week_count"] == 1
+    assert "too_few_weeks" in state.attributes["reasons"]
+
+    load = await hass.services.async_call(
+        DOMAIN,
+        "heat_load",
+        {"config_entry": entry.entry_id},
+        blocking=True,
+        return_response=True,
+    )
+    assert load["start"] == "2025-07-01T00:00:00+02:00"
+    assert load["week_count"] == 1
 
 
 @pytest.mark.freeze_time(NOW)

@@ -935,11 +935,11 @@
         },
         "start": {
           "name": "Start",
-          "description": "Without: the last complete season (gas or oil boiler: the last 365 days)."
+          "description": "Without: the window of the heat load sensors (the last complete season, without a usable one the current season so far; gas or oil boiler: the last 365 days)."
         },
         "end": {
           "name": "End",
-          "description": "Without: end of the last complete season, or now with a start."
+          "description": "Without: end of that window, or now with a start."
         },
         "design_outdoor_temp": {
           "name": "Design outdoor temperature",

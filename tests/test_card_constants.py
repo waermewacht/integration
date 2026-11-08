@@ -35,3 +35,11 @@ def test_boiler_card_knows_every_gas_sensor() -> None:
     keys = {d.key for d in GAS_DESCRIPTIONS} | set(OIL_NAMES.values())
     for key in keys:
         assert f"{key}:" in CARD, f"no tile text for {key}"
+
+
+def test_card_knows_the_heat_load_seasons() -> None:
+    """The analysis card names the season of the heat load (attribute
+    season of "Heizlast je Kelvin")."""
+    assert f'season === "{heat_load.CURRENT_SEASON}"' in CARD
+    assert f"{{ {heat_load.CURRENT_SEASON}: t.current, " in CARD
+    assert f"{heat_load.PREVIOUS_SEASON}: t.previousSeason }}[a.season]" in CARD

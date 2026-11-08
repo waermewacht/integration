@@ -113,6 +113,9 @@ from custom_components.waermewacht.health_extra import (  # noqa: E402
     standby_rise,
 )
 from custom_components.waermewacht.heat_load import (  # noqa: E402
+    CURRENT_SEASON,
+    PREVIOUS_SEASON,
+    choose_season,
     heat_load,
     heat_load_as_dict,
 )
@@ -833,7 +836,16 @@ class Sim:
                 performance_curve(*last_season, TZ, min_electricity=MIN_ELECTRICITY)
             ),
         }
-        load = heat_load(*last_building, TZ, design_temp=DESIGN_TEMP)
+        # The last complete season, without a usable one the current so far.
+        loads = {
+            PREVIOUS_SEASON: heat_load(*last_building, TZ, design_temp=DESIGN_TEMP),
+            CURRENT_SEASON: heat_load(*this_building, TZ, design_temp=DESIGN_TEMP),
+        }
+        load_season = choose_season(loads[PREVIOUS_SEASON], loads[CURRENT_SEASON])
+        load = loads[load_season]
+        load_window = (
+            (current, now) if load_season == CURRENT_SEASON else (previous, current)
+        )
         today = now.astimezone(TZ).date()
         first = current.astimezone(TZ).date()
         flow = {h: v for h, v in self.flow_hours.items() if h in outdoor}
@@ -858,6 +870,8 @@ class Sim:
             "previous": previous,
             "curves": curves,
             "heat_load": load,
+            "heat_load_season": load_season,
+            "heat_load_window": load_window,
             "degree_days": degree_days(*this_building, TZ, first, today),
             "degree_days_previous": degree_days(
                 *last_building, TZ, previous.astimezone(TZ).date(), first
@@ -1167,8 +1181,9 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         round(-load.slope_kw_per_k * 1000) if sufficient else None,
         "W/K",
         0,
-        start=a["previous"].astimezone(TZ).isoformat(),
-        end=a["current"].astimezone(TZ).isoformat(),
+        start=a["heat_load_window"][0].astimezone(TZ).isoformat(),
+        end=a["heat_load_window"][1].astimezone(TZ).isoformat(),
+        season=a["heat_load_season"],
         **heat_load_as_dict(load),
     )
     put("heating_limit", _r(load.heating_limit, 1) if sufficient else None, "°C", 1)

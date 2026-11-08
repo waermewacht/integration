@@ -10,10 +10,15 @@ import pytest
 
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.heat_load import (
+    CURRENT_SEASON,
+    PREVIOUS_SEASON,
     SLOPE_NOT_NEGATIVE,
     SPREAD_TOO_SMALL,
     TOO_FEW_FROST_DAYS,
     TOO_FEW_WEEKS,
+    HeatLoad,
+    WeekPoint,
+    choose_season,
     fit_line,
     heat_load,
     heat_load_as_dict,
@@ -284,3 +289,61 @@ def test_result_as_dict() -> None:
         "mean_outdoor": 10.0,
         "power_kw": round(A + B * (10 + 3 / 169), 3),
     }
+
+
+# Which season the sensors show (heat_load.choose_season).
+
+
+def made_up(weeks: int, *, sufficient: bool = False, preliminary: bool = False):
+    """A result with `weeks` valid weeks; only the fields the choice reads."""
+    point = WeekPoint(START, 7, 168, 0.0, 1.0, 0)
+    return HeatLoad(
+        sufficient=sufficient, preliminary=preliminary, weeks=[point] * weeks
+    )
+
+
+def test_sufficient_previous_season_is_kept() -> None:
+    """As before: the last complete season, even if this one is sufficient
+    too (a winter so far would be steeper or flatter than a whole one)."""
+    hours, outdoor = build(WEEKS)
+    both = heat_load(hours, outdoor, BERLIN)
+    assert choose_season(both, both) == PREVIOUS_SEASON
+    assert choose_season(both, made_up(30)) == PREVIOUS_SEASON
+
+
+def test_statistics_only_since_this_autumn() -> None:
+    """A new user: nothing in the previous season. This winter's weeks show
+    as they come, the values once they suffice."""
+    empty = heat_load({}, {}, BERLIN)
+    assert choose_season(empty, heat_load({}, {}, BERLIN)) == PREVIOUS_SEASON
+    first = heat_load(*build(WEEKS[:2]), BERLIN)
+    assert first.reasons == [TOO_FEW_WEEKS, SPREAD_TOO_SMALL, TOO_FEW_FROST_DAYS]
+    assert choose_season(empty, first) == CURRENT_SEASON
+    winter = heat_load(*build(WEEKS), BERLIN, design_temp=-12.0)
+    assert winter.sufficient
+    assert choose_season(empty, winter) == CURRENT_SEASON
+
+
+def test_current_season_preliminary_beats_an_empty_previous() -> None:
+    hours, outdoor = build((11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0))
+    mild = heat_load(hours, outdoor, BERLIN)
+    assert mild.preliminary
+    assert choose_season(made_up(5), mild) == CURRENT_SEASON
+
+
+def test_insufficient_seasons_by_weeks() -> None:
+    """Neither has a line: the one with more weeks, a tie keeps the previous."""
+    assert choose_season(made_up(5), made_up(3)) == PREVIOUS_SEASON
+    assert choose_season(made_up(5), made_up(5)) == PREVIOUS_SEASON
+    assert choose_season(made_up(5), made_up(6)) == CURRENT_SEASON
+
+
+def test_a_line_beats_more_weeks_without_one() -> None:
+    """A preliminary line of the previous season stays until the current one
+    has a line too (more weeks with a rising line say less)."""
+    previous = made_up(9, preliminary=True)
+    assert choose_season(previous, made_up(12)) == PREVIOUS_SEASON
+    assert choose_season(previous, made_up(8, preliminary=True)) == PREVIOUS_SEASON
+    assert choose_season(previous, made_up(9, preliminary=True)) == PREVIOUS_SEASON
+    assert choose_season(previous, made_up(10, preliminary=True)) == CURRENT_SEASON
+    assert choose_season(previous, made_up(8, sufficient=True)) == CURRENT_SEASON

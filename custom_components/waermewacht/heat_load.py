@@ -27,6 +27,10 @@ With 8 weeks but too small a spread or too few frost days (data only from
 mild weeks, e.g. a gas meter recorded since late winter) the line is kept
 as preliminary: slope, intercept, R² and heating limit, but no heat load at
 the design temperature - that is the far extrapolation the rules guard.
+
+A heat pump's sensors show the last complete season; without a usable one
+(statistics only since this autumn) the current season so far, see
+`choose_season`. The two are never mixed.
 """
 
 from __future__ import annotations
@@ -254,6 +258,30 @@ def heat_load(
         design_temp=design_temp,
         max_outdoor=max_outdoor,
     )
+
+
+PREVIOUS_SEASON = "previous"
+CURRENT_SEASON = "current"
+
+
+def choose_season(previous: HeatLoad, current: HeatLoad) -> str:
+    """Which season's signature the sensors show: PREVIOUS_SEASON (the last
+    complete one) or CURRENT_SEASON (so far).
+
+    The last complete season wins whenever it is sufficient. Otherwise the
+    better of the two: sufficient before preliminary before neither, then
+    more valid weeks; a tie keeps the previous season. So a statistic that
+    starts this autumn shows this winter's weeks as they come and the values
+    once they suffice, and the result does not swing back and forth: the
+    previous season stays fixed, the current one only gains weeks.
+    """
+    if previous.sufficient:
+        return PREVIOUS_SEASON
+
+    def rank(result: HeatLoad) -> tuple[bool, bool, int]:
+        return result.sufficient, result.preliminary, len(result.weeks)
+
+    return CURRENT_SEASON if rank(current) > rank(previous) else PREVIOUS_SEASON
 
 
 def _round(value: float | None, digits: int) -> float | None:

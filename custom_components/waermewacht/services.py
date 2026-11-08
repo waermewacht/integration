@@ -24,7 +24,7 @@ from homeassistant.util import dt as dt_util
 from .const import CONF_KIND, DOMAIN, KIND_GAS
 from .curve import curve_as_dicts, performance_curve
 from .gas import window
-from .heat_load import heat_load, heat_load_as_dict
+from .heat_load import CURRENT_SEASON, heat_load, heat_load_as_dict
 from .model import Signal
 from .periods import Period, local_midnight, period_start
 
@@ -167,7 +167,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
             previous = local_midnight(first, runtime.tz)
         else:
             current, previous = runtime.seasons(now)
-        # Default: the current season, or the last complete one (heat load).
+            if default_previous and runtime.heat_load_season == CURRENT_SEASON:
+                # The heat load sensors fell back to the current season (no
+                # usable previous one): the action's default follows them.
+                previous, current = current, now
+        # Default: the current season, or the heat load sensors' window.
         start = (
             _as_utc(call.data[ATTR_START])
             if ATTR_START in call.data

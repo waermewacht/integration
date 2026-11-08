@@ -485,7 +485,7 @@ Alle Sensoren dieses Abschnitts brauchen die Außentemperatur sowie Wärme und S
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
 | AZ-Kennlinie Heizen | Zeitpunkt | Wann zuletzt gerechnet wurde. Die Kennlinie steht in den Attributen. |
-| Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison. |
+| Heizlast je Kelvin | W/K | Steigung der Energiesignatur der letzten vollständigen Saison; reicht die nicht, der laufenden Saison bis jetzt (siehe unten). |
 | Heizgrenze | °C | Außentemperatur, ab der das Haus nicht mehr heizt: dort erreicht die Energiesignatur 0 (dasselbe wie das Attribut `heating_limit` von „Heizlast je Kelvin“). |
 | Heizlast bei Normaußentemperatur | kW | Heizlast „normgerecht“ (Gerade durch 0 bei 20 °C). Nur mit der Einstellung Normaußentemperatur. |
 | Spreizung 7 Tage | K | Spreizung im Heizbetrieb an kalten Tagen (unter 5 °C) der letzten 7 Tage, ab 10 Stunden Heizbetrieb. Braucht dazu Vorlauf, Rücklauf und Betriebsart. Attribute `all_days` (alle Tage), `field_reference` und `field_range` (Feldtest WPsmart: 6,8 K, 3,2–9,8 K). Kein Alarm: Hydraulik und Fühlerort prägen den Wert. |
@@ -514,13 +514,15 @@ Jede Klasse hat `lower` und `upper` (°C, untere Grenze eingeschlossen), `days`,
 - Ein voller Tag hat mindestens 20 Stundenwerte der Außentemperatur, keine Kühlung und mindestens 1 kWh Wärme fürs Heizen. Tage mit ausgeschalteter Heizung (Sommerbetrieb von Hand gehalten, Gasheizung im Herbst noch aus) zählen nicht: Sie sagen nichts über das Haus und würden die Gerade zu steil machen. Werte außerhalb von −35 bis 45 °C werden verworfen. Ein Frosttag hat ein Tagesmittel unter 0 °C.
 - Ein Ergebnis gibt es erst mit mindestens 8 Wochen, 10 K Spanne zwischen kältester und wärmster Woche, 5 Frosttagen und einer fallenden Geraden. Sonst bleibt der Wert leer, und `reasons` nennt den Grund.
 - **Vorläufig:** Reichen die Wochen, fehlen aber Spanne oder Frosttage (etwa weil die Statistik erst im Spätwinter beginnt), zeigen die Attribute die Gerade schon mit `preliminary: true`: Steigung, Achsenabschnitt, Heizgrenze und R². Der Zustand bleibt unbekannt, und die Heizlast bei Normaußentemperatur fehlt: Sie wäre aus milden Wochen weit hochgerechnet. Die Diagramm-Karte zeichnet die vorläufige Gerade schon.
+- **Welche Saison:** Wärmewacht nimmt die letzte vollständige Saison, wenn sie für ein Ergebnis reicht. Sonst die laufende Saison bis jetzt, sobald die besser ist: erst ein Ergebnis, dann eine vorläufige Gerade, dann mehr gültige Wochen (bei Gleichstand bleibt die Vorsaison). Wer die Statistik erst seit diesem Herbst hat, sieht so die Wochen dieses Winters, sobald sie da sind, und die Werte, sobald sie reichen, statt bis zum nächsten Sommer nichts. Beide Saisons werden nie gemischt. Das Attribut `season` sagt, welche es ist; die Karte schreibt dann „Laufende Saison“ dazu. Die Mindestregeln bleiben dieselben. Leistung je Heizlast rechnet mit derselben Heizlast.
 - „Gemessen“ (`measured_kw`) ist die Gerade bei Normaußentemperatur, mit inneren und solaren Gewinnen. „Normgerecht“ (`standard_kw`) ist die parallel verschobene Gerade durch 0 bei 20 °C, ohne diese Gewinne. Der Sensor „Heizlast bei Normaußentemperatur“ zeigt den normgerechten Wert.
 
 Attribute von „Heizlast je Kelvin“:
 
 | Attribut | Bedeutung |
 | --- | --- |
-| `start`, `end` | ausgewerteter Zeitraum (die letzte vollständige Saison) |
+| `start`, `end` | ausgewerteter Zeitraum (die letzte vollständige Saison, sonst die laufende bis zur letzten Rechnung) |
+| `season` | `previous` (letzte vollständige Saison) oder `current` (laufende Saison bis jetzt) |
 | `sufficient` | `true`, wenn die Daten für ein Ergebnis reichen |
 | `preliminary` | `true`, wenn die Gerade nur vorläufig ist (genug Wochen, aber zu wenig Spanne oder Frosttage) |
 | `reasons` | Gründe, wenn nicht: `too_few_weeks`, `spread_too_small`, `too_few_frost_days`, `slope_not_negative` |
@@ -655,8 +657,8 @@ data:
 
 | Feld | Vorgabe | Bedeutung |
 | --- | --- | --- |
-| `start` | Beginn der letzten vollständigen Saison (Gasheizung: vor 365 Tagen) | |
-| `end` | Ende der letzten vollständigen Saison; mit `start`: jetzt | |
+| `start` | Beginn des Zeitraums der Sensoren: der letzten vollständigen Saison bzw. der laufenden (Attribut `season`; Gasheizung: vor 365 Tagen) | |
+| `end` | Ende dieses Zeitraums (laufende Saison: jetzt); mit `start`: jetzt | |
 | `design_outdoor_temp` | Normaußentemperatur aus den Einstellungen | °C, für `measured_kw` und `standard_kw` |
 
 Die Antwort enthält dieselben Werte wie die Attribute von „Heizlast je Kelvin“.
@@ -678,7 +680,7 @@ Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS. Die Dashb
 | Wärmewacht Warmwasser (`…-dhw-card`) | letzte Ladung (Dauer, Temperaturhub) und die Ladungen der letzten 30 Tage |
 | Wärmewacht Kosten (`…-costs-card`) | Strom Monat und Saison, Kosten je kWh Wärme, Ersparnis gegenüber Gas |
 | Wärmewacht Hybridanlage (`…-hybrid-card`) | Anteil der Wärmepumpe, Wärme des Kessels |
-| Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C |
+| Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C; fehlt die Heizlast noch, was den Daten fehlt (etwa „2 von 8 Wochen“) |
 | Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl |
 | Wärmewacht Gas- und Ölheizung (`…-boiler-card`) | Energiesignatur als Diagramm (auch die vorläufige Gerade), Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf, Warmwasseranteil, Verbrauch und Kosten der letzten 365 Tage; fehlt ein Wert, steht der Grund dabei, bei der Heizlast auch, was den Daten noch fehlt (etwa „2 von 8 Wochen“) |
 

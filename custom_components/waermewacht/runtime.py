@@ -144,7 +144,13 @@ from .health_extra import (
     standby_rise,
     to_lph,
 )
-from .heat_load import HeatLoad, heat_load
+from .heat_load import (
+    CURRENT_SEASON,
+    PREVIOUS_SEASON,
+    HeatLoad,
+    choose_season,
+    heat_load,
+)
 from .heating_curve import FlowCurve, flow_curve
 from .model import (
     ACTIVITY_PARTS,
@@ -384,11 +390,13 @@ class HeatPumpRuntime:
         self._hot = False
         self._dhw_temp: float | None = None
         # Performance curves (current and previous season) and heat load of
-        # the last complete season; recomputed daily, kept in memory only.
+        # the last complete season or, without a usable one, of the current
+        # season so far (heat_load_season); recomputed daily, in memory only.
         self.curves: dict[str, list[dict[str, Any]]] = {}
         self.curve_starts: dict[str, datetime] = {}
         self.heat_load: HeatLoad | None = None
         self.heat_load_window: tuple[datetime, datetime] | None = None
+        self.heat_load_season: str | None = None  # heat_load.PREVIOUS_SEASON, …
         # Degree days G20/15 of the current season up to yesterday, and the
         # heat per degree day of the previous season for comparison.
         self.degree_days: DegreeDays | None = None
@@ -928,7 +936,8 @@ class HeatPumpRuntime:
     async def _async_refresh_analysis(self, now: datetime) -> None:
         """Performance curve of the current and the previous season (never
         mixed: a changed heating curve would blur both) and the heat load of
-        the last complete season."""
+        the last complete season, or of the current one so far when the last
+        gives nothing usable (heat_load.choose_season)."""
         self._analysing = True
         try:
             current, previous = self.seasons(now)
@@ -962,10 +971,20 @@ class HeatPumpRuntime:
                 ),
             }
             self.curve_starts = {"current": current, "previous": previous}
-            self.heat_load = heat_load(
-                *last_building, self.tz, design_temp=self.design_temp
+            loads = {
+                PREVIOUS_SEASON: heat_load(
+                    *last_building, self.tz, design_temp=self.design_temp
+                ),
+                CURRENT_SEASON: heat_load(
+                    *this_building, self.tz, design_temp=self.design_temp
+                ),
+            }
+            season = choose_season(loads[PREVIOUS_SEASON], loads[CURRENT_SEASON])
+            self.heat_load = loads[season]
+            self.heat_load_season = season
+            self.heat_load_window = (
+                (current, now) if season == CURRENT_SEASON else (previous, current)
             )
-            self.heat_load_window = (previous, current)
             today = now.astimezone(self.tz).date()
             first = current.astimezone(self.tz).date()
             self.degree_days = degree_days(*this_building, self.tz, first, today)

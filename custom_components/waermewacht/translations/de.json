@@ -935,11 +935,11 @@
         },
         "start": {
           "name": "Beginn",
-          "description": "Ohne: die letzte vollständige Saison (Gas- oder Ölheizung: die letzten 365 Tage)."
+          "description": "Ohne: der Zeitraum der Heizlast-Sensoren (die letzte vollständige Saison, ohne verwertbare die laufende bis jetzt; Gas- oder Ölheizung: die letzten 365 Tage)."
         },
         "end": {
           "name": "Ende",
-          "description": "Ohne: Ende der letzten vollständigen Saison, mit Beginn: jetzt."
+          "description": "Ohne: Ende dieses Zeitraums, mit Beginn: jetzt."
         },
         "design_outdoor_temp": {
           "name": "Normaußentemperatur",
