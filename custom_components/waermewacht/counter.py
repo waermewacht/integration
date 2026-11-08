@@ -9,7 +9,7 @@ Copies: speicherwacht/custom_components/speicherwacht/counter.py (derived).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, tzinfo
+from datetime import date, datetime, time, timedelta, tzinfo
 from enum import StrEnum
 from itertools import pairwise
 from typing import Any
@@ -36,6 +36,12 @@ JUMP_TOLERANCE_KWH = 1.0
 # value, stalled 36 and 52 minutes). At most this far back, so that a counter
 # idle for weeks (cooling in winter) still rejects glitches.
 CATCH_UP_HOURS = 1.0
+# A jump that falls back to at least the value before it was a glitch of the
+# source (observed in Tarifwacht: 107 -> 109851.5 -> 110.131 kWh, Wh as kWh
+# for one reading): the real increase across it is booked when the fall back
+# comes, if plausible for the time since the value before the jump. Waited
+# for this long at most (own assumption; glitches seen lasted one reading).
+JUMP_RECOVERY = timedelta(hours=24)
 
 # A day counter (energy "today") taken for a lifetime counter: it falls by half
 # or more at the same local hour on different days (own assumption; the rule of
@@ -61,6 +67,9 @@ class CounterEvent(StrEnum):
     DIP = "dip"  # step back (noise, defrost): baseline held, nothing booked
     RESET = "reset"  # counter started anew: new baseline
     JUMP = "jump"  # implausibly large increase: new baseline, nothing booked
+    # Fall back after a jump to at least the value before it: the real
+    # increase across the glitch is booked (less what was booked during it).
+    RECOVERED = "recovered"
 
 
 def looks_like_day_counter(rows: list[tuple[datetime, float]], tz: tzinfo) -> bool:
@@ -129,6 +138,40 @@ class CounterUpdate:
 
 
 @dataclass
+class PendingJump:
+    """A jump that may still fall back (see JUMP_RECOVERY)."""
+
+    before: float  # value before the jump
+    before_time: datetime  # its reading
+    before_rose: datetime | None  # when the baseline rose before the jump
+    at: datetime  # the jump
+    level: float  # highest value since the jump
+    booked: float = 0.0  # booked since the jump (rises at the glitch level)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "before": self.before,
+            "before_time": self.before_time.isoformat(),
+            "before_rose": self.before_rose.isoformat() if self.before_rose else None,
+            "at": self.at.isoformat(),
+            "level": self.level,
+            "booked": self.booked,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> PendingJump:
+        rose = data.get("before_rose")
+        return cls(
+            before=float(data["before"]),
+            before_time=datetime.fromisoformat(data["before_time"]),
+            before_rose=datetime.fromisoformat(rose) if rose else None,
+            at=datetime.fromisoformat(data["at"]),
+            level=float(data["level"]),
+            booked=float(data.get("booked", 0.0)),
+        )
+
+
+@dataclass
 class Counter:
     """Track the last reading of a cumulative counter.
 
@@ -152,6 +195,8 @@ class Counter:
     last_time: datetime | None = None
     # When the baseline last moved up (first value, rise, reset, jump).
     rose_time: datetime | None = None
+    # The latest jump while it may still fall back (lifetime counters only).
+    jump: PendingJump | None = None
 
     def update(self, value: float, at: datetime) -> CounterUpdate:
         """Process a reading in kWh taken at `at` (timezone-aware)."""
@@ -163,11 +208,17 @@ class Counter:
             return CounterUpdate(event=CounterEvent.FIRST)
         if self.day_tz is not None:
             return self._update_day(value, at, previous_value, previous_time)
+        if self.jump is not None and at - self.jump.at > JUMP_RECOVERY:
+            self.jump = None
         delta = value - previous_value
         if delta < 0:
+            if (recovered := self._recover(value, at)) is not None:
+                return recovered
             if -delta <= max(RESET_MIN_KWH, RESET_FRACTION * previous_value):
                 self.last_time = at
                 return CounterUpdate(event=CounterEvent.DIP)
+            if self.jump is not None and value < self.jump.before:
+                self.jump = None  # below the value before the jump: a reset
             self.last_value, self.last_time, self.rose_time = value, at, at
             return CounterUpdate(event=CounterEvent.RESET)
         rose_time = self.rose_time
@@ -175,14 +226,61 @@ class Counter:
         if delta == 0:
             return CounterUpdate()
         self.rose_time = at
-        if self.max_kw is not None:
-            hours = (at - previous_time).total_seconds() / 3600
-            if rose_time is not None:
-                since_rise = (at - rose_time).total_seconds() / 3600
-                hours = max(hours, min(since_rise, CATCH_UP_HOURS))
-            if delta > self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH:
-                return CounterUpdate(event=CounterEvent.JUMP)
+        if not self._plausible(delta, at, previous_time, rose_time):
+            if self.jump is None:  # a second jump keeps the first value
+                self.jump = PendingJump(
+                    before=previous_value,
+                    before_time=previous_time,
+                    before_rose=rose_time,
+                    at=at,
+                    level=value,
+                )
+            self.jump.level = max(self.jump.level, value)
+            return CounterUpdate(event=CounterEvent.JUMP)
+        if self.jump is not None:
+            self.jump.booked += delta
+            self.jump.level = max(self.jump.level, value)
         return CounterUpdate(delta=delta)
+
+    def _plausible(
+        self,
+        delta: float,
+        at: datetime,
+        previous_time: datetime,
+        rose_time: datetime | None,
+    ) -> bool:
+        """An increase within `max_kw` for the time since the last reading,
+        or since the last rise (at most CATCH_UP_HOURS back)."""
+        if self.max_kw is None:
+            return True
+        hours = (at - previous_time).total_seconds() / 3600
+        if rose_time is not None:
+            since_rise = (at - rose_time).total_seconds() / 3600
+            hours = max(hours, min(since_rise, CATCH_UP_HOURS))
+        return delta <= self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH
+
+    def _recover(self, value: float, at: datetime) -> CounterUpdate | None:
+        """A fall back after a jump to at least the value before it, nearer
+        to that value than to the glitch level: the jump was a glitch. Books
+        the increase since the value before the jump, less what rises at the
+        glitch level booked, if plausible for the time since that value (the
+        jump bound, counted from there). A dip at the new level (defrost,
+        noise) after a real jump is no fall back."""
+        jump = self.jump
+        if jump is None or value < jump.before:
+            return None
+        if value - jump.before >= (jump.level - jump.before) / 2:
+            return None
+        if not self._plausible(
+            value - jump.before, at, jump.before_time, jump.before_rose
+        ):
+            return None  # not the glitch falling back: as before
+        self.jump = None
+        self.last_value, self.last_time, self.rose_time = value, at, at
+        return CounterUpdate(
+            delta=max(value - jump.before - jump.booked, 0.0),
+            event=CounterEvent.RECOVERED,
+        )
 
     def _update_day(
         self, value: float, at: datetime, previous_value: float, previous: datetime
@@ -219,11 +317,14 @@ class Counter:
         return value <= self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "last_value": self.last_value,
             "last_time": self.last_time.isoformat() if self.last_time else None,
             "rose_time": self.rose_time.isoformat() if self.rose_time else None,
         }
+        if self.jump is not None:
+            data["jump"] = self.jump.as_dict()
+        return data
 
     def restore(self, data: dict[str, Any]) -> None:
         self.last_value = data.get("last_value")
@@ -231,3 +332,5 @@ class Counter:
         self.last_time = datetime.fromisoformat(last_time) if last_time else None
         rose_time = data.get("rose_time")
         self.rose_time = datetime.fromisoformat(rose_time) if rose_time else None
+        jump = data.get("jump")
+        self.jump = PendingJump.from_dict(jump) if jump else None

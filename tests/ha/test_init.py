@@ -195,6 +195,24 @@ async def test_jump_readings_in_diagnostics(
 
 
 @pytest.mark.freeze_time(START)
+async def test_glitch_falling_back_is_booked(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """One wrong reading (Wh as kWh) and back: the real heat across it is
+    booked when the counter falls back."""
+    entry = await setup(hass)
+    freezer.tick(timedelta(seconds=30))
+    hass.states.async_set(HEAT_HEATING, "1000000.0", ENERGY)
+    await tick(hass, freezer, 1)
+    hass.states.async_set(HEAT_HEATING, "1000.75", ENERGY)
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "heat_heating") == pytest.approx(0.75)
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["events"]["jump:heat_heating"] == 1
+    assert diagnostics["events"]["recovered:heat_heating"] == 1
+
+
+@pytest.mark.freeze_time(START)
 async def test_unavailable_counter_is_not_zero(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
