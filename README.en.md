@@ -32,7 +32,7 @@ The user interface is available in German and English and follows the language o
 - **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup) · [Settings](#settings) · [Gas boiler before switching](#gas-boiler-before-switching)
 - **[Entities](#entities):** [Performance factors](#performance-factors) · [Energy](#energy) · [Cycling](#cycling) · [Hot water charges](#hot-water-charges) · [Health check](#health-check) · [Hybrid system](#hybrid-system) · [Costs and gas comparison](#costs-and-gas-comparison) · [Performance curve and heat load](#performance-curve-and-heat-load)
 - **[Actions](#actions):** [Report](#report) · [Performance curve](#performance-curve) · [Heat load](#heat-load)
-- **More:** [Cards](#cards) · [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
+- **More:** [Notifications](#notifications) · [Cards](#cards) · [Dashboard examples](#dashboard-examples) · [System boundary](#system-boundary-and-limits) · [Troubleshooting](#troubleshooting) · [Privacy](#privacy) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Related projects](#related-projects)
 
 ## Features
 
@@ -664,6 +664,18 @@ data:
 The response contains the same values as the attributes of "Heat load per kelvin".
 
 Performance curve and heat load report an error when no outdoor temperature is mapped or the recorder is missing.
+
+## Notifications
+
+A blueprint reports when a check turns conspicuous: in the Home Assistant bell and, optionally, also on the phone (or through another notify service), with the finding in words, such as "Heat pump Efficiency dropped: COP heating 3.10 instead of 3.60 in the same weather last season" or "Heat pump Conspicuous cycling: 5 starts in 24 h (limit 4)".
+
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
+
+- **Checks:** the problem binary sensors of one or more Wärmewacht devices (efficiency dropped, conspicuous cycling, backup heater in mild weather, backup heater in hot water charges, hot water efficiency below last year). Data errors such as stuck meters already come as repair issues.
+- **Also send to:** leave empty for the bell only, else a notify action such as `notify.mobile_app_my_phone` (*Developer tools → Actions*, search for "mobile_app").
+- **Also when fine again** (default on): otherwise the notification leaves the bell silently.
+- **After a restart** the checks are unknown at first and are judged again shortly after. A finding that persists is back in the bell; the phone only gets a change from fine to conspicuous (switch "Phone also after a restart" to change that).
+- **Language** of the message: German or English.
 
 ## Cards
 

@@ -1,0 +1,186 @@
+blueprint:
+  name: Wärmewacht – Befund melden (Glocke, optional Handy)
+  description: >-
+    Meldet, wenn eine Prüfung von Wärmewacht auffällig wird (Effizienz
+    gesunken, auffälliges Takten, Heizstab bei milder Witterung oder bei
+    Warmwasser, Warmwasser-Effizienz unter Vorjahr): als Benachrichtigung in
+    der Glocke und auf Wunsch zusätzlich an einen Benachrichtigungsdienst, etwa
+    das Handy mit der Home-Assistant-App. Auf Wunsch auch, wenn alles wieder in
+    Ordnung ist. Aufs Handy geht nur ein Wechsel von „in Ordnung“ auf
+    „auffällig“, nicht jeder Neustart (die Glocke steht dann wieder da).
+    ---
+    Reports when a Wärmewacht check turns conspicuous (efficiency dropped,
+    conspicuous cycling, backup heater in mild weather or for hot water, hot
+    water efficiency below last year): as a notification in the bell and,
+    optionally, through a notify action such as the phone with the Home
+    Assistant app. Optionally also when it is fine again. The phone only gets a
+    change from fine to conspicuous, not every restart (the bell shows it
+    again).
+  domain: automation
+  author: Wärmewacht
+  homeassistant:
+    min_version: "2026.4.0"
+  source_url: https://github.com/waermewacht/integration/blob/main/blueprints/automation/waermewacht/befund_melden.yaml
+  input:
+    checks:
+      name: Prüfungen / Checks
+      description: >-
+        Die Binärsensoren der Prüfungen eines oder mehrerer Wärmewacht-Geräte
+        (Problem-Sensoren wie „Effizienz gesunken“, „Auffälliges Takten“). /
+        The problem binary sensors of one or more Wärmewacht devices.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            integration: waermewacht
+            domain: binary_sensor
+            device_class: problem
+    notify_action:
+      name: Zusätzlich senden an / Also send to (optional)
+      description: >-
+        Leer lassen für nur die Glocke. Sonst eine Benachrichtigungs-Aktion,
+        z. B. notify.mobile_app_mein_handy (Entwicklerwerkzeuge → Aktionen). /
+        Leave empty for the bell only, else a notify action such as
+        notify.mobile_app_my_phone.
+      default: ""
+      selector:
+        text: {}
+    notify_fine:
+      name: Auch melden, wenn wieder in Ordnung / Also when fine again
+      description: >-
+        Aus: Die Meldung in der Glocke verschwindet still. / Off: the bell
+        notification is dismissed silently.
+      default: true
+      selector:
+        boolean: {}
+    after_restart:
+      name: Handy auch nach einem Neustart / Phone also after a restart
+      description: >-
+        Nach einem Neustart oder der Einrichtung ist eine Prüfung erst
+        unbekannt. An: Auch „unbekannt → auffällig“ geht aufs Handy (dann nach
+        jedem Neustart erneut). / After a restart or the setup a check is
+        unknown at first. On: “unknown → conspicuous” also goes to the phone
+        (again after every restart).
+      default: false
+      selector:
+        boolean: {}
+    language:
+      name: Sprache der Meldung / Language of the message
+      default: de
+      selector:
+        select:
+          options:
+            - label: Deutsch
+              value: de
+            - label: English
+              value: en
+
+mode: queued
+max: 10
+
+triggers:
+  - trigger: state
+    entity_id: !input checks
+    to: "on"
+    id: problem
+  - trigger: state
+    entity_id: !input checks
+    from: "on"
+    to: "off"
+    id: fine
+
+variables:
+  notify_action: !input notify_action
+  notify_fine: !input notify_fine
+  after_restart: !input after_restart
+  lang: !input language
+  notification_id: "waermewacht_{{ trigger.entity_id }}"
+  name: >-
+    {{ trigger.to_state.name if trigger.to_state else trigger.entity_id }}
+  # Sent to the phone: a real change from fine, or (if wanted) from unknown.
+  to_phone: >-
+    {{ notify_action | trim != '' and (trigger.id == 'fine'
+       or (trigger.from_state is not none and (trigger.from_state.state == 'off'
+           or (after_restart and trigger.from_state.state in ['unknown', 'unavailable'])))) }}
+  # The finding in words, from the attributes of the binary sensor.
+  detail: >-
+    {%- set a = trigger.to_state.attributes if trigger.to_state else {} -%}
+    {%- set de = lang == 'de' -%}
+    {%- macro n(x, d) -%}
+    {{- ('%.' ~ d ~ 'f') | format(x | float(0)) | replace('.', ',' if lang == 'de' else '.') -}}
+    {%- endmacro -%}
+    {%- if a.max_starts_per_hour is defined -%}
+      {%- set parts = [] -%}
+      {%- if 'starts_per_hour' in (a.triggers or []) -%}
+        {%- set parts = parts + [(('max. ' ~ a.max_starts_per_hour ~ ' Starts in einer Stunde (Grenze ' ~ n(a.starts_per_hour_limit, 0) ~ ')') if de else ('max. ' ~ a.max_starts_per_hour ~ ' starts within one hour (limit ' ~ n(a.starts_per_hour_limit, 0) ~ ')'))] -%}
+      {%- endif -%}
+      {%- if 'critical_runs' in (a.triggers or []) -%}
+        {%- set parts = parts + [((a.critical_runs_24h ~ ' kritisch kurze Läufe in 24 h') if de else (a.critical_runs_24h ~ ' critically short runs in 24 h'))] -%}
+      {%- endif -%}
+      {%- if 'starts_per_day' in (a.triggers or []) -%}
+        {%- set parts = parts + [((a.starts_24h ~ ' Starts in 24 h (Grenze ' ~ n(a.starts_per_day_limit, 0) ~ ')') if de else (a.starts_24h ~ ' starts in 24 h (limit ' ~ n(a.starts_per_day_limit, 0) ~ ')'))] -%}
+      {%- endif -%}
+      {%- if not parts -%}
+        {%- set parts = [(('max. ' ~ a.max_starts_per_hour ~ ' Starts/h, ' ~ a.short_runs_24h ~ ' Kurzläufe in 24 h') if de else ('max. ' ~ a.max_starts_per_hour ~ ' starts/h, ' ~ a.short_runs_24h ~ ' short runs in 24 h'))] -%}
+      {%- endif -%}
+      {{ parts | join(', ') }}
+    {%- elif a.ratio_previous_same_weather is defined -%}
+      {{ ('AZ Heizen ' ~ n(a.ratio_current, 2) ~ ' statt ' ~ n(a.ratio_previous_same_weather, 2) ~ ' bei gleichem Wetter in der Vorsaison') if de else ('COP heating ' ~ n(a.ratio_current, 2) ~ ' instead of ' ~ n(a.ratio_previous_same_weather, 2) ~ ' in the same weather last season') }}
+    {%- elif a.aux_kwh_7d is defined -%}
+      {{ ('Heizstab ' ~ n(a.aux_kwh_7d, 1) ~ ' kWh in 7 Tagen an milden Tagen') if de else ('backup heater ' ~ n(a.aux_kwh_7d, 1) ~ ' kWh in 7 days on mild days') }}
+    {%- elif a.aux_share is defined -%}
+      {{ ('Heizstab-Anteil ' ~ n(a.aux_share, 1) ~ ' % der Warmwasserladungen (' ~ n(a.aux_kwh, 2) ~ ' kWh in 30 Tagen)') if de else ('backup heater share ' ~ n(a.aux_share, 1) ~ ' % of the hot water charges (' ~ n(a.aux_kwh, 2) ~ ' kWh in 30 days)') }}
+    {%- elif a.previous_ratio is defined -%}
+      {{ ('AZ Warmwasser ' ~ n(a.ratio, 2) ~ ' statt ' ~ n(a.previous_ratio, 2) ~ ' im Vorjahr') if de else ('COP hot water ' ~ n(a.ratio, 2) ~ ' instead of ' ~ n(a.previous_ratio, 2) ~ ' last year') }}
+    {%- endif -%}
+  title: "{{ 'Wärmewacht: auffällig' if lang == 'de' else 'Wärmewacht: conspicuous' }}"
+  message: >-
+    {{ name }}{{ ': ' ~ detail if detail else '' }}
+  fine_title: "{{ 'Wärmewacht: wieder in Ordnung' if lang == 'de' else 'Wärmewacht: fine again' }}"
+  fine_message: >-
+    {{ name }}{{ ': wieder in Ordnung' if lang == 'de' else ': fine again' }}
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: problem
+        sequence:
+          - action: persistent_notification.create
+            data:
+              notification_id: "{{ notification_id }}"
+              title: "{{ title }}"
+              message: "{{ message }}"
+          - if:
+              - condition: template
+                value_template: "{{ to_phone }}"
+            then:
+              - action: "{{ notify_action | trim }}"
+                data:
+                  title: "{{ title }}"
+                  message: "{{ message }}"
+      - conditions:
+          - condition: trigger
+            id: fine
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ notify_fine }}"
+            then:
+              - action: persistent_notification.create
+                data:
+                  notification_id: "{{ notification_id }}"
+                  title: "{{ fine_title }}"
+                  message: "{{ fine_message }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ to_phone }}"
+                then:
+                  - action: "{{ notify_action | trim }}"
+                    data:
+                      title: "{{ fine_title }}"
+                      message: "{{ fine_message }}"
+            else:
+              - action: persistent_notification.dismiss
+                data:
+                  notification_id: "{{ notification_id }}"

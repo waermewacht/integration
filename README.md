@@ -32,7 +32,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung) · [Einstellungen](#einstellungen) · [Gasheizung vor dem Umstieg](#gasheizung-vor-dem-umstieg)
 - **[Entitäten](#entitäten):** [Arbeitszahlen](#arbeitszahlen) · [Energie](#energie) · [Takte](#takte) · [Warmwasser-Ladungen](#warmwasser-ladungen) · [Gesundheits-Check](#gesundheits-check) · [Hybridanlage](#hybridanlage) · [Kosten und Gasvergleich](#kosten-und-gasvergleich) · [Kennlinie und Heizlast](#kennlinie-und-heizlast)
 - **[Aktionen](#aktionen):** [Bericht](#bericht) · [AZ-Kennlinie](#az-kennlinie) · [Heizlast](#heizlast)
-- **Mehr:** [Karten](#karten) · [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
+- **Mehr:** [Benachrichtigen](#benachrichtigen) · [Karten](#karten) · [Dashboard-Beispiele](#dashboard-beispiele) · [Bilanzgrenze](#bilanzgrenze-und-grenzen-der-aussage) · [Fehlerbehebung](#fehlerbehebung) · [Datenschutz](#datenschutz) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Verwandte Projekte](#verwandte-projekte)
 
 ## Was Wärmewacht kann
 
@@ -664,6 +664,18 @@ data:
 Die Antwort enthält dieselben Werte wie die Attribute von „Heizlast je Kelvin“.
 
 AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeordnet ist oder der Recorder fehlt.
+
+## Benachrichtigen
+
+Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home Assistant und auf Wunsch zusätzlich aufs Handy (oder an einen anderen Benachrichtigungsdienst), mit dem Befund in Worten, etwa „Wärmepumpe Effizienz gesunken: AZ Heizen 3,10 statt 3,60 bei gleichem Wetter in der Vorsaison“ oder „Wärmepumpe Auffälliges Takten: 5 Starts in 24 h (Grenze 4)“.
+
+[![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
+
+- **Prüfungen:** die Problem-Binärsensoren eines oder mehrerer Wärmewacht-Geräte (Effizienz gesunken, Auffälliges Takten, Heizstab bei milder Witterung, Heizstab bei Warmwasserladungen, Warmwasser-Effizienz unter Vorjahr). Datenfehler wie stehende Zähler meldet Wärmewacht ohnehin als Reparaturhinweis.
+- **Zusätzlich senden an:** leer lassen für nur die Glocke, sonst eine Aktion wie `notify.mobile_app_mein_handy` (*Entwicklerwerkzeuge → Aktionen*, nach „mobile_app“ suchen).
+- **Auch melden, wenn wieder in Ordnung** (Vorgabe an): sonst verschwindet die Meldung still aus der Glocke.
+- **Nach einem Neustart** sind die Prüfungen erst unbekannt und werden kurz darauf neu bewertet. Ein fortbestehender Befund steht dann wieder in der Glocke; aufs Handy geht nur ein Wechsel von „in Ordnung“ auf „auffällig“ (umstellbar mit „Handy auch nach einem Neustart“).
+- **Sprache** der Meldung: Deutsch oder Englisch.
 
 ## Karten
 
