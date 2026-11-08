@@ -183,6 +183,7 @@ from .report import (
     degree_days_by_month,
     figures,
     late_import_signals,
+    missing_rows,
     own_hour,
     own_totals,
     statistics_rows,
@@ -492,6 +493,11 @@ class HeatPumpRuntime:
         # imported hour, its sum, energy to add; see _async_adjust_history).
         self.history_imported = False
         self.history_done: set[str] = set()
+        # The hours missing between the rows of imports before 0.4.6 are
+        # filled (once), and how many per own sensor.
+        self.history_dense = False
+        self.history_gaps_filled: dict[str, int] = {}
+        self._filling = False
         self.history_shift: dict[str, tuple[datetime, float, float]] = {}
         # Update from 0.4.4 or older: one flag for the entry, the sensors
         # handled then are told by their statistics (_async_import_late).
@@ -808,7 +814,7 @@ class HeatPumpRuntime:
         except Exception:  # never block the setup
             _LOGGER.exception("Reading the statistics for the history import failed")
             return
-        rows, totals = statistics_rows(hours), own_totals(hours)
+        rows, totals = statistics_rows(hours, before), own_totals(hours)
         for key, entity_id in ids.items():
             if recorded.get(entity_id) or not rows.get(key):
                 continue
@@ -881,7 +887,7 @@ class HeatPumpRuntime:
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics of %s failed", key)
                 continue
-            if rows := statistics_rows(hours).get(key):
+            if rows := statistics_rows(hours, end).get(key):
                 self._write_history(key, entity_id, rows, own_totals(hours)[key])
                 _LOGGER.info(
                     "%s: imported the statistics of %s before %s",
@@ -960,6 +966,12 @@ class HeatPumpRuntime:
     ) -> None:
         """Import `rows` (hour, sum) into the statistics of `entity_id`, and
         remember the shift by `total` for _async_adjust_history."""
+        self._import_rows(entity_id, rows)
+        self.history_shift[key] = (rows[0][0], rows[0][1], total)
+        self._dirty = True
+
+    def _import_rows(self, entity_id: str, rows: list[tuple[datetime, float]]) -> None:
+        """Hourly sums into the statistics of an own energy sensor."""
         metadata = StatisticMetaData(
             mean_type=StatisticMeanType.NONE,
             has_sum=True,
@@ -974,8 +986,63 @@ class HeatPumpRuntime:
             metadata,
             [StatisticData(start=hour, sum=kwh) for hour, kwh in rows],
         )
-        self.history_shift[key] = (rows[0][0], rows[0][1], total)
+
+    async def _async_fill_history_gaps(self) -> None:
+        """Once (update to 0.4.6): rows for the hours missing between the
+        hourly rows of the own energy sensors, with the sum of the row before.
+
+        Imports before 0.4.6 wrote only hours with energy. Home Assistant's
+        sums over a calendar period start from the row just before it; a
+        missing row there lost the first change of the period (statistics
+        cards per month or year). Only missing hours are inserted, no sum
+        changes; a second run finds nothing. Hours missing while Home
+        Assistant was off get the same rows (no energy booked in them).
+        """
+        self._filling = True
+        until = _hour(self._started_at)
+        filled: dict[str, int] = {}
+        try:
+            for key, entity_id in self._own_ids().items():
+                found = await get_instance(self.hass).async_add_executor_job(
+                    partial(
+                        statistics_during_period,
+                        self.hass,
+                        EARLIEST,
+                        until,
+                        {entity_id},
+                        "hour",
+                        None,
+                        {"sum"},
+                    )
+                )
+                rows = [
+                    (
+                        r["start"]
+                        if isinstance(r["start"], datetime)
+                        else dt_util.utc_from_timestamp(r["start"]),
+                        r["sum"],
+                    )
+                    for r in found.get(entity_id, [])
+                    if r.get("sum") is not None
+                ]
+                if missing := missing_rows(rows):
+                    self._import_rows(entity_id, missing)
+                    filled[key] = len(missing)
+        except Exception:  # never block; the next start tries again
+            _LOGGER.exception("Filling the hours missing in the statistics failed")
+            return
+        finally:
+            self._filling = False
+        self.history_dense = True
+        self.history_gaps_filled = filled
         self._dirty = True
+        if filled:
+            _LOGGER.info(
+                "%s: added %s hourly rows missing in the statistics (%s)",
+                self.entry.title,
+                sum(filled.values()),
+                ", ".join(f"{k} {n}" for k, n in sorted(filled.items())),
+            )
 
     @property
     def history_adjusted(self) -> bool:
@@ -2406,6 +2473,17 @@ class HeatPumpRuntime:
             and "recorder" in self.hass.config.components
         ):
             self.spawn(self._async_adjust_history(), "adjust_history", cancel=False)
+        if (
+            not self.history_dense
+            and self.history_imported
+            and not self.history_shift
+            and not self._adjusting
+            and not self._filling
+            and now - self._started_at >= ADJUST_DELAY
+            and "recorder" in self.hass.config.components
+        ):
+            # After the import and its shift: rows only between existing ones.
+            self.spawn(self._async_fill_history_gaps(), "fill_history")
         day_changed = self.marks.starts.get(Period.TODAY) != period_start(
             Period.TODAY, now, self.tz, self.marks.season_month
         )
@@ -2632,6 +2710,8 @@ class HeatPumpRuntime:
             "saved_at": dt_util.utcnow().isoformat(),
             "since": self.since.isoformat() if self.since else None,
             "history_imported": self.history_imported,
+            "history_dense": self.history_dense,
+            "history_gaps_filled": self.history_gaps_filled,
             # 0.4.4 and older read only the two flags (and during the update
             # this start, the sensors are not told apart yet).
             "history_adjusted": self.history_adjusted and not self._legacy_unshifted,
@@ -2699,6 +2779,8 @@ class HeatPumpRuntime:
         since = data.get("since")
         self.since = dt_util.parse_datetime(since) if since else None
         self.history_imported = data.get("history_imported", False)
+        self.history_dense = data.get("history_dense", False)
+        self.history_gaps_filled = dict(data.get("history_gaps_filled", {}))
         if "history_done" in data:
             self.history_done = set(data["history_done"])
             self.history_shift = {

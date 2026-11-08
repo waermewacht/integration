@@ -3,7 +3,7 @@ sensors, once per sensor: also for a sensor that appears later."""
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -16,6 +16,7 @@ from homeassistant.components.recorder.models import (
 )
 from homeassistant.components.recorder.statistics import (
     async_import_statistics,
+    statistic_during_period,
     statistics_during_period,
 )
 from homeassistant.core import HomeAssistant
@@ -267,3 +268,132 @@ async def test_update_from_one_flag_imports_only_the_new_sensor(
     books = hass_storage[f"{DOMAIN}.{entry.entry_id}"]["data"]
     assert {"heat_heating", "heat_dhw"} <= set(books["history_done"])
     assert books["history_shift"] == {}
+
+
+# Midnight of 01.01.2026 in Berlin (23:00 UTC) and of 01.02.2026.
+JANUARY = datetime(2025, 12, 31, 23, 0, tzinfo=UTC)
+FEBRUARY = datetime(2026, 1, 31, 23, 0, tzinfo=UTC)
+DEC_31 = datetime(2025, 12, 31, 4, 0, tzinfo=UTC)
+JAN_1 = datetime(2026, 1, 1, 4, 0, tzinfo=UTC)
+
+
+async def month_change(hass: HomeAssistant, statistic_id: str) -> float | None:
+    """Change of January as Home Assistant's statistics cards ask for it."""
+    found = await hass.async_add_executor_job(
+        statistic_during_period, hass, JANUARY, FEBRUARY, statistic_id, {"change"}, None
+    )
+    return found.get("change")
+
+
+async def hourly_rows(hass: HomeAssistant, statistic_id: str) -> dict[datetime, float]:
+    rows = await hass.async_add_executor_job(
+        statistics_during_period,
+        hass,
+        DEC_31 - timedelta(days=1),
+        START,
+        {statistic_id},
+        "hour",
+        None,
+        {"sum"},
+    )
+    return {
+        datetime.fromtimestamp(r["start"], UTC)
+        if not isinstance(r["start"], datetime)
+        else r["start"]: r["sum"]
+        for r in rows.get(statistic_id, [])
+    }
+
+
+@pytest.mark.freeze_time(START)
+async def test_imported_hours_are_dense(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Energy on 31.12. and 01.01. only (as found in a real system): the
+    import writes every hour up to the setup, so January's change in Home
+    Assistant's own period sum keeps the first hour of January."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    first = DEC_31 - timedelta(hours=2)
+    count = int((SETUP_HOUR - first) / timedelta(hours=1))
+    hours = [first + timedelta(hours=i) for i in range(count)]
+
+    def sums_of(kwh_31: float, kwh_1: float) -> list[float]:
+        return [
+            (kwh_31 if h >= DEC_31 else 0.0) + (kwh_1 if h >= JAN_1 else 0.0)
+            for h in hours
+        ]
+
+    source_statistics(hass, HEAT_HEATING, sums_of(6.08, 6.60), first)
+    source_statistics(hass, ELEC_HEATING, sums_of(2.0, 2.2), first)
+    await async_wait_recording_done(hass)
+    hass.states.async_set(HEAT_HEATING, "12.68", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "4.2", ENERGY)
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(entities=HEATING)
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await settle(hass)
+
+    heat = entity_id(hass, entry, "heat_heating")
+    rows = await hourly_rows(hass, heat)
+    # From the first hour with energy up to the setup hour, every hour.
+    assert min(rows) == DEC_31
+    assert len(rows) == int((SETUP_HOUR - DEC_31) / timedelta(hours=1))
+    assert rows[JANUARY - timedelta(hours=1)] == pytest.approx(-6.60)
+    assert await month_change(hass, heat) == pytest.approx(6.60)
+
+
+@pytest.mark.freeze_time(START)
+async def test_gaps_of_older_imports_are_filled_once(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Rows an import before 0.4.6 left out are added once, with the sum of
+    the row before; existing sums stay as they are."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "12.68", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "4.2", ENERGY)
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(entities=HEATING)
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await settle(hass)
+    heat = entity_id(hass, entry, "heat_heating")
+    # As 0.4.5 imported it: hours with energy only.
+    async_import_statistics(
+        hass,
+        StatisticMetaData(
+            mean_type=StatisticMeanType.NONE,
+            has_sum=True,
+            name=None,
+            source="recorder",
+            statistic_id=heat,
+            unit_class="energy",
+            unit_of_measurement="kWh",
+        ),
+        [
+            StatisticData(start=DEC_31, sum=-6.60),
+            StatisticData(start=JAN_1, sum=0.0),
+        ],
+    )
+    await async_wait_recording_done(hass)
+    runtime = entry.runtime_data
+    assert not runtime.history_dense
+
+    freezer.tick(timedelta(minutes=16))
+    async_fire_time_changed(hass)
+    await settle(hass)
+    assert runtime.history_dense
+    assert runtime.history_gaps_filled == {"heat_heating": 23}
+    rows = await hourly_rows(hass, heat)
+    assert rows[DEC_31] == pytest.approx(-6.60)  # unchanged
+    assert rows[JAN_1] == pytest.approx(0.0)
+    assert len(rows) == 24
+    assert rows[JANUARY - timedelta(hours=1)] == pytest.approx(-6.60)
+    assert await month_change(hass, heat) == pytest.approx(6.60)
+
+    # A second run finds nothing to add.
+    await runtime._async_fill_history_gaps()
+    await settle(hass)
+    assert runtime.history_gaps_filled == {}
+    assert len(await hourly_rows(hass, heat)) == 24

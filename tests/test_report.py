@@ -16,6 +16,7 @@ from custom_components.waermewacht.report import (
     degree_days_by_month,
     figures,
     late_import_signals,
+    missing_rows,
     own_hour,
     statistics_rows,
 )
@@ -79,11 +80,65 @@ def test_statistics_rows_end_at_zero() -> None:
         totals.add(Kind.AUX, Mode.HEATING, aux)
         hours[h0 + timedelta(hours=offset)] = totals
     rows = statistics_rows(hours)
-    assert rows["heat_heating"] == [(h0, -2.0), (h0 + timedelta(hours=2), 0.0)]
+    hour = timedelta(hours=1)
+    # Every hour gets a row; one without energy carries the sum before.
+    assert rows["heat_heating"] == [(h0, -2.0), (h0 + hour, -2.0), (h0 + 2 * hour, 0.0)]
     # Electricity of a mode includes its backup heater, as the sensor does.
-    assert rows["electricity_heating"] == [(h0, -0.7), (h0 + timedelta(hours=2), 0.0)]
-    assert rows["standby"] == [(h0 + timedelta(hours=1), 0.0)]
+    assert rows["electricity_heating"] == [
+        (h0, -0.7),
+        (h0 + hour, -0.7),
+        (h0 + 2 * hour, 0.0),
+    ]
+    assert rows["standby"] == [(h0 + hour, 0.0)]
     assert "heat_dhw" not in rows  # no energy, no rows
+
+    # Up to the setup hour: the hours after the last energy carry 0.
+    rows = statistics_rows(hours, end=h0 + 5 * hour)
+    assert rows["heat_heating"] == [
+        (h0, -2.0),
+        (h0 + hour, -2.0),
+        (h0 + 2 * hour, 0.0),
+        (h0 + 3 * hour, 0.0),
+        (h0 + 4 * hour, 0.0),
+    ]
+    # A row's sum is the sum at the end of its hour.
+    assert rows["standby"] == [
+        (h0 + hour, 0.0),
+        (h0 + 2 * hour, 0.0),
+        (h0 + 3 * hour, 0.0),
+        (h0 + 4 * hour, 0.0),
+    ]
+
+
+def test_statistics_rows_over_a_month_boundary() -> None:
+    """The case found in a real system: energy on 30.09. and 01.10. only.
+    Every hour in between has a row, so a calendar month starting between
+    them finds the row just before it."""
+    first = datetime(2026, 9, 30, 4, tzinfo=UTC)
+    second = datetime(2026, 10, 1, 4, tzinfo=UTC)
+    hours = {}
+    for at, kwh in ((first, 6.08), (second, 6.60)):
+        totals = Totals()
+        totals.add(Kind.HEAT, Mode.DHW, kwh)
+        hours[at] = totals
+    rows = statistics_rows(hours, end=second + timedelta(hours=2))
+    heat = dict(rows["heat_dhw"])
+    assert len(heat) == 26  # 30.09. 04:00 up to 01.10. 05:00
+    # Midnight in Berlin (22:00 UTC): the row before October holds the
+    # September sum; October's change is all of the 6.60.
+    october = datetime(2026, 9, 30, 22, tzinfo=UTC)
+    assert heat[october - timedelta(hours=1)] == pytest.approx(-6.60)
+    assert heat[second] - heat[october - timedelta(hours=1)] == pytest.approx(6.60)
+
+
+def test_missing_rows_carry_the_sum_before() -> None:
+    h0 = datetime(2026, 9, 30, 4, tzinfo=UTC)
+    hour = timedelta(hours=1)
+    rows = [(h0, 10.0), (h0 + hour, 12.0), (h0 + 4 * hour, 15.0)]
+    assert missing_rows(rows) == [(h0 + 2 * hour, 12.0), (h0 + 3 * hour, 12.0)]
+    assert missing_rows([*rows, *missing_rows(rows)]) == []  # nothing twice
+    assert missing_rows([]) == []
+    assert missing_rows([(h0, 1.0)]) == []
 
 
 def test_late_sensor_imports_only_its_own_meters() -> None:

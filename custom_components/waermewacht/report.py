@@ -7,8 +7,9 @@ sensors, which book standby from the compressor state.
 
 from __future__ import annotations
 
-from collections.abc import Collection, Iterable, Mapping
-from datetime import datetime, tzinfo
+from collections.abc import Collection, Iterable, Mapping, Sequence
+from datetime import datetime, timedelta, tzinfo
+from itertools import pairwise
 from typing import Any
 
 from .degree_days import DayDegrees, heat_per_degree_day
@@ -128,32 +129,61 @@ def own_changes(totals: Totals) -> dict[str, float]:
     return changes
 
 
+HOUR = timedelta(hours=1)
+
+
 def statistics_rows(
     hours: Mapping[datetime, Totals],
+    end: datetime | None = None,
 ) -> dict[str, list[tuple[datetime, float]]]:
-    """Hourly sums of the own sensors for the hours before the setup.
+    """Hourly sums of the own sensors for the hours before `end` (the setup).
 
     The sums end at 0 with the last hour: Home Assistant starts the sum of a
     new sensor at 0, so the imported past joins it without a step. Home
     Assistant takes the change of the earliest row against 0, though: once
     the sensor has short-term statistics, all rows are shifted up by the
-    imported energy (own_totals), so the sum starts at 0. Hours without
-    energy get no row.
+    imported energy (own_totals), so the sum starts at 0.
+
+    Every hour from a sensor's first hour with energy up to `end` gets a row,
+    hours without energy the sum before (as Home Assistant compiles them):
+    its sums over a calendar period start from the row just before the
+    period, and a missing row there loses the first change in the period.
     """
-    changes: dict[str, list[tuple[datetime, float]]] = {}
+    changes: dict[str, dict[datetime, float]] = {}
     for hour in sorted(hours):
         for key, kwh in own_changes(hours[hour]).items():
             if kwh:
-                changes.setdefault(key, []).append((hour, kwh))
+                changes.setdefault(key, {})[hour] = kwh
     rows: dict[str, list[tuple[datetime, float]]] = {}
     for key, values in changes.items():
-        remaining = sum(kwh for _, kwh in values)
+        first = min(values)
+        last = max(values)
+        if end is not None:
+            last = max(last, end - HOUR)
+        remaining = sum(values.values())
         rows[key] = []
-        for hour, kwh in values:
-            remaining -= kwh
+        hour = first
+        while hour <= last:
+            remaining -= values.get(hour, 0.0)
             rows[key].append((hour, round(-remaining, 3) + 0.0))
+            hour += HOUR
         rows[key][-1] = (rows[key][-1][0], 0.0)
     return rows
+
+
+def missing_rows(
+    rows: Sequence[tuple[datetime, float]],
+) -> list[tuple[datetime, float]]:
+    """Rows for the hours missing between consecutive hourly rows, each with
+    the sum of the row before (no energy in it): the repair of imports
+    written before 0.4.6, which left out hours without energy."""
+    result: list[tuple[datetime, float]] = []
+    for (hour, total), (following, _) in pairwise(sorted(rows)):
+        hour += HOUR
+        while hour < following:
+            result.append((hour, total))
+            hour += HOUR
+    return result
 
 
 def late_import_signals(key: str, entities: Collection[Signal]) -> frozenset[Signal]:

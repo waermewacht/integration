@@ -205,6 +205,9 @@ async def async_get_config_entry_diagnostics(
         # and imported sums still to shift.
         "history_done": sorted(runtime.history_done),
         "history_shift": sorted(runtime.history_shift),
+        # Hours added once (0.4.6) between the rows of older imports.
+        "history_dense": runtime.history_dense,
+        "history_gaps_filled": runtime.history_gaps_filled,
         "events": runtime.events,
         "jumps": runtime.jumps,
         "tracker": runtime.tracker.as_dict(),
