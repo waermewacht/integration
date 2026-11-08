@@ -9,11 +9,13 @@ import pytest
 
 from custom_components.waermewacht.degree_days import DayDegrees
 from custom_components.waermewacht.energy import Kind, Totals
-from custom_components.waermewacht.model import Mode
+from custom_components.waermewacht.model import Mode, Signal
 from custom_components.waermewacht.report import (
+    OWN_KEYS,
     by_month,
     degree_days_by_month,
     figures,
+    late_import_signals,
     own_hour,
     statistics_rows,
 )
@@ -82,6 +84,61 @@ def test_statistics_rows_end_at_zero() -> None:
     assert rows["electricity_heating"] == [(h0, -0.7), (h0 + timedelta(hours=2), 0.0)]
     assert rows["standby"] == [(h0 + timedelta(hours=1), 0.0)]
     assert "heat_dhw" not in rows  # no energy, no rows
+
+
+def test_late_sensor_imports_only_its_own_meters() -> None:
+    """A sensor that appears after the setup gets its past only from meters
+    no other own sensor counted before it appeared."""
+    entities = {
+        Signal.HEAT_HEATING,
+        Signal.ELEC_HEATING,
+        Signal.HEAT_DHW,
+        Signal.ELEC_DHW,
+        Signal.AUX_DHW,
+        Signal.ELEC_COOLING,
+        Signal.BOILER_HEAT_HEATING,
+        Signal.FUEL_DHW,
+        Signal.COMPRESSOR,
+    }
+    assert late_import_signals("heat_dhw", entities) == {
+        Signal.HEAT_DHW,
+        Signal.ELEC_DHW,
+    }
+    # Electricity with its backup heater; the heat tells standby apart.
+    assert late_import_signals("electricity_dhw", entities) == {
+        Signal.HEAT_DHW,
+        Signal.ELEC_DHW,
+        Signal.AUX_DHW,
+    }
+    assert late_import_signals("electricity_cooling", entities) == {Signal.ELEC_COOLING}
+    assert late_import_signals("boiler_heat_heating", entities) == {
+        Signal.BOILER_HEAT_HEATING
+    }
+    assert late_import_signals("fuel_dhw", entities) == {Signal.FUEL_DHW}
+    # Standby was in the electricity of the modes before.
+    assert late_import_signals("standby", entities) == set()
+    # Not mapped: nothing of its own.
+    assert late_import_signals("heat_cooling", entities) == set()
+    assert late_import_signals("fuel_heating", entities) == set()
+    for key in OWN_KEYS:
+        assert late_import_signals(key, set()) == set()
+
+
+def test_late_sensor_split_off_a_common_meter_imports_nothing() -> None:
+    """With one meter for all modes, the hot water's electricity was in
+    heating's until the hot water got its heat meter."""
+    entities = {
+        Signal.HEAT_HEATING,
+        Signal.HEAT_DHW,
+        Signal.ELEC_TOTAL,
+        Signal.ELEC_DHW,
+    }
+    assert late_import_signals("electricity_dhw", entities) == set()
+    assert late_import_signals("electricity_heating", entities) == set()
+    assert late_import_signals("heat_dhw", entities) == {
+        Signal.HEAT_DHW,
+        Signal.ELEC_DHW,
+    }
 
 
 def test_degree_days_per_month() -> None:

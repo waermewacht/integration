@@ -175,6 +175,7 @@ from .report import (
     degree_day_figures,
     degree_days_by_month,
     figures,
+    late_import_signals,
     own_hour,
     own_totals,
     statistics_rows,
@@ -250,6 +251,10 @@ ANALYSIS_HOUR = 3  # local time
 # Imported sums are shifted once the own sensors have short-term statistics
 # (compiled every 5 minutes), so the recorder continues from shifted sums.
 ADJUST_DELAY = timedelta(minutes=15)
+# Update from 0.4.4 or older: an own sensor with statistics rows up to this
+# long after the setup hour was there at the setup (its first row is the
+# setup hour) and had its history imported then.
+SETUP_ROWS = timedelta(hours=2)
 # Day values of a cloud: the electricity of a fetch waits this long for the
 # heat of the same fetch (the entities update one after another), and heat
 # up to SAME_FETCH before the electricity belongs to the same fetch.
@@ -453,10 +458,17 @@ class HeatPumpRuntime:
         self.spread = Mean()  # flow minus return, compressor heating, today
         self.flow = Mean()  # flow temperature, compressor heating, today
         self.since: datetime | None = None  # first setup
-        # The hours before the setup are in the own sensors' statistics, and
-        # their sums were shifted to start at 0.
+        # The past is in the own sensors' statistics: the setup import ran,
+        # the sensors handled since (once each: imported, left alone or
+        # nothing to import), and the imported sums still to shift (first
+        # imported hour, its sum, energy to add; see _async_adjust_history).
         self.history_imported = False
-        self.history_adjusted = False
+        self.history_done: set[str] = set()
+        self.history_shift: dict[str, tuple[datetime, float, float]] = {}
+        # Update from 0.4.4 or older: one flag for the entry, the sensors
+        # handled then are told by their statistics (_async_import_late).
+        self._history_migrate = False
+        self._legacy_unshifted = False
         self._adjusting = False
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
         # Readings around the last jumps: show whether a source caught up or
@@ -714,59 +726,227 @@ class HeatPumpRuntime:
         return True
 
     async def async_import_history(self) -> None:
-        """Once per entry: write the hours before the setup into the
-        statistics of the own energy sensors, so statistics cards show the
-        months before the setup as well.
+        """Write the past into the statistics of the own energy sensors, once
+        per sensor, so statistics cards show the months before the setup too.
 
-        Only hours before the first row Home Assistant recorded itself are
-        written, with sums ending at 0 where its own sum starts (see
-        report.statistics_rows): no recorded row changes. A sensor that
-        already has rows from before the setup is left alone.
+        At the setup: the hours before it, for every sensor there
+        (_async_import_setup). A sensor that appears later (a meter added
+        under Reconfigure) gets its past when it appears
+        (_async_import_late). Only hours before the first row Home Assistant
+        recorded itself are written, with sums ending at 0 where its own sum
+        starts (report.statistics_rows); the sums are shifted once later
+        (_async_adjust_history). A sensor that already has rows from before
+        the setup is left alone.
         """
-        if self.history_imported or self.since is None:
+        if self.since is None or "recorder" not in self.hass.config.components:
             return
-        if "recorder" not in self.hass.config.components:
-            return
+        ids = self._own_ids()
         if self.template.previous_day:
             # No usable source statistics (see _async_backfill).
-            self.history_imported = self.history_adjusted = True
+            self.history_imported = True
+            self.history_done.update(ids)
+            self._history_migrate = self._legacy_unshifted = False
             self._dirty = True
             return
+        if not self.history_imported:
+            await self._async_import_setup(ids)
+            return
+        if waiting := {k: v for k, v in ids.items() if k not in self.history_done}:
+            await self._async_import_late(waiting)
+        elif self._history_migrate:
+            self._history_migrate = self._legacy_unshifted = False
+            self._dirty = True
+
+    async def _async_import_setup(self, ids: dict[str, str]) -> None:
+        """The hours before the setup, for the sensors there at the setup."""
         # One attempt, also on failure: never run twice into the same rows.
         self.history_imported = True
+        self.history_done.update(ids)
         self._dirty = True
         before = self._history_end()
-        ids = self._own_ids()
         try:
             recorded = await self.async_hourly(set(ids.values()), EARLIEST, before)
-            rows = statistics_rows(
-                by_hour(
-                    await self._async_source_hours(EARLIEST, before),
-                    self.heat_modes,
-                    self.template.heat_includes_electricity,
-                )
+            hours = by_hour(
+                await self._async_source_hours(EARLIEST, before),
+                self.heat_modes,
+                self.template.heat_includes_electricity,
             )
         except Exception:  # never block the setup
             _LOGGER.exception("Reading the statistics for the history import failed")
             return
+        rows, totals = statistics_rows(hours), own_totals(hours)
         for key, entity_id in ids.items():
             if recorded.get(entity_id) or not rows.get(key):
                 continue
-            metadata = StatisticMetaData(
-                mean_type=StatisticMeanType.NONE,
-                has_sum=True,
-                name=None,
-                source="recorder",
-                statistic_id=entity_id,
-                unit_class="energy",
-                unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-            )
-            async_import_statistics(
-                self.hass,
-                metadata,
-                [StatisticData(start=hour, sum=kwh) for hour, kwh in rows[key]],
-            )
+            self._write_history(key, entity_id, rows[key], totals[key])
         _LOGGER.debug("Imported the statistics before %s for %s", before, ids)
+
+    async def _async_import_late(self, waiting: dict[str, str]) -> None:
+        """Sensors not handled yet: they appeared after the setup.
+
+        Such a sensor's state counts from when it appeared (a new meter
+        starts at its first reading), Home Assistant's sum from its first
+        row. Its past is the time before the setup and the time between the
+        setup and its appearance: the hours before its first own row, from
+        the meters only it counts (report.late_import_signals; standby and
+        electricity split off a common meter were counted by other sensors
+        and get nothing). A sensor with rows from before the setup is left
+        alone (another history under its id). Update from 0.4.4 or older
+        (one flag for the entry): a sensor with rows up to shortly after the
+        setup hour was there at the setup and handled then.
+        """
+        migrate = self._history_migrate
+        setup = _hour(self.since or EARLIEST)
+        # Only sensors that are there now: one left from a removed meter
+        # (restored, no state) waits until it is there again; a disabled one
+        # until it is enabled (the entry reloads then).
+        shown = {
+            key: entity_id
+            for key, entity_id in waiting.items()
+            if (state := self.hass.states.get(entity_id)) is not None
+            and not state.attributes.get("restored")
+        }
+        ids = set(waiting.values() if migrate else shown.values())
+        try:
+            # The few rows around the setup first, so that the imported rows
+            # of the sensors there at the setup are read only where needed.
+            earlier = (
+                await self._async_first_rows(ids, setup, setup + SETUP_ROWS)
+                if migrate
+                else {}
+            )
+            earlier |= await self._async_first_rows(ids - set(earlier), EARLIEST, setup)
+            first = await self._async_first_rows(
+                set(shown.values()) - set(earlier),
+                setup,
+                dt_util.utcnow() + timedelta(hours=1),
+            )
+        except Exception:  # never block the setup; the next start tries again
+            _LOGGER.exception("Reading the statistics for the history import failed")
+            return
+        handled = {k: v for k, v in waiting.items() if v in earlier}
+        # One attempt, also on failure: never run twice into the same rows.
+        self.history_done.update(handled)
+        self.history_done.update(shown)
+        self._history_migrate = False
+        self._dirty = True
+        if migrate and self._legacy_unshifted:
+            await self._async_legacy_shift(handled)
+        for key, entity_id in shown.items():
+            if entity_id in earlier:
+                continue
+            if not (signals := late_import_signals(key, self.entities)):
+                continue
+            end = self._late_end(first.get(entity_id))
+            try:
+                hours = by_hour(
+                    await self._async_source_hours(EARLIEST, end, signals),
+                    self.heat_modes,
+                    self.template.heat_includes_electricity,
+                )
+            except Exception:  # never block the setup
+                _LOGGER.exception("Reading the statistics of %s failed", key)
+                continue
+            if rows := statistics_rows(hours).get(key):
+                self._write_history(key, entity_id, rows, own_totals(hours)[key])
+                _LOGGER.info(
+                    "%s: imported the statistics of %s before %s",
+                    self.entry.title,
+                    entity_id,
+                    end,
+                )
+
+    def _late_end(self, first_row: datetime | None) -> datetime:
+        """End of the hours written for a sensor that appeared after the
+        setup: its first own row, else the hour this start began (its state
+        counts from then). Hourly statistics are booked late, up to
+        HOURLY_LOOKBACK back: before its first row by that much, else from
+        where the booking continues."""
+        started = _hour(self._started_at)
+        if self.hourly:
+            if first_row is not None:
+                return first_row - HOURLY_LOOKBACK
+            return min(self.booked_until or started, started)
+        return started if first_row is None else min(first_row, started)
+
+    async def _async_first_rows(
+        self, entity_ids: set[str], start: datetime, end: datetime
+    ) -> dict[str, datetime]:
+        """Start of the first hourly statistics row in [start, end) of each
+        entity that has one."""
+        if not entity_ids or start >= end:
+            return {}
+        rows = await get_instance(self.hass).async_add_executor_job(
+            partial(
+                statistics_during_period,
+                self.hass,
+                start,
+                end,
+                entity_ids,
+                "hour",
+                None,
+                {"sum"},
+            )
+        )
+        first: dict[str, datetime] = {}
+        for entity_id, entity_rows in rows.items():
+            if entity_rows:
+                at = entity_rows[0]["start"]
+                first[entity_id] = (
+                    at if isinstance(at, datetime) else dt_util.utc_from_timestamp(at)
+                )
+        return first
+
+    async def _async_legacy_shift(self, handled: dict[str, str]) -> None:
+        """Update from 0.4.4 or older within 15 minutes of the setup: the
+        sums imported then are not shifted yet. Their rows as computed then
+        (the hours before the setup, all meters)."""
+        self._legacy_unshifted = False
+        try:
+            hours = by_hour(
+                await self._async_source_hours(EARLIEST, self._history_end()),
+                self.heat_modes,
+                self.template.heat_includes_electricity,
+            )
+        except Exception:  # the first bar then stays negative
+            _LOGGER.exception("Reading the statistics for the shift failed")
+            return
+        rows, totals = statistics_rows(hours), own_totals(hours)
+        for key in handled:
+            if rows.get(key):
+                hour, imported_sum = rows[key][0]
+                self.history_shift[key] = (hour, imported_sum, totals[key])
+
+    def _write_history(
+        self,
+        key: str,
+        entity_id: str,
+        rows: list[tuple[datetime, float]],
+        total: float,
+    ) -> None:
+        """Import `rows` (hour, sum) into the statistics of `entity_id`, and
+        remember the shift by `total` for _async_adjust_history."""
+        metadata = StatisticMetaData(
+            mean_type=StatisticMeanType.NONE,
+            has_sum=True,
+            name=None,
+            source="recorder",
+            statistic_id=entity_id,
+            unit_class="energy",
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        )
+        async_import_statistics(
+            self.hass,
+            metadata,
+            [StatisticData(start=hour, sum=kwh) for hour, kwh in rows],
+        )
+        self.history_shift[key] = (rows[0][0], rows[0][1], total)
+        self._dirty = True
+
+    @property
+    def history_adjusted(self) -> bool:
+        """Whether every imported sum is shifted."""
+        return not self.history_shift
 
     def _history_end(self) -> datetime:
         """End of the hours written before the setup: the setup hour, or for
@@ -789,7 +969,7 @@ class HeatPumpRuntime:
         }
 
     async def _async_adjust_history(self) -> None:
-        """Shift the imported sums up by the imported energy, once.
+        """Shift the imported sums up by the imported energy, once per sensor.
 
         Home Assistant takes the change of a sensor's earliest row against 0:
         imported sums ending at 0 would show the whole past as one negative
@@ -798,34 +978,27 @@ class HeatPumpRuntime:
         the first imported one is shifted (never twice, never other data).
         """
         self._adjusting = True
+        pending = dict(self.history_shift)
         try:
-            if self.since is None:
-                return
-            before = self._history_end()
             ids = self._own_ids()
-            hours = by_hour(
-                await self._async_source_hours(EARLIEST, before),
-                self.heat_modes,
-                self.template.heat_includes_electricity,
-            )
-            rows, totals = statistics_rows(hours), own_totals(hours)
-            first = await get_instance(self.hass).async_add_executor_job(
-                partial(
-                    statistics_during_period,
-                    self.hass,
-                    EARLIEST,
-                    before,
-                    set(ids.values()),
-                    "hour",
-                    None,
-                    {"sum"},
-                )
-            )
-            for key, entity_id in ids.items():
-                if not rows.get(key) or not first.get(entity_id):
+            for key, (hour, imported_sum, total) in pending.items():
+                if (entity_id := ids.get(key)) is None:
                     continue
-                hour, imported_sum = rows[key][0]
-                row = first[entity_id][0]
+                rows = await get_instance(self.hass).async_add_executor_job(
+                    partial(
+                        statistics_during_period,
+                        self.hass,
+                        EARLIEST,
+                        hour + timedelta(hours=1),
+                        {entity_id},
+                        "hour",
+                        None,
+                        {"sum"},
+                    )
+                )
+                if not (found := rows.get(entity_id)):
+                    continue
+                row = found[0]
                 start = row["start"]
                 if not isinstance(start, datetime):
                     start = dt_util.utc_from_timestamp(start)
@@ -837,13 +1010,14 @@ class HeatPumpRuntime:
                 ):
                     continue
                 get_instance(self.hass).async_adjust_statistics(
-                    entity_id, hour, totals[key], UnitOfEnergy.KILO_WATT_HOUR
+                    entity_id, hour, total, UnitOfEnergy.KILO_WATT_HOUR
                 )
         except Exception:  # keep running; the first bar then stays negative
             _LOGGER.exception("Shifting the imported statistics failed")
         finally:
-            # One attempt: never shift twice.
-            self.history_adjusted = True
+            # One attempt: never shift twice. Imports since stay pending.
+            for key in pending:
+                self.history_shift.pop(key, None)
             self._adjusting = False
             self._dirty = True
 
@@ -2171,8 +2345,7 @@ class HeatPumpRuntime:
             self._counter_check_day = now.astimezone(self.tz).date()
             self.spawn(self._async_check_counters(), "counter_kinds")
         if (
-            self.history_imported
-            and not self.history_adjusted
+            self.history_shift
             and not self._adjusting
             and now - self._started_at >= ADJUST_DELAY
             and "recorder" in self.hass.config.components
@@ -2376,7 +2549,20 @@ class HeatPumpRuntime:
             "saved_at": dt_util.utcnow().isoformat(),
             "since": self.since.isoformat() if self.since else None,
             "history_imported": self.history_imported,
-            "history_adjusted": self.history_adjusted,
+            # 0.4.4 and older read only the two flags (and during the update
+            # this start, the sensors are not told apart yet).
+            "history_adjusted": self.history_adjusted and not self._legacy_unshifted,
+            **(
+                {}
+                if self._history_migrate
+                else {
+                    "history_done": sorted(self.history_done),
+                    "history_shift": {
+                        key: [hour.isoformat(), first, total]
+                        for key, (hour, first, total) in self.history_shift.items()
+                    },
+                }
+            ),
             "counters": {s.value: c.as_dict() for s, c in self.counters.items()},
             "counter_entities": {s.value: self.entities.get(s) for s in self.counters},
             "look_back_entities": self._look_back_entities,
@@ -2430,7 +2616,16 @@ class HeatPumpRuntime:
         since = data.get("since")
         self.since = dt_util.parse_datetime(since) if since else None
         self.history_imported = data.get("history_imported", False)
-        self.history_adjusted = data.get("history_adjusted", False)
+        if "history_done" in data:
+            self.history_done = set(data["history_done"])
+            self.history_shift = {
+                key: (datetime.fromisoformat(hour), float(first), float(total))
+                for key, (hour, first, total) in data.get("history_shift", {}).items()
+            }
+        elif self.history_imported:
+            # Update from 0.4.4 or older (see _async_import_late).
+            self._history_migrate = True
+            self._legacy_unshifted = not data.get("history_adjusted", False)
         # A counter read from another entity now (reconfigured, moved to the
         # preferred form of the counter): its last reading is no baseline.
         before = data.get("counter_entities")

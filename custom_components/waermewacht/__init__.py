@@ -202,7 +202,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _retry_adoption(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    # Once: the past into the statistics of the energy sensors (now registered).
+    # The past into the statistics of the energy sensors (now registered),
+    # once per sensor: at the setup, and for a sensor that appears later.
     runtime.spawn(runtime.async_import_history(), "import_history", background=True)
     return True
 

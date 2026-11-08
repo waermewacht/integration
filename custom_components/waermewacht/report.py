@@ -7,13 +7,21 @@ sensors, which book standby from the compressor state.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from datetime import datetime, tzinfo
 from typing import Any
 
 from .degree_days import DayDegrees, heat_per_degree_day
 from .energy import SEASONAL_MODES, Kind, Totals, combined_ratio, mode_ratio
-from .model import BOILER_HEAT_SIGNALS, FUEL_SIGNALS, Mode
+from .model import (
+    AUX_SIGNALS,
+    BOILER_HEAT_SIGNALS,
+    ELEC_SIGNALS,
+    FUEL_SIGNALS,
+    HEAT_SIGNALS,
+    Mode,
+    Signal,
+)
 
 # Scope of the report -> modes; "heating_dhw" includes standby (seasonal ratio).
 SCOPES: dict[str, tuple[Mode, ...]] = {
@@ -146,6 +154,41 @@ def statistics_rows(
             rows[key].append((hour, round(-remaining, 3) + 0.0))
         rows[key][-1] = (rows[key][-1][0], 0.0)
     return rows
+
+
+def late_import_signals(key: str, entities: Collection[Signal]) -> frozenset[Signal]:
+    """The meters whose statistics alone make up the past of own sensor `key`
+    when the sensor appears after the setup (a meter added under Reconfigure).
+
+    Before it appeared, the other own sensors were already recorded: its past
+    may only come from energy none of them counted. That holds for heat,
+    boiler heat and fuel (their own meter), and for the electricity of a mode
+    with its own meter (with that mode's backup heater; the heat only tells
+    standby apart). Empty where the energy was in another sensor: standby
+    (in the electricity of the modes) and the electricity of a mode split off
+    a common meter (in the electricity of heating until the mode got its heat
+    meter).
+    """
+    present = set(entities)
+    for mode in Mode:
+        heat, elec = HEAT_SIGNALS[mode], ELEC_SIGNALS[mode]
+        if key == f"heat_{mode}" and heat in present:
+            # The electricity only for sources that count it into the heat.
+            return frozenset({heat, elec} & present)
+        if (
+            key == f"electricity_{mode}"
+            and elec in present
+            and Signal.ELEC_TOTAL not in present
+        ):
+            return frozenset({heat, elec, AUX_SIGNALS.get(mode, elec)} & present)
+    for prefix, signals in (
+        ("boiler_heat", BOILER_HEAT_SIGNALS),
+        ("fuel", FUEL_SIGNALS),
+    ):
+        for mode, signal in signals.items():
+            if key == f"{prefix}_{mode}" and signal in present:
+                return frozenset({signal})
+    return frozenset()
 
 
 def own_totals(hours: Mapping[datetime, Totals]) -> dict[str, float]:

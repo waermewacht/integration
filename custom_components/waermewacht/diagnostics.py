@@ -200,6 +200,10 @@ async def async_get_config_entry_diagnostics(
         "charges_kept": len(runtime.charges),
         "states": states,
         "since": runtime.since.isoformat() if runtime.since else None,
+        # Own sensors whose past is in their statistics (or that need none),
+        # and imported sums still to shift.
+        "history_done": sorted(runtime.history_done),
+        "history_shift": sorted(runtime.history_shift),
         "events": runtime.events,
         "jumps": runtime.jumps,
         "tracker": runtime.tracker.as_dict(),
