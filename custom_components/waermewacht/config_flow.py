@@ -138,6 +138,10 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.COMPRESSOR,
         Signal.ACTIVITY,
         Signal.STARTS_TOTAL,
+    ),
+    # Rare meters, collapsed when unused: one meter for all modes instead of
+    # per mode, and electricity a source counts apart (Lambda, iDM).
+    "totals": (
         Signal.HEAT_TOTAL,
         Signal.ELEC_TOTAL,
         Signal.AUX_TOTAL,
@@ -161,7 +165,7 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
 }
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
 # Sections that came after the first release of the form.
-LATER_SECTIONS = frozenset({"boiler"})
+LATER_SECTIONS = frozenset({"boiler", "totals"})
 
 
 # Flow units in Home Assistant's spelling and in lower case.
@@ -242,7 +246,14 @@ def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.
     }
     if top is not None:
         groups[MORE] = tuple(s for s in FORM_SIGNALS if s.value not in top)
-    collapsible = ("cooling", "boiler", "measurements", "activity_parts", MORE)
+    collapsible = (
+        "cooling",
+        "boiler",
+        "totals",
+        "measurements",
+        "activity_parts",
+        MORE,
+    )
     return vol.Schema(
         {
             # Sections added later are optional: input from before them
@@ -924,14 +935,18 @@ def _known(
     return known_signals(template.signals, known, offered) if template else []
 
 
-# Optional settings in sections of the options form; an empty field is unset.
+# The options form: on top what nearly everyone sets, the rest in sections
+# that start collapsed (forms got too full, 08.11.2026). Sections only group
+# the form: the options are stored flat as ever, an empty field is unset.
+OPTION_TOP: tuple[str, ...] = (CONF_ELECTRICITY_PRICE, CONF_DESIGN_TEMP)
 OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
     "costs": (
-        CONF_ELECTRICITY_PRICE,
         CONF_ELECTRICITY_PRICE_ENTITY,
         CONF_ELECTRICITY_BASE_PRICE,
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
+    ),
+    "pv": (
         CONF_GRID_IMPORT_ENTITY,
         CONF_FEED_IN_ENTITY,
         CONF_PV_ENTITY,
@@ -939,8 +954,33 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
         CONF_BATTERY_DISCHARGED_ENTITY,
         CONF_FEED_IN_TARIFF,
     ),
-    "heat_load": (CONF_DESIGN_TEMP, CONF_RATED_POWER, CONF_MIN_POWER),
+    "heat_load": (CONF_RATED_POWER, CONF_MIN_POWER),
+    "limits": (
+        CONF_MIN_ELECTRICITY,
+        CONF_SHORT_RUN,
+        CONF_CRITICAL_RUN,
+        CONF_STARTS_PER_HOUR,
+        CONF_STARTS_PER_DAY,
+        CONF_AUX_MILD_FROM,
+        CONF_EFFICIENCY_DROP,
+        CONF_DISINFECTION_TEMP,
+        CONF_SEASON_START,
+    ),
 }
+# Settings with a default: always stored (the form shows the default).
+OPTION_DEFAULTS: dict[str, Any] = {
+    CONF_MIN_ELECTRICITY: DEFAULT_MIN_ELECTRICITY_KWH,
+    CONF_SHORT_RUN: DEFAULT_SHORT_RUN_MINUTES,
+    CONF_CRITICAL_RUN: DEFAULT_CRITICAL_RUN_MINUTES,
+    CONF_STARTS_PER_HOUR: DEFAULT_STARTS_PER_HOUR,
+    CONF_AUX_MILD_FROM: MILD_FROM,
+    CONF_EFFICIENCY_DROP: DROP_PERCENT,
+    CONF_DISINFECTION_TEMP: DISINFECTION_TEMP_C,
+    # The select stores the month as text ("7").
+    CONF_SEASON_START: str(DEFAULT_SEASON_START_MONTH),
+}
+# The section that holds the fields an error is about: shown open.
+ERROR_SECTIONS = {"price_unit": "costs", "battery_both": "pv", "meter_unit": "pv"}
 
 
 # Meters of the house for the split into grid and own electricity.
@@ -984,11 +1024,15 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 for k, v in user_input.items()
                 if k not in OPTIONAL_SECTIONS and v not in ("", None)
             }
-            for name in OPTIONAL_SECTIONS:
+            for name, keys in OPTIONAL_SECTIONS.items():
+                if name not in user_input:
+                    # Not sent at all: what is stored stays.
+                    data.update({k: options[k] for k in keys if k in options})
+                    continue
                 data.update(
                     {
                         k: v
-                        for k, v in (user_input.get(name) or {}).items()
+                        for k, v in (user_input[name] or {}).items()
                         if v not in ("", None)
                     }
                 )
@@ -1022,6 +1066,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
             else:
                 return self.async_create_entry(data=data)
             options = data
+        # Sections open: the one an error is about, those with suggestions.
+        expanded = {ERROR_SECTIONS[e] for e in errors.values() if e in ERROR_SECTIONS}
         step_id = "init"
         if user_input is None and not options.get(SISTERS_OFFERED):
             # Once: meters and price sensor from Tarifwacht or Einspeisewacht.
@@ -1029,6 +1075,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
             offered = {k: v for k, v in found.values.items() if k not in options}
             if offered and found.source:
                 options = {**offered, **options}
+                expanded |= {
+                    name
+                    for name, keys in OPTIONAL_SECTIONS.items()
+                    if any(k in offered for k in keys)
+                }
                 step_id = f"init_{found.source}"
                 placeholders = {"entry": found.title or found.source}
             elif not found.found:
@@ -1052,59 +1103,56 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 )
             )
 
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_MIN_ELECTRICITY,
-                    default=options.get(
-                        CONF_MIN_ELECTRICITY, DEFAULT_MIN_ELECTRICITY_KWH
-                    ),
-                ): number(0, 10, 0.1, "kWh"),
-                vol.Required(
-                    CONF_SHORT_RUN,
-                    default=options.get(CONF_SHORT_RUN, DEFAULT_SHORT_RUN_MINUTES),
-                ): number(1, 60, 1, "min"),
-                vol.Required(
-                    CONF_CRITICAL_RUN,
-                    default=options.get(
-                        CONF_CRITICAL_RUN, DEFAULT_CRITICAL_RUN_MINUTES
-                    ),
-                ): number(1, 60, 1, "min"),
-                vol.Required(
-                    CONF_STARTS_PER_HOUR,
-                    default=options.get(CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR),
-                ): number(1, 12, 1, "/h"),
-                # Optional (empty: off), for on/off heat pumps.
-                vol.Optional(
-                    CONF_STARTS_PER_DAY,
-                    description={"suggested_value": options.get(CONF_STARTS_PER_DAY)},
-                ): number(1, 200, 1, "/d"),
-                vol.Required(
-                    CONF_AUX_MILD_FROM,
-                    default=options.get(CONF_AUX_MILD_FROM, MILD_FROM),
-                ): number(-5, 15, 0.5, "°C"),
-                vol.Required(
-                    CONF_EFFICIENCY_DROP,
-                    default=options.get(CONF_EFFICIENCY_DROP, DROP_PERCENT),
-                ): number(5, 50, 1, "%"),
-                vol.Required(
-                    CONF_DISINFECTION_TEMP,
-                    default=options.get(CONF_DISINFECTION_TEMP, DISINFECTION_TEMP_C),
-                ): number(45, 80, 1, "°C"),
-                vol.Required(
-                    CONF_SEASON_START,
-                    default=str(
-                        options.get(CONF_SEASON_START, DEFAULT_SEASON_START_MONTH)
-                    ),
-                ): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[str(m) for m in range(1, 13)],
-                        translation_key="month",
-                        mode=selector.SelectSelectorMode.DROPDOWN,
+        fields: dict[str, selector.Selector] = {
+            CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
+            CONF_DESIGN_TEMP: number(-30, 5, 0.1, "°C"),
+            CONF_ELECTRICITY_PRICE_ENTITY: selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
+            CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
+            CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
+            CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
+            **dict.fromkeys(
+                HOUSE_METERS,
+                selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain="sensor", device_class="energy"
                     )
                 ),
-            }
-        )
+            ),
+            CONF_FEED_IN_TARIFF: number(0, 100, 0.001, "ct/kWh"),
+            CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
+            CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
+            CONF_MIN_ELECTRICITY: number(0, 10, 0.1, "kWh"),
+            CONF_SHORT_RUN: number(1, 60, 1, "min"),
+            CONF_CRITICAL_RUN: number(1, 60, 1, "min"),
+            CONF_STARTS_PER_HOUR: number(1, 12, 1, "/h"),
+            # Optional (empty: off), for on/off heat pumps.
+            CONF_STARTS_PER_DAY: number(1, 200, 1, "/d"),
+            CONF_AUX_MILD_FROM: number(-5, 15, 0.5, "°C"),
+            CONF_EFFICIENCY_DROP: number(5, 50, 1, "%"),
+            CONF_DISINFECTION_TEMP: number(45, 80, 1, "°C"),
+            CONF_SEASON_START: selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[str(m) for m in range(1, 13)],
+                    translation_key="month",
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+        }
+
+        def marker(key: str) -> vol.Marker:
+            """A setting with a default always has a value; the others are
+            suggested (empty: unset). No default on a section: the frontend
+            would take it over the values of its fields (forum 07.11.)."""
+            if key in OPTION_DEFAULTS:
+                value = options.get(key, OPTION_DEFAULTS[key])
+                return vol.Required(
+                    key, default=str(value) if key == CONF_SEASON_START else value
+                )
+            return vol.Optional(key, description={"suggested_value": options.get(key)})
+
+        schema = vol.Schema({marker(key): fields[key] for key in OPTION_TOP})
         # Hybrid system whose boiler reports only its fuel: heat = fuel x η.
         mapped = {
             Signal(key)
@@ -1122,41 +1170,12 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     ): number(0.5, 1.0, 0.01, "")
                 }
             )
-        optional: dict[str, selector.Selector] = {
-            CONF_ELECTRICITY_PRICE: number(0, 200, 0.01, "ct/kWh"),
-            CONF_ELECTRICITY_PRICE_ENTITY: selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
-            ),
-            CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
-            CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
-            CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
-            **dict.fromkeys(
-                HOUSE_METERS,
-                selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor", device_class="energy"
-                    )
-                ),
-            ),
-            CONF_FEED_IN_TARIFF: number(0, 100, 0.001, "ct/kWh"),
-            CONF_DESIGN_TEMP: number(-30, 5, 0.1, "°C"),
-            CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
-            CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
-        }
         for name, keys in OPTIONAL_SECTIONS.items():
             schema = schema.extend(
                 {
-                    vol.Required(name): section(
-                        vol.Schema(
-                            {
-                                vol.Optional(
-                                    key,
-                                    description={"suggested_value": options.get(key)},
-                                ): optional[key]
-                                for key in keys
-                            }
-                        ),
-                        {"collapsed": not any(k in options for k in keys)},
+                    vol.Optional(name): section(
+                        vol.Schema({marker(key): fields[key] for key in keys}),
+                        {"collapsed": name not in expanded},
                     )
                 }
             )

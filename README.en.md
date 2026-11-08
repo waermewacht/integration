@@ -180,7 +180,7 @@ Or by hand:
 | Operation | Compressor running (on/off or speed) | `binary_sensor.boiler_hpcompon` |
 | | Activity | `sensor.boiler_hpactivity` |
 | | Compressor starts total | `sensor.boiler_totalcompstarts` |
-| | Heat produced total (meter, only without per mode) | – |
+| One meter for all modes, special meters | Heat produced total (meter, only without per mode) | – |
 | | Compressor electricity total (only without per mode) | – |
 | | Backup heater total (only without per mode) | – |
 | | Electricity defrost | – |
@@ -209,10 +209,26 @@ Several heat pumps: add one entry each.
 
 ### Settings
 
-*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry. The fields in the order of the form:
+*Wärmewacht → entry → cogwheel (Configure)*. Every change reloads the entry. On top only the electricity price and the design outdoor temperature, everything else in sections that start collapsed (open when an error or a suggestion from Tarifwacht/Einspeisewacht concerns them). Saving without opening a section keeps its values. The fields in the order of the form:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
+| Electricity price | – | ct/kWh gross. With a price sensor (under “More prices”) it only counts for the hours without its price. Without both there are no cost sensors. |
+| Design outdoor temperature | – | °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
+| ***More prices and gas comparison (optional)*** | | |
+| Electricity price sensor | – | For dynamic tariffs (Tibber, Nordpool, EPEX Spot …) or a template with the annual tariff; in ct/kWh, €/kWh or €/MWh, needs `state_class: measurement`. See [costs](#costs-and-gas-comparison). |
+| Electricity base price | – | €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
+| Gas working price | – | ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
+| Gas base price | – | €/year gross, spread per day. Without it only the working prices are compared. |
+| ***Own PV and battery in the costs (optional)*** | | |
+| Grid import meter | – | Optional: the meter of the grid connection the heat pump is behind. With it, electricity from own PV or battery costs the feed-in tariff instead of the grid price, see [costs](#costs-and-gas-comparison). Not for a separate heat pump tariff meter. |
+| Feed-in meter, PV production meter | – | Optional: with both, Wärmewacht splits proportionally (below), otherwise "heat pump first". With a hybrid inverter its AC output as PV. |
+| Battery charge meter, discharge meter | – | Optional, only both together. Whether the battery sits behind the PV inverter, Wärmewacht tells from the data. |
+| Feed-in tariff | – | ct/kWh: what own electricity would have earned when fed in; empty = 0. |
+| ***Heating power from the data sheet (optional)*** | | |
+| Rated heating power at A-7/W35 | – | kW from the data sheet. Gives the sensor "Power per heat load". |
+| Smallest heating power | – | kW from the data sheet. Shows whether cycling is to be expected in mild weather. |
+| ***Limits and evaluation*** | | |
 | Minimum electricity for a ratio | 0.5 kWh | Below it the performance factor is unknown instead of a random value. |
 | Short run below | 10 min | Fraunhofer ISE reports cycles under about 10 minutes separately. |
 | Critical run below | 6 min | Minimum run time of about 6 minutes according to the Dimplex planning manual. |
@@ -222,20 +238,6 @@ Several heat pumps: add one entry each.
 | Efficiency dropped from | 15 % | Health check: drop of the heating performance factor against the previous season at the same outdoor temperature; off again only 5 points lower (own assumption). |
 | Thermal disinfection from | 60 °C | Hot water temperature from which a charge counts as thermal disinfection. DVGW W 551 requires 60 °C at the outlet; the storage sensor often reads a little lower. |
 | Season starts in | July | Start of the season (heating period July to June). |
-| ***Costs and gas comparison (optional)*** | | |
-| Electricity price | – | ct/kWh gross. With a price sensor it only counts for the hours without its price. Without both there are no cost sensors. |
-| Electricity price sensor | – | For dynamic tariffs (Tibber, Nordpool, EPEX Spot …) or a template with the annual tariff; in ct/kWh, €/kWh or €/MWh, needs `state_class: measurement`. See [costs](#costs-and-gas-comparison). |
-| Electricity base price | – | €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
-| Gas working price | – | ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
-| Gas base price | – | €/year gross, spread per day. Without it only the working prices are compared. |
-| Grid import meter | – | Optional: the meter of the grid connection the heat pump is behind. With it, electricity from own PV or battery costs the feed-in tariff instead of the grid price, see [costs](#costs-and-gas-comparison). Not for a separate heat pump tariff meter. |
-| Feed-in meter, PV production meter | – | Optional: with both, Wärmewacht splits proportionally (below), otherwise "heat pump first". With a hybrid inverter its AC output as PV. |
-| Battery charge meter, discharge meter | – | Optional, only both together. Whether the battery sits behind the PV inverter, Wärmewacht tells from the data. |
-| Feed-in tariff | – | ct/kWh: what own electricity would have earned when fed in; empty = 0. |
-| ***Heat load (optional)*** | | |
-| Design outdoor temperature | – | °C per DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). For the heat load at the design temperature. |
-| Rated heating power at A-7/W35 | – | kW from the data sheet. Gives the sensor "Power per heat load". |
-| Smallest heating power | – | kW from the data sheet. Shows whether cycling is to be expected in mild weather. |
 
 Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
 

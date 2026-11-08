@@ -494,19 +494,21 @@ SECTIONS = {
     ),
     "operation": (
         ("Operation", "Betrieb"),
-        (
-            "compressor",
-            "activity",
-            "starts_total",
-            "heat_total",
-            "elec_total",
-            "aux_total",
-            "elec_defrost",
-            "elec_standby",
-        ),
+        ("compressor", "activity", "starts_total"),
         (
             "For starts, short runs, defrosts and standby.",
             "Für Starts, Kurzläufe, Abtauungen und Stillstand.",
+        ),
+    ),
+    "totals": (
+        (
+            "One meter for all modes, special meters",
+            "Ein Zähler für alle Betriebsarten, Sonderzähler",
+        ),
+        ("heat_total", "elec_total", "aux_total", "elec_defrost", "elec_standby"),
+        (
+            "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), or counts the electricity of defrosts and standby apart (Lambda, iDM).",
+            "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen) oder den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM).",
         ),
     ),
     "measurements": (
@@ -564,6 +566,212 @@ MORE = (
         "Dafür hat die Vorlage nichts gefunden. Nur ausfüllen, wenn du sicher bist, dass die Entität genau das liefert; eine nur ähnlich klingende ergibt falsche Werte.",
     ),
 )
+
+OPTION_LABELS = {
+    "min_electricity": (
+        "Minimum electricity for a ratio",
+        "Mindeststrom für eine Arbeitszahl",
+    ),
+    "short_run_minutes": ("Short run below", "Kurzlauf unter"),
+    "critical_run_minutes": ("Critical run below", "Kritischer Lauf unter"),
+    "starts_per_hour": (
+        "Conspicuous above starts per hour",
+        "Auffällig ab Starts pro Stunde über",
+    ),
+    "starts_per_day": (
+        "Conspicuous above starts per day",
+        "Auffällig ab Starts pro Tag über",
+    ),
+    "season_start_month": ("Season starts in", "Saison beginnt im"),
+    "aux_mild_from": (
+        "Backup heater: mild weather from",
+        "Heizstab: milde Witterung ab",
+    ),
+    "efficiency_drop_percent": ("Efficiency dropped from", "Effizienz gesunken ab"),
+    "disinfection_temp": ("Thermal disinfection from", "Thermische Desinfektion ab"),
+    "electricity_price": ("Electricity price", "Strompreis"),
+    "electricity_price_entity": ("Electricity price sensor", "Strompreis-Sensor"),
+    "electricity_base_price": ("Electricity base price", "Strom-Grundpreis"),
+    "gas_price": ("Gas working price", "Gas-Arbeitspreis"),
+    "gas_base_price": ("Gas base price", "Gas-Grundpreis"),
+    "grid_import_entity": (
+        "Grid import meter (own PV and battery)",
+        "Netzbezug-Zähler (eigene PV und Batterie)",
+    ),
+    "feed_in_entity": ("Feed-in meter", "Einspeisezähler"),
+    "pv_entity": ("PV production meter", "PV-Erzeugungszähler"),
+    "battery_charged_entity": ("Battery charge meter", "Batterie-Ladezähler"),
+    "battery_discharged_entity": ("Battery discharge meter", "Batterie-Entladezähler"),
+    "feed_in_tariff": ("Feed-in tariff", "Einspeisevergütung"),
+    "design_outdoor_temp": ("Design outdoor temperature", "Normaußentemperatur"),
+    "rated_power_kw": ("Rated heating power at A-7/W35", "Heizleistung bei A−7/W35"),
+    "min_power_kw": ("Smallest heating power", "Kleinste Heizleistung"),
+}
+OPTION_HELP = {
+    "starts_per_day": (
+        "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
+        "Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden machen das Takten auffällig. Leer: aus.",
+    ),
+    "min_electricity": (
+        "Below it the ratio is unknown instead of a random value.",
+        "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
+    ),
+    "season_start_month": (
+        "The current season is recomputed from the statistics.",
+        "Die laufende Saison wird aus der Statistik neu berechnet.",
+    ),
+    "aux_mild_from": (
+        "Daily mean outdoor temperature from which the heat pump should heat alone.",
+        "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
+    ),
+    "efficiency_drop_percent": (
+        "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+        "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
+    ),
+    "disinfection_temp": (
+        "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+        "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
+    ),
+    "electricity_price": (
+        "Gross price per kWh of the heat pump's electricity; empty: no costs. With a price sensor (under “More prices”): for the hours without its price.",
+        "Bruttopreis je kWh für den Strom der Wärmepumpe; leer: keine Kosten. Mit Strompreis-Sensor (unter „Weitere Preise“): für die Stunden ohne dessen Preis.",
+    ),
+    "electricity_price_entity": (
+        "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
+        "Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template: Jede Stunde wird mit dem Mittel des Sensors in dieser Stunde aus der Langzeitstatistik bewertet (braucht die Zustandsklasse measurement), auch der Rückblick vor der Einrichtung. Einheit ct/kWh, €/kWh oder €/MWh.",
+    ),
+    "electricity_base_price": (
+        "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
+        "Nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif), brutto je Jahr. Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an.",
+    ),
+    "gas_price": (
+        "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+        "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
+    ),
+    "gas_base_price": (
+        "Gross per year; spread over the days of a period.",
+        "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt.",
+    ),
+    "grid_import_entity": (
+        "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+        "Optional: der Zähler am Netzanschluss, hinter dem die Wärmepumpe hängt. Damit kostet Strom der Wärmepumpe aus eigener PV oder Batterie die Einspeisevergütung statt den Netzpreis (nur die Kosten ändern sich, nicht die Arbeitszahlen). Nicht für einen eigenen Wärmepumpenzähler.",
+    ),
+    "feed_in_entity": (
+        "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+        "Mit Einspeise- und PV-Zähler bekommt die Wärmepumpe den Netzanteil des ganzen Hauses; ohne sie geht der Netzbezug zuerst an die Wärmepumpe.",
+    ),
+    "pv_entity": (
+        "With a hybrid inverter: its AC output.",
+        "Bei einem Hybrid-Wechselrichter: dessen AC-Ausgang.",
+    ),
+    "battery_charged_entity": (
+        "Optional, only together with the discharge meter.",
+        "Optional, nur zusammen mit dem Entladezähler.",
+    ),
+    "feed_in_tariff": (
+        "What own electricity would have earned when fed in; empty: 0.",
+        "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0.",
+    ),
+    "design_outdoor_temp": (
+        "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+        "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
+    ),
+    "rated_power_kw": (
+        "From the data sheet; gives the power per heat load.",
+        "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
+    ),
+    "min_power_kw": (
+        "From the data sheet; shows whether cycling in mild weather is to be expected.",
+        "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist.",
+    ),
+}
+
+# The options form (config_flow.OPTION_TOP, OPTION_SECTIONS): what nearly
+# everyone sets on top, the rest in collapsed sections.
+OPTION_TOP = ("electricity_price", "design_outdoor_temp")
+OPTION_SECTIONS = {
+    "costs": (
+        (
+            "More prices and gas comparison (optional)",
+            "Weitere Preise und Gasvergleich (optional)",
+        ),
+        (
+            "Every field may stay empty. Without an electricity price (fixed above or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
+            "Jedes Feld darf leer bleiben. Ohne Strompreis (fest oben oder als Sensor) gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
+        ),
+        (
+            "electricity_price_entity",
+            "electricity_base_price",
+            "gas_price",
+            "gas_base_price",
+        ),
+    ),
+    "pv": (
+        (
+            "Own PV and battery in the costs (optional)",
+            "Eigene PV und Batterie in den Kosten (optional)",
+        ),
+        (
+            "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.",
+            "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.",
+        ),
+        (
+            "grid_import_entity",
+            "feed_in_entity",
+            "pv_entity",
+            "battery_charged_entity",
+            "battery_discharged_entity",
+            "feed_in_tariff",
+        ),
+    ),
+    "heat_load": (
+        (
+            "Heating power from the data sheet (optional)",
+            "Heizleistung laut Datenblatt (optional)",
+        ),
+        None,
+        ("rated_power_kw", "min_power_kw"),
+    ),
+    "limits": (
+        ("Limits and evaluation", "Grenzen und Auswertung"),
+        (
+            "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours.",
+            "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist.",
+        ),
+        (
+            "min_electricity",
+            "short_run_minutes",
+            "critical_run_minutes",
+            "starts_per_hour",
+            "starts_per_day",
+            "aux_mild_from",
+            "efficiency_drop_percent",
+            "disinfection_temp",
+            "season_start_month",
+        ),
+    ),
+}
+
+
+def _options_init(t) -> dict:
+    """The options form of a heat pump: fields on top, sections below."""
+
+    def fields(keys: tuple[str, ...]) -> dict:
+        part = {"data": {k: t(OPTION_LABELS[k]) for k in keys}}
+        if helps := {k: t(OPTION_HELP[k]) for k in keys if k in OPTION_HELP}:
+            part["data_description"] = helps
+        return part
+
+    sections = {}
+    for name, (title, desc, keys) in OPTION_SECTIONS.items():
+        sections[name] = {"name": t(title), **fields(keys)}
+        if desc:
+            sections[name]["description"] = t(desc)
+    return {
+        "title": t(("Settings", "Einstellungen")),
+        **fields(OPTION_TOP),
+        "sections": sections,
+    }
 
 
 def _build(lang: int) -> dict:
@@ -729,245 +937,7 @@ def _build(lang: int) -> dict:
                 ),
             },
             "step": {
-                "init": {
-                    "title": t(("Settings", "Einstellungen")),
-                    "data": {
-                        "min_electricity": t(
-                            (
-                                "Minimum electricity for a ratio",
-                                "Mindeststrom für eine Arbeitszahl",
-                            )
-                        ),
-                        "short_run_minutes": t(("Short run below", "Kurzlauf unter")),
-                        "critical_run_minutes": t(
-                            ("Critical run below", "Kritischer Lauf unter")
-                        ),
-                        "starts_per_hour": t(
-                            (
-                                "Conspicuous above starts per hour",
-                                "Auffällig ab Starts pro Stunde über",
-                            )
-                        ),
-                        "starts_per_day": t(
-                            (
-                                "Conspicuous above starts per day",
-                                "Auffällig ab Starts pro Tag über",
-                            )
-                        ),
-                        "season_start_month": t(
-                            ("Season starts in", "Saison beginnt im")
-                        ),
-                        "aux_mild_from": t(
-                            (
-                                "Backup heater: mild weather from",
-                                "Heizstab: milde Witterung ab",
-                            )
-                        ),
-                        "efficiency_drop_percent": t(
-                            ("Efficiency dropped from", "Effizienz gesunken ab")
-                        ),
-                        "disinfection_temp": t(
-                            ("Thermal disinfection from", "Thermische Desinfektion ab")
-                        ),
-                    },
-                    "data_description": {
-                        "starts_per_day": t(
-                            (
-                                "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
-                                "Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden machen das Takten auffällig. Leer: aus.",
-                            )
-                        ),
-                        "min_electricity": t(
-                            (
-                                "Below it the ratio is unknown instead of a random value.",
-                                "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
-                            )
-                        ),
-                        "season_start_month": t(
-                            (
-                                "The current season is recomputed from the statistics.",
-                                "Die laufende Saison wird aus der Statistik neu berechnet.",
-                            )
-                        ),
-                        "aux_mild_from": t(
-                            (
-                                "Daily mean outdoor temperature from which the heat pump should heat alone.",
-                                "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
-                            )
-                        ),
-                        "efficiency_drop_percent": t(
-                            (
-                                "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
-                                "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
-                            )
-                        ),
-                        "disinfection_temp": t(
-                            (
-                                "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
-                                "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
-                            )
-                        ),
-                    },
-                    "sections": {
-                        "costs": {
-                            "name": t(
-                                (
-                                    "Costs and gas comparison (optional)",
-                                    "Kosten und Gasvergleich (optional)",
-                                )
-                            ),
-                            "description": t(
-                                (
-                                    "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.",
-                                    "Jedes Feld darf leer bleiben. Ohne Strompreis (fest oder als Sensor) gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.",
-                                )
-                            ),
-                            "data": {
-                                "electricity_price": t(
-                                    ("Electricity price", "Strompreis")
-                                ),
-                                "electricity_price_entity": t(
-                                    ("Electricity price sensor", "Strompreis-Sensor")
-                                ),
-                                "electricity_base_price": t(
-                                    ("Electricity base price", "Strom-Grundpreis")
-                                ),
-                                "gas_price": t(
-                                    ("Gas working price", "Gas-Arbeitspreis")
-                                ),
-                                "gas_base_price": t(
-                                    ("Gas base price", "Gas-Grundpreis")
-                                ),
-                                "grid_import_entity": t(
-                                    (
-                                        "Grid import meter (own PV and battery)",
-                                        "Netzbezug-Zähler (eigene PV und Batterie)",
-                                    )
-                                ),
-                                "feed_in_entity": t(
-                                    ("Feed-in meter", "Einspeisezähler")
-                                ),
-                                "pv_entity": t(
-                                    ("PV production meter", "PV-Erzeugungszähler")
-                                ),
-                                "battery_charged_entity": t(
-                                    ("Battery charge meter", "Batterie-Ladezähler")
-                                ),
-                                "battery_discharged_entity": t(
-                                    (
-                                        "Battery discharge meter",
-                                        "Batterie-Entladezähler",
-                                    )
-                                ),
-                                "feed_in_tariff": t(
-                                    ("Feed-in tariff", "Einspeisevergütung")
-                                ),
-                            },
-                            "data_description": {
-                                "electricity_price": t(
-                                    (
-                                        "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
-                                        "Bruttopreis je kWh für den Strom der Wärmepumpe. Mit Strompreis-Sensor: für die Stunden ohne dessen Preis.",
-                                    )
-                                ),
-                                "electricity_price_entity": t(
-                                    (
-                                        "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
-                                        "Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template: Jede Stunde wird mit dem Mittel des Sensors in dieser Stunde aus der Langzeitstatistik bewertet (braucht die Zustandsklasse measurement), auch der Rückblick vor der Einrichtung. Einheit ct/kWh, €/kWh oder €/MWh.",
-                                    )
-                                ),
-                                "electricity_base_price": t(
-                                    (
-                                        "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
-                                        "Nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif), brutto je Jahr. Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an.",
-                                    )
-                                ),
-                                "gas_price": t(
-                                    (
-                                        "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
-                                        "Brutto je kWh Brennwert (wie auf der Gasrechnung). Kesselwirkungsgrad 0,87.",
-                                    )
-                                ),
-                                "gas_base_price": t(
-                                    (
-                                        "Gross per year; spread over the days of a period.",
-                                        "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt.",
-                                    )
-                                ),
-                                "grid_import_entity": t(
-                                    (
-                                        "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
-                                        "Optional: der Zähler am Netzanschluss, hinter dem die Wärmepumpe hängt. Damit kostet Strom der Wärmepumpe aus eigener PV oder Batterie die Einspeisevergütung statt den Netzpreis (nur die Kosten ändern sich, nicht die Arbeitszahlen). Nicht für einen eigenen Wärmepumpenzähler.",
-                                    )
-                                ),
-                                "feed_in_entity": t(
-                                    (
-                                        "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
-                                        "Mit Einspeise- und PV-Zähler bekommt die Wärmepumpe den Netzanteil des ganzen Hauses; ohne sie geht der Netzbezug zuerst an die Wärmepumpe.",
-                                    )
-                                ),
-                                "pv_entity": t(
-                                    (
-                                        "With a hybrid inverter: its AC output.",
-                                        "Bei einem Hybrid-Wechselrichter: dessen AC-Ausgang.",
-                                    )
-                                ),
-                                "battery_charged_entity": t(
-                                    (
-                                        "Optional, only together with the discharge meter.",
-                                        "Optional, nur zusammen mit dem Entladezähler.",
-                                    )
-                                ),
-                                "feed_in_tariff": t(
-                                    (
-                                        "What own electricity would have earned when fed in; empty: 0.",
-                                        "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0.",
-                                    )
-                                ),
-                            },
-                        },
-                        "heat_load": {
-                            "name": t(("Heat load (optional)", "Heizlast (optional)")),
-                            "data": {
-                                "design_outdoor_temp": t(
-                                    (
-                                        "Design outdoor temperature",
-                                        "Normaußentemperatur",
-                                    )
-                                ),
-                                "rated_power_kw": t(
-                                    (
-                                        "Rated heating power at A-7/W35",
-                                        "Heizleistung bei A−7/W35",
-                                    )
-                                ),
-                                "min_power_kw": t(
-                                    ("Smallest heating power", "Kleinste Heizleistung")
-                                ),
-                            },
-                            "data_description": {
-                                "design_outdoor_temp": t(
-                                    (
-                                        "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
-                                        "Aus DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Ohne sie nur die Heizlast je Kelvin.",
-                                    )
-                                ),
-                                "rated_power_kw": t(
-                                    (
-                                        "From the data sheet; gives the power per heat load.",
-                                        "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
-                                    )
-                                ),
-                                "min_power_kw": t(
-                                    (
-                                        "From the data sheet; shows whether cycling in mild weather is to be expected.",
-                                        "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist.",
-                                    )
-                                ),
-                            },
-                        },
-                    },
-                }
+                "init": _options_init(t),
             },
         },
         "selector": {
@@ -1938,7 +1908,7 @@ def _set(data: dict, path: str, value: str) -> None:
     data[last] = value
 
 
-# The options form again, with a hint under the costs section: meters
+# The options form again, with a hint under the PV section: meters
 # suggested from a sister integration, or where to get them (config_flow).
 COST_HINTS = {
     "init_tarifwacht": (
@@ -1961,8 +1931,8 @@ def _add_cost_hints(data: dict, lang: int) -> None:
     init = steps["init"]
     for step_id, hint in COST_HINTS.items():
         variant = copy.deepcopy(init)
-        costs = variant["sections"]["costs"]
-        costs["description"] = costs["description"] + "\n\n" + hint[lang]
+        pv = variant["sections"]["pv"]
+        pv["description"] = pv["description"] + "\n\n" + hint[lang]
         steps[step_id] = variant
 
 

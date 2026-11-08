@@ -60,7 +60,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 - **4.3:** Attribute am Sensor „Abtauungen heute“: Abtauungen, warme Abtauungen (Stundenmittel ab 10 °C, eigene Annahme), mittlere und längste Dauer der letzten 7 Tage. Dazu Attribut `classes`: Abtauungen je Laufstunde je 2-K-Klasse aus dem Tagebuch, laufende gegen vorige Saison (`defrost_classes`, `compare_defrost_classes`), ohne Schwelle. Kein Binärsensor.
 - **4.4:** Sensor „Spreizung 7 Tage“: Mittel der Heizzeit an Tagen unter 5 °C, ab 10 Stunden (beides eigene Annahme). Attribut `all_days` für alle Tage, Feldwert 6,8 K (WPsmart).
-- **4.7:** Einstellungen „Heizleistung bei A−7/W35“ und „Kleinste Heizleistung“ im Abschnitt Heizlast. Der Faktor bezieht sich auf die normgerechte Heizlast; `measured_factor` auf die gemessene; `cycling_expected`, wenn die gemessene Heizlast bei +7 °C unter der kleinsten Leistung liegt. Feldmittel 1,5, keine Schwelle.
+- **4.7:** Einstellungen „Heizleistung bei A−7/W35“ und „Kleinste Heizleistung“ im Abschnitt „Heizleistung laut Datenblatt“. Der Faktor bezieht sich auf die normgerechte Heizlast; `measured_factor` auf die gemessene; `cycling_expected`, wenn die gemessene Heizlast bei +7 °C unter der kleinsten Leistung liegt. Feldmittel 1,5, keine Schwelle.
 - **4.8:** Attribute am Stillstand-Sensor: mittlere Leistung 7 Tage, kleinster und größter Tag, Median der 30 Tage davor, `rising` ab +50 % und +10 W (eigene Annahme). Stunden ohne Lauf je Tag aus dem Tagebuch, Umstellungstage mit 23/25 h.
 - **4.10 e:** Die Wärmeleistung kommt aus dem Zuwachs des Wärmezählers Heizen über die Heizzeit eines Tages, weil die Vorlagen kein Leistungssignal mehr zuordnen. Unplausibel ab Faktor 10, mindestens 1 Stunde Heizen, 1 kWh und 2 K (eigene Annahmen). Durchfluss 0: 15 Minuten Heizbetrieb ohne einen Wert über 0. Nicht bei Quellen ohne Betriebsart, also nicht bei HomeCom.
 
@@ -357,8 +357,8 @@ Wenige, mit Vorgabe und Quelle wie die bestehenden:
 | Heizstab: milde Witterung ab | 5 °C | 4.2 | eigene Annahme; Anlagen mit hoher Normaußentemperatur (Küste) wollen eher höher |
 | Effizienz gesunken ab | 15 % | 4.1 | eigene Annahme; die Rückstellung liegt fest 5 Punkte darunter |
 | Thermische Desinfektion ab | 60 °C | 4.9 | DVGW W 551; einstellbar, weil der Speicherfühler nicht der Austritt ist |
-| Heizleistung bei A−7/W35 (optional, Abschnitt Heizlast) | – | 4.7 | Datenblatt |
-| Kleinste Heizleistung (optional, Abschnitt Heizlast) | – | 4.7 | Datenblatt |
+| Heizleistung bei A−7/W35 (optional, Abschnitt „Heizleistung laut Datenblatt“) | – | 4.7 | Datenblatt |
+| Kleinste Heizleistung (optional, Abschnitt „Heizleistung laut Datenblatt“) | – | 4.7 | Datenblatt |
 
 Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten, nicht der Anlage) und die 2-kWh-Menge in 4.2. Abschalten einer Prüfung geht über das Deaktivieren der Entität; Reparaturhinweise lassen sich in HA ignorieren.
 

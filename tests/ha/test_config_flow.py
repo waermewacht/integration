@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, section
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -19,6 +19,17 @@ from custom_components.waermewacht.const import CONF_ENTITIES, CONF_TEMPLATE, DO
 from custom_components.waermewacht.model import Signal
 
 from .conftest import ENERGY, entry_data, form_input
+
+# Options without the optional sections (stored values stay, defaults apply).
+REQUIRED_OPTIONS: dict[str, Any] = {
+    "limits": {
+        "min_electricity": 0.5,
+        "short_run_minutes": 10,
+        "critical_run_minutes": 6,
+        "starts_per_hour": 3,
+        "season_start_month": "7",
+    },
+}
 
 EMPTY_SECTIONS = {
     "heating": {},
@@ -301,7 +312,7 @@ async def test_manual_elec_total_completes_a_mode(hass: HomeAssistant) -> None:
                 "heat_heating": "sensor.heat",
                 "elec_heating": "sensor.elec_heating",
             },
-            "operation": {"elec_total": "sensor.elec"},
+            "totals": {"elec_total": "sensor.elec"},
         },
     )
     assert result["errors"] == {"base": "elec_twice"}
@@ -310,7 +321,7 @@ async def test_manual_elec_total_completes_a_mode(hass: HomeAssistant) -> None:
         {
             **EMPTY_SECTIONS,
             "heating": {"heat_heating": "sensor.heat"},
-            "operation": {"elec_total": "sensor.elec"},
+            "totals": {"elec_total": "sensor.elec"},
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -378,10 +389,8 @@ async def test_own_sensor_as_source_is_refused(hass: HomeAssistant) -> None:
         result["flow_id"],
         {
             **EMPTY_SECTIONS,
-            "operation": {
-                "compressor": "binary_sensor.compressor",
-                "elec_standby": own.entity_id,
-            },
+            "operation": {"compressor": "binary_sensor.compressor"},
+            "totals": {"elec_standby": own.entity_id},
         },
     )
     assert result["errors"] == {"base": "own_entity"}
@@ -400,14 +409,17 @@ async def test_options(hass: HomeAssistant) -> None:
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {
-            "min_electricity": 1.0,
-            "short_run_minutes": 12,
-            "critical_run_minutes": 5,
-            "starts_per_hour": 4,
-            "season_start_month": "9",
+            "electricity_price": 27.75,
+            "design_outdoor_temp": -12.0,
             # Optional: a gas price without base price.
-            "costs": {"electricity_price": 27.75, "gas_price": 11.5},
-            "heat_load": {"design_outdoor_temp": -12.0},
+            "costs": {"gas_price": 11.5},
+            "limits": {
+                "min_electricity": 1.0,
+                "short_run_minutes": 12,
+                "critical_run_minutes": 5,
+                "starts_per_hour": 4,
+                "season_start_month": "9",
+            },
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -418,20 +430,130 @@ async def test_options(hass: HomeAssistant) -> None:
     assert "gas_base_price" not in entry.options
     assert entry.options["design_outdoor_temp"] == -12.0
     assert "costs" not in entry.options
+    assert "limits" not in entry.options
+    # Defaults of fields not sent are stored as well.
+    assert entry.options["disinfection_temp"] == 60.0
+
+
+STORED_OPTIONS = {
+    "electricity_price": 27.75,
+    "design_outdoor_temp": -12.0,
+    "electricity_price_entity": "sensor.price",
+    "gas_price": 12.0,
+    "grid_import_entity": "sensor.grid_import",
+    "feed_in_tariff": 7.94,
+    "rated_power_kw": 5.4,
+    "min_power_kw": 1.8,
+    "min_electricity": 1.0,
+    "short_run_minutes": 12,
+    "critical_run_minutes": 5,
+    "starts_per_hour": 4,
+    "starts_per_day": 30,
+    "aux_mild_from": 3.0,
+    "efficiency_drop_percent": 20,
+    "disinfection_temp": 58,
+    "season_start_month": "9",
+    "sister_suggestions_offered": True,
+}
+
+
+async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
+    """Forms got too full (08.11.2026): on top only the electricity price
+    and the design outdoor temperature, the rest in sections that start
+    collapsed, also with values stored in them."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(), options=STORED_OPTIONS
+    )
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init"
+    schema = result["data_schema"].schema
+    top = [str(k) for k, v in schema.items() if not isinstance(v, section)]
+    assert top == ["electricity_price", "design_outdoor_temp"]
+    assert collapsed(result) == {
+        "costs": True,
+        "pv": True,
+        "heat_load": True,
+        "limits": True,
+    }
+    # No section has a default (the frontend would take it over the values
+    # of its fields), and the fields carry the stored values.
+    assert all(
+        key.default is type(key)("x").default
+        for key, value in schema.items()
+        if isinstance(value, section)
+    )
+    sent = unchanged_input(result)
+    assert sent["limits"]["short_run_minutes"] == 12
+    assert sent["limits"]["starts_per_day"] == 30
+    assert sent["pv"]["feed_in_tariff"] == 7.94
+
+
+async def test_options_saved_unopened_keep_their_values(hass: HomeAssistant) -> None:
+    """Saved without opening a section, every stored value stays; also when
+    a client leaves a section out entirely."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(), options=STORED_OPTIONS
+    )
+    entry.add_to_hass(hass)
+    for meter in ("sensor.grid_import",):
+        hass.states.async_set(meter, "100", KWH)
+    hass.states.async_set("sensor.price", "30", {"unit_of_measurement": "ct/kWh"})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], unchanged_input(result)
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert dict(entry.options) == STORED_OPTIONS
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"electricity_price": 30.0, "design_outdoor_temp": -12.0}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert dict(entry.options) == {**STORED_OPTIONS, "electricity_price": 30.0}
+
+
+async def test_reconfigure_shows_stored_meters_in_their_sections(
+    hass: HomeAssistant,
+) -> None:
+    """Reconfigure: a meter stored before the section "totals" existed (in
+    "operation" then) is shown there, its section open; submitted unchanged
+    the mapping stays."""
+    entities = {
+        "heat_heating": "sensor.heat",
+        "elec_total": "sensor.elec",
+        "compressor": "binary_sensor.compressor",
+    }
+    for entity_id_ in ("sensor.heat", "sensor.elec"):
+        hass.states.async_set(entity_id_, "1.0", ENERGY)
+    hass.states.async_set("binary_sensor.compressor", "off")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        unique_id="sensor.heat",
+        data={**entry_data(), CONF_TEMPLATE: None, CONF_ENTITIES: entities},
+    )
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
+    assert result["step_id"] == "entities"
+    sent = unchanged_input(result)
+    assert sent["totals"] == {"elec_total": "sensor.elec"}
+    shown = collapsed(result)
+    assert shown["totals"] is False
+    assert shown["cooling"] is True
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], sent)
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ENTITIES] == entities
 
 
 async def test_options_price_sensor_unit(hass: HomeAssistant) -> None:
     """A price sensor in ct/kWh, €/kWh or €/MWh; other units are refused."""
     entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
     entry.add_to_hass(hass)
-    required = {
-        "min_electricity": 0.5,
-        "short_run_minutes": 10,
-        "critical_run_minutes": 6,
-        "starts_per_hour": 3,
-        "season_start_month": "7",
-        "heat_load": {},
-    }
+    required = REQUIRED_OPTIONS
     hass.states.async_set("sensor.price", "0.31", {"unit_of_measurement": "EUR"})
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
@@ -452,25 +574,47 @@ async def test_options_price_sensor_unit(hass: HomeAssistant) -> None:
     assert "electricity_price" not in entry.options
 
 
-REQUIRED_OPTIONS = {
-    "min_electricity": 0.5,
-    "short_run_minutes": 10,
-    "critical_run_minutes": 6,
-    "starts_per_hour": 3,
-    "season_start_month": "7",
-    "heat_load": {},
-}
 KWH = {"unit_of_measurement": "kWh", "device_class": "energy"}
 
 
 def suggested_costs(result: Any) -> dict[str, Any]:
-    """Suggested values of the costs section of an options form."""
+    """Suggested values of the price and PV sections of an options form."""
     schema = result["data_schema"].schema
-    costs = next(v for k, v in schema.items() if str(k) == "costs")
     return {
         str(marker): (marker.description or {}).get("suggested_value")
-        for marker in costs.schema.schema
+        for name in ("costs", "pv")
+        for marker in next(v for k, v in schema.items() if str(k) == name).schema.schema
     }
+
+
+def collapsed(result: Any) -> dict[str, bool]:
+    """Sections of a form and whether they start collapsed."""
+    return {
+        str(key): value.options["collapsed"]
+        for key, value in result["data_schema"].schema.items()
+        if isinstance(value, section)
+    }
+
+
+def unchanged_input(result: Any) -> dict[str, Any]:
+    """What the frontend sends for a form submitted unchanged, without
+    opening a section (computeInitialHaFormData): each field's suggested
+    value, else its default; sections nested, collapsed or not."""
+
+    def values(schema: dict[Any, Any]) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        for key, value in schema.items():
+            if isinstance(value, section):
+                data[str(key)] = values(value.schema.schema)
+                continue
+            suggested = (key.description or {}).get("suggested_value")
+            if suggested is not None:
+                data[str(key)] = suggested
+            elif key.default is not type(key)("x").default:
+                data[str(key)] = key.default()
+        return data
+
+    return values(result["data_schema"].schema)
 
 
 def tarifwacht_entry(kind: str) -> MockConfigEntry:
@@ -526,6 +670,13 @@ async def test_options_suggest_meters_and_price_from_tarifwacht(
     assert suggested["feed_in_tariff"] == 7.86
     # The grid import meter switches the split on: never suggested.
     assert suggested["grid_import_entity"] is None
+    # The sections with suggestions are open, the others collapsed.
+    assert collapsed(result) == {
+        "costs": False,
+        "pv": False,
+        "heat_load": True,
+        "limits": True,
+    }
 
 
 async def test_exchange_price_of_tarifwacht_is_not_suggested(
@@ -555,7 +706,7 @@ async def test_options_suggest_from_einspeisewacht_once(hass: HomeAssistant) -> 
     assert suggested_costs(result)["feed_in_entity"] == "sensor.feed_in"
     # Saved without the suggestion (fields cleared): not suggested again.
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {**REQUIRED_OPTIONS, "costs": {}}
+        result["flow_id"], {**REQUIRED_OPTIONS, "pv": {}}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert "feed_in_entity" not in entry.options
@@ -585,18 +736,21 @@ async def test_options_house_meters(hass: HomeAssistant) -> None:
         result["flow_id"],
         {
             **REQUIRED_OPTIONS,
-            "costs": {
+            "pv": {
                 "grid_import_entity": "sensor.grid_import",
                 "battery_charged_entity": "sensor.charged",
             },
         },
     )
     assert result["errors"] == {"base": "battery_both"}
+    # The section the error is about is open.
+    assert collapsed(result)["pv"] is False
+    assert collapsed(result)["limits"] is True
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {
             **REQUIRED_OPTIONS,
-            "costs": {
+            "pv": {
                 "grid_import_entity": "sensor.grid_import",
                 "pv_entity": "sensor.pv_power",
             },
@@ -608,8 +762,8 @@ async def test_options_house_meters(hass: HomeAssistant) -> None:
         result["flow_id"],
         {
             **REQUIRED_OPTIONS,
-            "costs": {
-                "electricity_price": 30.0,
+            "electricity_price": 30.0,
+            "pv": {
                 "grid_import_entity": "sensor.grid_import",
                 "battery_charged_entity": "sensor.charged",
                 "battery_discharged_entity": "sensor.discharged",

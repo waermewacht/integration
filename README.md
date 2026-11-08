@@ -180,7 +180,7 @@ Oder von Hand:
 | Betrieb | Kompressor läuft (an/aus oder Drehzahl) | `binary_sensor.boiler_hpcompon` |
 | | Betriebsart (Aktivität) | `sensor.boiler_hpactivity` |
 | | Kompressorstarts gesamt | `sensor.boiler_totalcompstarts` |
-| | Erzeugte Wärme gesamt (Zähler, nur ohne Aufteilung je Modus) | – |
+| Ein Zähler für alle Betriebsarten, Sonderzähler | Erzeugte Wärme gesamt (Zähler, nur ohne Aufteilung je Modus) | – |
 | | Strom Kompressor gesamt (nur ohne Aufteilung je Modus) | – |
 | | Strom Heizstab gesamt (nur ohne Aufteilung je Modus) | – |
 | | Strom Abtauen | – |
@@ -209,10 +209,26 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 
 ### Einstellungen
 
-*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu. Die Felder in der Reihenfolge des Formulars:
+*Wärmewacht → Eintrag → Zahnrad (Konfigurieren)*. Jede Änderung lädt den Eintrag neu. Oben stehen nur Strompreis und Normaußentemperatur, alles Weitere in Abschnitten, die eingeklappt beginnen (aufgeklappt, wenn eine Fehlermeldung oder ein Vorschlag aus Tarifwacht/Einspeisewacht sie betrifft). Speichern, ohne einen Abschnitt aufzuklappen, lässt seine Werte, wie sie sind. Die Felder in der Reihenfolge des Formulars:
 
 | Einstellung | Vorgabe | Bedeutung |
 | --- | --- | --- |
+| Strompreis | – | ct/kWh brutto. Mit Strompreis-Sensor (unter „Weitere Preise“) gilt er nur für die Stunden ohne dessen Preis. Ohne beide gibt es keine Kosten-Sensoren. |
+| Normaußentemperatur | – | °C nach DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Für die Heizlast bei Normaußentemperatur. |
+| ***Weitere Preise und Gasvergleich (optional)*** | | |
+| Strompreis-Sensor | – | Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template mit dem Jahrestarif; in ct/kWh, €/kWh oder €/MWh, braucht `state_class: measurement`. Siehe [Kosten](#kosten-und-gasvergleich). |
+| Strom-Grundpreis | – | €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
+| Gas-Arbeitspreis | – | ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
+| Gas-Grundpreis | – | €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
+| ***Eigene PV und Batterie in den Kosten (optional)*** | | |
+| Netzbezug-Zähler | – | Optional: Zähler am Netzanschluss, hinter dem die Wärmepumpe hängt. Damit kostet Strom aus eigener PV oder Batterie die Einspeisevergütung statt den Netzpreis, siehe [Kosten](#kosten-und-gasvergleich). Nicht für einen eigenen Wärmepumpenzähler. |
+| Einspeisezähler, PV-Erzeugungszähler | – | Optional: Mit beiden rechnet Wärmewacht anteilig (unten), sonst „Wärmepumpe zuerst“. Beim Hybrid-Wechselrichter dessen AC-Ausgang als PV. |
+| Batterie-Ladezähler, -Entladezähler | – | Optional, nur beide zusammen. Ob die Batterie hinter dem PV-Wechselrichter sitzt, erkennt Wärmewacht aus den Daten. |
+| Einspeisevergütung | – | ct/kWh: was eigener Strom bei Einspeisung gebracht hätte; leer = 0. |
+| ***Heizleistung laut Datenblatt (optional)*** | | |
+| Heizleistung bei A−7/W35 | – | kW laut Datenblatt. Ergibt den Sensor „Leistung je Heizlast“. |
+| Kleinste Heizleistung | – | kW laut Datenblatt. Zeigt, ob in der Übergangszeit Takten zu erwarten ist. |
+| ***Grenzen und Auswertung*** | | |
 | Mindeststrom für eine Arbeitszahl | 0,5 kWh | Darunter ist die Arbeitszahl unbekannt statt zufällig. |
 | Kurzlauf unter | 10 min | Fraunhofer ISE weist Zyklen unter etwa 10 Minuten gesondert aus. |
 | Kritischer Lauf unter | 6 min | Mindestlaufzeit laut Dimplex-Projektierungshandbuch etwa 6 Minuten. |
@@ -222,20 +238,6 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Effizienz gesunken ab | 15 % | Gesundheits-Check: Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter (eigene Annahme). |
 | Thermische Desinfektion ab | 60 °C | Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt. DVGW W 551 verlangt 60 °C am Austritt; der Speicherfühler zeigt oft etwas weniger. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
-| ***Kosten und Gasvergleich (optional)*** | | |
-| Strompreis | – | ct/kWh brutto. Mit Strompreis-Sensor gilt er nur für die Stunden ohne dessen Preis. Ohne beide gibt es keine Kosten-Sensoren. |
-| Strompreis-Sensor | – | Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template mit dem Jahrestarif; in ct/kWh, €/kWh oder €/MWh, braucht `state_class: measurement`. Siehe [Kosten](#kosten-und-gasvergleich). |
-| Strom-Grundpreis | – | €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
-| Gas-Arbeitspreis | – | ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
-| Gas-Grundpreis | – | €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
-| Netzbezug-Zähler | – | Optional: Zähler am Netzanschluss, hinter dem die Wärmepumpe hängt. Damit kostet Strom aus eigener PV oder Batterie die Einspeisevergütung statt den Netzpreis, siehe [Kosten](#kosten-und-gasvergleich). Nicht für einen eigenen Wärmepumpenzähler. |
-| Einspeisezähler, PV-Erzeugungszähler | – | Optional: Mit beiden rechnet Wärmewacht anteilig (unten), sonst „Wärmepumpe zuerst“. Beim Hybrid-Wechselrichter dessen AC-Ausgang als PV. |
-| Batterie-Ladezähler, -Entladezähler | – | Optional, nur beide zusammen. Ob die Batterie hinter dem PV-Wechselrichter sitzt, erkennt Wärmewacht aus den Daten. |
-| Einspeisevergütung | – | ct/kWh: was eigener Strom bei Einspeisung gebracht hätte; leer = 0. |
-| ***Heizlast (optional)*** | | |
-| Normaußentemperatur | – | °C nach DIN/TS 12831-1 für deine Postleitzahl (z. B. BWP-Klimakarte). Für die Heizlast bei Normaußentemperatur. |
-| Heizleistung bei A−7/W35 | – | kW laut Datenblatt. Ergibt den Sensor „Leistung je Heizlast“. |
-| Kleinste Heizleistung | – | kW laut Datenblatt. Zeigt, ob in der Übergangszeit Takten zu erwarten ist. |
 
 Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
 
