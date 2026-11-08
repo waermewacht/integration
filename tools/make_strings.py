@@ -387,12 +387,12 @@ FIELDS = {
 # Help below a field of the setup form (data_description).
 FIELD_HELP = {
     "boiler_heat_heating": (
-        "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
-        "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, in HA meist …boiler_energy_heating_2; Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat (…boiler_energy_heating): Das ist nur Modulation × Nennleistung.",
+        "Heat the boiler reports, with EMS-ESP usually …boiler_energy_heating_2 (Buderus “energy supplied”). Not …boiler_energy_heating without “_2”: EMS-ESP computes that one only from modulation × nominal power.",
+        "Wärme, die der Kessel meldet, bei EMS-ESP meist …boiler_energy_heating_2 (Buderus „Abgegebene Energie“). Nicht …boiler_energy_heating ohne „_2“: Das rechnet EMS-ESP nur aus Modulation × Nennleistung.",
     ),
     "boiler_heat_dhw": (
-        "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
-        "EMS-ESP: boiler_dhw_nrg2, in HA meist …boiler_dhw_energy_2.",
+        "With EMS-ESP usually …boiler_dhw_energy_2.",
+        "Bei EMS-ESP meist …boiler_dhw_energy_2.",
     ),
     "fuel_heating": (
         "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",

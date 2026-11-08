@@ -59,8 +59,8 @@
             },
             "description": "Nur mit einem Kessel neben der Wärmepumpe (z. B. Hybrid Manager HM200). Wärmewacht zählt den Kessel nie als Wärmepumpe: Seine Wärme geht in Heizlast, Energiesignatur und den Anteil der Wärmepumpe ein. Am besten die Wärme, die der Kessel selbst meldet; nur ohne sie den Brennstoff (Wärme = Brennstoff × Kesselnutzungsgrad, Einstellungen).",
             "data_description": {
-              "boiler_heat_heating": "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, in HA meist …boiler_energy_heating_2; Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat (…boiler_energy_heating): Das ist nur Modulation × Nennleistung.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA meist …boiler_dhw_energy_2.",
+              "boiler_heat_heating": "Wärme, die der Kessel meldet, bei EMS-ESP meist …boiler_energy_heating_2 (Buderus „Abgegebene Energie“). Nicht …boiler_energy_heating ohne „_2“: Das rechnet EMS-ESP nur aus Modulation × Nennleistung.",
+              "boiler_heat_dhw": "Bei EMS-ESP meist …boiler_dhw_energy_2.",
               "fuel_heating": "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, in HA meist …boiler_gas_meter_heating, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
               "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA meist …boiler_dhw_gas_meter."
             }
@@ -149,8 +149,8 @@
               "elec_heating": "Strom des Kompressors fürs Heizen, ohne Heizstab.",
               "aux_heating": "Strom des Heizstabs fürs Heizen, falls er getrennt gezählt wird.",
               "dhw_temp": "Ist-Temperatur im Warmwasserspeicher, nicht der Sollwert. Ergibt Ladungen und Desinfektionen.",
-              "boiler_heat_heating": "Wärme, die der Kessel meldet (EMS-ESP: boiler_nrgheat2, in HA meist …boiler_energy_heating_2; Buderus „Abgegebene Energie“). Nicht das EMS-ESP-eigene boiler_nrgheat (…boiler_energy_heating): Das ist nur Modulation × Nennleistung.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA meist …boiler_dhw_energy_2.",
+              "boiler_heat_heating": "Wärme, die der Kessel meldet, bei EMS-ESP meist …boiler_energy_heating_2 (Buderus „Abgegebene Energie“). Nicht …boiler_energy_heating ohne „_2“: Das rechnet EMS-ESP nur aus Modulation × Nennleistung.",
+              "boiler_heat_dhw": "Bei EMS-ESP meist …boiler_dhw_energy_2.",
               "fuel_heating": "Brennstoff des Kessels in kWh (EMS-ESP: boiler_gasmeterheat, in HA meist …boiler_gas_meter_heating, auch bei Öl). Für die Wärme nur ohne Wärmezähler genutzt.",
               "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA meist …boiler_dhw_gas_meter.",
               "compressor": "Eine An/aus-Entität oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Modulation in %). Kein Status-Text wie „heating“ – der gehört unter „Betriebsart“.",

@@ -59,8 +59,8 @@
             },
             "description": "Only with a boiler next to the heat pump (e.g. hybrid manager HM200). Wärmewacht never counts the boiler as heat pump energy: its heat goes into heat load, energy signature and the heat pump's share. Best the heat the boiler reports itself; only without it the fuel (heat = fuel × boiler efficiency, settings).",
             "data_description": {
-              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
+              "boiler_heat_heating": "Heat the boiler reports, with EMS-ESP usually …boiler_energy_heating_2 (Buderus “energy supplied”). Not …boiler_energy_heating without “_2”: EMS-ESP computes that one only from modulation × nominal power.",
+              "boiler_heat_dhw": "With EMS-ESP usually …boiler_dhw_energy_2.",
               "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",
               "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter."
             }
@@ -149,8 +149,8 @@
               "elec_heating": "Electricity of the compressor for heating, without the backup heater.",
               "aux_heating": "Electricity of the backup heater for heating, if it is metered apart.",
               "dhw_temp": "Actual temperature in the hot water tank, not the setpoint. Gives charges and disinfections.",
-              "boiler_heat_heating": "Heat the boiler reports (EMS-ESP: boiler_nrgheat2, in HA usually …boiler_energy_heating_2; Buderus “energy supplied”). Not EMS-ESP's own boiler_nrgheat (…boiler_energy_heating): that one is only modulation × nominal power.",
-              "boiler_heat_dhw": "EMS-ESP: boiler_dhw_nrg2, in HA usually …boiler_dhw_energy_2.",
+              "boiler_heat_heating": "Heat the boiler reports, with EMS-ESP usually …boiler_energy_heating_2 (Buderus “energy supplied”). Not …boiler_energy_heating without “_2”: EMS-ESP computes that one only from modulation × nominal power.",
+              "boiler_heat_dhw": "With EMS-ESP usually …boiler_dhw_energy_2.",
               "fuel_heating": "Fuel of the boiler in kWh (EMS-ESP: boiler_gasmeterheat, in HA usually …boiler_gas_meter_heating, also for oil). Used for the heat only without a heat counter.",
               "fuel_dhw": "EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter.",
               "compressor": "An on/off entity, or a number above 0 while the compressor runs (speed, frequency, modulation in %). Not a status text such as \"heating\": that belongs under Activity.",
