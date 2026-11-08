@@ -1,5 +1,6 @@
 """Generate strings.json, translations/en.json, de.json and icons.json for Wärmewacht."""
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -683,6 +684,18 @@ def _build(lang: int) -> dict:
         },
         "options": {
             "error": {
+                "battery_both": t(
+                    (
+                        "Battery: please choose the charge and the discharge meter, or neither.",
+                        "Batterie: bitte Lade- und Entladezähler wählen oder keinen.",
+                    )
+                ),
+                "meter_unit": t(
+                    (
+                        "{entity} is no energy meter in Wh, kWh or MWh.",
+                        "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
+                    )
+                ),
                 "price_unit": t(
                     (
                         "{entity} reports its price in “{unit}”. Possible are {units}.",
@@ -800,6 +813,30 @@ def _build(lang: int) -> dict:
                                 "gas_base_price": t(
                                     ("Gas base price", "Gas-Grundpreis")
                                 ),
+                                "grid_import_entity": t(
+                                    (
+                                        "Grid import meter (own PV and battery)",
+                                        "Netzbezug-Zähler (eigene PV und Batterie)",
+                                    )
+                                ),
+                                "feed_in_entity": t(
+                                    ("Feed-in meter", "Einspeisezähler")
+                                ),
+                                "pv_entity": t(
+                                    ("PV production meter", "PV-Erzeugungszähler")
+                                ),
+                                "battery_charged_entity": t(
+                                    ("Battery charge meter", "Batterie-Ladezähler")
+                                ),
+                                "battery_discharged_entity": t(
+                                    (
+                                        "Battery discharge meter",
+                                        "Batterie-Entladezähler",
+                                    )
+                                ),
+                                "feed_in_tariff": t(
+                                    ("Feed-in tariff", "Einspeisevergütung")
+                                ),
                             },
                             "data_description": {
                                 "electricity_price": t(
@@ -830,6 +867,36 @@ def _build(lang: int) -> dict:
                                     (
                                         "Gross per year; spread over the days of a period.",
                                         "Brutto je Jahr; wird auf die Tage eines Zeitraums verteilt.",
+                                    )
+                                ),
+                                "grid_import_entity": t(
+                                    (
+                                        "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+                                        "Optional: der Zähler am Netzanschluss, hinter dem die Wärmepumpe hängt. Damit kostet Strom der Wärmepumpe aus eigener PV oder Batterie die Einspeisevergütung statt den Netzpreis (nur die Kosten ändern sich, nicht die Arbeitszahlen). Nicht für einen eigenen Wärmepumpenzähler.",
+                                    )
+                                ),
+                                "feed_in_entity": t(
+                                    (
+                                        "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+                                        "Mit Einspeise- und PV-Zähler bekommt die Wärmepumpe den Netzanteil des ganzen Hauses; ohne sie geht der Netzbezug zuerst an die Wärmepumpe.",
+                                    )
+                                ),
+                                "pv_entity": t(
+                                    (
+                                        "With a hybrid inverter: its AC output.",
+                                        "Bei einem Hybrid-Wechselrichter: dessen AC-Ausgang.",
+                                    )
+                                ),
+                                "battery_charged_entity": t(
+                                    (
+                                        "Optional, only together with the discharge meter.",
+                                        "Optional, nur zusammen mit dem Entladezähler.",
+                                    )
+                                ),
+                                "feed_in_tariff": t(
+                                    (
+                                        "What own electricity would have earned when fed in; empty: 0.",
+                                        "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0.",
                                     )
                                 ),
                             },
@@ -1830,6 +1897,34 @@ def _set(data: dict, path: str, value: str) -> None:
     data[last] = value
 
 
+# The options form again, with a hint under the costs section: meters
+# suggested from a sister integration, or where to get them (config_flow).
+COST_HINTS = {
+    "init_tarifwacht": (
+        "Meters suggested from Tarifwacht “{entry}” – please check.",
+        "Zähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen.",
+    ),
+    "init_einspeisewacht": (
+        "Meters suggested from Einspeisewacht “{entry}” – please check.",
+        "Zähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen.",
+    ),
+    "init_tip": (
+        "Tip: if you also use [Tarifwacht](https://github.com/tarifwacht/integration) or [Einspeisewacht](https://github.com/einspeisewacht/integration), these fields are filled in already.",
+        "Tipp: Nutzt du auch [Tarifwacht](https://github.com/tarifwacht/integration) oder [Einspeisewacht](https://github.com/einspeisewacht/integration), sind diese Felder schon ausgefüllt.",
+    ),
+}
+
+
+def _add_cost_hints(data: dict, lang: int) -> None:
+    steps = data["options"]["step"]
+    init = steps["init"]
+    for step_id, hint in COST_HINTS.items():
+        variant = copy.deepcopy(init)
+        costs = variant["sections"]["costs"]
+        costs["description"] = costs["description"] + "\n\n" + hint[lang]
+        steps[step_id] = variant
+
+
 def build(lang: int) -> dict:
     data = _build(lang)
     steps = data["config"]["step"]
@@ -1842,6 +1937,8 @@ def build(lang: int) -> dict:
     _add_gas(data, lang)
     for path, texts in TEXTS.items():
         _set(data, path, texts[lang])
+    # After the single texts: the variants copy the whole options form.
+    _add_cost_hints(data, lang)
     # After the single texts: the oil step reuses the options description.
     _add_oil(data, lang)
     return data

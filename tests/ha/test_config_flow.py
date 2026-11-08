@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -448,6 +450,173 @@ async def test_options_price_sensor_unit(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["electricity_price_entity"] == "sensor.price"
     assert "electricity_price" not in entry.options
+
+
+REQUIRED_OPTIONS = {
+    "min_electricity": 0.5,
+    "short_run_minutes": 10,
+    "critical_run_minutes": 6,
+    "starts_per_hour": 3,
+    "season_start_month": "7",
+    "heat_load": {},
+}
+KWH = {"unit_of_measurement": "kWh", "device_class": "energy"}
+
+
+def suggested_costs(result: Any) -> dict[str, Any]:
+    """Suggested values of the costs section of an options form."""
+    schema = result["data_schema"].schema
+    costs = next(v for k, v in schema.items() if str(k) == "costs")
+    return {
+        str(marker): (marker.description or {}).get("suggested_value")
+        for marker in costs.schema.schema
+    }
+
+
+def tarifwacht_entry(kind: str) -> MockConfigEntry:
+    return MockConfigEntry(
+        domain="tarifwacht",
+        title="Haus",
+        data={"name": "Haus", "meter_entity": "sensor.grid_import"},
+        version=2,
+        subentries_data=[
+            {
+                "data": {
+                    "feed_in_entity": "sensor.feed_in",
+                    "pv_entity": "sensor.pv",
+                    "charged_entity": "sensor.charged",
+                    "discharged_entity": "sensor.discharged",
+                    "feed_in_rate": 7.86,
+                    "same_inverter": False,
+                },
+                "subentry_id": "solar1",
+                "subentry_type": "solar",
+                "title": "PV",
+                "unique_id": None,
+            },
+            {
+                "data": {
+                    "kind": kind,
+                    "current": True,
+                    "price_entity": "sensor.tibber_price",
+                },
+                "subentry_id": "tariff1",
+                "subentry_type": "tariff",
+                "title": "Tibber",
+                "unique_id": None,
+            },
+        ],
+    )
+
+
+async def test_options_suggest_meters_and_price_from_tarifwacht(
+    hass: HomeAssistant,
+) -> None:
+    tarifwacht_entry("dynamic_total").add_to_hass(hass)
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init_tarifwacht"
+    assert result["description_placeholders"] == {"entry": "Haus"}
+    suggested = suggested_costs(result)
+    assert suggested["electricity_price_entity"] == "sensor.tibber_price"
+    assert suggested["feed_in_entity"] == "sensor.feed_in"
+    assert suggested["pv_entity"] == "sensor.pv"
+    assert suggested["battery_charged_entity"] == "sensor.charged"
+    assert suggested["feed_in_tariff"] == 7.86
+    # The grid import meter switches the split on: never suggested.
+    assert suggested["grid_import_entity"] is None
+
+
+async def test_exchange_price_of_tarifwacht_is_not_suggested(
+    hass: HomeAssistant,
+) -> None:
+    """A tariff "exchange price plus surcharges" has no full price sensor."""
+    tarifwacht_entry("dynamic_market").add_to_hass(hass)
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    suggested = suggested_costs(result)
+    assert suggested["electricity_price_entity"] is None
+    assert suggested["feed_in_entity"] == "sensor.feed_in"
+
+
+async def test_options_suggest_from_einspeisewacht_once(hass: HomeAssistant) -> None:
+    MockConfigEntry(
+        domain="einspeisewacht",
+        title="PV Dach",
+        data={"meter_entity": "sensor.feed_in", "rates": [7.86]},
+    ).add_to_hass(hass)
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init_einspeisewacht"
+    assert result["description_placeholders"] == {"entry": "PV Dach"}
+    assert suggested_costs(result)["feed_in_entity"] == "sensor.feed_in"
+    # Saved without the suggestion (fields cleared): not suggested again.
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**REQUIRED_OPTIONS, "costs": {}}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert "feed_in_entity" not in entry.options
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init"
+    assert suggested_costs(result)["feed_in_entity"] is None
+
+
+async def test_options_tip_without_sisters(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["step_id"] == "init_tip"
+
+
+async def test_options_house_meters(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    for meter in ("sensor.grid_import", "sensor.charged", "sensor.discharged"):
+        hass.states.async_set(meter, "100", KWH)
+    hass.states.async_set("sensor.pv_power", "100", {"unit_of_measurement": "W"})
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            **REQUIRED_OPTIONS,
+            "costs": {
+                "grid_import_entity": "sensor.grid_import",
+                "battery_charged_entity": "sensor.charged",
+            },
+        },
+    )
+    assert result["errors"] == {"base": "battery_both"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            **REQUIRED_OPTIONS,
+            "costs": {
+                "grid_import_entity": "sensor.grid_import",
+                "pv_entity": "sensor.pv_power",
+            },
+        },
+    )
+    assert result["errors"] == {"base": "meter_unit"}
+    assert result["description_placeholders"] == {"entity": "sensor.pv_power"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            **REQUIRED_OPTIONS,
+            "costs": {
+                "electricity_price": 30.0,
+                "grid_import_entity": "sensor.grid_import",
+                "battery_charged_entity": "sensor.charged",
+                "battery_discharged_entity": "sensor.discharged",
+                "feed_in_tariff": 8.0,
+            },
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["grid_import_entity"] == "sensor.grid_import"
+    assert entry.options["feed_in_tariff"] == 8.0
 
 
 async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:

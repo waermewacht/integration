@@ -37,6 +37,8 @@ from .adopt import known_signals
 from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_AUX_MILD_FROM,
+    CONF_BATTERY_CHARGED_ENTITY,
+    CONF_BATTERY_DISCHARGED_ENTITY,
     CONF_BOILER_EFFICIENCY,
     CONF_BOILER_TYPE,
     CONF_CALORIFIC_VALUE,
@@ -48,9 +50,12 @@ from .const import (
     CONF_ELECTRICITY_PRICE,
     CONF_ELECTRICITY_PRICE_ENTITY,
     CONF_ENTITIES,
+    CONF_FEED_IN_ENTITY,
+    CONF_FEED_IN_TARIFF,
     CONF_FUEL,
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
+    CONF_GRID_IMPORT_ENTITY,
     CONF_HISTORY,
     CONF_KIND,
     CONF_KNOWN_SIGNALS,
@@ -60,6 +65,7 @@ from .const import (
     CONF_MIN_POWER,
     CONF_NAME,
     CONF_OIL_PRICE,
+    CONF_PV_ENTITY,
     CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
@@ -110,6 +116,7 @@ from .oil import BOILER_TYPES, CUSTOM, KWH_PER_LITRE_HS
 from .oil import efficiency as boiler_type_efficiency
 from .prices import ACCEPTED_UNITS, price_factor
 from .profiles import Match, RegistryEntry, drop_foreign_activity, find
+from .sisters import suggestions
 from .templates import TEMPLATES
 
 # Form sections and the signals in them.
@@ -900,9 +907,28 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
         CONF_ELECTRICITY_BASE_PRICE,
         CONF_GAS_PRICE,
         CONF_GAS_BASE_PRICE,
+        CONF_GRID_IMPORT_ENTITY,
+        CONF_FEED_IN_ENTITY,
+        CONF_PV_ENTITY,
+        CONF_BATTERY_CHARGED_ENTITY,
+        CONF_BATTERY_DISCHARGED_ENTITY,
+        CONF_FEED_IN_TARIFF,
     ),
     "heat_load": (CONF_DESIGN_TEMP, CONF_RATED_POWER, CONF_MIN_POWER),
 }
+
+
+# Meters of the house for the split into grid and own electricity.
+HOUSE_METERS = (
+    CONF_GRID_IMPORT_ENTITY,
+    CONF_FEED_IN_ENTITY,
+    CONF_PV_ENTITY,
+    CONF_BATTERY_CHARGED_ENTITY,
+    CONF_BATTERY_DISCHARGED_ENTITY,
+)
+# Stored once the options were saved: the sisters' values are suggested
+# only until then (a suggestion is saved with any change).
+SISTERS_OFFERED = "sister_suggestions_offered"
 
 
 def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
@@ -941,18 +967,47 @@ class WaermewachtOptionsFlow(OptionsFlow):
                         if v not in ("", None)
                     }
                 )
+            data[SISTERS_OFFERED] = True
             price_entity = data.get(CONF_ELECTRICITY_PRICE_ENTITY)
             unit = _unit_of(self.hass, price_entity) if price_entity else None
-            if not price_entity or price_factor(unit) is not None:
+            if price_entity and price_factor(unit) is None:
+                # Prices in other units (currencies, per MWh of gas…) are not
+                # guessed.
+                errors["base"] = "price_unit"
+                placeholders = {
+                    "entity": price_entity,
+                    "unit": unit or "–",
+                    "units": ACCEPTED_UNITS,
+                }
+            elif bool(data.get(CONF_BATTERY_CHARGED_ENTITY)) != bool(
+                data.get(CONF_BATTERY_DISCHARGED_ENTITY)
+            ):
+                errors["base"] = "battery_both"
+            elif wrong := next(
+                (
+                    data[key]
+                    for key in HOUSE_METERS
+                    if data.get(key)
+                    and _unit_of(self.hass, data[key]) not in UNIT_FACTORS
+                ),
+                None,
+            ):
+                errors["base"] = "meter_unit"
+                placeholders = {"entity": wrong}
+            else:
                 return self.async_create_entry(data=data)
-            # Prices in other units (currencies, per MWh of gas…) are not guessed.
-            errors["base"] = "price_unit"
-            placeholders = {
-                "entity": price_entity,
-                "unit": unit or "–",
-                "units": ACCEPTED_UNITS,
-            }
             options = data
+        step_id = "init"
+        if user_input is None and not options.get(SISTERS_OFFERED):
+            # Once: meters and price sensor from Tarifwacht or Einspeisewacht.
+            found = suggestions(self.hass)
+            offered = {k: v for k, v in found.values.items() if k not in options}
+            if offered and found.source:
+                options = {**offered, **options}
+                step_id = f"init_{found.source}"
+                placeholders = {"entry": found.title or found.source}
+            elif not found.found:
+                step_id = "init_tip"
 
         def number(
             minimum: float, maximum: float, step: float, unit: str
@@ -1045,6 +1100,15 @@ class WaermewachtOptionsFlow(OptionsFlow):
             CONF_ELECTRICITY_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
             CONF_GAS_PRICE: number(0, 100, 0.01, "ct/kWh"),
             CONF_GAS_BASE_PRICE: number(0, 2000, 0.01, "€/a"),
+            **dict.fromkeys(
+                HOUSE_METERS,
+                selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain="sensor", device_class="energy"
+                    )
+                ),
+            ),
+            CONF_FEED_IN_TARIFF: number(0, 100, 0.001, "ct/kWh"),
             CONF_DESIGN_TEMP: number(-30, 5, 0.1, "°C"),
             CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
             CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
@@ -1067,11 +1131,28 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 }
             )
         return self.async_show_form(
-            step_id="init",
+            step_id=step_id,
             data_schema=schema,
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    # The same form with a hint in the costs section (texts of a form are
+    # per step; its placeholders are not translated).
+    async def async_step_init_tarifwacht(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self.async_step_init(user_input)
+
+    async def async_step_init_einspeisewacht(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self.async_step_init(user_input)
+
+    async def async_step_init_tip(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self.async_step_init(user_input)
 
     async def async_step_gas(
         self, user_input: dict[str, Any] | None = None

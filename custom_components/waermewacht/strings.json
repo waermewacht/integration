@@ -260,6 +260,8 @@
   },
   "options": {
     "error": {
+      "battery_both": "Battery: please choose the charge and the discharge meter, or neither.",
+      "meter_unit": "{entity} is no energy meter in Wh, kWh or MWh.",
       "price_unit": "{entity} reports its price in “{unit}”. Possible are {units}.",
       "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency."
     },
@@ -296,14 +298,25 @@
               "electricity_price_entity": "Electricity price sensor",
               "electricity_base_price": "Electricity base price",
               "gas_price": "Gas working price",
-              "gas_base_price": "Gas base price"
+              "gas_base_price": "Gas base price",
+              "grid_import_entity": "Grid import meter (own PV and battery)",
+              "feed_in_entity": "Feed-in meter",
+              "pv_entity": "PV production meter",
+              "battery_charged_entity": "Battery charge meter",
+              "battery_discharged_entity": "Battery discharge meter",
+              "feed_in_tariff": "Feed-in tariff"
             },
             "data_description": {
               "electricity_price": "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
               "electricity_price_entity": "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
               "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
               "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
-              "gas_base_price": "Gross per year; spread over the days of a period."
+              "gas_base_price": "Gross per year; spread over the days of a period.",
+              "grid_import_entity": "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+              "feed_in_entity": "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+              "pv_entity": "With a hybrid inverter: its AC output.",
+              "battery_charged_entity": "Optional, only together with the discharge meter.",
+              "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             }
           },
           "heat_load": {
@@ -339,6 +352,213 @@
           "gas_base_price": "Gross per year.",
           "calorific_value": "Only for counters in m³: from the gas bill.",
           "z_number": "Only for counters in m³: from the gas bill."
+        },
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+      },
+      "init_tarifwacht": {
+        "title": "Settings",
+        "data": {
+          "min_electricity": "Minimum electricity for a ratio",
+          "short_run_minutes": "Short run below",
+          "critical_run_minutes": "Critical run below",
+          "starts_per_hour": "Conspicuous above starts per hour",
+          "starts_per_day": "Conspicuous above starts per day",
+          "season_start_month": "Season starts in",
+          "aux_mild_from": "Backup heater: mild weather from",
+          "efficiency_drop_percent": "Efficiency dropped from",
+          "disinfection_temp": "Thermal disinfection from",
+          "boiler_efficiency": "Boiler efficiency"
+        },
+        "data_description": {
+          "starts_per_day": "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
+          "min_electricity": "Below it the ratio is unknown instead of a random value.",
+          "season_start_month": "The current season is recomputed from the statistics.",
+          "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
+          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+          "boiler_efficiency": "Only for boiler heat from fuel: heat = fuel × efficiency, on the gross calorific value (Hs) as the boiler counts its fuel. 0.87: field value of condensing gas boilers (DBU 2004), taken over for oil; a boiler that runs short and in pieces in a hybrid system reaches less."
+        },
+        "sections": {
+          "costs": {
+            "name": "Costs and gas comparison (optional)",
+            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.\n\nMeters suggested from Tarifwacht “{entry}” – please check.",
+            "data": {
+              "electricity_price": "Electricity price",
+              "electricity_price_entity": "Electricity price sensor",
+              "electricity_base_price": "Electricity base price",
+              "gas_price": "Gas working price",
+              "gas_base_price": "Gas base price",
+              "grid_import_entity": "Grid import meter (own PV and battery)",
+              "feed_in_entity": "Feed-in meter",
+              "pv_entity": "PV production meter",
+              "battery_charged_entity": "Battery charge meter",
+              "battery_discharged_entity": "Battery discharge meter",
+              "feed_in_tariff": "Feed-in tariff"
+            },
+            "data_description": {
+              "electricity_price": "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
+              "electricity_price_entity": "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
+              "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
+              "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+              "gas_base_price": "Gross per year; spread over the days of a period.",
+              "grid_import_entity": "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+              "feed_in_entity": "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+              "pv_entity": "With a hybrid inverter: its AC output.",
+              "battery_charged_entity": "Optional, only together with the discharge meter.",
+              "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
+            }
+          },
+          "heat_load": {
+            "name": "Heat load (optional)",
+            "data": {
+              "design_outdoor_temp": "Design outdoor temperature",
+              "rated_power_kw": "Rated heating power at A-7/W35",
+              "min_power_kw": "Smallest heating power"
+            },
+            "data_description": {
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+              "rated_power_kw": "From the data sheet; gives the power per heat load.",
+              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+            }
+          }
+        },
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+      },
+      "init_einspeisewacht": {
+        "title": "Settings",
+        "data": {
+          "min_electricity": "Minimum electricity for a ratio",
+          "short_run_minutes": "Short run below",
+          "critical_run_minutes": "Critical run below",
+          "starts_per_hour": "Conspicuous above starts per hour",
+          "starts_per_day": "Conspicuous above starts per day",
+          "season_start_month": "Season starts in",
+          "aux_mild_from": "Backup heater: mild weather from",
+          "efficiency_drop_percent": "Efficiency dropped from",
+          "disinfection_temp": "Thermal disinfection from",
+          "boiler_efficiency": "Boiler efficiency"
+        },
+        "data_description": {
+          "starts_per_day": "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
+          "min_electricity": "Below it the ratio is unknown instead of a random value.",
+          "season_start_month": "The current season is recomputed from the statistics.",
+          "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
+          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+          "boiler_efficiency": "Only for boiler heat from fuel: heat = fuel × efficiency, on the gross calorific value (Hs) as the boiler counts its fuel. 0.87: field value of condensing gas boilers (DBU 2004), taken over for oil; a boiler that runs short and in pieces in a hybrid system reaches less."
+        },
+        "sections": {
+          "costs": {
+            "name": "Costs and gas comparison (optional)",
+            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.\n\nMeters suggested from Einspeisewacht “{entry}” – please check.",
+            "data": {
+              "electricity_price": "Electricity price",
+              "electricity_price_entity": "Electricity price sensor",
+              "electricity_base_price": "Electricity base price",
+              "gas_price": "Gas working price",
+              "gas_base_price": "Gas base price",
+              "grid_import_entity": "Grid import meter (own PV and battery)",
+              "feed_in_entity": "Feed-in meter",
+              "pv_entity": "PV production meter",
+              "battery_charged_entity": "Battery charge meter",
+              "battery_discharged_entity": "Battery discharge meter",
+              "feed_in_tariff": "Feed-in tariff"
+            },
+            "data_description": {
+              "electricity_price": "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
+              "electricity_price_entity": "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
+              "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
+              "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+              "gas_base_price": "Gross per year; spread over the days of a period.",
+              "grid_import_entity": "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+              "feed_in_entity": "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+              "pv_entity": "With a hybrid inverter: its AC output.",
+              "battery_charged_entity": "Optional, only together with the discharge meter.",
+              "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
+            }
+          },
+          "heat_load": {
+            "name": "Heat load (optional)",
+            "data": {
+              "design_outdoor_temp": "Design outdoor temperature",
+              "rated_power_kw": "Rated heating power at A-7/W35",
+              "min_power_kw": "Smallest heating power"
+            },
+            "data_description": {
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+              "rated_power_kw": "From the data sheet; gives the power per heat load.",
+              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+            }
+          }
+        },
+        "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+      },
+      "init_tip": {
+        "title": "Settings",
+        "data": {
+          "min_electricity": "Minimum electricity for a ratio",
+          "short_run_minutes": "Short run below",
+          "critical_run_minutes": "Critical run below",
+          "starts_per_hour": "Conspicuous above starts per hour",
+          "starts_per_day": "Conspicuous above starts per day",
+          "season_start_month": "Season starts in",
+          "aux_mild_from": "Backup heater: mild weather from",
+          "efficiency_drop_percent": "Efficiency dropped from",
+          "disinfection_temp": "Thermal disinfection from",
+          "boiler_efficiency": "Boiler efficiency"
+        },
+        "data_description": {
+          "starts_per_day": "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
+          "min_electricity": "Below it the ratio is unknown instead of a random value.",
+          "season_start_month": "The current season is recomputed from the statistics.",
+          "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
+          "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
+          "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
+          "boiler_efficiency": "Only for boiler heat from fuel: heat = fuel × efficiency, on the gross calorific value (Hs) as the boiler counts its fuel. 0.87: field value of condensing gas boilers (DBU 2004), taken over for oil; a boiler that runs short and in pieces in a hybrid system reaches less."
+        },
+        "sections": {
+          "costs": {
+            "name": "Costs and gas comparison (optional)",
+            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.\n\nTip: if you also use [Tarifwacht](https://github.com/tarifwacht/integration) or [Einspeisewacht](https://github.com/einspeisewacht/integration), these fields are filled in already.",
+            "data": {
+              "electricity_price": "Electricity price",
+              "electricity_price_entity": "Electricity price sensor",
+              "electricity_base_price": "Electricity base price",
+              "gas_price": "Gas working price",
+              "gas_base_price": "Gas base price",
+              "grid_import_entity": "Grid import meter (own PV and battery)",
+              "feed_in_entity": "Feed-in meter",
+              "pv_entity": "PV production meter",
+              "battery_charged_entity": "Battery charge meter",
+              "battery_discharged_entity": "Battery discharge meter",
+              "feed_in_tariff": "Feed-in tariff"
+            },
+            "data_description": {
+              "electricity_price": "Gross price per kWh of the heat pump's electricity. With a price sensor: for the hours without its price.",
+              "electricity_price_entity": "For a dynamic tariff (Tibber, Nordpool, EPEX Spot …) or a template: each hour is priced with the sensor's mean of that hour from the long-term statistics (needs state class measurement), also the look-back before the setup. Unit ct/kWh, €/kWh or €/MWh.",
+              "electricity_base_price": "Only for a separate heat pump meter (heat pump tariff), gross per year. On the household meter leave it empty: that base price is paid anyway.",
+              "gas_price": "Gross, per kWh on the gross calorific value (as on the gas bill). Boiler efficiency 0.87.",
+              "gas_base_price": "Gross per year; spread over the days of a period.",
+              "grid_import_entity": "Optional: the meter of the grid connection the heat pump is behind. With it, heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price (only the costs change, not the performance factors). Not for a separate heat pump tariff meter.",
+              "feed_in_entity": "With feed-in and PV meters the heat pump gets the grid share of the whole house; without them the grid import goes to the heat pump first.",
+              "pv_entity": "With a hybrid inverter: its AC output.",
+              "battery_charged_entity": "Optional, only together with the discharge meter.",
+              "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
+            }
+          },
+          "heat_load": {
+            "name": "Heat load (optional)",
+            "data": {
+              "design_outdoor_temp": "Design outdoor temperature",
+              "rated_power_kw": "Rated heating power at A-7/W35",
+              "min_power_kw": "Smallest heating power"
+            },
+            "data_description": {
+              "design_outdoor_temp": "From DIN/TS 12831-1 for your postcode (e.g. the BWP climate map). Without it the heat load is given per kelvin only.",
+              "rated_power_kw": "From the data sheet; gives the power per heat load.",
+              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+            }
+          }
         },
         "description": "Meters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
       },
