@@ -3,7 +3,8 @@ blueprint:
   description: >-
     Meldet, wenn eine Prüfung von Wärmewacht auffällig wird (Effizienz
     gesunken, auffälliges Takten, Heizstab bei milder Witterung oder bei
-    Warmwasser, Warmwasser-Effizienz unter Vorjahr): als Benachrichtigung in
+    Warmwasser, Warmwasser-Effizienz unter Vorjahr, auffällige
+    Statusmeldungen): als Benachrichtigung in
     der Glocke und auf Wunsch zusätzlich an einen Benachrichtigungsdienst, etwa
     das Handy mit der Home-Assistant-App. Auf Wunsch auch, wenn alles wieder in
     Ordnung ist. Aufs Handy geht nur ein Wechsel von „in Ordnung“ auf
@@ -11,7 +12,8 @@ blueprint:
     ---
     Reports when a Wärmewacht check turns conspicuous (efficiency dropped,
     conspicuous cycling, backup heater in mild weather or for hot water, hot
-    water efficiency below last year): as a notification in the bell and,
+    water efficiency below last year, conspicuous status messages): as a
+    notification in the bell and,
     optionally, through a notify action such as the phone with the Home
     Assistant app. Optionally also when it is fine again. The phone only gets a
     change from fine to conspicuous, not every restart (the bell shows it
@@ -132,6 +134,9 @@ variables:
       {{ ('Heizstab-Anteil ' ~ n(a.aux_share, 1) ~ ' % der Warmwasserladungen (' ~ n(a.aux_kwh, 2) ~ ' kWh in 30 Tagen)') if de else ('backup heater share ' ~ n(a.aux_share, 1) ~ ' % of the hot water charges (' ~ n(a.aux_kwh, 2) ~ ' kWh in 30 days)') }}
     {%- elif a.previous_ratio is defined -%}
       {{ ('AZ Warmwasser ' ~ n(a.ratio, 2) ~ ' statt ' ~ n(a.previous_ratio, 2) ~ ' im Vorjahr') if de else ('COP hot water ' ~ n(a.ratio, 2) ~ ' instead of ' ~ n(a.previous_ratio, 2) ~ ' last year') }}
+    {%- elif a.most_frequent is defined -%}
+      {%- set more = (a.entries_7d | int(0)) > (a.most_frequent_count | int(0)) -%}
+      {{ (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 Tagen' ~ ((', Schutz- und Störmeldungen zusammen ' ~ a.entries_7d ~ '×') if more else '')) if de else (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 days' ~ ((', protection and fault messages ' ~ a.entries_7d ~ '× in all') if more else '')) }}
     {%- endif -%}
   title: "{{ 'Wärmewacht: auffällig' if lang == 'de' else 'Wärmewacht: conspicuous' }}"
   message: >-

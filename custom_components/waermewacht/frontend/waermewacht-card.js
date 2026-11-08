@@ -70,6 +70,7 @@ const TEXT = {
       aux_dhw_charges: "Heizstab bei Warmwasser",
       dhw_efficiency_drop: "Warmwasser gegen Vorjahr",
       cycling_problem: "Takten",
+      status_messages: "Statusmeldungen",
     },
     tiles: {
       activity: "Betriebsart",
@@ -138,6 +139,9 @@ const TEXT = {
     times: (n, m) => `${n}-mal · Ø ${m} min`,
     charges: (n, m) => `${n}× · Ø ${m} min`,
     withDhw: (v) => `mit Warmwasser ${v} %`,
+    // Own electricity (PV, battery) per mode, attribute own_share_by_mode.
+    ownShare: (parts) => `eigen: ${parts}`,
+    ownModes: { heating: "Heizen", dhw: "WW", cooling: "Kühlen" },
     previous: "Vorsaison",
     sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
@@ -160,6 +164,10 @@ const TEXT = {
       dhw_efficiency_drop: (a, n) => `AZ ${n(a.ratio, 2)} statt ${n(a.previous_ratio, 2)}`,
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} Starts/h · ${n(a.short_runs_24h, 0)} Kurzläufe`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} Starts in 24 h (Grenze ${n(a.starts_per_day_limit, 0)})` : ""),
+      status_messages: (a, n) => (a.most_frequent
+        ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 Tagen`
+          + (a.entries_7d > a.most_frequent_count ? ` · Schutz/Störung zusammen ${n(a.entries_7d, 0)}×` : "")
+        : "keine Schutz- oder Störmeldung in 7 Tagen"),
     },
     fine: "In Ordnung",
     problem: "Auffällig",
@@ -236,6 +244,7 @@ const TEXT = {
       aux_dhw_charges: "Backup heater for hot water",
       dhw_efficiency_drop: "Hot water against last year",
       cycling_problem: "Cycling",
+      status_messages: "Status messages",
     },
     tiles: {
       activity: "Activity",
@@ -302,6 +311,8 @@ const TEXT = {
     times: (n, m) => `${n} times · mean ${m} min`,
     charges: (n, m) => `${n}× · mean ${m} min`,
     withDhw: (v) => `with hot water ${v} %`,
+    ownShare: (parts) => `own: ${parts}`,
+    ownModes: { heating: "heating", dhw: "DHW", cooling: "cooling" },
     previous: "previous season",
     sameLastYear: "last year to date",
     curve: "Performance curve heating",
@@ -322,6 +333,10 @@ const TEXT = {
       aux_mild_weather: (a, n) => `${n(a.aux_kwh_7d, 1)} kWh in 7 days${a.aux_kwh_defrost_7d > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost_7d, 1)} kWh` : ""}`,
       aux_dhw_charges: (a, n) => `${n(a.aux_share, 1)} % · ${n(a.aux_kwh, 2)} kWh in 30 days${a.aux_kwh_defrost > 0 ? ` · in defrosts ${n(a.aux_kwh_defrost, 2)} kWh` : ""}`,
       dhw_efficiency_drop: (a, n) => `COP ${n(a.ratio, 2)} instead of ${n(a.previous_ratio, 2)}`,
+      status_messages: (a, n) => (a.most_frequent
+        ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 days`
+          + (a.entries_7d > a.most_frequent_count ? ` · protection/fault ${n(a.entries_7d, 0)}× in all` : "")
+        : "no protection or fault message in 7 days"),
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),
     },
@@ -364,7 +379,8 @@ const TEXT = {
   },
 };
 
-const CHECKS = ["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem"];
+const CHECKS = ["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem",
+  "status_messages"];
 // Backup heater checks (binary_sensor.AUX_CHECKS).
 const AUX_CHECKS = new Set(["aux_mild_weather", "aux_dhw_charges"]);
 const RATIO_SCOPES = ["heating", "dhw", "combined", "cooling"];
@@ -893,7 +909,18 @@ class WaermewachtCard extends HTMLElement {
 
   _costs(t) {
     return this._grid(["cost_month", "cost_season", "heat_cost_season", "gas_savings_season"]
-      .map((key) => this._own(key, t.tiles[key])));
+      .map((key) => this._own(key, t.tiles[key], key.startsWith("cost_") ? this._ownShare(t, key) : "")));
+  }
+
+  /** "own: heating 31 %, DHW 58 %": the share of own electricity (PV,
+   * battery) per mode, only with the grid import meter (allocation.py). */
+  _ownShare(t, key) {
+    const shares = this._state(key)?.attributes.own_share_by_mode;
+    if (!shares) return "";
+    const parts = Object.keys(t.ownModes)
+      .filter((mode) => shares[mode] !== undefined && shares[mode] !== null)
+      .map((mode) => `${t.ownModes[mode]} ${this._num(shares[mode] * 100, 0)} %`);
+    return parts.length ? t.ownShare(parts.join(", ")) : "";
   }
 
   _hybrid(t) {

@@ -649,6 +649,9 @@
       },
       "dhw_efficiency_drop": {
         "name": "Hot water efficiency below last year"
+      },
+      "status_messages": {
+        "name": "Conspicuous status messages"
       }
     },
     "button": {
@@ -967,6 +970,23 @@
       },
       "dhw_efficiency_drop_status": {
         "name": "Check hot water vs. last year",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "comparison_restarted": "Comparison restarted",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "status_messages_status": {
+        "name": "Check status messages",
         "state": {
           "ok": "Fine",
           "problem": "Conspicuous",

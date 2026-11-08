@@ -12,6 +12,9 @@ Only the costs change, never a performance factor. Rules (README "Kosten"):
   min(heat pump electricity, grid import).
 - cost = grid share x grid price + (heat pump electricity - grid share) x
   feed-in tariff (what the own electricity would have earned).
+- Per mode (heating, hot water, cooling; standby apart): the grid share of
+  the hour applies to each, so hot water at noon on PV and heating at night
+  from the grid get their own shares (`by_mode`).
 - An hour without statistics of a meter it needs counts as all from the
   grid (`hours_all_grid`). § 51 EEG (no feed-in payment at negative prices)
   is left out: the price sensor need not give exchange prices.
@@ -24,13 +27,17 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from .costs import NOISE_KWH
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
 from .solar import HourFlows, SolarSettings
+
+# Keys of Allocation.by_mode: the modes and standby.
+STANDBY = "standby"
+PARTS = (Mode.HEATING.value, Mode.DHW.value, Mode.COOLING.value, STANDBY)
 
 PROPORTIONAL = "proportional"
 HEAT_PUMP_FIRST = "heat_pump_first"
@@ -61,20 +68,42 @@ class Allocation:
     hours_all_grid: int = 0  # hours without the meters' statistics
     saving_eur: float = 0.0  # own kWh x (grid price - feed-in tariff)
     heat_saving_eur: float = 0.0  # its share of heating, hot water, standby
+    # Per PARTS key: (kWh from the grid, kWh own); keys with electricity only.
+    by_mode: dict[str, tuple[float, float]] = field(default_factory=dict)
 
     def __add__(self, other: Allocation) -> Allocation:
+        by_mode = dict(self.by_mode)
+        for key, (grid, own) in other.by_mode.items():
+            before = by_mode.get(key, (0.0, 0.0))
+            by_mode[key] = (before[0] + grid, before[1] + own)
         return Allocation(
             self.kwh_grid + other.kwh_grid,
             self.kwh_own + other.kwh_own,
             self.hours_all_grid + other.hours_all_grid,
             self.saving_eur + other.saving_eur,
             self.heat_saving_eur + other.heat_saving_eur,
+            by_mode,
         )
 
     @property
     def grid_share(self) -> float | None:
         total = self.kwh_grid + self.kwh_own
         return self.kwh_grid / total if total > 0 else None
+
+
+def mode_kwh(totals: Totals) -> dict[str, float]:
+    """Heat pump electricity of `totals` per PARTS key (those above 0)."""
+    values = {m.value: totals.electricity(m) for m in Mode}
+    values[STANDBY] = totals.standby()
+    return {key: values[key] for key in PARTS if values[key] > 0}
+
+
+def split_by_mode(totals: Totals, own_share: float) -> dict[str, tuple[float, float]]:
+    """(grid, own) per PARTS key with one own share for all (0..1)."""
+    return {
+        key: (kwh * (1 - own_share), kwh * own_share)
+        for key, kwh in mode_kwh(totals).items()
+    }
 
 
 def grid_kwh(
@@ -116,7 +145,11 @@ def allocate(
             continue
         found = flows.get(hour)
         if found is None:
-            result = result + Allocation(kwh_grid=heat_pump, hours_all_grid=1)
+            result = result + Allocation(
+                kwh_grid=heat_pump,
+                hours_all_grid=1,
+                by_mode=split_by_mode(totals, 0.0),
+            )
             continue
         grid = grid_kwh(heat_pump, found, split.rule, split.solar)
         own = heat_pump - grid
@@ -129,5 +162,6 @@ def allocate(
             kwh_own=own,
             saving_eur=saving,
             heat_saving_eur=saving * max(0.0, heat_side) / heat_pump,
+            by_mode=split_by_mode(totals, own / heat_pump),
         )
     return result

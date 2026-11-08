@@ -555,7 +555,8 @@ def _price_attributes(
 
 def _allocation_attributes(runtime: HeatPumpRuntime, period: Period) -> dict[str, Any]:
     """Heat pump electricity from the grid and own (PV, battery) in the
-    period; `allocation` names the rule (none without a grid meter)."""
+    period, also per mode (own share None below the minimum electricity of a
+    ratio); `allocation` names the rule (none without a grid meter)."""
     feed = runtime.prices
     if feed is None or feed.rule is None:
         return {"allocation": NONE}
@@ -572,6 +573,18 @@ def _allocation_attributes(runtime: HeatPumpRuntime, period: Period) -> dict[str
         "kwh_own": round(found.kwh_own, 2),
         "hours_all_grid": found.hours_all_grid,
         "hours_implausible": feed.hours_implausible(start),
+        "own_share_by_mode": {
+            key: round(own / (grid + own), 3)
+            if grid + own >= runtime.min_electricity
+            else None
+            for key, (grid, own) in found.by_mode.items()
+        },
+        "kwh_own_by_mode": {
+            key: round(own, 2) for key, (_, own) in found.by_mode.items()
+        },
+        "kwh_from_grid_by_mode": {
+            key: round(grid, 2) for key, (grid, _) in found.by_mode.items()
+        },
     }
 
 
@@ -1018,6 +1031,10 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
             "previous",
             "weeks",
             "classes",
+            # Own electricity per mode (allocation.py).
+            "own_share_by_mode",
+            "kwh_own_by_mode",
+            "kwh_from_grid_by_mode",
         }
     )
 

@@ -51,6 +51,9 @@ def health_checks(runtime: HeatPumpRuntime) -> list[str]:
         checks.append("dhw_efficiency_drop")
         if any(s in runtime.entities for s in (Signal.AUX_DHW, Signal.AUX_TOTAL)):
             checks.append("aux_dhw_charges")
+    # Texts of the activity entity (status_messages.py).
+    if Signal.ACTIVITY in runtime.entities:
+        checks.append("status_messages")
     return checks
 
 
@@ -91,8 +94,10 @@ class HealthProblem(HeatPumpEntity, BinarySensorEntity):
     """A finding of the daily health check."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
-    # Lists per class or day: shown, not recorded (write load).
-    _unrecorded_attributes = frozenset({"classes", "days"})
+    # Lists per class, day or text: shown, not recorded (write load).
+    _unrecorded_attributes = frozenset(
+        {"classes", "days", "protection", "waiting", "unclassified"}
+    )
 
     def __init__(self, entry: WaermewachtConfigEntry, key: str) -> None:
         super().__init__(entry, key)

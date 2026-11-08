@@ -159,3 +159,61 @@ def test_detect_same_inverter_copied_from_tarifwacht() -> None:
     own = {h(i): HourFlows(pv=0.0, discharged=1.0) for i in range(12)}
     assert detect_same_inverter(own) is False
     assert detect_same_inverter({h(0): HourFlows(discharged=1.0)}) is None
+
+
+def test_own_share_per_mode() -> None:
+    """Hot water at noon on PV, heating at night from the grid: each mode
+    gets the grid share of its hours."""
+    from custom_components.waermewacht.price_feed import PriceFeed
+
+    hours = {h(i): heating(1.0) for i in range(6)}  # night, all grid
+    flows = {h(i): HourFlows(purchase=1.5) for i in range(6)}
+    for i in (11, 12):  # noon: the house runs on PV
+        hours[h(i)] = Totals({"elec_dhw": 1.5, "standby_dhw": 0.02})
+        flows[h(i)] = HourFlows(purchase=0.0, feed_in=2.5, pv=5.0)
+    # Evening: house 1.5 kWh, half of it from the grid.
+    hours[h(18)] = Totals({"elec_heating": 1.0, "elec_dhw": 0.5})
+    flows[h(18)] = HourFlows(purchase=0.75, feed_in=0.25, pv=1.0)
+    found = allocate(hours, flows, {}, 0.30, split(PROPORTIONAL))
+    assert found.by_mode["heating"] == pytest.approx((6.5, 0.5))
+    assert found.by_mode["dhw"] == pytest.approx((0.25, 3.25))
+    assert found.by_mode["standby"] == pytest.approx((0.0, 0.04))
+    assert "cooling" not in found.by_mode
+    # The parts add up to the whole.
+    assert sum(g for g, _ in found.by_mode.values()) == pytest.approx(found.kwh_grid)
+    assert sum(o for _, o in found.by_mode.values()) == pytest.approx(found.kwh_own)
+
+    # Over the priced days of a period, plus the running hour (all grid).
+    feed = PriceFeed(
+        None,  # type: ignore[arg-type]
+        None,
+        BERLIN,
+        fixed=0.30,
+        day_values=False,
+        meters={"purchase": "a", "feed_in": "b", "pv": "c"},
+        feed_in_rate=0.08,
+    )
+    feed.days = price_days(hours, {}, 0.30, BERLIN, flows, split(PROPORTIONAL))
+    totals = Totals()
+    for t in hours.values():
+        totals = totals + t
+    totals = totals + heating(0.5)
+    period = feed.allocation(DAY, totals)
+    assert period is not None
+    assert period.by_mode["heating"] == pytest.approx((7.0, 0.5))
+    assert period.by_mode["dhw"] == pytest.approx((0.25, 3.25))
+    heating_share = period.by_mode["heating"][1] / sum(period.by_mode["heating"])
+    dhw_share = period.by_mode["dhw"][1] / sum(period.by_mode["dhw"])
+    assert heating_share == pytest.approx(0.067, abs=1e-3)
+    assert dhw_share == pytest.approx(0.929, abs=1e-3)
+
+
+def test_hours_without_meters_are_grid_per_mode() -> None:
+    found = allocate(
+        {h(0): Totals({"elec_dhw": 2.0, "elec_cooling": 1.0})},
+        {},
+        {},
+        0.30,
+        split(HEAT_PUMP_FIRST),
+    )
+    assert found.by_mode == {"dhw": (2.0, 0.0), "cooling": (1.0, 0.0)}

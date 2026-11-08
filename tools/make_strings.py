@@ -279,6 +279,11 @@ BINARY = {
         "Warmwasser-Effizienz unter Vorjahr",
         "mdi:water-thermometer-outline",
     ),
+    "status_messages": (
+        "Conspicuous status messages",
+        "Auffällige Statusmeldungen",
+        "mdi:message-alert-outline",
+    ),
 }
 # Status sensors of the checks: (en, de, icon) and their states.
 STATUS = {
@@ -298,6 +303,11 @@ STATUS = {
         "Check hot water vs. last year",
         "Befund Warmwasser Vorjahr",
         "mdi:water-thermometer-outline",
+    ),
+    "status_messages": (
+        "Check status messages",
+        "Befund Statusmeldungen",
+        "mdi:message-alert-outline",
     ),
 }
 STATUS_STATES = {

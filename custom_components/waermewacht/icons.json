@@ -15,6 +15,9 @@
       },
       "dhw_efficiency_drop": {
         "default": "mdi:water-thermometer-outline"
+      },
+      "status_messages": {
+        "default": "mdi:message-alert-outline"
       }
     },
     "button": {
@@ -288,6 +291,9 @@
       },
       "dhw_efficiency_drop_status": {
         "default": "mdi:water-thermometer-outline"
+      },
+      "status_messages_status": {
+        "default": "mdi:message-alert-outline"
       },
       "oil_consumption_year": {
         "default": "mdi:oil"

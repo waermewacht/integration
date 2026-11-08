@@ -249,6 +249,27 @@ Alternative ohne Speicher: Vorlauf und Spreizung aus der Langzeitstatistik der T
 
 Attribut `field_reference` an „AZ Heizen+WW Saison“: Fraunhofer ISE WP-QS (Luft/Wasser JAZ 3 Mittel 3,4, Spanne 2,6–4,9), WPsmart im Bestand (Mittel 3,1, n = 29), heatpumpmonitor.org (Luft-Wärmepumpen, SEPEMO H4, 3,86 bei 170 Anlagen). Wichtig im Text: verschiedene Bilanzgrenzen (Wärmewacht etwa H1/H3, heatpumpmonitor H4, Fraunhofer JAZ 3 ≈ H3 mit Abtauwärme abgezogen). Gehört zu Stufe 3, nicht zum Gesundheits-Check im engeren Sinn.
 
+### 4.13 Auffällige Statusmeldungen (umgesetzt, `status_messages.py`)
+
+**Was und warum.** Manche Betriebsart-Entitäten melden neben den Betriebsarten auch Schutzfunktionen, Störungen und Wartezeiten, vor allem eigene Status-Templates bei manueller Zuordnung („Durchflussüberwachung“, „Hochdrucksicherung“, „Schaltspielsperre“), aber auch Bosch PointT `alarm`. Wärmewacht ordnet sie keiner Betriebsart zu („sonstige“, der Strom bleibt beim Modus davor). Anlass (simon42-Forum, 2026-11): eine Anlage meldete tagelang bei jedem Heiztakt „Durchflussüberwachung“ – ein Hinweis auf zu wenig Volumenstrom (Filter, Luft, Pumpe, Ventil), den bisher nur die Diagnose-Datei (`events`) zeigte.
+
+**Regel.**
+
+- Gezählt wird das **Annehmen** eines Textes ohne Betriebsart (`Activity.OTHER`): Der Text der Betriebsart-Entität wechselt von einem anderen bekannten Text zu ihm. `unknown`/`unavailable` dazwischen ändern nichts, ein Neustart ist also keine Meldung, der erste Text nach der Einrichtung auch nicht. Attributänderungen mit gleichem Text zählen nicht.
+- Je lokalem Tag, die letzten 7 Tage (heute mitgezählt), je Tag höchstens 20 Texte (weitere unter „…“) zu höchstens 60 Zeichen.
+- Einteilung nach Wörtern (klein, Umlaute als ae/oe/ue, `-` und `_` als Leerzeichen), in dieser Reihenfolge: **Warten** (EVU, Netzbelastung, SG Ready, Schaltspielsperre, Mindeststandzeit, Spülen, Primärpumpenvorlauf, Nachlauf, Standby, utility, anti cycling, start delay, purge …), **Schutz/Störung** (Störung, Alarm, Fehler, Durchfluss, Niederdruck, Hochdruck, Druck, Frostschutz, Taupunkt, Einsatzgrenze, Sicherung, Abschaltung, Notbetrieb, error, fault, failure, pressure, low flow, flow switch, dew point, frost protection, lockout …), dann eine einfache **Sperre**/Pause (Warten). Warten zuerst, damit „EVU-Abschaltung“ kein Befund ist; die einfache Sperre zuletzt, damit „Hochdrucksperre“ einer ist. Alles andere ist nicht eingeordnet (`unclassified`), wird gezeigt, nie gezählt. Englisch nicht bloß `flow`, weil „flow temperature limit“ eine Vorlaufgrenze ist.
+- **An** ab 3 Schutz- oder Störmeldungen in den 7 Tagen, alle Texte zusammen. Kein Hysterese-Wert: das rollende Fenster ist die Hysterese.
+- **Unbekannt** (`too_few_days`), solange weniger als 7 Tage beobachtet sind (Zählbeginn = erster Start mit dieser Version; kein Rückblick aus dem Recorder) und es nicht an ist.
+- Bewertet bei jeder gezählten Meldung, beim Start und um Mitternacht.
+
+**Quelle.** Keine: Die Schwelle 3 in 7 Tagen ist **eigene Annahme** (einmal ist Zufall, eine Meldung je Takt ein Muster; eine Anlage, die je Takt meldet, ist binnen eines Tages darüber). Die Wortlisten stammen aus dem echten Status-Template des Anlasses und gängigen Bezeichnungen der Hersteller; sie sind kein vollständiges Fehlerverzeichnis.
+
+**Fehlalarme.** Eigene Templates können Wörter anders benutzen (ein Text „Druck ok“ wäre Schutz). Herstellertexte, die Schutzfunktionen im Normalbetrieb melden (Frostschutz bei Kälte), zählen mit. Deshalb steht der häufigste Text im Befund, und `protection`/`waiting`/`unclassified` zeigen jede Zuordnung.
+
+**Datenhaltung.** `StatusCounter` (Tage, Zählbeginn, letzter Text) in der kleinen Live-Datei, gespeichert mit deren ohnehin laufendem Intervall (`_dirty`), kein eigenes Speichern, kein Lesen aus dem Recorder. Wechselt die Betriebsart-Entität (Neu konfigurieren), beginnt die Zählung neu (`verdict_entities`).
+
+**Anzeige.** Binärsensor „Auffällige Statusmeldungen“ (`status_messages`) und „Befund Statusmeldungen“, nur mit Betriebsart-Entität. Attribute: `entries_7d`, `most_frequent`, `most_frequent_count`, `protection`, `waiting`, `unclassified` (je Text die Anzahl; nicht aufgezeichnet), `days_observed`, `threshold_entries`, `reason`. Gesundheitskarte und Blueprint: „Durchflussüberwachung 12× in 7 Tagen“.
+
 ## 5. Rangfolge
 
 Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf). Bewertung vor der Umsetzung; was inzwischen umgesetzt ist, steht oben unter „Stand“.

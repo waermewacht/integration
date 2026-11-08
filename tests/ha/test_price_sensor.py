@@ -202,6 +202,10 @@ async def test_own_electricity_at_the_feed_in_tariff(
     assert attributes["grid_share"] == pytest.approx(0.417)
     assert attributes["hours_all_grid"] == 0
     assert attributes["price_source"] == "fixed"
+    # All of it heating here (per mode: tests/test_allocation.py).
+    assert attributes["own_share_by_mode"] == {"heating": pytest.approx(0.583)}
+    assert attributes["kwh_own_by_mode"] == {"heating": pytest.approx(3.5)}
+    assert attributes["kwh_from_grid_by_mode"] == {"heating": pytest.approx(2.5)}
 
 
 @pytest.mark.freeze_time(START)
@@ -214,6 +218,7 @@ async def test_without_grid_meter_no_allocation(
     assert value(hass, entry, "cost_month") == pytest.approx(1.8)
     attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
     assert attributes["allocation"] == "none"
+    assert "own_share_by_mode" not in attributes
 
 
 @pytest.mark.freeze_time(START)

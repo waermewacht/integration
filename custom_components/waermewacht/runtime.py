@@ -204,6 +204,7 @@ from .runs import (
     defrost_aux_by_day,
     replay,
 )
+from .status_messages import StatusCounter
 from .templates import TEMPLATES
 
 if TYPE_CHECKING:
@@ -407,7 +408,11 @@ class HeatPumpRuntime:
             "aux_mild_weather": Finding(None, NOT_ANALYSED),
             "aux_dhw_charges": Finding(None, NOT_ANALYSED),
             "dhw_efficiency_drop": Finding(None, NOT_ANALYSED),
+            "status_messages": Finding(None, NOT_ANALYSED),
         }
+        # Entries of status texts without a mode per day (status_messages.py),
+        # in the live file.
+        self.status = StatusCounter()
         self._efficiency_on = False
         self.comparison_reset_at: datetime | None = None
         self._stuck_seconds: dict[str, float] = {}  # running time without rise
@@ -605,12 +610,16 @@ class HeatPumpRuntime:
             self._mapping_ok = self._mapping_still_fits()
         if self.has_charges:
             self._update_charge_finding(now)
+        if self.status.since is None:
+            self.status.since = now.astimezone(self.tz).date()
+            self._dirty = True
         for entity_id in sorted(self._signal_of):
             if state := self.hass.states.get(entity_id):
                 # A counter value is dated by its own change: a cloud day value
                 # of yesterday must not count as today's after a restart.
                 counter = self._signal_of[entity_id] in self.counters
                 self._handle(entity_id, state, state.last_updated if counter else now)
+        self._update_status_finding(now)
         self._unsubscribe = [
             async_track_state_change_event(
                 self.hass, sorted(self._signal_of), self._on_state_change
@@ -2225,11 +2234,11 @@ class HeatPumpRuntime:
                 if not self._activity_foreign:
                     self._activity_foreign = self._dirty = True
                 self._count("activity:foreign")
-            elif (
-                signal is Signal.ACTIVITY
-                and self.template.parse_activity(state.state) is Activity.OTHER
-            ):
-                self._count(f"activity:{state.state}")
+            elif signal is Signal.ACTIVITY:
+                other = self.template.parse_activity(state.state) is Activity.OTHER
+                if other:
+                    self._count(f"activity:{state.state}")
+                self._note_status(state.state, at, other)
             self._apply_activity(at, (signal, state.state))
         elif signal is Signal.FLOW_TEMP:
             self._flow_temp = _float(state)
@@ -2251,6 +2260,19 @@ class HeatPumpRuntime:
             self.charge_tracker.temperature(self._dhw_temp)
             self._note_hot(at)
         self._sampling = self._sample_condition()
+
+    def _note_status(self, state: str, at: datetime, other: bool) -> None:
+        """A text of the activity entity: count the entry of a text without
+        a mode (health check 4.13), saved with the live file."""
+        if self.status.observe(state, at.astimezone(self.tz).date(), other):
+            self._dirty = True
+            self._update_status_finding(at)
+
+    def _update_status_finding(self, now: datetime) -> None:
+        today = now.astimezone(self.tz).date()
+        if self.status.prune(today):
+            self._dirty = True
+        self.findings["status_messages"] = self.status.finding(today)
 
     def _handle_counter(self, signal: Signal, state: State, at: datetime) -> None:
         if (value := _float(state)) is None:
@@ -2543,6 +2565,7 @@ class HeatPumpRuntime:
                 self._write_diary(now)
                 self._judge_spread()
                 self._judge_flow()
+                self._update_status_finding(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             self.flow_rate = Mean()
             prune(
@@ -2815,6 +2838,7 @@ class HeatPumpRuntime:
             "hot": self._hot,
             "swapped": self._swapped,
             "activity_foreign": self._activity_foreign,
+            "status": self.status.as_dict(),
             "verdict_entities": self._verdict_entities(),
             "backfill_until": _iso(self.backfill_until),
             "booked_until": _iso(self.booked_until),
@@ -2884,6 +2908,7 @@ class HeatPumpRuntime:
         self._hot = data.get("hot", False)
         self._swapped = data.get("swapped")
         self._activity_foreign = data.get("activity_foreign", False)
+        self.status = StatusCounter.from_dict(data.get("status"))
         self.flow_rate = Mean.from_dict(data.get("flow_rate"))
         self._flow_verdict = data.get("flow_verdict")
         self._zero_flow.seconds = float(data.get("zero_flow_seconds", 0.0))
@@ -2908,6 +2933,7 @@ class HeatPumpRuntime:
             now_ids = self._verdict_entities()
             if before.get("activity") != now_ids["activity"]:
                 self._activity_foreign = False
+                self.status = StatusCounter()
             if any(before.get(k) != now_ids[k] for k in ("flow", "return")):
                 self._swapped = None
             if any(before.get(k) != now_ids[k] for k in ("flow", "return", "rate")):

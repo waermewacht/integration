@@ -26,7 +26,7 @@ from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, State
 from homeassistant.util import dt as dt_util
 
-from .allocation import PROPORTIONAL, Allocation, SplitSettings, rule_for
+from .allocation import PROPORTIONAL, Allocation, SplitSettings, mode_kwh, rule_for
 from .costs import ElectricityCost
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
@@ -243,7 +243,7 @@ class PriceFeed:
     def allocation(self, start: datetime, totals: Totals) -> Allocation | None:
         """Grid and own electricity of the period from `start` with the
         energy `totals`: what the priced days hold as own, the rest from the
-        grid (the running hour included)."""
+        grid (the running hour included); so also per mode."""
         if self.days is None:
             return None
         found = period_allocation(self.days, start)
@@ -254,12 +254,17 @@ class PriceFeed:
             + totals.standby()
             + totals.electricity(Mode.COOLING)
         )
+        by_mode: dict[str, tuple[float, float]] = {}
+        for key, kwh in mode_kwh(totals).items():
+            own = found.by_mode.get(key, (0.0, 0.0))[1]
+            by_mode[key] = (max(0.0, kwh - own), own)
         return Allocation(
             kwh_grid=max(0.0, total - found.kwh_own),
             kwh_own=found.kwh_own,
             hours_all_grid=found.hours_all_grid,
             saving_eur=found.saving_eur,
             heat_saving_eur=found.heat_saving_eur,
+            by_mode=by_mode,
         )
 
     async def _async_prices(

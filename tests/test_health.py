@@ -312,6 +312,7 @@ def test_status_states_are_translated() -> None:
         "aux_mild_weather",
         "aux_dhw_charges",
         "dhw_efficiency_drop",
+        "status_messages",
     )
     for name in ("strings.json", "translations/en.json", "translations/de.json"):
         sensors = json.loads((root / name).read_text(encoding="utf-8"))["entity"][

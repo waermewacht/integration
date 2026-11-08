@@ -320,3 +320,44 @@ async def test_key_figures_as_own_sensors(hass: HomeAssistant) -> None:
         found = entity_id(hass, entry, "sensor", key)
         assert found, key
         assert hass.states.get(found) is not None, key
+
+
+@pytest.mark.freeze_time(START)
+async def test_status_messages_entered_again_and_again(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A protection text without a mode, entered three times: conspicuous.
+    Its repetition after a reload is no entry, waits are no finding."""
+    entry = await setup(hass)
+    problem = entity_id(hass, entry, "binary_sensor", "status_messages")
+    status = entity_id(hass, entry, "sensor", "status_messages_status")
+    # Fewer than 7 days observed and nothing found: no verdict yet.
+    assert hass.states.get(problem).attributes["reason"] == "too_few_days"
+    assert hass.states.get(status).state == "too_few_days"
+    for text in ("Schaltspielsperre", "Netzbelastung", "aus"):
+        hass.states.async_set(ACTIVITY, text)
+        await tick(hass, freezer, 1)
+    for _ in range(2):
+        hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
+        await tick(hass, freezer, 1)
+        hass.states.async_set(ACTIVITY, "Heizen")
+        await tick(hass, freezer, 1)
+    hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
+    await tick(hass, freezer, 1)
+    state = hass.states.get(problem)
+    assert state.state == "on"
+    assert state.attributes["most_frequent"] == "Durchflussüberwachung"
+    assert state.attributes["most_frequent_count"] == 3
+    assert state.attributes["waiting"] == {"Netzbelastung": 1, "Schaltspielsperre": 1}
+    assert hass.states.get(status).state == "problem"
+
+    # A reload (restart): unavailable, then the same text again.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    hass.states.async_set(ACTIVITY, "unavailable")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(ACTIVITY, "Durchflussüberwachung")
+    await tick(hass, freezer, 1)
+    assert hass.states.get(problem).attributes["most_frequent_count"] == 3
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["findings"]["status_messages"]["problem"] is True

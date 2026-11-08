@@ -23,8 +23,9 @@ Rebuilt here, because they live in runtime.py next to Home Assistant:
 - the daily diary (`_write_diary`) the health rules read;
 - the daily analysis (`_async_refresh_analysis`) and the hourly energy it
   reads (`_async_hours`: source counters before the setup, own sensors after);
-- "Auffälliges Takten" (`cycling_problem`) and the sensor values and
-  attributes of sensor.py and binary_sensor.py.
+- "Auffälliges Takten" (`cycling_problem`), the counting of status texts
+  (`_note_status`, here none: the source reports only modes) and the sensor
+  values and attributes of sensor.py and binary_sensor.py.
 """
 
 from __future__ import annotations
@@ -142,6 +143,9 @@ from custom_components.waermewacht.report import (  # noqa: E402
     own_hour,
 )
 from custom_components.waermewacht.runs import Defrost, Run, RunTracker  # noqa: E402
+from custom_components.waermewacht.status_messages import (  # noqa: E402
+    StatusCounter,
+)
 
 OUT = ROOT / "docs" / "demo" / "data"
 TRANSLATIONS = ROOT / "custom_components" / "waermewacht" / "translations"
@@ -1329,6 +1333,13 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "aux_mild_weather": _finding(a["aux_mild_weather"]),
         "aux_dhw_charges": dhw_charges,
         "dhw_efficiency_drop": _finding(a["dhw_efficiency_drop"]),
+        # The made-up source reports only modes as its activity: no status
+        # text without a mode was entered (runtime._note_status).
+        "status_messages": _finding(
+            StatusCounter(since=sim.setup.astimezone(TZ).date()).finding(
+                now.astimezone(TZ).date()
+            )
+        ),
     }
     # binary_sensor.HealthProblem: whether the heater counted at all
     # (runtime.aux_used); the card leaves a hybrid's heater checks out without.

@@ -31,6 +31,17 @@ DROP = {
     "ratio_previous_same_weather": 3.6,
     "drop_percent": 13.9,
 }
+STATUS = "binary_sensor.wp_auffallige_statusmeldungen"
+MESSAGES = {
+    "friendly_name": "WP Auffällige Statusmeldungen",
+    "device_class": "problem",
+    "reason": None,
+    "entries_7d": 15,
+    "most_frequent": "Durchflussüberwachung",
+    "most_frequent_count": 12,
+    "days_observed": 7,
+    "threshold_entries": 3,
+}
 CYCLES = {
     "friendly_name": "WP Auffälliges Takten",
     "device_class": "problem",
@@ -49,6 +60,7 @@ async def setup(
 ) -> tuple[list[ServiceCall], list[ServiceCall], list[ServiceCall]]:
     hass.states.async_set(EFFICIENCY, "off", DROP)
     hass.states.async_set(CYCLING, STATE_UNKNOWN, CYCLES)
+    hass.states.async_set(STATUS, "off", MESSAGES)
     blueprint = Blueprint(
         load_yaml(BLUEPRINT),
         expected_domain="automation",
@@ -59,7 +71,7 @@ async def setup(
         {
             "use_blueprint": {
                 "path": BLUEPRINT.name,
-                "input": {"checks": [EFFICIENCY, CYCLING], **inputs},
+                "input": {"checks": [EFFICIENCY, CYCLING, STATUS], **inputs},
             }
         },
     ).async_substitute()
@@ -132,3 +144,26 @@ async def test_phone_after_a_restart_on_request(
     )
     await change(hass, CYCLING, "on", CYCLES)
     assert len(phone) == (1 if after_restart else 0)
+
+
+@pytest.mark.parametrize(
+    ("language", "message"),
+    [
+        (
+            "de",
+            "WP Auffällige Statusmeldungen: Durchflussüberwachung 12× in 7 Tagen, "
+            "Schutz- und Störmeldungen zusammen 15×",
+        ),
+        (
+            "en",
+            "WP Auffällige Statusmeldungen: Durchflussüberwachung 12× in 7 days, "
+            "protection and fault messages 15× in all",
+        ),
+    ],
+)
+async def test_status_messages_in_words(
+    hass: HomeAssistant, language: str, message: str
+) -> None:
+    created, _, _ = await setup(hass, language=language)
+    await change(hass, STATUS, "on", MESSAGES)
+    assert created[0].data["message"] == message
