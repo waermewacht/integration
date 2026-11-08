@@ -187,6 +187,7 @@
           "gas_dhw": "Gas Warmwasser",
           "outdoor_temp": "Außentemperatur",
           "flow_temp": "Vorlauftemperatur",
+          "flow_in_circuit": "Vorlauffühler sitzt im Heizkreis (hinter Puffer oder Mischer)",
           "manual_unit": "Ablesung von Hand",
           "calorific_value": "Brennwert",
           "z_number": "Zustandszahl"
@@ -196,7 +197,8 @@
           "gas_heating": "Nur wenn die Therme Heizen und Warmwasser getrennt zählt (z. B. Viessmann ViCare); dann auch den Warmwasser-Zähler eintragen. „Gas gesamt“ bleibt leer.",
           "gas_dhw": "Optional: Gas für Warmwasser, wenn getrennt gezählt.",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
-          "flow_temp": "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+          "flow_temp": "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf. Ein Fühler im Heizkreis braucht beides nicht (Haken darunter).",
+          "flow_in_circuit": "Anhaken, wenn der Fühler den Vorlauf des Heizkreises misst, nicht den Kesselaustritt (z. B. hinter Pufferspeicher oder Mischer). Dann heben ihn Warmwasserladungen nicht, und der Vorlauf braucht keinen Warmwasser-Zähler: Wärmewacht nimmt die Stunden, in denen der Heizkreis läuft (Vorlauf ab 25 °C, Tage unter 15 °C), nicht die Brennerstunden.",
           "manual_unit": "Statt eines Zählers: die Einheit deines Gaszählers. Den Stand trägst du über die Entität „Zählerstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein (auch ältere Stände, z. B. aus Rechnungen). Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
           "calorific_value": "Nur für Zähler in m³: aus der Gasrechnung (kWh je m³, Brennwert Hs).",
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
@@ -211,6 +213,7 @@
           "gas_dhw": "Öl Warmwasser",
           "outdoor_temp": "Außentemperatur",
           "flow_temp": "Vorlauftemperatur",
+          "flow_in_circuit": "Vorlauffühler sitzt im Heizkreis (hinter Puffer oder Mischer)",
           "manual_unit": "Ablesung von Hand",
           "boiler_type": "Kesselart",
           "boiler_efficiency": "Eigener Nutzungsgrad (Hs)"
@@ -220,7 +223,8 @@
           "gas_heating": "Nur wenn der Kessel Heizen und Warmwasser getrennt zählt; dann auch den Warmwasser-Zähler eintragen. „Öl gesamt“ bleibt leer.",
           "gas_dhw": "Optional: Öl für Warmwasser, wenn getrennt gezählt (EMS-ESP: boiler_dhw_gasmeter, in HA meist …boiler_dhw_gas_meter).",
           "outdoor_temp": "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
-          "flow_temp": "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+          "flow_temp": "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf. Ein Fühler im Heizkreis braucht beides nicht (Haken darunter).",
+          "flow_in_circuit": "Anhaken, wenn der Fühler den Vorlauf des Heizkreises misst, nicht den Kesselaustritt (z. B. hinter Pufferspeicher oder Mischer). Dann heben ihn Warmwasserladungen nicht, und der Vorlauf braucht keinen Warmwasser-Zähler: Wärmewacht nimmt die Stunden, in denen der Heizkreis läuft (Vorlauf ab 25 °C, Tage unter 15 °C), nicht die Brennerstunden.",
           "manual_unit": "Statt eines Zählers: Ölzähler (Liter, zählt aufwärts), Tankstand (Liter, zählt abwärts) oder ein Zähler in kWh. Den Stand trägst du über die Entität „Zählerstand eintragen“ bzw. „Tankstand eintragen“ oder die Aktion „Zählerstand eintragen (Gas, Öl)“ ein. Beim Tankstand nach dem Tanken zuerst „Nachfüllen eintragen“, dann den neuen Stand. Jeder Zeitraum zwischen zwei Ablesungen von 5 bis 35 Tagen ist ein Punkt der Energiesignatur.",
           "boiler_type": "Ergibt den Nutzungsgrad bezogen auf den Brennwert: Brennwertkessel 0,87, Niedertemperaturkessel 0,79, Konstanttemperaturkessel (meist vor 1990) 0,70, abgeleitet aus den Aufwandszahlen nach DIN V 4701-10 (IWU 2005). Die Heizlast ändert sich im selben Verhältnis.",
           "boiler_efficiency": "Nur für „Eigener Wert“: Anteil des Öls, der zu Wärme wird, bezogen auf den Brennwert."

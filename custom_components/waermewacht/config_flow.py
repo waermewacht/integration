@@ -52,6 +52,7 @@ from .const import (
     CONF_ENTITIES,
     CONF_FEED_IN_ENTITY,
     CONF_FEED_IN_TARIFF,
+    CONF_FLOW_IN_CIRCUIT,
     CONF_FUEL,
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
@@ -444,6 +445,10 @@ def gas_schema(values: dict[str, Any], *, oil: bool = False) -> vol.Schema:
                 description=suggested(Signal.FLOW_TEMP.value),
             ): outdoor,
             vol.Optional(
+                CONF_FLOW_IN_CIRCUIT,
+                default=bool(values.get(CONF_FLOW_IN_CIRCUIT)),
+            ): selector.BooleanSelector(),
+            vol.Optional(
                 CONF_MANUAL_UNIT, description=suggested(CONF_MANUAL_UNIT)
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
@@ -746,6 +751,8 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             values.update(entry.options)
             if manual := entry.data.get(CONF_MANUAL_UNIT):
                 values[CONF_MANUAL_UNIT] = manual
+            if entry.data.get(CONF_FLOW_IN_CIRCUIT):
+                values[CONF_FLOW_IN_CIRCUIT] = True
         if user_input is not None:
             values = {k: v for k, v in user_input.items() if v not in (None, "")}
             error = validate_gas(self.hass, values, oil=oil)
@@ -770,6 +777,12 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         entities, conversion = split_gas(values)
         manual = values.get(CONF_MANUAL_UNIT)
+        # Only with a flow sensor; kept in the data, as the sensor is.
+        circuit = (
+            {CONF_FLOW_IN_CIRCUIT: True}
+            if values.get(CONF_FLOW_IN_CIRCUIT) and Signal.FLOW_TEMP.value in entities
+            else {}
+        )
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
             options = {
@@ -777,7 +790,11 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 for k, v in entry.options.items()
                 if k not in (OIL_FORM_OPTIONS if oil else GAS_FORM_OPTIONS)
             }
-            data = {k: v for k, v in entry.data.items() if k != CONF_MANUAL_UNIT}
+            data = {
+                k: v
+                for k, v in entry.data.items()
+                if k not in (CONF_MANUAL_UNIT, CONF_FLOW_IN_CIRCUIT)
+            }
             # The main counter identifies the boiler, also after a change;
             # readings by hand keep their id (and the stored readings).
             unique_id = (
@@ -792,6 +809,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     **data,
                     CONF_ENTITIES: entities,
                     **({CONF_MANUAL_UNIT: manual} if manual else {}),
+                    **circuit,
                 },
                 options={**options, **conversion},
             )
@@ -822,6 +840,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 **({CONF_FUEL: FUEL_OIL} if oil else {}),
                 CONF_ENTITIES: entities,
                 **({CONF_MANUAL_UNIT: manual} if manual else {}),
+                **circuit,
             },
             options=conversion,
         )

@@ -1338,6 +1338,10 @@ GAS_FIELDS = {
     "gas_dhw": ("Gas hot water", "Gas Warmwasser"),
     "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
+    "flow_in_circuit": (
+        "Flow sensor sits in the heating circuit (after buffer or mixing valve)",
+        "Vorlauffühler sitzt im Heizkreis (hinter Puffer oder Mischer)",
+    ),
     "manual_unit": ("Readings by hand", "Ablesung von Hand"),
     "calorific_value": ("Calorific value", "Brennwert"),
     "z_number": ("Z-number", "Zustandszahl"),
@@ -1360,8 +1364,12 @@ GAS_FIELD_HELP = {
         "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
     ),
     "flow_temp": (
-        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
-        "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow. A sensor in the heating circuit needs neither (box below).",
+        "Optional: Vorlauftemperatur der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn die Therme kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf. Ein Fühler im Heizkreis braucht beides nicht (Haken darunter).",
+    ),
+    "flow_in_circuit": (
+        "Tick it when the sensor measures the flow of the heating circuit, not the boiler outlet (e.g. after a buffer tank or a mixing valve). Then hot water charges do not affect it, and the flow needs no hot water counter: Wärmewacht takes the hours in which the circuit runs (flow at least 25 °C, days below 15 °C), not the burner hours.",
+        "Anhaken, wenn der Fühler den Vorlauf des Heizkreises misst, nicht den Kesselaustritt (z. B. hinter Pufferspeicher oder Mischer). Dann heben ihn Warmwasserladungen nicht, und der Vorlauf braucht keinen Warmwasser-Zähler: Wärmewacht nimmt die Stunden, in denen der Heizkreis läuft (Vorlauf ab 25 °C, Tage unter 15 °C), nicht die Brennerstunden.",
     ),
     "manual_unit": (
         'Instead of a counter: the unit of your gas meter. You enter its reading with the entity "Enter meter reading" or the action "Add meter reading (gas, oil)" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.',
@@ -1596,6 +1604,10 @@ OIL_FIELDS = {
     "gas_dhw": ("Oil hot water", "Öl Warmwasser"),
     "outdoor_temp": ("Outdoor temperature", "Außentemperatur"),
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
+    "flow_in_circuit": (
+        "Flow sensor sits in the heating circuit (after buffer or mixing valve)",
+        "Vorlauffühler sitzt im Heizkreis (hinter Puffer oder Mischer)",
+    ),
     "manual_unit": ("Readings by hand", "Ablesung von Hand"),
     "boiler_type": ("Boiler type", "Kesselart"),
     "boiler_efficiency": ("Custom efficiency (Hs)", "Eigener Nutzungsgrad (Hs)"),
@@ -1626,8 +1638,12 @@ OIL_FIELD_HELP = {
         "Mit Langzeitstatistik (Zustandsklasse measurement). Eine nahe Wetterstation ist in Ordnung.",
     ),
     "flow_temp": (
-        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
-        "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf.",
+        "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow. A sensor in the heating circuit needs neither (box below).",
+        "Optional: Vorlauftemperatur des Kessels oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse measurement). Ergibt den Vorlauf bei 0 °C und bei Normaußentemperatur – höchstens so viel müsste eine Wärmepumpe liefern. Nur mit Warmwasser-Zähler oder mit Heizen-Zähler, wenn der Kessel kein Warmwasser macht: Eine Warmwasserladung hebt den Vorlauf. Ein Fühler im Heizkreis braucht beides nicht (Haken darunter).",
+    ),
+    "flow_in_circuit": (
+        "Tick it when the sensor measures the flow of the heating circuit, not the boiler outlet (e.g. after a buffer tank or a mixing valve). Then hot water charges do not affect it, and the flow needs no hot water counter: Wärmewacht takes the hours in which the circuit runs (flow at least 25 °C, days below 15 °C), not the burner hours.",
+        "Anhaken, wenn der Fühler den Vorlauf des Heizkreises misst, nicht den Kesselaustritt (z. B. hinter Pufferspeicher oder Mischer). Dann heben ihn Warmwasserladungen nicht, und der Vorlauf braucht keinen Warmwasser-Zähler: Wärmewacht nimmt die Stunden, in denen der Heizkreis läuft (Vorlauf ab 25 °C, Tage unter 15 °C), nicht die Brennerstunden.",
     ),
     "manual_unit": (
         'Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity "Enter meter reading" or "Enter tank level", or the action "Add meter reading (gas, oil)". With the tank level, after filling up first "Enter refill", then the new level. Each period between two readings of 5 to 35 days is one point of the energy signature.',

@@ -10,6 +10,8 @@ import pytest
 
 from custom_components.waermewacht.gas import (
     COUNTER,
+    FLOW_BY_CIRCUIT,
+    FLOW_BY_HEAT,
     FLOW_NEEDS_DHW_COUNTER,
     HEATING_ONLY,
     NO_SUMMER_DAYS,
@@ -205,6 +207,7 @@ def test_flow_at_zero_and_at_design_temperature() -> None:
     )
     assert result.flow is not None
     assert result.flow_reason is None
+    assert result.flow_selection == FLOW_BY_HEAT
     assert result.flow.at_zero == pytest.approx(35.0, abs=0.01)
     assert result.flow.slope == pytest.approx(-0.8, abs=0.001)
     assert result.flow_at_design == pytest.approx(44.6, abs=0.01)
@@ -232,7 +235,101 @@ def test_flow_needs_the_hot_water_hours() -> None:
     result = analyse(TOTAL, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True, flow=FLOW)
     assert result.flow is None
     assert result.flow_reason == FLOW_NEEDS_DHW_COUNTER
+    assert result.flow_selection == FLOW_BY_HEAT
     # Without a flow entity: nothing, and no reason.
     plain = analyse(TOTAL, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True)
     assert plain.flow is None
     assert plain.flow_reason is None
+    assert plain.flow_selection is None
+    # The box alone (without a flow entity) changes nothing.
+    ticked = analyse(
+        TOTAL, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True, flow_in_circuit=True
+    )
+    assert ticked.flow is None
+    assert ticked.flow_selection is None
+
+
+def buffer_system() -> tuple[dict[datetime, float], dict[datetime, float]]:
+    """Gas boiler and solar thermal charge a buffer; the radiator circuit
+    runs from it through a mixing valve, the sensor sits after the mixer.
+
+    The burner fires only from 0 to 3 o'clock (buffer charge, hot water on
+    top), on every third day not at all (solar). The circuit runs from 6 to
+    22 o'clock on the heating curve (35 °C at 0 °C, 0.8 K per K), at night it
+    is off and the sensor at room level (20 °C); in summer it is off, and the
+    warm boiler room keeps the sensor at 27 °C. Hot water charges never
+    reach it."""
+    gas: dict[datetime, float] = {}
+    flow: dict[datetime, float] = {}
+    for hour, mean in OUTDOOR.items():
+        local = hour.astimezone(TZ)
+        solar = local.date().toordinal() % 3 == 0
+        gas[hour] = 0.0 if solar or local.hour >= 3 else 8.0
+        if mean >= LIMIT:
+            flow[hour] = 27.0
+        elif 6 <= local.hour < 22:
+            flow[hour] = 35.0 - 0.8 * mean
+        else:
+            flow[hour] = 20.0
+    return gas, flow
+
+
+def test_flow_sensor_in_the_heating_circuit() -> None:
+    """With the box the running circuit chooses the hours: no hot water
+    counter needed, burner hours and solar days do not matter."""
+    gas, flow = buffer_system()
+    old = analyse(gas, OUTDOOR, TZ, YEAR_START, END, includes_dhw=True, flow=flow)
+    assert old.flow is None
+    assert old.flow_reason == FLOW_NEEDS_DHW_COUNTER
+    result = analyse(
+        gas,
+        OUTDOOR,
+        TZ,
+        YEAR_START,
+        END,
+        includes_dhw=True,
+        design_temp=-12.0,
+        flow=flow,
+        flow_in_circuit=True,
+    )
+    assert result.flow_reason is None
+    assert result.flow_selection == FLOW_BY_CIRCUIT
+    assert result.flow is not None
+    assert result.flow.reasons == ()
+    assert result.flow.at_zero == pytest.approx(35.0, abs=0.01)
+    assert result.flow.slope == pytest.approx(-0.8, abs=0.001)
+    assert result.flow_at_design == pytest.approx(44.6, abs=0.01)
+    # Summer (warm boiler room) and the hours below 25 °C are left out.
+    assert max(d.mean_outdoor for d in result.flow.days) < LIMIT
+    # Solar days count as well (no gas that day).
+    solar = {d.day for d in result.flow.days if d.day.toordinal() % 3 == 0}
+    assert solar
+    # By the burner hours instead (a heating counter): the night flow of a
+    # circuit at rest, a wrong line.
+    by_gas = analyse(gas, OUTDOOR, TZ, YEAR_START, END, includes_dhw=False, flow=flow)
+    assert by_gas.flow is not None
+    assert by_gas.flow.at_zero != pytest.approx(35.0, abs=1.0)
+
+
+def test_flow_in_the_circuit_with_too_few_days() -> None:
+    gas, flow = buffer_system()
+    first = date(2026, 1, 10)
+    short = {
+        h: v
+        for h, v in flow.items()
+        if local_midnight(first, TZ) <= h < local_midnight(first + timedelta(10), TZ)
+    }
+    result = analyse(
+        gas,
+        OUTDOOR,
+        TZ,
+        YEAR_START,
+        END,
+        includes_dhw=True,
+        flow=short,
+        flow_in_circuit=True,
+    )
+    assert result.flow is not None
+    assert result.flow.at_zero is None
+    assert result.flow.reasons[0] == "too_few_days"
+    assert result.flow_reason is None

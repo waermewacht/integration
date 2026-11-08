@@ -43,6 +43,9 @@ SOURCE_OIL: Final = "oil"  # setup choice
 CONF_BOILER_TYPE: Final = "boiler_type"  # oil.BOILER_TYPES or oil.CUSTOM
 CONF_OIL_PRICE: Final = "oil_price"  # EUR per 100 l, gross
 CONF_KWH_PER_LITRE: Final = "kwh_per_litre"  # kWh (Hs) per litre of oil
+# Gas or oil: the flow sensor sits in the heating circuit (after a buffer or
+# a mixing valve), not at the boiler (data, only when set; gas.py).
+CONF_FLOW_IN_CIRCUIT: Final = "flow_in_circuit"
 
 # Options.
 CONF_MIN_ELECTRICITY: Final = "min_electricity"

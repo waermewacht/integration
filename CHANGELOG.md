@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Neu: „Vorlauffühler sitzt im Heizkreis (hinter Puffer oder Mischer)“ für Gas- und Ölheizungen.** Ein Haken in der Einrichtung und unter *Neu konfigurieren*, gleich unter der Vorlauftemperatur. Misst der Fühler den Vorlauf des Heizkreises statt des Kesselaustritts, heben ihn Warmwasserladungen nicht: „Vorlauf bei 0 °C“ braucht dann keinen Warmwasser-Zähler mehr (bisher unbekannt mit `flow_needs_dhw_counter`). Weil mit Pufferspeicher und Solarthermie Brenner und Heizkreis zu verschiedenen Zeiten laufen, zählen dann die Stunden, in denen der Heizkreis lief (Vorlauf im Stundenmittel ab 25 °C, an Tagen unter 15 °C draußen), alle gleich gewichtet, statt der Stunden mit Gas. Rückwirkend aus der Langzeitstatistik wie bisher. Neues Attribut `flow_selection` (`heating_circuit` oder `heating_heat`) an beiden Vorlauf-Sensoren; die Karte „Gas- und Ölheizung“ nennt beim fehlenden Warmwasser-Zähler jetzt auch den Haken. Ohne Haken bleibt alles wie bisher. Anlass: Rückmeldung aus dem simon42-Forum.
+
 ## 0.4.7 – 2026-11-08
 
 - **Neu: Strom aus eigener PV und Batterie in den Kosten.** In den Einstellungen unter „Kosten und Gasvergleich“ gibt es jetzt Netzbezug-, Einspeise-, PV- und Batteriezähler und die Einspeisevergütung. Mit dem Netzbezug-Zähler kostet Strom, den die Wärmepumpe nicht aus dem Netz nimmt, die Einspeisevergütung statt den Netzpreis – je Stunde aus der Langzeitstatistik, auch im Rückblick. Mit Einspeise- und PV-Zähler rechnet Wärmewacht anteilig (die Wärmepumpe bekommt den Netzanteil des ganzen Hauses), nur mit dem Netzbezug „Wärmepumpe zuerst“ (der Netzbezug der Stunde geht zuerst an die Wärmepumpe). Stunden ohne Statistik eines Zählers zählen als Netzstrom. Die Arbeitszahlen ändern sich nicht. Neue Attribute der Kosten-Sensoren: `allocation`, `grid_share`, `kwh_from_grid`, `kwh_own`, `hours_all_grid`. Die Haus-Formeln stammen aus Tarifwacht. Anlass: Rückmeldung aus dem simon42-Forum.

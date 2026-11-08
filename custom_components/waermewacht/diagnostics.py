@@ -119,11 +119,13 @@ def _gas_diagnostics(hass: HomeAssistant, entry: GasConfigEntry) -> dict[str, An
             if analysis.flow is None
             else flow_curve_as_dict(analysis.flow),
             "flow_reason": analysis.flow_reason,
+            "flow_selection": analysis.flow_selection,
         }
     return {
         "config": {
             "kind": "gas",
             "fuel": runtime.fuel,
+            "flow_in_circuit": runtime.flow_in_circuit,
             "entities": {k: mask(v) for k, v in configured.items()},
             "options": dict(entry.options),
         },

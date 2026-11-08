@@ -112,15 +112,19 @@ def _cost_attributes(runtime: GasRuntime, analysis: GasAnalysis) -> dict[str, An
 
 
 def _flow_attributes(runtime: GasRuntime, analysis: GasAnalysis) -> dict[str, Any]:
+    method = {
+        "dhw_method": analysis.split.method,
+        "flow_selection": analysis.flow_selection,
+    }
     if analysis.flow is None:
-        return {"dhw_method": analysis.split.method}
+        return method
     figures = flow_curve_as_dict(analysis.flow)
     figures.pop("at_zero")
     days = analysis.flow.days
     return {
         **figures,
         "coldest_day": _round(min(d.mean_outdoor for d in days), 1) if days else None,
-        "dhw_method": analysis.split.method,
+        **method,
     }
 
 

@@ -264,6 +264,7 @@ Wer noch mit Gas heizt und über eine Wärmepumpe nachdenkt, braucht vor allem d
 | Gas Warmwasser | optional, wenn Warmwasser getrennt gezählt wird |
 | Außentemperatur | Pflicht, mit Langzeitstatistik; eine nahe Wetterstation genügt |
 | Vorlauftemperatur | optional: Vorlauf der Therme oder des Heizkreises, mit Langzeitstatistik (Zustandsklasse `measurement`) |
+| Vorlauffühler sitzt im Heizkreis | anhaken, wenn der Fühler den Vorlauf des Heizkreises misst (hinter Pufferspeicher oder Mischer), nicht den Kesselaustritt, siehe **Vorlauf** unten |
 | Ablesung von Hand | statt eines Zählers: Einheit deines Gaszählers (m³ oder kWh), siehe [Ablesung von Hand](#ablesung-von-hand) |
 | Brennwert, Zustandszahl | nur für Zähler in m³, aus der Gasrechnung (kWh = m³ × Brennwert × Zustandszahl) |
 
@@ -287,7 +288,7 @@ Die Zähler brauchen eine Langzeitstatistik (Zustandsklasse `total` oder `total_
 | Warmwasseranteil | % | Anteil des Gases für Warmwasser. Attribute `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
 | Gas 365 Tage | kWh | Gas der letzten 365 Tage. Attribute `days` (Tage mit Daten), `complete`, `heat_kwh` (Wärme nach Nutzungsgrad) |
 | Gaskosten 365 Tage | € | nur mit Gaspreis in den Einstellungen; mit Grundpreis |
-| Vorlauf bei 0 °C | °C | nur mit Vorlauftemperatur: Vorlauf, den die Heizung bei 0 °C Tagesmittel fährt. Attribute `slope` (K Vorlauf je K Außentemperatur), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method` |
+| Vorlauf bei 0 °C | °C | nur mit Vorlauftemperatur: Vorlauf, den die Heizung bei 0 °C Tagesmittel fährt. Attribute `slope` (K Vorlauf je K Außentemperatur), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method`, `flow_selection` (`heating_heat`: Stunden mit Heizwärme, `heating_circuit`: Stunden, in denen der Heizkreis lief) |
 | Vorlauf bei Normaußentemperatur | °C | dazu die Einstellung Normaußentemperatur: die Gerade bis dorthin verlängert, Attribut `design_temp` |
 
 ### Ablesung von Hand
@@ -311,7 +312,11 @@ Für eine Ölheizung wählst du bei der Einrichtung **Ölheizung (vor dem Umstie
 
 Die Sensoren heißen bei Öl „Heizöl 365 Tage“ (mit Attribut `litres`) und „Ölkosten 365 Tage“, alle anderen wie beim Gas. Einen Tankstand-Sensor (Ultraschall, OilFox-Füllstand) wertet Wärmewacht noch nicht aus; ein Verbrauchszähler in kWh oder Litern geht schon.
 
-**Vorlauf:** Neben der Heizlast ist die zweite Frage vor dem Umstieg, ob die Heizkörper mit niedrigem Vorlauf auskommen. Wärmewacht legt dafür wie bei der Wärmepumpe ([Vorlauf bei 0 °C](#kennlinie-und-heizlast)) eine Gerade durch die Tage: Stunden mit Heizwärme und ohne Warmwasser, Vorlauf gewichtet mit der Wärme, gegen das Tagesmittel draußen. Es braucht mindestens 14 Tage, die zusammen 6 K auseinanderliegen. Eine Warmwasserladung hebt den Vorlauf der Therme deutlich über den der Heizung, deshalb rechnet Wärmewacht den Vorlauf nur mit einem eigenen Warmwasser-Zähler oder mit „Gas nur Heizen“ ohne Warmwasser (macht die Therme doch Warmwasser, trag den Warmwasser-Zähler ein). Mit dem Sommersockel bleibt er unbekannt (`flow_needs_dhw_counter`). Gasthermen laufen oft mit einer steileren Heizkurve als nötig: Der Wert ist eine **Obergrenze** dessen, was eine Wärmepumpe liefern müsste, kein Urteil. Ob es mit weniger geht, zeigt erst ein Versuch mit abgesenkter Heizkurve an kalten Tagen.
+**Vorlauf:** Neben der Heizlast ist die zweite Frage vor dem Umstieg, ob die Heizkörper mit niedrigem Vorlauf auskommen. Wärmewacht legt dafür wie bei der Wärmepumpe ([Vorlauf bei 0 °C](#kennlinie-und-heizlast)) eine Gerade durch die Tage: Stunden mit Heizwärme und ohne Warmwasser, Vorlauf gewichtet mit der Wärme, gegen das Tagesmittel draußen. Es braucht mindestens 14 Tage, die zusammen 6 K auseinanderliegen. Eine Warmwasserladung hebt den Vorlauf der Therme deutlich über den der Heizung, deshalb rechnet Wärmewacht den Vorlauf nur mit einem eigenen Warmwasser-Zähler oder mit „Gas nur Heizen“ ohne Warmwasser (macht die Therme doch Warmwasser, trag den Warmwasser-Zähler ein). Mit dem Sommersockel bleibt er unbekannt (`flow_needs_dhw_counter`).
+
+Sitzt der Fühler im **Heizkreis** (hinter Pufferspeicher oder Mischer) statt am Kesselaustritt, hak **„Vorlauffühler sitzt im Heizkreis“** an. Warmwasserladungen erreichen ihn dann nicht, ein Warmwasser-Zähler ist nicht nötig. Mit Puffer und Solarthermie laufen Brenner und Heizkreis außerdem zu verschiedenen Zeiten (der Heizkreis zieht aus dem Puffer, Solar heizt ohne Gas). Wärmewacht nimmt deshalb nicht die Stunden mit Gas, sondern die, in denen der Heizkreis lief: Stundenmittel des Vorlaufs mindestens **25 °C** (deutlich über Raum- und Stillstandstemperatur, eigene Annahme), an Tagen mit einem Tagesmittel draußen unter **15 °C** (Heizgrenze nach VDI 3807; ein im Sommer abgeschalteter Heizkreis kann einen warmen Heizungsraum messen). Alle diese Stunden zählen gleich, die übrigen Regeln (mindestens 2 Stunden je Tag, 14 Tage, 6 K) bleiben. Das Attribut `flow_selection` zeigt, wie gewählt wurde (`heating_circuit` oder `heating_heat`).
+
+Gasthermen laufen oft mit einer steileren Heizkurve als nötig: Der Wert ist eine **Obergrenze** dessen, was eine Wärmepumpe liefern müsste, kein Urteil. Ob es mit weniger geht, zeigt erst ein Versuch mit abgesenkter Heizkurve an kalten Tagen.
 
 Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, beim Vorlauf `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, bei der Ablesung von Hand `too_few_periods`, sonst die Gründe der Energiesignatur). Die Aktion [Heizlast](#heizlast) geht auch für eine Gas- oder Ölheizung, vorgegeben sind dann die letzten 365 Tage. Alles auf einen Blick zeigt die Karte **Wärmewacht Gas- und Ölheizung** (`custom:waermewacht-boiler-card`, siehe [Karten](#karten)). Das Diagramm oben ist die Karte aus den [Dashboard-Beispielen](#az-kennlinie-und-energiesignatur), mit dem Sensor „Heizlast je Kelvin“ des Gas-Eintrags.
 
@@ -323,7 +328,7 @@ Ist ein Wert unbekannt, nennt das Attribut `reason` den Grund (`not_analysed_yet
 - **Solarthermie** (Warmwasser oder Heizungsunterstützung) liefert Wärme, die kein Gaszähler sieht:
   - Im Sommer deckt sie oft das Warmwasser. Der Sommersockel und damit der Warmwasseranteil fallen zu niedrig aus.
   - Mit Heizungsunterstützung senkt sie das Gas in sonnigen Wochen. Wie sich die Gerade dadurch verschiebt, hängt davon ab, wann die Anlage liefert: vor allem in milden Wochen der Übergangszeit wird sie steiler (Heizlast eher zu hoch, Heizgrenze zu niedrig), an sonnigen Frosttagen flacher (Heizlast zu niedrig). Ein Wärmemengenzähler am Solarkreis würde das klären; Wärmewacht wertet ihn noch nicht aus.
-  - Der Vorlauf eines Heizkreises hinter dem Pufferspeicher wird von Warmwasserladungen nicht gehoben. Mit „Gas gesamt“ ohne Warmwasser-Zähler bleibt er trotzdem unbekannt (`flow_needs_dhw_counter`), weil Wärmewacht die Lage des Fühlers nicht kennt.
+  - Der Vorlauf eines Heizkreises hinter dem Pufferspeicher wird von Warmwasserladungen nicht gehoben. Steht beim Vorlauf `flow_needs_dhw_counter`, obwohl der Fühler im Heizkreis sitzt: unter *Neu konfigurieren* **„Vorlauffühler sitzt im Heizkreis“** anhaken. Dann zählen die Stunden, in denen der Heizkreis lief, nicht die mit Gas.
 
 ## Entitäten
 

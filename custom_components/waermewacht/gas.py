@@ -31,6 +31,11 @@ Rules:
   above the heating's, so the hours with hot water must be known: only with a hot
   water counter or a heating counter without hot water ("heating_only");
   with the summer base every hour has a share ("flow_needs_dhw_counter").
+  Unless the sensor sits in the heating circuit (after a buffer or a mixing
+  valve, `flow_in_circuit`): hot water charges do not reach it, and with a
+  buffer or solar thermal the gas hours are not the heating hours, so the
+  hours are chosen by the running circuit instead
+  (heating_curve.circuit_flow_curve, "flow_selection" "heating_circuit").
   Boilers often run a steeper curve than the house needs, so the figure is
   an upper bound for the flow a heat pump would need, not a verdict.
 """
@@ -47,7 +52,7 @@ from .curve import MIN_DAY_HOURS, daily_samples
 from .degree_days import G20_15, DegreeDays, degree_days
 from .energy import Kind, Totals
 from .heat_load import HeatLoad, heat_load
-from .heating_curve import FlowCurve, flow_curve
+from .heating_curve import FlowCurve, circuit_flow_curve, flow_curve
 from .model import Mode
 from .periods import local_midnight
 
@@ -61,6 +66,9 @@ SUMMER_BASE = "summer_base"
 NO_SUMMER_DAYS = "no_summer_days"
 HEATING_ONLY = "heating_only"
 FLOW_NEEDS_DHW_COUNTER = "flow_needs_dhw_counter"
+# How the hours of the flow analysis are chosen.
+FLOW_BY_HEAT = "heating_heat"  # hours with heating gas and no hot water
+FLOW_BY_CIRCUIT = "heating_circuit"  # hours the heating circuit ran
 
 
 @dataclass
@@ -192,6 +200,7 @@ class GasAnalysis:
     # or with `flow_reason` (hot water not separable).
     flow: FlowCurve | None = None
     flow_reason: str | None = None
+    flow_selection: str | None = None  # FLOW_BY_*, None without a flow entity
 
     @property
     def flow_at_design(self) -> float | None:
@@ -229,12 +238,14 @@ def analyse(
     gas_price: float | None = None,
     gas_base_price: float | None = None,
     flow: Mapping[datetime, float] | None = None,
+    flow_in_circuit: bool = False,
 ) -> GasAnalysis:
     """Heat load, degree days, hot water share and gas of [start, end).
 
     `gas`, `dhw`, `outdoor` and `flow` (hourly mean flow temperature) are
     keyed by UTC hour starts; only hours of the window count. Prices in
-    €/kWh (Hs) and € per year.
+    €/kWh (Hs) and € per year. `flow_in_circuit`: the flow sensor sits in
+    the heating circuit, not at the boiler.
     """
     first, last = local_midnight(start, tz), local_midnight(end, tz)
 
@@ -260,9 +271,12 @@ def analyse(
             base = base_price_share(gas_base_price, first, last, tz)
             cost += base
     reasons = [] if split.dhw_known or split.method == HEATING_ONLY else [split.method]
-    curve, flow_reason = None, None
+    curve, flow_reason, selection = None, None, None
     if flow is not None:
-        if split.method in (COUNTER, HEATING_ONLY):
+        selection = FLOW_BY_CIRCUIT if flow_in_circuit else FLOW_BY_HEAT
+        if flow_in_circuit:
+            curve = circuit_flow_curve(inside(flow), outdoor_in, tz)
+        elif split.method in (COUNTER, HEATING_ONLY):
             curve = flow_curve(hours, inside(flow), outdoor_in, tz)
         else:
             flow_reason = FLOW_NEEDS_DHW_COUNTER
@@ -283,4 +297,5 @@ def analyse(
         design_temp=design_temp,
         flow=curve,
         flow_reason=flow_reason,
+        flow_selection=selection,
     )

@@ -28,6 +28,7 @@ from custom_components.waermewacht.const import (
     CONF_CALORIFIC_VALUE,
     CONF_DESIGN_TEMP,
     CONF_ENTITIES,
+    CONF_FLOW_IN_CIRCUIT,
     CONF_GAS_PRICE,
     CONF_KIND,
     CONF_NAME,
@@ -419,12 +420,8 @@ async def test_gas_reconfigure_keeps_prices(hass: HomeAssistant) -> None:
 FLOW = "sensor.boiler_flow"
 
 
-@pytest.mark.freeze_time(NOW)
-async def test_gas_boiler_flow_temperature(hass: HomeAssistant) -> None:
-    """A heating counter and the boiler's flow: the flow at 0 °C and at the
-    design temperature from the heating curve (35 °C - 0.8 K per K)."""
-    await hass.config.async_set_time_zone("Europe/Berlin")
-    import_statistics(hass)
+def import_flow_statistics(hass: HomeAssistant) -> None:
+    """The winter weeks on the heating curve 35 °C - 0.8 K per K."""
     tz = dt_util.get_default_time_zone()
     rows = []
     for day, mean in WINTER:
@@ -449,6 +446,15 @@ async def test_gas_boiler_flow_temperature(hass: HomeAssistant) -> None:
         ),
         rows,
     )
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_boiler_flow_temperature(hass: HomeAssistant) -> None:
+    """A heating counter and the boiler's flow: the flow at 0 °C and at the
+    design temperature from the heating curve (35 °C - 0.8 K per K)."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    import_statistics(hass)
+    import_flow_statistics(hass)
     await async_wait_recording_done(hass)
     hass.states.async_set(GAS, "1234.5", VOLUME)
     hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
@@ -480,9 +486,75 @@ async def test_gas_boiler_flow_temperature(hass: HomeAssistant) -> None:
     assert at_zero.attributes["days"] == 63
     assert at_zero.attributes["coldest_day"] == pytest.approx(-6.0)
     assert at_zero.attributes["dhw_method"] == "heating_only"
+    assert at_zero.attributes["flow_selection"] == "heating_heat"
     design = state(hass, entry, "gas_flow_at_design")
     assert float(design.state) == pytest.approx(44.6, abs=0.1)
     assert design.attributes["design_temp"] == -12.0
+    assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_gas_flow_sensor_in_the_heating_circuit(hass: HomeAssistant) -> None:
+    """The box in the form: a total counter without a hot water counter
+    still gives the flow, from the hours the circuit ran; unticked again
+    under Reconfigure, the flow needs the hot water counter."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    import_statistics(hass)
+    import_flow_statistics(hass)
+    await async_wait_recording_done(hass)
+    hass.states.async_set(GAS, "1234.5", VOLUME)
+    hass.states.async_set(OUTDOOR, "3.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "38.0", {**TEMPERATURE, "state_class": "measurement"})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Gas", "source": "gas"}
+    )
+    assert result["step_id"] == "gas"
+    assert CONF_FLOW_IN_CIRCUIT in result["data_schema"].schema
+    form = {
+        "gas_total": GAS,
+        "outdoor_temp": OUTDOOR,
+        "flow_temp": FLOW,
+        CONF_CALORIFIC_VALUE: HS,
+        CONF_Z_NUMBER: 1.0,
+    }
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**form, CONF_FLOW_IN_CIRCUIT: True}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_FLOW_IN_CIRCUIT] is True
+    entry = result["result"]
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    at_zero = state(hass, entry, "gas_flow_at_zero")
+    assert float(at_zero.state) == pytest.approx(35.0, abs=0.1)
+    assert at_zero.attributes["reason"] is None
+    assert at_zero.attributes["flow_selection"] == "heating_circuit"
+    assert at_zero.attributes["dhw_method"] == "summer_base"
+    assert at_zero.attributes["days"] == 63
+
+    # Reconfigure shows the box ticked; unticked, the old rule applies.
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["step_id"] == "gas"
+    schema = result["data_schema"].schema
+    (key,) = (k for k in schema if k == CONF_FLOW_IN_CIRCUIT)
+    assert key.default() is True
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**form, CONF_FLOW_IN_CIRCUIT: False}
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert CONF_FLOW_IN_CIRCUIT not in entry.data
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    at_zero = state(hass, entry, "gas_flow_at_zero")
+    assert at_zero.state == "unknown"
+    assert at_zero.attributes["reason"] == "flow_needs_dhw_counter"
+    assert at_zero.attributes["flow_selection"] == "heating_heat"
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 

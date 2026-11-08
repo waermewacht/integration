@@ -187,6 +187,7 @@
           "gas_dhw": "Gas hot water",
           "outdoor_temp": "Outdoor temperature",
           "flow_temp": "Flow temperature",
+          "flow_in_circuit": "Flow sensor sits in the heating circuit (after buffer or mixing valve)",
           "manual_unit": "Readings by hand",
           "calorific_value": "Calorific value",
           "z_number": "Z-number"
@@ -196,7 +197,8 @@
           "gas_heating": "Only if the boiler counts heating and hot water apart (e.g. Viessmann ViCare); then add the hot water counter as well. Leave \"Gas total\" empty.",
           "gas_dhw": "Optional: gas for hot water, if counted apart.",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
-          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow. A sensor in the heating circuit needs neither (box below).",
+          "flow_in_circuit": "Tick it when the sensor measures the flow of the heating circuit, not the boiler outlet (e.g. after a buffer tank or a mixing valve). Then hot water charges do not affect it, and the flow needs no hot water counter: Wärmewacht takes the hours in which the circuit runs (flow at least 25 °C, days below 15 °C), not the burner hours.",
           "manual_unit": "Instead of a counter: the unit of your gas meter. You enter its reading with the entity \"Enter meter reading\" or the action \"Add meter reading (gas, oil)\" (also for older readings, e.g. from bills). Each period between two readings of 5 to 35 days is one point of the energy signature.",
           "calorific_value": "Only for counters in m³: from the gas bill (kWh per m³, gross calorific value Hs).",
           "z_number": "Only for counters in m³: from the gas bill (Zustandszahl)."
@@ -211,6 +213,7 @@
           "gas_dhw": "Oil hot water",
           "outdoor_temp": "Outdoor temperature",
           "flow_temp": "Flow temperature",
+          "flow_in_circuit": "Flow sensor sits in the heating circuit (after buffer or mixing valve)",
           "manual_unit": "Readings by hand",
           "boiler_type": "Boiler type",
           "boiler_efficiency": "Custom efficiency (Hs)"
@@ -220,7 +223,8 @@
           "gas_heating": "Only if the boiler counts heating and hot water apart; then add the hot water counter as well. Leave \"Oil total\" empty.",
           "gas_dhw": "Optional: oil for hot water, if counted apart (EMS-ESP: boiler_dhw_gasmeter, in HA usually …boiler_dhw_gas_meter).",
           "outdoor_temp": "With long-term statistics (state class measurement). A nearby weather station is fine.",
-          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow.",
+          "flow_temp": "Optional: the flow temperature of the boiler or the heating circuit, with long-term statistics (state class measurement). Gives the flow at 0 °C and at the design temperature – what a heat pump would have to deliver at most. Only with a hot water counter, or with a heating counter if the boiler makes no hot water: a hot water charge lifts the flow. A sensor in the heating circuit needs neither (box below).",
+          "flow_in_circuit": "Tick it when the sensor measures the flow of the heating circuit, not the boiler outlet (e.g. after a buffer tank or a mixing valve). Then hot water charges do not affect it, and the flow needs no hot water counter: Wärmewacht takes the hours in which the circuit runs (flow at least 25 °C, days below 15 °C), not the burner hours.",
           "manual_unit": "Instead of a counter: an oil meter (litres, counts up), the tank level (litres, counts down) or a counter in kWh. You enter it with the entity \"Enter meter reading\" or \"Enter tank level\", or the action \"Add meter reading (gas, oil)\". With the tank level, after filling up first \"Enter refill\", then the new level. Each period between two readings of 5 to 35 days is one point of the energy signature.",
           "boiler_type": "Gives the efficiency on the gross calorific value: condensing 0.87, low temperature 0.79, constant temperature (mostly before 1990) 0.70, derived from the expenditure factors of DIN V 4701-10 (IWU 2005). The heat load changes in proportion.",
           "boiler_efficiency": "Only for \"Custom value\": the share of the oil that becomes heat, on the gross calorific value."

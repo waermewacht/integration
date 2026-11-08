@@ -9,8 +9,11 @@ import pytest
 
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.heating_curve import (
+    CIRCUIT_MIN_FLOW,
     SPREAD_TOO_SMALL,
     TOO_FEW_DAYS,
+    circuit_flow_curve,
+    circuit_flow_days,
     flow_curve,
     flow_days,
 )
@@ -74,3 +77,41 @@ def test_unknown_with_reasons() -> None:
     result = flow_curve(*build(days(10, 2.0, 4.0)), BERLIN)
     assert result.at_zero is None
     assert result.reasons == (TOO_FEW_DAYS, SPREAD_TOO_SMALL)
+
+
+# A sensor in the heating circuit: hours by the running circuit, not by heat.
+
+
+def test_circuit_hours_need_no_heat_and_weigh_the_same() -> None:
+    _, flow, outdoor = build({date(2026, 11, 2): 5.0})
+    hours = list(flow)
+    for n, hour in enumerate(hours):
+        # Circuit off at night (sensor at room level), two levels by day.
+        flow[hour] = 20.0 if n < 6 else (30.0 if n % 2 else 40.0)
+    (day,) = circuit_flow_days(flow, outdoor, BERLIN)
+    assert day.flow == pytest.approx(35.0)
+
+
+def test_circuit_leaves_out_days_above_the_heating_limit() -> None:
+    """A circuit off in summer can read a warm boiler room above 25 °C."""
+    _, flow, outdoor = build({date(2026, 7, 1): 15.0, date(2026, 7, 2): 14.9})
+    for hour in flow:
+        flow[hour] = 28.0
+    assert [d.day for d in circuit_flow_days(flow, outdoor, BERLIN)] == [
+        date(2026, 7, 2)
+    ]
+
+
+def test_circuit_curve_and_reasons() -> None:
+    _, flow, outdoor = build(days(20, -4.0, 10.0))
+    result = circuit_flow_curve(flow, outdoor, BERLIN)
+    assert result.at_zero == pytest.approx(35.0)
+    assert result.slope == pytest.approx(-0.5)
+    _, flow, outdoor = build(days(10, 2.0, 4.0))
+    assert circuit_flow_curve(flow, outdoor, BERLIN).reasons == (
+        TOO_FEW_DAYS,
+        SPREAD_TOO_SMALL,
+    )
+    # Below CIRCUIT_MIN_FLOW the circuit counts as off.
+    _, flow, outdoor = build(days(20, -4.0, 10.0), curve=lambda t: CIRCUIT_MIN_FLOW - 1)
+    assert circuit_flow_curve(flow, outdoor, BERLIN).days == ()

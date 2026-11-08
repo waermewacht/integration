@@ -20,6 +20,16 @@ From the long-term statistics, hour by hour:
 The hourly flow mean includes the pauses of a run within the hour, so the
 figure is a little below the set curve; it compares like with like between
 seasons of the same installation.
+
+A sensor in the heating circuit (after a buffer or a mixing valve, gas mode
+option "flow_in_circuit") needs no heat per hour: hot water charges do not
+reach it, and with a buffer or solar thermal the burner hours are not the
+heating hours. Then an hour counts when the circuit ran by its flow alone
+(circuit_flow_curve): an hourly mean of at least CIRCUIT_MIN_FLOW, clearly
+above room and standby level (own assumption), on a day below the heating
+limit CIRCUIT_DAY_BELOW (G20/15 of VDI 3807: a circuit off in summer can
+read a warm boiler room). All such hours weigh the same; the other rules
+are the same.
 """
 
 from __future__ import annotations
@@ -30,6 +40,7 @@ from datetime import date, datetime, tzinfo
 from typing import Any
 
 from .curve import daily_samples
+from .degree_days import G20_15
 from .energy import Kind, Totals
 from .heat_load import fit_line
 from .model import Mode
@@ -41,6 +52,10 @@ MIN_SPREAD = 6.0  # K between the coldest and warmest counted day
 AT_OUTDOOR = 0.0  # °C, where the figure is read off the line
 FLOW_MIN = 10.0  # °C, plausible hourly flow means
 FLOW_MAX = 80.0
+# Heating circuit sensor: the circuit ran in an hour with at least this mean
+# flow (own assumption), on a day with a lower outdoor mean than this.
+CIRCUIT_MIN_FLOW = 25.0
+CIRCUIT_DAY_BELOW = G20_15.limit
 
 TOO_FEW_DAYS = "too_few_days"
 SPREAD_TOO_SMALL = "spread_too_small"
@@ -73,6 +88,52 @@ def _counts(totals: Totals) -> bool:
     )
 
 
+def heating_weights(hours: Mapping[datetime, Totals]) -> dict[datetime, float]:
+    """Heating heat of the hours that count (enough of it, nothing else)."""
+    return {
+        hour: totals.get(Kind.HEAT, Mode.HEATING)
+        for hour, totals in hours.items()
+        if _counts(totals)
+    }
+
+
+def circuit_weights(flow: Mapping[datetime, float]) -> dict[datetime, float]:
+    """Hours the heating circuit ran, by its flow alone; all weigh the same."""
+    return {hour: 1.0 for hour, value in flow.items() if value >= CIRCUIT_MIN_FLOW}
+
+
+def _weighted_days(
+    weights: Mapping[datetime, float],
+    flow: Mapping[datetime, float],
+    outdoor: Mapping[datetime, float],
+    tz: tzinfo,
+    below: float | None = None,
+) -> list[FlowDay]:
+    """Days with enough counted hours (and a mean below `below`)."""
+    weighted: dict[date, list[tuple[float, float]]] = {}
+    for hour, weight in weights.items():
+        value = flow.get(hour)
+        if value is None or not FLOW_MIN <= value <= FLOW_MAX:
+            continue
+        weighted.setdefault(hour.astimezone(tz).date(), []).append((value, weight))
+    result = []
+    for sample in daily_samples({}, outdoor, tz):
+        rows = weighted.get(sample.day, [])
+        if len(rows) < MIN_HOURS_PER_DAY:
+            continue
+        if below is not None and sample.mean_outdoor >= below:
+            continue
+        total = sum(w for _, w in rows)
+        result.append(
+            FlowDay(
+                day=sample.day,
+                mean_outdoor=sample.mean_outdoor,
+                flow=sum(v * w for v, w in rows) / total,
+            )
+        )
+    return result
+
+
 def flow_days(
     hours: Mapping[datetime, Totals],
     flow: Mapping[datetime, float],
@@ -80,27 +141,16 @@ def flow_days(
     tz: tzinfo,
 ) -> list[FlowDay]:
     """Days with enough heating-only hours, with their outdoor mean."""
-    weighted: dict[date, list[tuple[float, float]]] = {}
-    for hour, totals in hours.items():
-        value = flow.get(hour)
-        if value is None or not FLOW_MIN <= value <= FLOW_MAX or not _counts(totals):
-            continue
-        heat = totals.get(Kind.HEAT, Mode.HEATING)
-        weighted.setdefault(hour.astimezone(tz).date(), []).append((value, heat))
-    result = []
-    for sample in daily_samples({}, outdoor, tz):
-        rows = weighted.get(sample.day, [])
-        if len(rows) < MIN_HOURS_PER_DAY:
-            continue
-        heat = sum(h for _, h in rows)
-        result.append(
-            FlowDay(
-                day=sample.day,
-                mean_outdoor=sample.mean_outdoor,
-                flow=sum(v * h for v, h in rows) / heat,
-            )
-        )
-    return result
+    return _weighted_days(heating_weights(hours), flow, outdoor, tz)
+
+
+def circuit_flow_days(
+    flow: Mapping[datetime, float], outdoor: Mapping[datetime, float], tz: tzinfo
+) -> list[FlowDay]:
+    """Days below the heating limit with enough hours of a running circuit."""
+    return _weighted_days(
+        circuit_weights(flow), flow, outdoor, tz, below=CIRCUIT_DAY_BELOW
+    )
 
 
 def flow_curve(
@@ -109,7 +159,18 @@ def flow_curve(
     outdoor: Mapping[datetime, float],
     tz: tzinfo,
 ) -> FlowCurve:
-    days = flow_days(hours, flow, outdoor, tz)
+    """The curve from the heating-only hours, weighted with their heat."""
+    return _curve(flow_days(hours, flow, outdoor, tz))
+
+
+def circuit_flow_curve(
+    flow: Mapping[datetime, float], outdoor: Mapping[datetime, float], tz: tzinfo
+) -> FlowCurve:
+    """The curve of a sensor in the heating circuit, from its running hours."""
+    return _curve(circuit_flow_days(flow, outdoor, tz))
+
+
+def _curve(days: list[FlowDay]) -> FlowCurve:
     temps = [d.mean_outdoor for d in days]
     spread = max(temps) - min(temps) if temps else None
     reasons = []

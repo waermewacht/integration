@@ -264,6 +264,7 @@ If you still heat with gas and think about a heat pump, the key figure is the **
 | Gas hot water | optional, if hot water is counted apart |
 | Outdoor temperature | required, with long-term statistics; a nearby weather station is fine |
 | Flow temperature | optional: flow of the boiler or of the heating circuit, with long-term statistics (state class `measurement`) |
+| Flow sensor sits in the heating circuit | tick it when the sensor measures the flow of the heating circuit (after a buffer tank or mixing valve), not the boiler outlet, see **Flow temperature** below |
 | Readings by hand | instead of a counter: the unit of your gas meter (m³ or kWh), see [Readings by hand](#readings-by-hand) |
 | Calorific value, Z-number | only for counters in m³, from the gas bill (kWh = m³ × calorific value × Z-number) |
 
@@ -287,7 +288,7 @@ The counters need long-term statistics (state class `total` or `total_increasing
 | Hot water share | % | share of the gas for hot water. Attributes `method` (`counter`, `summer_base`, `no_summer_days`, `heating_only`), `summer_days`, `summer_base_kwh_per_day` |
 | Gas 365 days | kWh | gas of the last 365 days. Attributes `days` (days with data), `complete`, `heat_kwh` (heat after efficiency) |
 | Gas cost 365 days | € | only with a gas price in the settings; with base price |
-| Flow temperature at 0 °C | °C | only with the flow temperature: the flow the heating runs at a daily mean of 0 °C. Attributes `slope` (K flow per K outdoor), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method` |
+| Flow temperature at 0 °C | °C | only with the flow temperature: the flow the heating runs at a daily mean of 0 °C. Attributes `slope` (K flow per K outdoor), `r_squared`, `days`, `spread`, `coldest_day`, `dhw_method`, `flow_selection` (`heating_heat`: hours with heating heat, `heating_circuit`: hours the heating circuit ran) |
 | Flow temperature at design temperature | °C | with the design outdoor temperature set as well: the line extended to it, attribute `design_temp` |
 
 ### Readings by hand
@@ -311,7 +312,11 @@ For an oil boiler, choose **Oil boiler (before switching)** in the setup. It is 
 
 For oil the sensors are named "Heating oil 365 days" (with the attribute `litres`) and "Oil cost 365 days", all others as for gas. Wärmewacht does not evaluate a tank level sensor (ultrasonic, OilFox level) yet; a consumption counter in kWh or litres already works.
 
-**Flow temperature:** Besides the heat load, the second question before switching is whether the radiators manage with a low flow temperature. As for the heat pump ([flow temperature at 0 °C](#performance-curve-and-heat-load)), Wärmewacht fits a line through the days: hours with heating heat and no hot water, the flow weighted with the heat, against the daily outdoor mean. It needs at least 14 days spanning 6 K. A hot water charge lifts the boiler's flow well above that of the heating, so Wärmewacht computes the flow only with a hot water counter of its own or with "Gas heating only" without hot water (if the boiler does make hot water, add the hot water counter). With the summer base it stays unknown (`flow_needs_dhw_counter`). Gas boilers often run a steeper heating curve than needed: the value is an **upper bound** of what a heat pump would have to deliver, not a verdict. Whether less will do only shows in a trial with a lowered heating curve on cold days.
+**Flow temperature:** Besides the heat load, the second question before switching is whether the radiators manage with a low flow temperature. As for the heat pump ([flow temperature at 0 °C](#performance-curve-and-heat-load)), Wärmewacht fits a line through the days: hours with heating heat and no hot water, the flow weighted with the heat, against the daily outdoor mean. It needs at least 14 days spanning 6 K. A hot water charge lifts the boiler's flow well above that of the heating, so Wärmewacht computes the flow only with a hot water counter of its own or with "Gas heating only" without hot water (if the boiler does make hot water, add the hot water counter). With the summer base it stays unknown (`flow_needs_dhw_counter`).
+
+If the sensor sits in the **heating circuit** (after a buffer tank or mixing valve) rather than at the boiler outlet, tick **"Flow sensor sits in the heating circuit"**. Hot water charges then do not reach it, and no hot water counter is needed. With a buffer and solar thermal the burner and the heating circuit also run at different times (the circuit draws from the buffer, solar heats without gas). So Wärmewacht takes not the hours with gas but those in which the heating circuit ran: an hourly mean flow of at least **25 °C** (clearly above room and standby temperature, own assumption), on days with a daily outdoor mean below **15 °C** (heating limit of VDI 3807; a circuit switched off in summer can read a warm boiler room). All these hours count the same; the other rules (at least 2 hours a day, 14 days, 6 K) stay. The attribute `flow_selection` shows how the hours were chosen (`heating_circuit` or `heating_heat`).
+
+Gas boilers often run a steeper heating curve than needed: the value is an **upper bound** of what a heat pump would have to deliver, not a verdict. Whether less will do only shows in a trial with a lowered heating curve on cold days.
 
 If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_recorder`, `gas_unit`, `no_calorific_value`, for the flow `flow_needs_dhw_counter`, `too_few_days`, `spread_too_small`, with readings by hand `too_few_periods`, otherwise the reasons of the energy signature). The action [Heat load](#heat-load) works for a gas or oil boiler too; it then defaults to the last 365 days. Everything at a glance shows the card **Wärmewacht Gas and oil boiler** (`custom:waermewacht-boiler-card`, see [Cards](#cards)). The chart above is the card from the [dashboard examples](#performance-curve-and-energy-signature), with the sensor "Heat load per kelvin" of the gas entry.
 
@@ -323,7 +328,7 @@ If a value is unknown, the attribute `reason` says why (`not_analysed_yet`, `no_
 - **Solar thermal** (hot water or space heating support) delivers heat no gas meter sees:
   - In summer it often covers the hot water. The summer base, and with it the hot water share, come out too low.
   - With space heating support it lowers the gas in sunny weeks. How that moves the line depends on when the system delivers: mainly in mild weeks of spring and autumn it gets steeper (heat load rather too high, heating limit too low), on sunny frost days flatter (heat load too low). A heat meter on the solar circuit would settle it; Wärmewacht does not use one yet.
-  - The flow of a heating circuit behind the buffer tank is not lifted by hot water charges. With "Gas total" and no hot water counter it still stays unknown (`flow_needs_dhw_counter`), as Wärmewacht does not know where the sensor sits.
+  - The flow of a heating circuit behind the buffer tank is not lifted by hot water charges. If the flow says `flow_needs_dhw_counter` although the sensor sits in the heating circuit: tick **"Flow sensor sits in the heating circuit"** under *Reconfigure*. Then the hours in which the circuit ran count, not those with gas.
 
 ## Entities
 

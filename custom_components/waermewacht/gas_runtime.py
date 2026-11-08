@@ -31,6 +31,7 @@ from .const import (
     CONF_CALORIFIC_VALUE,
     CONF_DESIGN_TEMP,
     CONF_ENTITIES,
+    CONF_FLOW_IN_CIRCUIT,
     CONF_FUEL,
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
@@ -127,6 +128,7 @@ class GasRuntime:
         self.gas_entity = configured.get(GAS_TOTAL) or configured.get(GAS_HEATING, "")
         self.dhw_entity = configured.get(GAS_DHW)
         self.flow_entity = configured.get(Signal.FLOW_TEMP.value)
+        self.flow_in_circuit = bool(entry.data.get(CONF_FLOW_IN_CIRCUIT))
         # Keyed like the heat pump's for the shared actions.
         self.entities: dict[Signal, str] = {
             Signal.OUTDOOR_TEMP: configured[Signal.OUTDOOR_TEMP.value]
@@ -404,6 +406,7 @@ class GasRuntime:
                 gas_price=self.gas_price,
                 gas_base_price=self.gas_base_price,
                 flow=flow,
+                flow_in_circuit=self.flow_in_circuit,
             )
             self.problem = None
             self.analysed_at = now
