@@ -23,9 +23,14 @@ before sharing it, shown as a notification by a button:
 `show(intro=...)` replaces the notice above the report.
 
 The same file in all six sister projects (Eilwacht, Einspeisewacht,
-Speicherwacht, Streckenwacht, Tarifwacht, Wärmewacht); change it in all of
-them. `render`, `issue_key`, `text` and `utc` are pure; the rest reads Home
-Assistant.
+Speicherwacht, Streckenwacht, Tarifwacht, Wärmewacht). `render`, `issue_key`,
+`text` and `utc` are pure; the rest reads Home Assistant.
+
+Copies: eilwacht/custom_components/eilwacht/issue_report.py,
+einspeisewacht/custom_components/einspeisewacht/issue_report.py,
+speicherwacht/custom_components/speicherwacht/issue_report.py,
+streckenwacht/custom_components/streckenwacht/issue_report.py,
+tarifwacht/custom_components/tarifwacht/issue_report.py (all verbatim).
 """
 
 from __future__ import annotations

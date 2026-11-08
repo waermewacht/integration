@@ -4,6 +4,9 @@ lifetime counters where a template books day values.
 
 Used by the config flow (a warning, a second submit keeps the counters) and
 once a day by the runtime (repair issue for entries made before the check).
+
+Copies: speicherwacht/custom_components/speicherwacht/day_counters.py
+(derived).
 """
 
 from __future__ import annotations

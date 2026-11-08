@@ -1,10 +1,12 @@
 """Hourly energy flows of the house: grid, PV, battery.
 
-Kopie von tarifwacht/custom_components/tarifwacht/solar.py (Stand 8e9669a),
-hier nicht ändern - Änderungen dort und hierher ziehen. Copied: HourFlows,
-SolarSettings (consumption, pv_alone), detect_same_inverter and their
-constants; the rest of Tarifwacht's module (tariffs, savings) is not used
-here. How Wärmewacht shares these flows with the heat pump is its own code
+Copy (excerpt: HourFlows, SolarSettings, detect_same_inverter and their
+constants) of tarifwacht/custom_components/tarifwacht/solar.py (as of
+9493c91). Do not change here; make changes there and copy them here
+(tools/check_shared.py in the parent folder reports differences).
+
+The rest of Tarifwacht's module (tariffs, savings) is not used here. How
+Wärmewacht shares these flows with the heat pump is its own code
 (allocation.py).
 
 The household consumption is derived from the meters:

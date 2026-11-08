@@ -2,6 +2,8 @@
 
 Pure Python, no Home Assistant imports. Same idea as the meter trackers of
 Einspeisewacht and Tarifwacht, without splitting into quarter hours.
+
+Copies: speicherwacht/custom_components/speicherwacht/counter.py (derived).
 """
 
 from __future__ import annotations
