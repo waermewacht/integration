@@ -569,6 +569,9 @@ async def test_options_tip_without_sisters(hass: HomeAssistant) -> None:
     entry.add_to_hass(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["step_id"] == "init_tip"
+    assert result["description_placeholders"]["tarifwacht_url"] == (
+        "https://github.com/tarifwacht/integration"
+    )
 
 
 async def test_options_house_meters(hass: HomeAssistant) -> None:

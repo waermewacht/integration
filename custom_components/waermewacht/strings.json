@@ -519,7 +519,7 @@
         "sections": {
           "costs": {
             "name": "Costs and gas comparison (optional)",
-            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.\n\nTip: if you also use [Tarifwacht](https://github.com/tarifwacht/integration) or [Einspeisewacht](https://github.com/einspeisewacht/integration), these fields are filled in already.",
+            "description": "Every field may stay empty. Without an electricity price (fixed or a sensor) there are no costs; without a gas price no gas comparison; without a base price only the working prices are compared.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already.",
             "data": {
               "electricity_price": "Electricity price",
               "electricity_price_entity": "Electricity price sensor",

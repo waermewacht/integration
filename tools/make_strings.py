@@ -1909,8 +1909,8 @@ COST_HINTS = {
         "Zähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen.",
     ),
     "init_tip": (
-        "Tip: if you also use [Tarifwacht](https://github.com/tarifwacht/integration) or [Einspeisewacht](https://github.com/einspeisewacht/integration), these fields are filled in already.",
-        "Tipp: Nutzt du auch [Tarifwacht](https://github.com/tarifwacht/integration) oder [Einspeisewacht](https://github.com/einspeisewacht/integration), sind diese Felder schon ausgefüllt.",
+        "Tip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already.",
+        "Tipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) oder [Einspeisewacht]({einspeisewacht_url}), sind diese Felder schon ausgefüllt.",
     ),
 }
 

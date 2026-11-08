@@ -519,7 +519,7 @@
         "sections": {
           "costs": {
             "name": "Kosten und Gasvergleich (optional)",
-            "description": "Jedes Feld darf leer bleiben. Ohne Strompreis (fest oder als Sensor) gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.\n\nTipp: Nutzt du auch [Tarifwacht](https://github.com/tarifwacht/integration) oder [Einspeisewacht](https://github.com/einspeisewacht/integration), sind diese Felder schon ausgefüllt.",
+            "description": "Jedes Feld darf leer bleiben. Ohne Strompreis (fest oder als Sensor) gibt es keine Kosten, ohne Gaspreis kein Gasvergleich, ohne Grundpreis nur die Arbeitspreise.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) oder [Einspeisewacht]({einspeisewacht_url}), sind diese Felder schon ausgefüllt.",
             "data": {
               "electricity_price": "Strompreis",
               "electricity_price_entity": "Strompreis-Sensor",

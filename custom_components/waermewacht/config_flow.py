@@ -1008,6 +1008,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 placeholders = {"entry": found.title or found.source}
             elif not found.found:
                 step_id = "init_tip"
+                # Links as placeholders: translations may hold no URLs.
+                placeholders = {
+                    "tarifwacht_url": "https://github.com/tarifwacht/integration",
+                    "einspeisewacht_url": "https://github.com/einspeisewacht/integration",
+                }
 
         def number(
             minimum: float, maximum: float, step: float, unit: str
