@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Starts pro Jahr: Lücken zählen nicht mehr gegen die Hochrechnung.** Bisher war die Hochrechnung unbekannt, sobald in den letzten 7 Tagen zusammen mehr als eine Stunde lang kein Kompressorstatus da war – nach einem mehrstündigen Cloud-Ausfall (etwa Bosch HomeCom) verschwand die Kachel für eine Woche. Jetzt rechnet Wärmewacht über die Stunden, in denen der Kompressorstatus bekannt war: Starts ÷ beobachtete Stunden × 24 × 365 (Beispiel: 31 Starts in 158 Stunden ≈ 1.719 im Jahr). Nötig sind mindestens 6 Tage (144 Stunden) beobachtet, sonst `starts_7d_reason: too_few_hours`. Neues Attribut `starts_7d_observed_hours`; die Kachel schreibt nach einer Lücke „aus 6,6 Tagen hochgerechnet“. Anlass: eigene Prüfung.
+
 ## 0.4.6 – 2026-11-08
 
 - **Neu: Starts pro Jahr, hochgerechnet aus 7 Tagen, mit dem Fraunhofer-Feldtest zum Vergleich.** „Starts heute“ trägt jetzt die Attribute `starts_per_day_7d` (Mittel der letzten 7 vollständigen Tage), `starts_per_year_projected` (× 365) und `starts_field_class`: Einordnung in den Feldtest WP-QS des Fraunhofer ISE (51 Luft/Wasser-Wärmepumpen, Messjahr 2024) – `low_third` bis 2.000 Starts im Jahr (ein Drittel der Anlagen), `typical` bis 5.500 (90 % lagen darunter, etwa 15 am Tag), `top_10_percent` darüber. Das ist eine Orientierung, keine Prüfung: Eine Woche im Herbst oder Winter ist kein Jahr, „Auffälliges Takten“ schaltet davon nicht. Unbekannt, bis der Kompressor 7 volle Tage beobachtet ist (`starts_7d_days`, `starts_7d_reason`), oder wenn in den 7 Tagen mehr als eine Stunde lang kein Kompressorstatus da war. Die Karte „Takte“ zeigt die Hochrechnung als Kachel („≈ 4.380 · aus 7 Tagen hochgerechnet · Feldtest: üblich“). Anlass: Rückmeldung aus dem simon42-Forum.
