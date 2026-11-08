@@ -32,6 +32,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry, is_gas
+from .allocation import NONE
 from .binary_sensor import health_checks
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
@@ -552,6 +553,27 @@ def _price_attributes(
     }
 
 
+def _allocation_attributes(runtime: HeatPumpRuntime, period: Period) -> dict[str, Any]:
+    """Heat pump electricity from the grid and own (PV, battery) in the
+    period; `allocation` names the rule (none without a grid meter)."""
+    feed = runtime.prices
+    if feed is None or feed.rule is None:
+        return {"allocation": NONE}
+    totals = runtime.energy(period)
+    start = runtime.marks.starts.get(period)
+    found = None if totals is None or start is None else feed.allocation(start, totals)
+    if found is None:
+        return {"allocation": feed.rule}
+    share = found.grid_share
+    return {
+        "allocation": feed.rule,
+        "grid_share": None if share is None else round(share, 3),
+        "kwh_from_grid": round(found.kwh_grid, 2),
+        "kwh_own": round(found.kwh_own, 2),
+        "hours_all_grid": found.hours_all_grid,
+    }
+
+
 def _money(value: float | None, digits: int = 2) -> float | None:
     return None if value is None else round(value, digits)
 
@@ -584,6 +606,7 @@ def _cost_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, An
         return {
             **_period_attributes(period)(runtime),
             **_price_attributes(_comparison(runtime, period), runtime),
+            **_allocation_attributes(runtime, period),
         }
 
     return attributes
@@ -596,6 +619,7 @@ def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     return {
         **_period_attributes(Period.SEASON)(runtime),
         **_price_attributes(result, runtime),
+        **_allocation_attributes(runtime, Period.SEASON),
         "heat_kwh": round(result.heat_kwh, 1),
         "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),
         "electricity_base_cost_eur": _money(result.electricity_base_cost_eur),

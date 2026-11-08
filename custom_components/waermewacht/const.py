@@ -64,6 +64,14 @@ CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
 # A price sensor (dynamic tariff): ct/kWh, €/kWh or €/MWh (prices.py); hours
 # without its price fall back to the fixed price.
 CONF_ELECTRICITY_PRICE_ENTITY: Final = "electricity_price_entity"
+# Own PV and battery electricity in the costs (allocation.py): the grid
+# import meter enables it; the others make the house consumption known.
+CONF_GRID_IMPORT_ENTITY: Final = "grid_import_entity"
+CONF_FEED_IN_ENTITY: Final = "feed_in_entity"
+CONF_PV_ENTITY: Final = "pv_entity"
+CONF_BATTERY_CHARGED_ENTITY: Final = "battery_charged_entity"
+CONF_BATTERY_DISCHARGED_ENTITY: Final = "battery_discharged_entity"
+CONF_FEED_IN_TARIFF: Final = "feed_in_tariff"  # ct/kWh, own electricity
 # EUR per year, only for a separate heat pump meter (heat pump tariff).
 CONF_ELECTRICITY_BASE_PRICE: Final = "electricity_base_price"
 CONF_GAS_PRICE: Final = "gas_price"  # ct/kWh on the gross calorific value (Hs)

@@ -17,20 +17,25 @@ Rules (docs/ENTWICKLUNG.md, "Strompreis aus einem Sensor"):
   local days from its start, plus what the statistics do not hold yet (the
   running hour, late counters) at the current price of the sensor, else the
   fixed price.
+- With grid, PV and battery meters, own electricity of an hour is priced at
+  the feed-in tariff instead (allocation.py): the day's saving is taken off
+  its cost. The rest of a period counts as from the grid.
 """
 
 from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, tzinfo
 from itertools import pairwise
 
+from .allocation import Allocation, SplitSettings, allocate
 from .costs import NO_ELECTRICITY, ElectricityCost, electricity_cost
 from .energy import SEASONAL_MODES, Kind, Totals
 from .model import Mode
 from .periods import local_midnight
+from .solar import HourFlows
 
 HOUR = timedelta(hours=1)
 
@@ -127,8 +132,9 @@ def day_mean_prices(
 class PricedDay:
     """The priced hours of one local day."""
 
-    electricity: ElectricityCost
+    electricity: ElectricityCost  # all of it at the grid price
     heat_kwh: float  # heating and hot water (the gas comparison)
+    allocation: Allocation | None = None  # grid and own electricity
 
 
 def price_days(
@@ -136,9 +142,11 @@ def price_days(
     prices: Mapping[datetime, float],
     fixed: float | None,
     tz: tzinfo,
+    flows: Mapping[datetime, HourFlows] | None = None,
+    split: SplitSettings | None = None,
 ) -> dict[datetime, PricedDay]:
     """Hourly energy priced hour by hour and summed per local day (key: the
-    day's start in UTC)."""
+    day's start in UTC); with `split`, its own electricity apart."""
     days: dict[date, dict[datetime, Totals]] = {}
     for hour, totals in hours.items():
         days.setdefault(hour.astimezone(tz).date(), {})[hour] = totals
@@ -146,9 +154,27 @@ def price_days(
         local_midnight(day, tz): PricedDay(
             electricity_cost(day_hours, price=fixed, hourly_prices=prices),
             sum(t.heat(*SEASONAL_MODES) for t in day_hours.values()),
+            None
+            if split is None
+            else allocate(day_hours, flows or {}, prices, fixed, split),
         )
         for day, day_hours in days.items()
     }
+
+
+def period_allocation(
+    days: Mapping[datetime, PricedDay], start: datetime
+) -> Allocation | None:
+    """Grid and own electricity of the priced days from `start` on (None
+    without the meters)."""
+    found = [p.allocation for d, p in days.items() if d >= start]
+    if not found or any(a is None for a in found):
+        return None
+    total = Allocation()
+    for allocation in found:
+        assert allocation is not None
+        total = total + allocation
+    return total
 
 
 def period_cost(
@@ -185,6 +211,17 @@ def period_cost(
         price=fixed,
         hourly_prices={} if current is None else {at: current},
     )
+    if (allocation := period_allocation(days, start)) is not None:
+        # Own electricity at the feed-in tariff instead of the grid price.
+        electricity = replace(
+            electricity,
+            cost_eur=None
+            if electricity.cost_eur is None
+            else electricity.cost_eur - allocation.saving_eur,
+            heat_cost_eur=None
+            if electricity.heat_cost_eur is None
+            else electricity.heat_cost_eur - allocation.heat_saving_eur,
+        )
     return electricity, totals.heat(*SEASONAL_MODES)
 
 

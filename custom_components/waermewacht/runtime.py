@@ -70,6 +70,8 @@ from .charges import (
 from .charges import prune as prune_charges
 from .const import (
     CONF_AUX_MILD_FROM,
+    CONF_BATTERY_CHARGED_ENTITY,
+    CONF_BATTERY_DISCHARGED_ENTITY,
     CONF_BOILER_EFFICIENCY,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
@@ -79,11 +81,15 @@ from .const import (
     CONF_ELECTRICITY_PRICE,
     CONF_ELECTRICITY_PRICE_ENTITY,
     CONF_ENTITIES,
+    CONF_FEED_IN_ENTITY,
+    CONF_FEED_IN_TARIFF,
     CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
+    CONF_GRID_IMPORT_ENTITY,
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_MIN_POWER,
+    CONF_PV_ENTITY,
     CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
@@ -344,6 +350,20 @@ class HeatPumpRuntime:
         # statistics, the fixed price for hours without its price. Needs the
         # recorder; without it the fixed price alone counts.
         self.price_entity: str | None = options.get(CONF_ELECTRICITY_PRICE_ENTITY)
+        # Grid, PV and battery meters: own electricity at the feed-in tariff
+        # (allocation.py); the grid import meter enables it.
+        self.grid_entity: str | None = options.get(CONF_GRID_IMPORT_ENTITY)
+        meters = {
+            key: entity_id
+            for key, option in (
+                ("purchase", CONF_GRID_IMPORT_ENTITY),
+                ("feed_in", CONF_FEED_IN_ENTITY),
+                ("pv", CONF_PV_ENTITY),
+                ("charged", CONF_BATTERY_CHARGED_ENTITY),
+                ("discharged", CONF_BATTERY_DISCHARGED_ENTITY),
+            )
+            if (entity_id := options.get(option))
+        }
         self.prices: PriceFeed | None = (
             PriceFeed(
                 hass,
@@ -351,8 +371,11 @@ class HeatPumpRuntime:
                 self.tz,
                 fixed=self.electricity_price,
                 day_values=self.template.previous_day,
+                meters=meters if self.grid_entity else None,
+                feed_in_rate=_per_kwh(options.get(CONF_FEED_IN_TARIFF)) or 0.0,
             )
-            if self.price_entity and "recorder" in hass.config.components
+            if (self.price_entity or self.grid_entity)
+            and "recorder" in hass.config.components
             else None
         )
         self.design_temp: float | None = options.get(CONF_DESIGN_TEMP)
@@ -2435,7 +2458,11 @@ class HeatPumpRuntime:
         try:
             await self.prices.async_refresh(min(end, now), season, self._async_hours)
         except Exception:  # keep running; the costs wait for the next hour
-            _LOGGER.exception("Reading the prices of %s failed", self.price_entity)
+            _LOGGER.exception(
+                "Reading the prices and meters for the costs failed (%s, %s)",
+                self.price_entity,
+                self.grid_entity,
+            )
         finally:
             self._notify()
 

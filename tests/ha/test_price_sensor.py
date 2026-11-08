@@ -167,3 +167,50 @@ async def test_prices_from_recorded_states(
     assert value(hass, entry, "cost_month") == pytest.approx(2.0)
     diagnostics = entry.runtime_data.prices
     assert diagnostics is not None and diagnostics.hours_from_states >= 3
+
+
+@pytest.mark.freeze_time(START)
+async def test_own_electricity_at_the_feed_in_tariff(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Only a grid import meter: the grid import goes to the heat pump first;
+    the rest is own electricity at the feed-in tariff."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    # The heat pump uses 1, 2, 3 kWh; the house takes 0.5, 2, 0 from the grid.
+    source_statistics(
+        hass,
+        "sensor.grid_import",
+        [0.0, 0.5, 2.5, 2.5],
+        SETUP_HOUR - timedelta(hours=4),
+    )
+    entry = await setup_entry(
+        hass,
+        {
+            "electricity_price": 30.0,
+            "grid_import_entity": "sensor.grid_import",
+            "feed_in_tariff": 8.0,
+        },
+    )
+    await tick(hass, freezer, 1)
+    # 6 kWh x 0.30 = 1.80 €, own 0.5 + 0 + 3 = 3.5 kWh at 0.08 instead:
+    # 1.80 - 3.5 x 0.22 = 1.03 €, in steps of 10 cents.
+    assert value(hass, entry, "cost_month") == pytest.approx(1.0)
+    attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
+    assert attributes["allocation"] == "heat_pump_first"
+    assert attributes["kwh_own"] == pytest.approx(3.5)
+    assert attributes["kwh_from_grid"] == pytest.approx(2.5)
+    assert attributes["grid_share"] == pytest.approx(0.417)
+    assert attributes["hours_all_grid"] == 0
+    assert attributes["price_source"] == "fixed"
+
+
+@pytest.mark.freeze_time(START)
+async def test_without_grid_meter_no_allocation(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    entry = await setup_entry(hass, {"electricity_price": 30.0})
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "cost_month") == pytest.approx(1.8)
+    attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
+    assert attributes["allocation"] == "none"

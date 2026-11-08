@@ -1,5 +1,6 @@
 """Hourly prices of an electricity price sensor and the energy priced with
-them (prices.py has the rules).
+them (prices.py has the rules); with grid, PV and battery meters also the
+split into grid and own electricity (allocation.py).
 
 Refreshed after each full hour from the recorder: the hourly energy of the
 season (the same hours as the report: source counters before the setup,
@@ -25,8 +26,10 @@ from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, State
 from homeassistant.util import dt as dt_util
 
+from .allocation import PROPORTIONAL, Allocation, SplitSettings, rule_for
 from .costs import ElectricityCost
-from .energy import Totals
+from .energy import SEASONAL_MODES, Totals
+from .model import Mode
 from .periods import local_midnight
 from .prices import (
     PricedDay,
@@ -34,10 +37,21 @@ from .prices import (
     floor_hour,
     hourly_means,
     hours_between,
+    period_allocation,
     period_cost,
     price_days,
     to_eur_per_kwh,
 )
+from .solar import HourFlows, SolarSettings, detect_same_inverter
+
+# Meters of the house (Meters keys) -> HourFlows field.
+FLOW_FIELDS = {
+    "purchase": "purchase",
+    "feed_in": "feed_in",
+    "pv": "pv",
+    "charged": "charged",
+    "discharged": "discharged",
+}
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,14 +70,31 @@ class PriceFeed:
     def __init__(
         self,
         hass: HomeAssistant,
-        entity_id: str,
+        entity_id: str | None,
         tz: tzinfo,
         *,
         fixed: float | None,
         day_values: bool,
+        meters: dict[str, str] | None = None,
+        feed_in_rate: float = 0.0,
     ) -> None:
         self.hass = hass
-        self.entity_id = entity_id
+        self.entity_id = entity_id  # price sensor, None: the fixed price
+        # Meters of the house by FLOW_FIELDS key; "purchase" enables the split.
+        self.meters = dict(meters or {})
+        self.feed_in_rate = feed_in_rate  # EUR/kWh
+        battery = "charged" in self.meters and "discharged" in self.meters
+        if not battery:
+            self.meters.pop("charged", None)
+            self.meters.pop("discharged", None)
+        self.rule: str | None = (
+            rule_for(pv="pv" in self.meters, feed_in="feed_in" in self.meters)
+            if "purchase" in self.meters
+            else None
+        )
+        # Battery behind the PV inverter, from the data (None: unclear, read
+        # as a battery with its own inverter).
+        self.same_inverter: bool | None = None
         self.tz = tz
         self.fixed = fixed  # €/kWh, for hours without a price of the sensor
         self.day_values = day_values  # a day's energy in one hour
@@ -79,6 +110,8 @@ class PriceFeed:
 
     def current(self) -> float | None:
         """The sensor's price now in €/kWh (None while unknown)."""
+        if self.entity_id is None:
+            return None
         state = self.hass.states.get(self.entity_id)
         if state is None:
             return None
@@ -113,15 +146,23 @@ class PriceFeed:
             if not full:
                 recent = (until - RECENT).astimezone(self.tz).date()
                 start = max(season_start, local_midnight(recent, self.tz))
+            flows: dict[datetime, HourFlows] = {}
             if start >= until:
                 hours: dict[datetime, Totals] = {}
                 prices: dict[datetime, float] = {}
             else:
                 hours = await hours_of(start, until)
                 prices = await self._async_prices(start, until)
+                if self.rule is not None:
+                    flows = await self._async_flows(start, until)
+            if full and self.rule == PROPORTIONAL and "charged" in self.meters:
+                self.same_inverter = detect_same_inverter(flows)
             if self.day_values:
                 prices = day_mean_prices(prices, hours, self.tz)
-            priced = price_days(hours, prices, self.fixed, self.tz)
+                flows = _day_flows(flows, hours, self.tz)
+            priced = price_days(
+                hours, prices, self.fixed, self.tz, flows, self._split()
+            )
             days = {} if full or self.days is None else dict(self.days)
             days = {day: p for day, p in days.items() if day < start}
             days.update(priced)
@@ -133,11 +174,82 @@ class PriceFeed:
         finally:
             self.refreshing = False
 
+    def _split(self) -> SplitSettings | None:
+        if self.rule is None:
+            return None
+        return SplitSettings(
+            self.rule,
+            self.feed_in_rate,
+            SolarSettings(
+                same_inverter=bool(self.same_inverter),
+                feed_in_rate=self.feed_in_rate,
+            ),
+        )
+
+    async def _async_flows(
+        self, start: datetime, end: datetime
+    ) -> dict[datetime, HourFlows]:
+        """Energy of the house meters per hour in [start, end), for the
+        hours in which every meter the rule needs has statistics."""
+        needed = {"purchase"}
+        if self.rule == PROPORTIONAL:
+            needed |= set(self.meters)
+        ids = {self.meters[key]: key for key in needed}
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            start,
+            end,
+            set(ids),
+            "hour",
+            {"energy": "kWh"},
+            {"change"},
+        )
+        per_key: dict[str, dict[datetime, float]] = {}
+        for entity_id, key in ids.items():
+            values = per_key.setdefault(key, {})
+            for row in rows.get(entity_id, []):
+                if (change := row.get("change")) is None:
+                    continue
+                hour = row["start"]
+                if not isinstance(hour, datetime):
+                    hour = dt_util.utc_from_timestamp(hour)
+                values[hour] = max(0.0, change)  # a meter reset is no energy
+        common = set.intersection(*(set(v) for v in per_key.values()))
+        return {
+            hour: HourFlows(**{FLOW_FIELDS[k]: v[hour] for k, v in per_key.items()})
+            for hour in common
+        }
+
+    def allocation(self, start: datetime, totals: Totals) -> Allocation | None:
+        """Grid and own electricity of the period from `start` with the
+        energy `totals`: what the priced days hold as own, the rest from the
+        grid (the running hour included)."""
+        if self.days is None:
+            return None
+        found = period_allocation(self.days, start)
+        if found is None:
+            return None
+        total = (
+            totals.electricity(*SEASONAL_MODES)
+            + totals.standby()
+            + totals.electricity(Mode.COOLING)
+        )
+        return Allocation(
+            kwh_grid=max(0.0, total - found.kwh_own),
+            kwh_own=found.kwh_own,
+            hours_all_grid=found.hours_all_grid,
+            saving_eur=found.saving_eur,
+            heat_saving_eur=found.heat_saving_eur,
+        )
+
     async def _async_prices(
         self, start: datetime, end: datetime
     ) -> dict[datetime, float]:
         """€/kWh per hour in [start, end): long-term statistics (mean), else
-        the recorded states."""
+        the recorded states. None without a price sensor."""
+        if self.entity_id is None:
+            return {}
         recorder = get_instance(self.hass)
         rows = await recorder.async_add_executor_job(
             statistics_during_period,
@@ -206,6 +318,27 @@ class PriceFeed:
             fixed=self.fixed,
             at=max(self.until, start, floor_hour(now)),
         )
+
+
+def _day_flows(
+    flows: dict[datetime, HourFlows], hours: dict[datetime, Totals], tz: tzinfo
+) -> dict[datetime, HourFlows]:
+    """Day values book a day in one hour: the flows of its whole local day
+    (the hours with statistics), for that hour."""
+    days: dict[date, list[HourFlows]] = {}
+    for hour, found in flows.items():
+        days.setdefault(hour.astimezone(tz).date(), []).append(found)
+    result: dict[datetime, HourFlows] = {}
+    for hour in hours:
+        if parts := days.get(hour.astimezone(tz).date()):
+            result[hour] = HourFlows(
+                purchase=sum(p.purchase for p in parts),
+                feed_in=sum(p.feed_in for p in parts),
+                pv=sum(p.pv for p in parts),
+                charged=sum(p.charged for p in parts),
+                discharged=sum(p.discharged for p in parts),
+            )
+    return result
 
 
 def _number(value: str) -> float | None:

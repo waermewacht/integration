@@ -231,6 +231,9 @@ async def async_get_config_entry_diagnostics(
             "days": None if runtime.prices.days is None else len(runtime.prices.days),
             "hours_from_states": runtime.prices.hours_from_states,
             "current": runtime.prices.current(),
+            # Grid and own electricity (allocation.py): rule, battery coupling.
+            "allocation": runtime.prices.rule,
+            "same_inverter": runtime.prices.same_inverter,
         },
         "today": runtime.cycles("today", now).__dict__,
         "totals": runtime.totals.as_dict(),
