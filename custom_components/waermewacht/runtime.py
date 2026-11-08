@@ -814,7 +814,11 @@ class HeatPumpRuntime:
         except Exception:  # never block the setup
             _LOGGER.exception("Reading the statistics for the history import failed")
             return
-        rows, totals = statistics_rows(hours, before), own_totals(hours)
+        # Rows up to the setup hour, where Home Assistant's own rows begin
+        # (hourly statistics end the energy earlier, at backfill_until: the
+        # hours between carry the sum, their energy is booked later).
+        dense_end = max(before, _hour(self.since))
+        rows, totals = statistics_rows(hours, dense_end), own_totals(hours)
         for key, entity_id in ids.items():
             if recorded.get(entity_id) or not rows.get(key):
                 continue
@@ -887,7 +891,11 @@ class HeatPumpRuntime:
             except Exception:  # never block the setup
                 _LOGGER.exception("Reading the statistics of %s failed", key)
                 continue
-            if rows := statistics_rows(hours, end).get(key):
+            # Rows up to its first own row (hourly statistics end the energy
+            # HOURLY_LOOKBACK before it), so no hour is missing in between.
+            first_row = first.get(entity_id)
+            dense_end = max(end, first_row) if first_row else end
+            if rows := statistics_rows(hours, dense_end).get(key):
                 self._write_history(key, entity_id, rows, own_totals(hours)[key])
                 _LOGGER.info(
                     "%s: imported the statistics of %s before %s",
