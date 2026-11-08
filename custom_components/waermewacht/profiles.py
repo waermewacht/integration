@@ -254,6 +254,26 @@ EMS_ESP_ACTIVITY = _words(
         ),
     }
 )
+# A manual mapping parses with the EMS-ESP words. Self-made status entities
+# often say "Heizung" instead of "Heizen" and the like; unknown, such a text
+# counts as OTHER and the energy stays with the mode before (e.g. hot water).
+# EMS-ESP never sends these words.
+EMS_ESP_ACTIVITY |= _words(
+    {
+        Activity.HEATING: ("Heizung", "Heizbetrieb", "heat"),
+        Activity.COOLING: ("Kühlung", "Kühlbetrieb", "cool"),
+        Activity.DHW: (
+            "Warmwasserbereitung",
+            "Warmwasserbetrieb",
+            "Trinkwasser",
+            "Trinkwarmwasser",
+            "Brauchwasser",
+            "dhw",
+            "domestic hot water",
+        ),
+        Activity.DEFROST: ("Abtauung", "Abtaubetrieb", "defrosting"),
+    }
+)
 
 # Keys after "<device>_": current names (EMS-ESP >= 3.7, "dhw_…") first, then
 # the 3.6-compatible formats ("…ww", "ww…"); within each, the counters in
