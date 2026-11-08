@@ -165,7 +165,9 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Bestand.** Binärsensor „Auffälliges Takten“: mehr als 3 Starts in einer Stunde oder ≥ 3 kritische Läufe (< 6 min) in 24 h. Quellen in `ENTWICKLUNG.md` §3 (Verdichterhersteller 6–12 Starts/h, zitiert in WP-QS S. 98; Fraunhofer: Zyklen unter ~10 min gesondert ausweisen; Dimplex ~6 min Mindestlaufzeit). Eine verifizierte Primärquelle für Grenzen am Gebäude gibt es nicht; die Vorgaben sind weiche Schwellen. Fraunhofer ISE (Pressemitteilung WP-QS 2025): Schalthäufigkeit „bei einigen sehr hoch“.
 
-**Ergänzung (Vorschlag).** Attribute `starts_per_day_7d` und `starts_per_year_projected` (7-Tage-Mittel × 365). Orientierung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feld unter 5.500 Starts/Jahr (~15/Tag), ein Drittel ≤ 2.000 (`ENTWICKLUNG.md` §3). Kein neues Kriterium für „an“: eine Hochrechnung aus 7 Tagen im Herbst ist keine Jahreszahl.
+**Ergänzung (umgesetzt in 0.4.6).** Attribute an „Starts heute“ (nicht am Binärsensor, damit niemand sie für ein Kriterium hält): `starts_per_day_7d` und `starts_per_year_projected` (Mittel der letzten 7 vollständigen Tage × 365), `starts_field_class` (`low_third` ≤ 2.000, `typical` ≤ 5.500, `top_10_percent` darüber), `starts_7d_days`, `starts_7d_reason` (`too_few_days`, `observation_gap`). Orientierung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feld unter 5.500 Starts/Jahr (~15/Tag), ein Drittel ≤ 2.000 (`ENTWICKLUNG.md` §3). Kein neues Kriterium für „an“: eine Hochrechnung aus 7 Tagen im Herbst ist keine Jahreszahl. Die Karte „Takte“ zeigt sie als Kachel.
+
+**Grenze je Tag (optional, seit 0.4.6).** Einstellung „Auffällig ab Starts pro Tag über“, Vorgabe aus: mehr Starts in den letzten 24 Stunden (dasselbe Fenster wie die übrigen Kriterien) schalten „Auffälliges Takten“ und „Befund Takten“ auf auffällig. Für Wärmepumpen, die nur ein- und ausschalten. **Keine Quelle**, der Nutzer wählt die Grenze; deshalb keine Vorgabe. Attribute `triggers`, `starts_24h`, `starts_per_day_limit`.
 
 ### 4.7 Überdimensionierung (Leistung gegen Heizlast)
 

@@ -42,7 +42,7 @@ The user interface is available in German and English and follows the language o
 - **Diagnostics:** backup heater share, flow-return spread and mean flow temperature while heating (with an activity).
 - **Hot water per charge:** performance factor of the last charge and of the charges of the last 30 days, last thermal disinfection.
 - **Health check:** reports a dropped efficiency at the same weather, a dropped hot water efficiency against last year and the backup heater on mild days or in hot water charges. Repair issues when a meter stands still, a source fails, the outdoor temperature is stuck or flow rate, flow and return do not add up.
-- **Costs and gas comparison** (optional, with fixed prices): electricity cost, heat cost per kWh and the savings against a gas boiler.
+- **Costs and gas comparison** (optional, with a fixed price or a price sensor for dynamic tariffs): electricity cost, heat cost per kWh and the savings against a gas boiler.
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
 - **Gas or oil boiler before switching:** heat load, heating limit and hot water share from the gas or oil consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
@@ -215,12 +215,14 @@ Several heat pumps: add one entry each.
 | Short run below | 10 min | Fraunhofer ISE reports cycles under about 10 minutes separately. |
 | Critical run below | 6 min | Minimum run time of about 6 minutes according to the Dimplex planning manual. |
 | Conspicuous above starts per hour | 3 | More starts within one hour count as conspicuous. Compressor manufacturers give 6 to 12 starts per hour as the upper limit. |
+| Conspicuous above starts per day | – | Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours count as conspicuous. Empty: off. There is no limit with a source; for comparison see "starts per year" under [Cycling](#cycling). |
 | Backup heater: mild weather from | 5 °C | Health check: daily mean outdoor temperature from which the heat pump should heat alone (own assumption). |
 | Efficiency dropped from | 15 % | Health check: drop of the heating performance factor against the previous season at the same outdoor temperature; off again only 5 points lower (own assumption). |
 | Thermal disinfection from | 60 °C | Hot water temperature from which a charge counts as thermal disinfection. DVGW W 551 requires 60 °C at the outlet; the storage sensor often reads a little lower. |
 | Season starts in | July | Start of the season (heating period July to June). |
 | ***Costs and gas comparison (optional)*** | | |
-| Electricity price | – | ct/kWh gross. Without it there are no cost sensors. |
+| Electricity price | – | ct/kWh gross. With a price sensor it only counts for the hours without its price. Without both there are no cost sensors. |
+| Electricity price sensor | – | For dynamic tariffs (Tibber, Nordpool, EPEX Spot …) or a template with the annual tariff; in ct/kWh, €/kWh or €/MWh, needs `state_class: measurement`. See [costs](#costs-and-gas-comparison). |
 | Electricity base price | – | €/year gross, only for a separate heat pump meter (heat pump tariff). On the household meter leave it empty: that base price is paid anyway. |
 | Gas working price | – | ct/kWh gross on the gross calorific value (as on the gas bill). For the savings against a gas boiler. |
 | Gas base price | – | €/year gross, spread per day. Without it only the working prices are compared. |
@@ -371,7 +373,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 
 | Entity | Unit | Meaning |
 | --- | --- | --- |
-| Starts today, Starts yesterday | – | observed compressor starts |
+| Starts today, Starts yesterday | – | observed compressor starts; on "Starts today" the projection to a year (below) |
 | Starts season | – | Starts since the start of the season from the heat pump's counter and its long-term statistics. If the statistics do not reach back that far, it counts from their first value. Attributes `since` and `per_day`. For comparison: 90 % of the air/water heat pumps in the Fraunhofer field test stay below 5,500 starts a year, about 15 a day. Needs the start counter and the outdoor temperature (set with the daily analysis). |
 | Starts total | – | the heat pump's counter if mapped (attribute `source: heat_pump`), otherwise starts observed since the setup (`since_setup`) |
 | Run time today | min | compressor run time, in steps of 5 minutes |
@@ -380,6 +382,8 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | Shortest pause today | min | shortest time between the end of a run and the next start |
 | Defrosts today | – | count; attributes `minutes` (duration today), `yesterday` (count yesterday). With the daily analysis (only with an outdoor temperature) for the last 7 days the count (`defrosts_7d`), warm defrosts (`warm_defrosts_7d`, hourly mean of 10 °C or more), mean and longest duration (`mean_minutes_7d`, `longest_minutes_7d`), plus `classes`: defrosts per run hour per 2 K class against the previous season (`factor` = current ÷ previous) |
 
+**Starts per year (projection):** attributes of "Starts today": `starts_per_day_7d` (mean of the last 7 complete days), `starts_per_year_projected` (× 365) and `starts_field_class`, the place in the field test WP-QS of Fraunhofer ISE (51 air/water heat pumps, measuring year 2024): `low_third` up to 2,000 starts a year (a third of the systems were that low), `typical` up to 5,500 (90 % stayed below, about 15 a day), `top_10_percent` above. This is an **orientation, not a check**: a week in autumn or winter is not a year, and "Conspicuous cycling" does not use it. Unknown until the compressor has been observed for 7 full days (`starts_7d_days`, `starts_7d_reason: too_few_days`), or when the compressor state was missing for more than an hour in total within the 7 days (`observation_gap`, e.g. Home Assistant off). The cycling card shows the projection as a tile.
+
 If the compressor state was missing for more than 5 minutes (Home Assistant or the source down), the affected run counts as uncertain. The same applies when an energy meter or an activity signal was unavailable for more than 5 minutes during the run: some sources then freeze the compressor reading, and the run looks longer than it was. It is then left out of run time per start, short runs and pauses.
 
 ### Conspicuous cycling
@@ -387,9 +391,10 @@ If the compressor state was missing for more than 5 minutes (Home Assistant or t
 Binary sensor (problem), only with "Compressor running". It is on if within the last 24 hours
 
 - there were more starts within one hour than set (default: more than 3) **or**
-- at least 3 runs were shorter than the critical run (default: 6 minutes).
+- at least 3 runs were shorter than the critical run (default: 6 minutes) **or**
+- there were more starts than "Conspicuous above starts per day", if set (default: off).
 
-Attributes: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
+Attributes: `triggers` (what set it off: `starts_per_hour`, `critical_runs`, `starts_per_day`), `max_starts_per_hour`, `starts_24h`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`, `starts_per_day_limit`. The projection "starts per year" does not count here.
 
 ### Hot water charges
 
@@ -451,7 +456,7 @@ With a boiler next to the heat pump (section "Boiler (hybrid system)" in the set
 
 ### Costs and gas comparison
 
-With an electricity price in the [settings](#settings).
+With an electricity price or an electricity price sensor in the [settings](#settings).
 
 | Entity | Unit | Meaning | Needs |
 | --- | --- | --- | --- |
@@ -460,7 +465,9 @@ With an electricity price in the [settings](#settings).
 | Savings vs. gas boiler season | € | gas cost (working price plus prorated gas base price) for the same heat minus the heat pump's cost of heating and hot water (electricity with standby, prorated electricity base price); in whole euros | electricity price, gas working price, heating or hot water complete |
 
 - **Season** means the heating period from the set month (default: 1 July to 30 June). The attribute `period_start` gives its start.
-- **Prices** are fixed, as entered in the settings. Wärmewacht does not support dynamic tariffs.
+- **Fixed price:** applies to every hour, as entered in the settings.
+- **Electricity price sensor (dynamic tariff):** every hour gets its own price, the sensor's hourly mean from the long-term statistics, times the electricity of that hour – also in the look-back before the setup, as far as the sensor's statistics reach back. The running hour uses its current value; prices are read after each full hour (after a restart the costs are unknown for about a minute). Units: ct/kWh, €/kWh (EUR/kWh) or €/MWh (EUR/MWh); the form refuses others. **The sensor needs `state_class: measurement`**, otherwise Home Assistant keeps no long-term statistics for it; Wärmewacht then takes its recorded states, but only as far as the recorder keeps them (default 10 days). For a template sensor, set `state_class: measurement` and `unit_of_measurement`. Hours without a price of the sensor use the fixed electricity price if set, otherwise the costs are unknown: electricity without a price never counts as free. Within an hour Wärmewacht does not weight by consumption (15-minute prices count with their hourly mean). Sources with day values (MELCloud, F1p, ESPHome Ecodan) get the day's mean price.
+- **Where the price came from** is in the attributes of the cost sensors: `price_source` (`sensor`, `fixed` or `mixed` = partly the fixed price), with a sensor also `price_entity`, `average_price_eur_per_kwh` (mean price paid), `hours_fixed_price` and `hours_without_price`.
 - **Base prices** are spread per day (annual price ÷ 365 or 366). The electricity base price only counts for a separate heat pump meter and belongs to heating and hot water.
 - **Gas boiler:** For the same heat (heating and hot water, no cooling) it would need heat ÷ 0.87 of gas on the gross calorific value. 0.87 is the efficiency that field measurements of condensing boilers found (Jagnow/Wolff, DBU 2004). Gas is billed on the gross calorific value, so the figure refers to it.
 - **No CO₂ comparison:** it would depend too much on assumptions (average or hourly mix, upstream chains, own PV use, battery, green tariffs).
@@ -688,12 +695,12 @@ Wärmewacht ships its own cards, without any extra card from HACS. It adds the d
 | Wärmewacht Now (`custom:waermewacht-now-card`) | activity (since when), compressor, outdoor, flow, return and storage temperature of the source; heat and electric power if you pick them in the editor |
 | Wärmewacht Performance factors (`…-ratios-card`) | table heating, hot water, both, cooling × today, month, season, total |
 | Wärmewacht Health (`…-health-card`) | every check with a dot (green, red, grey), the finding in words and the figure that matters |
-| Wärmewacht Cycling (`…-cycling-card`) | starts, run times, shortest pause, short runs, defrosts, spread, standby |
+| Wärmewacht Cycling (`…-cycling-card`) | starts, run times, shortest pause, short runs, defrosts, spread, standby, starts per year projected (with the Fraunhofer field test) |
 | Wärmewacht Hot water (`…-dhw-card`) | last charge (duration, temperature lift) and the charges of the last 30 days |
 | Wärmewacht Costs (`…-costs-card`) | electricity month and season, cost per kWh of heat, savings against gas |
 | Wärmewacht Hybrid system (`…-hybrid-card`) | heat pump share, boiler heat |
 | Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C; while the heat load is still missing, what the data lack (for example "2 of 8 weeks") |
-| Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor |
+| Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor; months of the current season in full colour, those before paler, a line marks the season start |
 | Wärmewacht Gas and oil boiler (`…-boiler-card`) | energy signature as a chart (also the preliminary line), heat load, heating limit, heat per degree day, flow, hot water share, consumption and cost of the last 365 days; a missing value says why, the heat load also what the data still lack (e.g. "2 of 8 weeks") |
 
 ```yaml

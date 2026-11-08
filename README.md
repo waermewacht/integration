@@ -42,7 +42,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Diagnose:** Heizstab-Anteil, Spreizung und mittlere Vorlauftemperatur im Heizbetrieb (mit Betriebsart).
 - **Warmwasser je Ladung:** Arbeitszahl der letzten Ladung und der Ladungen der letzten 30 Tage, letzte thermische Desinfektion.
 - **Gesundheits-Check:** meldet gesunkene Effizienz bei gleichem Wetter, eine gesunkene Warmwasser-Effizienz gegenüber dem Vorjahr und den Heizstab bei milder Witterung oder bei Warmwasserladungen. Reparaturhinweise, wenn ein Zähler stillsteht, eine Quelle ausfällt, die Außentemperatur hängt oder Durchfluss, Vor- und Rücklauf nicht stimmen.
-- **Kosten und Gasvergleich** (optional, mit festen Preisen): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
+- **Kosten und Gasvergleich** (optional, mit festem Preis oder Strompreis-Sensor für dynamische Tarife): Stromkosten, Wärmekosten je kWh und die Ersparnis gegenüber einem Gaskessel.
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume. Dazu Kennwerte wie Gradtage, Vorlauf bei 0 °C (die Heizkurve), Spreizung an kalten Tagen und Leistung je Heizlast.
 - **Gas- oder Ölheizung vor dem Umstieg:** Heizlast, Heizgrenze und Warmwasseranteil aus dem Gas- oder Ölverbrauch der letzten 365 Tage, als eigener Eintrag ([mehr](#gasheizung-vor-dem-umstieg)).
 - **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
@@ -215,12 +215,14 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Kurzlauf unter | 10 min | Fraunhofer ISE weist Zyklen unter etwa 10 Minuten gesondert aus. |
 | Kritischer Lauf unter | 6 min | Mindestlaufzeit laut Dimplex-Projektierungshandbuch etwa 6 Minuten. |
 | Auffällig ab Starts pro Stunde über | 3 | Mehr Starts innerhalb einer Stunde gelten als auffällig. Verdichterhersteller nennen 6 bis 12 Starts pro Stunde als Obergrenze. |
+| Auffällig ab Starts pro Tag über | – | Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden gelten als auffällig. Leer: aus. Eine Grenze mit Quelle gibt es nicht; zur Einordnung siehe „Starts pro Jahr“ unter [Takte](#takte). |
 | Heizstab: milde Witterung ab | 5 °C | Gesundheits-Check: Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte (eigene Annahme). |
 | Effizienz gesunken ab | 15 % | Gesundheits-Check: Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter (eigene Annahme). |
 | Thermische Desinfektion ab | 60 °C | Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt. DVGW W 551 verlangt 60 °C am Austritt; der Speicherfühler zeigt oft etwas weniger. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
 | ***Kosten und Gasvergleich (optional)*** | | |
-| Strompreis | – | ct/kWh brutto. Ohne ihn gibt es keine Kosten-Sensoren. |
+| Strompreis | – | ct/kWh brutto. Mit Strompreis-Sensor gilt er nur für die Stunden ohne dessen Preis. Ohne beide gibt es keine Kosten-Sensoren. |
+| Strompreis-Sensor | – | Für dynamische Tarife (Tibber, Nordpool, EPEX Spot …) oder ein Template mit dem Jahrestarif; in ct/kWh, €/kWh oder €/MWh, braucht `state_class: measurement`. Siehe [Kosten](#kosten-und-gasvergleich). |
 | Strom-Grundpreis | – | €/Jahr brutto, nur bei eigenem Wärmepumpenzähler (Wärmepumpentarif). Am Haushaltszähler leer lassen: Dessen Grundpreis fällt ohnehin an. |
 | Gas-Arbeitspreis | – | ct/kWh brutto auf den Brennwert (wie auf der Gasrechnung). Für die Ersparnis gegenüber einem Gaskessel. |
 | Gas-Grundpreis | – | €/Jahr brutto, anteilig je Tag. Ohne ihn vergleicht Wärmewacht nur die Arbeitspreise. |
@@ -371,7 +373,7 @@ Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen 
 
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
-| Starts heute, Starts gestern | – | beobachtete Kompressorstarts |
+| Starts heute, Starts gestern | – | beobachtete Kompressorstarts; an „Starts heute“ die Hochrechnung aufs Jahr (unten) |
 | Starts Saison | – | Starts seit Saisonbeginn aus dem Zähler der Wärmepumpe und seiner Langzeitstatistik. Reicht die Statistik nicht so weit zurück, zählt er ab ihrem ersten Wert. Attribute `since` und `per_day`. Zur Einordnung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feldtest liegen unter 5.500 Starts im Jahr, etwa 15 am Tag. Braucht den Startzähler und die Außentemperatur (wird mit der täglichen Analyse bestimmt). |
 | Starts gesamt | – | Zähler der Wärmepumpe, wenn zugeordnet (Attribut `source: heat_pump`), sonst beobachtete Starts seit der Einrichtung (`since_setup`) |
 | Laufzeit heute | min | Kompressor-Laufzeit, in Schritten von 5 Minuten |
@@ -380,6 +382,8 @@ Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen 
 | Kürzeste Pause heute | min | kürzeste Zeit zwischen Ende und nächstem Start |
 | Abtauungen heute | – | Anzahl; Attribute `minutes` (Dauer heute), `yesterday` (Anzahl gestern). Mit der täglichen Analyse (nur mit Außentemperatur) für die letzten 7 Tage Anzahl (`defrosts_7d`), warme Abtauungen (`warm_defrosts_7d`, Stundenmittel ab 10 °C), mittlere und längste Dauer (`mean_minutes_7d`, `longest_minutes_7d`), dazu `classes`: Abtauungen je Laufstunde je 2-K-Klasse gegen die Vorsaison (`factor` = laufende ÷ vorige) |
 
+**Starts pro Jahr (Hochrechnung):** Attribute an „Starts heute“: `starts_per_day_7d` (Mittel der letzten 7 vollständigen Tage), `starts_per_year_projected` (× 365) und `starts_field_class`, die Einordnung in den Feldtest WP-QS des Fraunhofer ISE (51 Luft/Wasser-Wärmepumpen, Messjahr 2024): `low_third` bis 2.000 Starts im Jahr (ein Drittel der Anlagen lag so niedrig), `typical` bis 5.500 (90 % lagen darunter, etwa 15 am Tag), `top_10_percent` darüber. Das ist eine **Orientierung, keine Prüfung**: Eine Woche im Herbst oder Winter ist kein Jahr, und „Auffälliges Takten“ schaltet davon nicht. Unbekannt, bis der Kompressor 7 volle Tage beobachtet ist (`starts_7d_days`, `starts_7d_reason: too_few_days`), oder wenn in den 7 Tagen zusammen mehr als eine Stunde lang kein Kompressorstatus da war (`observation_gap`, etwa Home Assistant aus). Die Karte „Takte“ zeigt die Hochrechnung als Kachel.
+
 Fehlte der Kompressorstatus länger als 5 Minuten (Home Assistant oder Quelle aus), gilt der betroffene Lauf als unsicher. Ebenso, wenn während des Laufs ein Energiezähler oder ein Signal der Betriebsart länger als 5 Minuten nicht verfügbar war: Manche Quellen frieren dann den Kompressorwert ein, und der Lauf wirkt länger, als er war. Er zählt dann nicht für Laufzeit pro Start, Kurzläufe und Pausen.
 
 ### Auffälliges Takten
@@ -387,9 +391,10 @@ Fehlte der Kompressorstatus länger als 5 Minuten (Home Assistant oder Quelle au
 Binärsensor (Problem), nur mit „Kompressor läuft“. Er ist an, wenn in den letzten 24 Stunden
 
 - innerhalb einer Stunde mehr Starts lagen als eingestellt (Vorgabe: mehr als 3) **oder**
-- mindestens 3 Läufe kürzer waren als der kritische Lauf (Vorgabe: 6 Minuten).
+- mindestens 3 Läufe kürzer waren als der kritische Lauf (Vorgabe: 6 Minuten) **oder**
+- mehr Starts lagen als „Auffällig ab Starts pro Tag über“, wenn eingestellt (Vorgabe: aus).
 
-Attribute: `max_starts_per_hour`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`.
+Attribute: `triggers` (was ausgelöst hat: `starts_per_hour`, `critical_runs`, `starts_per_day`), `max_starts_per_hour`, `starts_24h`, `critical_runs_24h`, `short_runs_24h`, `starts_per_hour_limit`, `starts_per_day_limit`. Die Hochrechnung „Starts pro Jahr“ zählt hier nicht.
 
 ### Warmwasser-Ladungen
 
@@ -451,7 +456,7 @@ Mit einem Kessel neben der Wärmepumpe (Abschnitt „Kessel (Hybridanlage)“ in
 
 ### Kosten und Gasvergleich
 
-Mit einem Strompreis in den [Einstellungen](#einstellungen).
+Mit einem Strompreis oder Strompreis-Sensor in den [Einstellungen](#einstellungen).
 
 | Entität | Einheit | Bedeutung | Braucht |
 | --- | --- | --- | --- |
@@ -460,7 +465,9 @@ Mit einem Strompreis in den [Einstellungen](#einstellungen).
 | Ersparnis ggü. Gaskessel Saison | € | Gaskosten (Arbeitspreis plus anteiliger Gas-Grundpreis) für dieselbe Wärme minus die Kosten der Wärmepumpe für Heizen und Warmwasser (Strom mit Stillstand, anteiliger Strom-Grundpreis); in ganzen Euro | Strompreis, Gas-Arbeitspreis, Heizen oder Warmwasser vollständig |
 
 - **Saison** heißt Heizperiode ab dem eingestellten Monat (Vorgabe: 1. Juli bis 30. Juni). Den Beginn nennt das Attribut `period_start`.
-- **Preise** gelten fest, so wie sie in den Einstellungen stehen. Dynamische Tarife berücksichtigt Wärmewacht nicht.
+- **Fester Preis:** gilt für jede Stunde, so wie er in den Einstellungen steht.
+- **Strompreis-Sensor (dynamischer Tarif):** Jede Stunde bekommt ihren eigenen Preis, das Stundenmittel des Sensors aus der Langzeitstatistik, mal den Strom dieser Stunde – auch im Rückblick vor der Einrichtung, soweit die Statistik des Sensors zurückreicht. Die laufende Stunde rechnet mit seinem aktuellen Wert; eingelesen wird nach jeder vollen Stunde (nach einem Neustart sind die Kosten etwa eine Minute unbekannt). Einheiten: ct/kWh, €/kWh (EUR/kWh) oder €/MWh (EUR/MWh); andere lehnt das Formular ab. **Der Sensor braucht `state_class: measurement`**, sonst führt Home Assistant keine Langzeitstatistik für ihn; dann nimmt Wärmewacht seine aufgezeichneten Zustände, aber nur so weit der Recorder sie aufhebt (Vorgabe 10 Tage). Bei einem Template-Sensor also `state_class: measurement` und `unit_of_measurement` setzen. Stunden ohne Preis des Sensors rechnen mit dem festen Strompreis, wenn eingetragen, sonst sind die Kosten unbekannt: Strom ohne Preis zählt nie als kostenlos. Innerhalb einer Stunde gewichtet Wärmewacht nicht nach Verbrauch (15-Minuten-Preise zählen mit ihrem Stundenmittel). Quellen mit Tageswerten (MELCloud, F1p, ESPHome-Ecodan) bekommen den mittleren Preis des Tages.
+- **Woher der Preis kam**, sagen die Attribute der Kosten-Sensoren: `price_source` (`sensor`, `fixed` oder `mixed` = teils fester Preis), mit Sensor dazu `price_entity`, `average_price_eur_per_kwh` (mittlerer gezahlter Preis), `hours_fixed_price` und `hours_without_price`.
 - **Grundpreise** werden je Tag verteilt (Jahrespreis ÷ 365 bzw. 366). Der Strom-Grundpreis zählt nur bei eigenem Wärmepumpenzähler und gehört zu Heizen und Warmwasser.
 - **Gaskessel:** Er bräuchte für dieselbe Wärme (Heizen und Warmwasser, ohne Kühlen) Wärme ÷ 0,87 an Gas, bezogen auf den Brennwert. 0,87 ist der Nutzungsgrad, den Feldmessungen an Brennwertkesseln ergeben haben (Jagnow/Wolff, DBU 2004). Gas wird nach Brennwert abgerechnet, deshalb gilt der Wert auf den Brennwert.
 - **Kein CO₂-Vergleich:** Er hinge zu stark an Annahmen (Durchschnitts- oder Stundenmix, Vorketten, PV-Eigenverbrauch, Batterie, Ökostrom).
@@ -688,12 +695,12 @@ Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS. Die Dashb
 | Wärmewacht Jetzt (`custom:waermewacht-now-card`) | Betriebsart (seit wann), Kompressor, Außen-, Vor-, Rücklauf- und Speichertemperatur der Quelle; Wärme- und Stromleistung, wenn du sie im Editor wählst |
 | Wärmewacht Arbeitszahlen (`…-ratios-card`) | Tabelle Heizen, Warmwasser, beides, Kühlen × heute, Monat, Saison, gesamt |
 | Wärmewacht Gesundheit (`…-health-card`) | jede Prüfung mit Punkt (grün, rot, grau), Befund in Worten und der entscheidenden Zahl |
-| Wärmewacht Takte (`…-cycling-card`) | Starts, Laufzeiten, kürzeste Pause, Kurzläufe, Abtauungen, Spreizung, Stillstand |
+| Wärmewacht Takte (`…-cycling-card`) | Starts, Laufzeiten, kürzeste Pause, Kurzläufe, Abtauungen, Spreizung, Stillstand, Starts pro Jahr hochgerechnet (mit Fraunhofer-Feldtest) |
 | Wärmewacht Warmwasser (`…-dhw-card`) | letzte Ladung (Dauer, Temperaturhub) und die Ladungen der letzten 30 Tage |
 | Wärmewacht Kosten (`…-costs-card`) | Strom Monat und Saison, Kosten je kWh Wärme, Ersparnis gegenüber Gas |
 | Wärmewacht Hybridanlage (`…-hybrid-card`) | Anteil der Wärmepumpe, Wärme des Kessels |
 | Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C; fehlt die Heizlast noch, was den Daten fehlt (etwa „2 von 8 Wochen“) |
-| Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl |
+| Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl; Monate der laufenden Saison in voller Farbe, die davor blasser, eine Linie markiert den Saisonbeginn |
 | Wärmewacht Gas- und Ölheizung (`…-boiler-card`) | Energiesignatur als Diagramm (auch die vorläufige Gerade), Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf, Warmwasseranteil, Verbrauch und Kosten der letzten 365 Tage; fehlt ein Wert, steht der Grund dabei, bei der Heizlast auch, was den Daten noch fehlt (etwa „2 von 8 Wochen“) |
 
 ```yaml
