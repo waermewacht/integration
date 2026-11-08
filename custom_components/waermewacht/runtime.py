@@ -87,6 +87,7 @@ from .const import (
     CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
+    CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
     DEFAULT_CRITICAL_RUN_MINUTES,
@@ -109,6 +110,7 @@ from .cycling import (
     StartsProjection,
     activity_seconds,
     cycle_stats,
+    cycling_triggers,
     max_starts_per_hour,
     prune,
     season_starts_baseline,
@@ -325,6 +327,9 @@ class HeatPumpRuntime:
         self.starts_per_hour: int = options.get(
             CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR
         )
+        # Optional limit of starts within 24 hours (an on/off heat pump).
+        per_day = options.get(CONF_STARTS_PER_DAY)
+        self.starts_per_day: int | None = None if per_day is None else int(per_day)
         self.tz = dt_util.get_default_time_zone()
         # Prices are entered in ct/kWh; the cost module works in €/kWh.
         self.electricity_price: float | None = _per_kwh(
@@ -2343,7 +2348,6 @@ class HeatPumpRuntime:
 
     # Minute tick: period boundaries, sensor updates, throttled saving.
 
-    @callback
     async def _async_refresh_prices(self, now: datetime) -> None:
         """Hourly prices of the price sensor and the season priced with them."""
         assert self.prices is not None
@@ -2360,6 +2364,7 @@ class HeatPumpRuntime:
         finally:
             self._notify()
 
+    @callback
     def _on_tick(self, now: datetime) -> None:
         self._note_mode(now)
         self._sample(now)
@@ -2603,10 +2608,19 @@ class HeatPumpRuntime:
             critical_seconds=self.critical_seconds,
         )
         per_hour = max_starts_per_hour(self.runs, self.tracker.open_run, start, now)
+        triggers = cycling_triggers(
+            per_hour,
+            stats.critical_runs,
+            stats.starts,
+            starts_per_hour=self.starts_per_hour,
+            critical_per_day=CRITICAL_RUNS_PER_DAY,
+            starts_per_day=self.starts_per_day,
+        )
         return {
-            "problem": per_hour > self.starts_per_hour
-            or stats.critical_runs >= CRITICAL_RUNS_PER_DAY,
+            "problem": bool(triggers),
+            "triggers": triggers,
             "max_starts_per_hour": per_hour,
+            "starts_24h": stats.starts,
             "critical_runs_24h": stats.critical_runs,
             "short_runs_24h": stats.short_runs,
         }
