@@ -72,11 +72,14 @@ from custom_components.waermewacht.curve import (  # noqa: E402
     performance_curve,
 )
 from custom_components.waermewacht.cycling import (  # noqa: E402
+    PROJECTION_DAYS,
     CycleStats,
     activity_seconds,
     cycle_stats,
+    cycling_triggers,
     max_starts_per_hour,
     prune,
+    starts_projection,
 )
 from custom_components.waermewacht.degree_days import (  # noqa: E402
     change_percent,
@@ -1074,7 +1077,20 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
             )
 
     today, yesterday = sim.cycles("today", now), sim.cycles("yesterday", now)
-    put("starts_today", today.starts)
+    # Starts per year from the last 7 complete days (runtime.starts_projection).
+    local_today = now.astimezone(TZ).date()
+    days = [
+        local_midnight(local_today - k * DAY, TZ) for k in range(PROJECTION_DAYS, 0, -1)
+    ]
+    projection = starts_projection(
+        sim.runs,
+        sim.tracker.open_run,
+        days,
+        local_midnight(local_today, TZ),
+        sim.tracker.observed_since,
+        sim.tracker.gaps,
+    )
+    put("starts_today", today.starts, **projection.as_attributes())
     put("starts_yesterday", yesterday.starts)
     put("starts_total", sim.starts, source="heat_pump")
     baseline = a["starts_baseline"]
@@ -1139,6 +1155,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
             "€",
             2,
             period_start=start.astimezone(TZ).isoformat(),
+            price_source="fixed",
         )
     season = comparison(Period.SEASON)
     season_start = sim.marks.starts[Period.SEASON]
@@ -1149,6 +1166,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "€/kWh",
         3,
         period_start=season_start.astimezone(TZ).isoformat(),
+        price_source="fixed",
     )
     put(
         "gas_savings_season",
@@ -1156,6 +1174,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "€",
         0,
         period_start=season_start.astimezone(TZ).isoformat(),
+        price_source="fixed",
         heat_kwh=round(season.heat_kwh, 1),
         heat_pump_cost_eur=_r(season.heat_pump_cost_eur),
         electricity_base_cost_eur=_r(season.electricity_base_cost_eur),
@@ -1273,7 +1292,15 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         critical_seconds=CRITICAL_SECONDS,
     )
     per_hour = max_starts_per_hour(sim.runs, sim.tracker.open_run, start, now)
-    problem = per_hour > STARTS_PER_HOUR or stats.critical_runs >= CRITICAL_RUNS_PER_DAY
+    triggers = cycling_triggers(
+        per_hour,
+        stats.critical_runs,
+        stats.starts,
+        starts_per_hour=STARTS_PER_HOUR,
+        critical_per_day=CRITICAL_RUNS_PER_DAY,
+        starts_per_day=None,
+    )
+    problem = bool(triggers)
     dhw_charges = _finding(aux_dhw_charges(split))
     for key in (
         "disinfections",
@@ -1286,10 +1313,13 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         "cycling_problem": {
             "s": "on" if problem else "off",
             "a": {
+                "triggers": triggers,
                 "max_starts_per_hour": per_hour,
+                "starts_24h": stats.starts,
                 "critical_runs_24h": stats.critical_runs,
                 "short_runs_24h": stats.short_runs,
                 "starts_per_hour_limit": STARTS_PER_HOUR,
+                "starts_per_day_limit": None,
             },
         },
         "efficiency_drop": _finding(a["efficiency_drop"]),
