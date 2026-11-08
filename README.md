@@ -792,7 +792,7 @@ entities:
 
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="AZ-Kennlinie Heizen über der Außentemperatur, Energiesignatur mit Heizlast-Gerade und Kennwerte wie Heizlast, Heizgrenze und Gradtage" width="720">
 
-Beide Diagramme brauchen die Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card) aus dem Marketplace (vor Home Assistant 2026.11: HACS). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die Grenzen der y-Achse (`min`, `max`) passt du an deine Anlage an.
+Beide Diagramme brauchen die Karte [apexcharts-card](https://github.com/RomRider/apexcharts-card) aus dem Marketplace (vor Home Assistant 2026.11: HACS). Sie kennt nur eine Zeitachse. Die Beispiele bilden deshalb die Außentemperatur von −15 bis 25 °C auf die 40 Stunden ab, die am Ende des heutigen Tages enden (1 K = 1 Stunde). Die Beschriftung der Achse rechnet die Zeit zurück in °C. Die y-Achse hat nur eine Untergrenze (`min`); nach oben skaliert ApexCharts selbst, damit kein Punkt abgeschnitten wird.
 
 AZ-Kennlinie Heizen, vorige und laufende Saison:
 
@@ -816,8 +816,7 @@ apex_config:
     tooltip:
       enabled: false
   yaxis:
-    - min: 2
-      max: 6
+    - min: 1
       tickAmount: 4
       decimalsInFloat: 1
       title:
@@ -882,7 +881,6 @@ apex_config:
       enabled: false
   yaxis:
     - min: 0
-      max: 4
       tickAmount: 4
       decimalsInFloat: 1
       title:

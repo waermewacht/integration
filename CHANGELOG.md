@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Statistik auch für später nachgetragene Zähler.** Wärmewacht schrieb die Zeit vor der Einrichtung nur einmal je Eintrag in die Statistik der eigenen Energie-Sensoren. Ein Sensor, der erst später entsteht, weil du unter *Neu konfigurieren* einen Zähler nachträgst (etwa die Wärme Warmwasser oder die Kesselzähler einer Hybridanlage), begann deshalb erst mit dem Nachtragen; Monatsbalken der Karte „Wärme und Strom je Monat“ und Statistik-Karten zeigten davor zu wenig. Jetzt bekommt jeder Sensor einmal seine Vergangenheit, auch wenn er später dazukommt: die Zeit vor der Einrichtung und die zwischen Einrichtung und Nachtragen, aus der Statistik seines Zählers, so weit sie zurückreicht. Das gilt für Wärme, Kesselwärme und Brennstoff und für Strom mit eigenem Zähler; Strom Stillstand und aus einem gemeinsamen Zähler aufgeteilter Strom bekommen nichts nach, weil diese Energie schon im Strom der anderen Sensoren steckte. Die Sensoren der Einrichtung bleiben unverändert, auch nach dem Update: Wärmewacht erkennt an der Statistik, welche schon versorgt sind, und schreibt nichts doppelt. Zähler, die du seit der Einrichtung nachgetragen hast, holt das Update beim ersten Start nach.
+- **README, ApexCharts-Beispiele:** Energiesignatur und AZ-Kennlinie ohne feste Obergrenze der y-Achse; Wochen über 4 kW bzw. Arbeitszahlen über 6 wurden abgeschnitten (die AZ-Kennlinie beginnt jetzt bei 1 statt 2). Anlass: Rückmeldung eines Nutzers.
 
 ## 0.4.4 – 2026-11-08
 

@@ -792,7 +792,7 @@ entities:
 
 <img src="https://raw.githubusercontent.com/waermewacht/integration/main/assets/screenshots/analyse.png" alt="Heating performance curve over the outdoor temperature, energy signature with the heat load line and figures such as heat load, heating limit and degree days" width="720">
 
-Both charts need the card [apexcharts-card](https://github.com/RomRider/apexcharts-card) from the Marketplace (before Home Assistant 2026.11: HACS). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. Adjust the limits of the y axis (`min`, `max`) to your installation.
+Both charts need the card [apexcharts-card](https://github.com/RomRider/apexcharts-card) from the Marketplace (before Home Assistant 2026.11: HACS). It only has a time axis. The examples therefore map the outdoor temperature from −15 to 25 °C onto the 40 hours that end at the end of today (1 K = 1 hour). The axis labels convert the time back to °C. The y axis only has a lower limit (`min`); upwards ApexCharts scales by itself, so no point is cut off.
 
 Performance curve heating, previous and current season:
 
@@ -816,8 +816,7 @@ apex_config:
     tooltip:
       enabled: false
   yaxis:
-    - min: 2
-      max: 6
+    - min: 1
       tickAmount: 4
       decimalsInFloat: 1
       title:
@@ -882,7 +881,6 @@ apex_config:
       enabled: false
   yaxis:
     - min: 0
-      max: 4
       tickAmount: 4
       decimalsInFloat: 1
       title:
