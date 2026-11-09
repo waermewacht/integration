@@ -9,6 +9,7 @@ import pytest
 
 from custom_components.waermewacht.backfill import (
     by_hour,
+    energy_between,
     hour_totals,
     near_heat_hours,
     split_heat_total,
@@ -134,3 +135,89 @@ def test_late_sensors_with_the_common_heat_meter() -> None:
         Signal.ELEC_HEATING,
         Signal.ELEC_DHW,
     }
+
+
+# Heat meter in whole kWh (SensoStar), 0.6 kWh heat an hour: the steps of
+# hours 0..9 of a run, 6 kWh in all.
+COARSE_STEPS = [0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0]
+
+
+@pytest.mark.parametrize(
+    ("heat_signal_", "modes"),
+    [
+        (Signal.HEAT_TOTAL, (Mode.HEATING,)),
+        (Signal.HEAT_TOTAL, HEAT_DHW_MODES),
+        (Signal.HEAT_HEATING, (Mode.HEATING,)),
+    ],
+)
+def test_whole_kwh_heat_meter_with_one_electricity_meter(
+    heat_signal_: Signal, modes: tuple[Mode, ...]
+) -> None:
+    """One electricity meter for all modes, 0.15 kWh an hour while running:
+    the hours between two heat steps are running, not standby (they were:
+    0.6 of 1.5 kWh standby, ratio heating 6.67 instead of 4)."""
+    hours = range(20)
+    heat = {H0 + timedelta(hours=h): COARSE_STEPS[h] if h < 10 else 0.0 for h in hours}
+    # Running 0.15 kWh an hour, then standby of 30 W.
+    elec = {H0 + timedelta(hours=h): 0.15 if h < 10 else 0.03 for h in hours}
+    hourly = {heat_signal_: heat, Signal.ELEC_TOTAL: elec}
+    run = energy_between(hourly, None, H0 + timedelta(hours=10), modes)
+    assert run.heat(Mode.HEATING) == pytest.approx(6.0)
+    assert run.electricity(Mode.HEATING) == pytest.approx(1.5)
+    assert run.standby() == 0
+    assert run.heat(Mode.HEATING) / run.electricity(Mode.HEATING) == pytest.approx(4)
+    # After the run: two hours in the window around the last step still
+    # count as running, the eight after that are real standby.
+    after = energy_between(
+        hourly, H0 + timedelta(hours=10), H0 + timedelta(hours=20), modes
+    )
+    assert after.electricity(*Mode) == pytest.approx(0.06)
+    assert after.standby() == pytest.approx(0.24)
+    assert after.get(Kind.STANDBY, Mode.HEATING) == pytest.approx(0.24)
+
+
+def test_fine_heat_meter_with_one_electricity_meter_keeps_the_same_hour() -> None:
+    """A heat meter in 0.01 kWh: an hour without heat stays standby, also
+    right next to a run (unchanged)."""
+    hourly = {
+        Signal.HEAT_TOTAL: {
+            H0: 0.61,
+            H0 + timedelta(hours=1): 0.0,
+            H0 + timedelta(hours=2): 0.59,
+        },
+        Signal.ELEC_TOTAL: {
+            H0: 0.15,
+            H0 + timedelta(hours=1): 0.03,
+            H0 + timedelta(hours=2): 0.15,
+        },
+    }
+    assert near_heat_hours(hourly, HEAT_DHW_MODES) == {}
+    hours = by_hour(hourly, HEAT_DHW_MODES)
+    assert hours[H0 + timedelta(hours=1)].get(
+        Kind.STANDBY, Mode.HEATING
+    ) == pytest.approx(0.03)
+    assert hours[H0 + timedelta(hours=1)].electricity(*Mode) == 0
+    total = energy_between(hourly, None, H0 + timedelta(hours=3), HEAT_DHW_MODES)
+    assert total.electricity(Mode.HEATING) == pytest.approx(0.3)
+    assert total.standby() == pytest.approx(0.03)
+
+
+def test_whole_kwh_electricity_meter_next_to_fine_heat() -> None:
+    """The one electricity meter in whole kWh steps an hour after the heat:
+    running, like a whole kWh meter of a mode."""
+    hourly = {
+        Signal.HEAT_HEATING: {H0: 2.31, H0 + timedelta(hours=1): 0.0},
+        Signal.ELEC_TOTAL: {H0: 0.0, H0 + timedelta(hours=1): 1.0},
+    }
+    hours = by_hour(hourly, (Mode.HEATING,))
+    assert hours[H0 + timedelta(hours=1)].get(Kind.ELEC, Mode.HEATING) == 1.0
+    assert hours[H0 + timedelta(hours=1)].standby() == 0
+
+
+def test_one_electricity_meter_near_heat_of_another_mode() -> None:
+    """Near the heat of hot water only: its electricity, not heating's."""
+    totals = hour_totals({Signal.ELEC_TOTAL: 1.0}, near_heat=[Mode.DHW])
+    assert totals.get(Kind.ELEC, Mode.DHW) == 1.0
+    assert totals.standby() == 0
+    totals = hour_totals({Signal.ELEC_TOTAL: 1.0}, near_heat=[Mode.DHW, Mode.HEATING])
+    assert totals.get(Kind.ELEC, Mode.HEATING) == 1.0

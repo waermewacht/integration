@@ -10,6 +10,8 @@ its electricity counts as running.
 Counters in whole kWh (Daikin over P1P2MQTT) step rarely, and the heat and
 the electricity of one run step in different hours: a step of electricity
 counts as running when its mode delivered heat within COARSE_WINDOW hours.
+The same holds for one electricity meter for all modes (Signal.ELEC_TOTAL)
+next to a heat meter in whole kWh (a separate heat meter, e.g. SensoStar).
 Standby of some 30 W makes such a counter step about once a day; hardly any
 of it is lost that way.
 
@@ -108,10 +110,13 @@ def hour_totals(
     elec_total = changes.get(Signal.ELEC_TOTAL, 0.0)
     if elec_total:
         # One meter for all modes: split by the heat of the hour; an hour
-        # without heat is standby.
+        # without heat is standby, unless a counter in whole kWh had heat in
+        # a neighbouring hour (to heating first, as the common heat meter).
         heat = sum(heat_by_mode.values())
         if heat <= 0:
-            totals.add(Kind.STANDBY, Mode.HEATING, elec_total)
+            near = [m for m in Mode if m in near_heat]
+            mode = Mode.HEATING if not near or Mode.HEATING in near else near[0]
+            totals.add(Kind.ELEC if near else Kind.STANDBY, mode, elec_total)
         else:
             for mode, part in heat_by_mode.items():
                 if part > 0:
@@ -212,7 +217,9 @@ def near_heat_hours(
         if heat is None and mode in TOTAL_HEAT_MODES:
             heat = hourly.get(Signal.HEAT_TOTAL)
         heat = heat or {}
-        elec = hourly.get(ELEC_SIGNALS[mode], {})
+        elec = hourly.get(ELEC_SIGNALS[mode])
+        if elec is None:
+            elec = hourly.get(Signal.ELEC_TOTAL, {})
         if not (coarse(heat) or coarse(elec)):
             continue
         near[mode] = {
