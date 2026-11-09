@@ -1,7 +1,8 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.6.1 – 2026-11-09
 
+- **Zahnrad: Hinweis auf Temperaturen ohne Langzeitstatistik.** Hat die Außen-, Vor- oder Rücklauftemperatur keine `state_class` (etwa selbst angelegte Modbus- oder Template-Sensoren), führt Home Assistant für sie keine Langzeitstatistik – dann fehlen AZ-Kennlinie, Heizlast und Gradtage bzw. „Vorlauf bei 0 °C“, und der Gütegrad hat keinen Rückblick, ohne dass man sah, warum. Die Übersicht oben im Zahnrad sagt es jetzt unter „Was fehlt“ („Außentemperatur ohne Langzeitstatistik (keine state_class): keine AZ-Kennlinie, Heizlast und Gradtage.“). Abhilfe: beim Sensor `state_class: measurement` setzen; die Statistik beginnt dann ab da. Anlass: Rückmeldung per PN aus dem simon42-Forum.
 - **Neu konfigurieren: Sonderzähler-Abschnitt bleibt eingeklappt.** Seit 0.6.0 trägt die EMS-ESP-Vorlage die Zähler „Laufzeit Kompressor Heizen“ und „Kompressorstarts Heizen“ ein (für den Rückblick der Laufzeit je Außentemperatur). Dadurch klappte der Abschnitt „Ein Zähler für alle Betriebsarten, Sonderzähler“ bei jedem EMS-ESP-Eintrag auf. Diese zwei Zähler öffnen ihn nicht mehr; ein echter Sonderzähler schon. Anlass: eigene Prüfung.
 - **Karte „Takte“: Diagramm ohne Sommer.** Das Diagramm „Laufzeit Heizen je Außentemperatur“ endet eine Klasse über der wärmsten mit Heizbetrieb, statt bis 35 °C nur Nullen zu zeigen.
 
