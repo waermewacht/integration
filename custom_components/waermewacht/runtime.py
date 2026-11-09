@@ -2314,7 +2314,9 @@ class HeatPumpRuntime:
             self.decimal.add(signal)
         counter = self.counters[signal]
         previous, before = counter.last_time, counter.last_value
-        rose = before is not None and kwh > before
+        # Not stuck when the value read rises, even below a held baseline.
+        seen = before if counter.last_reading is None else counter.last_reading
+        rose = seen is not None and kwh > seen
         update = counter.update(kwh, at)
         if update.event is CounterEvent.JUMP:
             self._note_jump(signal, before, kwh, previous, at)

@@ -212,6 +212,9 @@ class Counter:
     # Day counters: the local date the baseline belongs to when it is not the
     # date of `last_time` (the rest of the previous day read after midnight).
     value_day: date | None = None
+    # Day counters: the latest value read, also when it was a dip below the
+    # baseline (None: the baseline). Tells a rising source from a stuck one.
+    last_reading: float | None = None
 
     def update(self, value: float, at: datetime) -> CounterUpdate:
         """Process a reading in kWh taken at `at` (timezone-aware)."""
@@ -305,6 +308,9 @@ class Counter:
             return CounterUpdate()
         today = at.astimezone(self.day_tz).date()
         baseline_day = self.value_day or previous.astimezone(self.day_tz).date()
+        # Compared with the baseline, not the last reading: a source counted
+        # in UTC days that starts anew at local midnight (ViCare) shows its
+        # new day as dips before midnight UTC and rises across it.
         if baseline_day != today:
             if (
                 not self.previous_day
@@ -321,18 +327,19 @@ class Counter:
                 # The rest of the day before (or more of it): book the rise,
                 # keep the baseline on its day.
                 self.last_value, self.last_time = value, at
-                self.value_day = baseline_day
+                self.last_reading, self.value_day = value, baseline_day
                 return CounterUpdate(
                     delta=value - previous_value, event=CounterEvent.LATE
                 )
             if not self._plausible_day_value(value, at):
                 return CounterUpdate(event=CounterEvent.JUMP)
             self.last_value, self.last_time, self.value_day = value, at, None
+            self.last_reading = value
             return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
         if not self._plausible_day_value(value, at):
             return CounterUpdate(event=CounterEvent.JUMP)
         delta = value - previous_value
-        self.last_time = at
+        self.last_time, self.last_reading = at, value
         if delta < 0:
             return CounterUpdate(event=CounterEvent.DIP)
         self.last_value = value
@@ -366,6 +373,8 @@ class Counter:
             data["jump"] = self.jump.as_dict()
         if self.value_day is not None:
             data["value_day"] = self.value_day.isoformat()
+        if self.last_reading is not None and self.last_reading != self.last_value:
+            data["last_reading"] = self.last_reading
         return data
 
     def restore(self, data: dict[str, Any]) -> None:
@@ -378,3 +387,4 @@ class Counter:
         self.jump = PendingJump.from_dict(jump) if jump else None
         value_day = data.get("value_day")
         self.value_day = date.fromisoformat(value_day) if value_day else None
+        self.last_reading = data.get("last_reading")

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **„Zähler stehen still“ ohne Fehlalarm nach dem Update auf 0.4.10.** Wer 0.4.10 nach einer falsch gebuchten Nacht mitten am Tag installiert, hat beim Bosch-HomeCom-Eintrag noch den Endstand des Vortags als Basis; die Werte des Tages bleiben darunter und galten als Stillstand. Die Prüfung schaut jetzt auf den zuletzt gelesenen Wert: Steigt er, steht der Zähler nicht still. Gebucht wird wie in 0.4.10 (der Tag kommt in der Nacht danach, ab dem ersten Tag über dem Vortag ist alles wieder normal).
+
 ## 0.4.10 – 2026-11-09
 
 - **Behoben: Bosch HomeCom ab 1.6.2 – der neue Tag wurde nicht gebucht, Hinweis „Zähler stehen still“.** Bosch HomeCom liefert seit Version 1.6.2 nach Mitternacht erst die letzte Stunde des Vortags (z. B. 00:41: 5,25 kWh nach 4,95) und springt danach auf den neuen Tag (00:42: 0,0). Wärmewacht hielt den späten Vortageswert für den ersten Wert des neuen Tages: Es buchte den ganzen Vortag noch einmal, hielt danach jeden Wert unter diesem Stand für einen Rücksprung und buchte bis dahin nichts – nach 6 Stunden Lauf meldete es „Zähler stehen still“. Jetzt erkennt Wärmewacht den Rest des Vortags (ein Anstieg kurz nach Mitternacht, höchstens 3 Stunden nach dem letzten Wert) und bucht nur ihn; der neue Tag beginnt mit dem Sprung auf den neuen Tageswert. Der Rückblick war nicht betroffen. Zählt ein Eintrag zum Update-Zeitpunkt schon falsch, rückt sich das um Mitternacht von selbst zurecht; der Hinweis verschwindet, sobald der Zähler wieder als steigend erkannt wird. Anlass: eigene Anlage.

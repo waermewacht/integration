@@ -193,6 +193,38 @@ def test_day_counter_rising_after_midnight_books_every_rise_once() -> None:
     assert reset.delta == pytest.approx(0.2)
 
 
+def test_day_counter_baseline_from_the_wrong_day_heals() -> None:
+    """Updated during a day that started wrongly (before 0.4.10): the
+    baseline holds yesterday's 5.25, today's values stay below it. That day
+    is booked whole the next night; the first day above the day before
+    heals it (its rest after midnight is told, the step back starts anew)."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.restore(
+        {"last_value": 5.25, "last_time": local(27, 10).isoformat(), "rose_time": None}
+    )
+    assert counter.update(2.4, local(27, 11)).event is CounterEvent.DIP
+    assert counter.update(4.3, local(27, 23, 16)).event is CounterEvent.DIP
+    assert counter.update(4.5, local(28, 0, 41)).delta == pytest.approx(4.5)
+    assert counter.update(0.0, local(28, 0, 42)).event is CounterEvent.DIP
+    assert counter.update(6.0, local(28, 23, 16)).delta == pytest.approx(1.5)
+    late = counter.update(6.2, local(29, 0, 41))
+    assert late.event is CounterEvent.LATE
+    assert counter.update(0.0, local(29, 0, 42)).event is CounterEvent.RESET
+    assert counter.update(0.4, local(29, 1, 42)).delta == pytest.approx(0.4)
+
+
+def test_day_counter_last_reading_follows_dips_and_survives_a_restart() -> None:
+    """The stuck check compares with the value read, not the held baseline."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(5.25, local(27, 10))
+    counter.update(4.3, local(27, 23, 16))
+    assert counter.last_value == pytest.approx(5.25)
+    assert counter.last_reading == pytest.approx(4.3)
+    restored = Counter(max_kw=50.0, day_tz=BERLIN)
+    restored.restore(counter.as_dict())
+    assert restored.last_reading == pytest.approx(4.3)
+
+
 def test_previous_day_values_are_never_the_rest_of_a_day() -> None:
     """MELCloud: the new previous-day value after midnight is a whole day."""
     counter = Counter(max_kw=20.0, day_tz=BERLIN, previous_day=True)
