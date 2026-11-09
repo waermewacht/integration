@@ -35,6 +35,7 @@ def test_template_entry_with_everything() -> None:
         "de",
     )
     assert text == (
+        "**Eingerichtet**\n"
         "- **Quelle:** Vorlage EMS-ESP\n"
         "- **Zähler:** Heizen: Wärme, Strom · Warmwasser: Wärme, Strom"
         " · Kühlen: Wärme, Strom · Heizstab je Betriebsart\n"
@@ -68,7 +69,7 @@ def test_own_mapping_without_feed_in_meter() -> None:
         None,
         "de",
     )
-    lines = text.split("\n")
+    lines = text.split("\n")[1:]
     assert lines[0] == "- **Quelle:** eigene Zuordnung"
     assert lines[1] == (
         "- **Zähler:** Heizen: Wärme gesamt, Strom · Warmwasser: Wärme gesamt, Strom"
@@ -77,7 +78,7 @@ def test_own_mapping_without_feed_in_meter() -> None:
     assert "- **PV-Aufteilung:** Wärmepumpe zuerst, mit Batterie" in lines
     assert "30 Starts/Tag" in text
     assert text.endswith(
-        "**Was fehlt:**\n"
+        "**Was fehlt**\n"
         "- Keine Normaußentemperatur: Heizlast nur je Kelvin.\n"
         "- Kein Einspeise- und PV-Zähler: die PV-Aufteilung rechnet nur"
         " „Wärmepumpe zuerst aus dem Netz“."
@@ -95,7 +96,7 @@ def test_missing_meters_and_activity_in_english() -> None:
         "- **Meters:** Heating: heat, electricity · Hot water: no heat, electricity"
         in text
     )
-    hints = text.split("**Missing:**\n")[1].split("\n")
+    hints = text.split("**Missing**\n")[1].split("\n")
     assert hints == [
         "- No hot water heat meter: no hot water performance factor.",
         "- No compressor state: no runs and starts, standby only from the heat.",
@@ -124,12 +125,13 @@ def test_gas_entry() -> None:
         language="de",
     )
     assert text == (
+        "**Eingerichtet**\n"
         "- **Art:** Gasheizung\n"
         "- **Zähler:** gesamt (Heizen und Warmwasser)\n"
         "- **Messwerte:** außen ✓, Vorlauf ✓\n"
         "- **Gaspreis:** 11,5 ct/kWh · Nutzungsgrad 0,87 · Normaußentemperatur –\n"
         "\n"
-        "**Was fehlt:**\n"
+        "**Was fehlt**\n"
         "- Gesamtzähler ohne Warmwasserzähler und ohne Haken"
         " „Vorlauffühler sitzt im Heizkreis“: kein Vorlauf bei 0 °C.\n"
         "- Keine Normaußentemperatur: Heizlast nur je Kelvin."
@@ -170,7 +172,7 @@ def test_whole_kwh_heat_meter_without_compressor() -> None:
         " Laufstroms als Stillstand – Kompressor eintragen, wenn vorhanden."
     )
     text = heat_pump_summary(meters, {}, None, "de", coarse_heat=True)
-    hints = text.split("**Was fehlt:**\n")[1].split("\n")
+    hints = text.split("**Was fehlt**\n")[1].split("\n")
     assert (
         hints[
             hints.index(

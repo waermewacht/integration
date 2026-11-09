@@ -92,6 +92,7 @@ T = {
     "per_day": ("starts/day", "Starts/Tag"),
     "short": ("short run", "Kurzlauf"),
     "critical": ("critical", "kritisch"),
+    "configured": ("Set up", "Eingerichtet"),
     "missing": ("Missing", "Was fehlt"),
     "kind_gas": ("Gas boiler", "Gasheizung"),
     "kind_oil": ("Oil boiler", "Ölheizung"),
@@ -180,9 +181,11 @@ def _flag(present: bool) -> str:
 
 
 def _lines(lines: list[str], hints: list[str], lang: int) -> str:
-    text = "\n".join(f"- {line}" for line in lines)
+    """Headings as in the sister integrations: "Set up", then "Missing"
+    only when something is missing."""
+    text = f"**{T['configured'][lang]}**\n" + "\n".join(f"- {line}" for line in lines)
     if hints:
-        text += f"\n\n**{T['missing'][lang]}:**\n" + "\n".join(f"- {h}" for h in hints)
+        text += f"\n\n**{T['missing'][lang]}**\n" + "\n".join(f"- {h}" for h in hints)
     return text
 
 

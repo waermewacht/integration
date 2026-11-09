@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Einstellungen: Hinweis zur PV-Aufteilung klarer.** Sind Einspeise-, PV- oder Batteriezähler aus Tarifwacht oder Einspeisewacht vorbelegt, sagt der Hinweis jetzt auch, dass die Aufteilung erst mit dem Netzbezug-Zähler beginnt. Den schlägt Wärmewacht bewusst nicht vor, weil sonst jedes Speichern die Aufteilung einschalten würde; bisher konnte man meinen, mit den vorbelegten Zählern sei sie schon an. Die Zusammenfassung oben nennt „Starts/Tag“ nur noch, wenn eine Grenze eingetragen ist (bisher „– Starts/Tag“). Anlass: eigene Prüfung.
+- **Zusammenfassung im Zahnrad mit Überschriften wie in den anderen Wachten:** oben „Eingerichtet“, darunter „Was fehlt“ (ohne Doppelpunkt), nur wenn etwas fehlt. Inhalt unverändert.
 
 ## 0.4.9 – 2026-11-09
 

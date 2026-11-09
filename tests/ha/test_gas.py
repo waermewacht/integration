@@ -311,7 +311,7 @@ async def test_gas_setup_flow(hass: HomeAssistant) -> None:
     assert result["step_id"] == "gas"
     # The summary on top (Home Assistant in English in the tests).
     summary = result["description_placeholders"]["summary"]
-    assert summary.startswith("- **Kind:** Gas boiler\n")
+    assert summary.startswith("**Set up**\n- **Kind:** Gas boiler\n")
     assert "- No gas price: no costs." in summary
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],

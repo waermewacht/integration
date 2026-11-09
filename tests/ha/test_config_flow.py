@@ -485,7 +485,7 @@ async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
     )
     # The summary of the entry on top of the form.
     summary = result["description_placeholders"]["summary"]
-    assert summary.startswith("- **Source:** Template EMS-ESP\n")
+    assert summary.startswith("**Set up**\n- **Source:** Template EMS-ESP\n")
     assert "- **Electricity price:** sensor (else 27.75 ct/kWh)" in summary
     assert "- **PV split:** heat pump first" in summary
     sent = unchanged_input(result)
