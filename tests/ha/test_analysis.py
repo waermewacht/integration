@@ -481,3 +481,97 @@ async def test_look_back_again_for_new_meters(hass: HomeAssistant) -> None:
         assert await hass.config_entries.async_reload(entry.entry_id)
         await hass.async_block_till_done()
     rebuild.assert_not_called()
+
+
+RUNTIME = "sensor.hc_meters_hours_compressor_heating"
+COMPRESSOR = "binary_sensor.hc_mode_compressor"
+
+
+@pytest.mark.freeze_time(NOW)
+async def test_runs_continuously_from_a_runtime_counter_without_starts(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """P1P2MQTT: a run time counter in whole hours with state class
+    measurement (no sum, so no change) and no start counter of heating. The
+    look-back takes the step of the hourly maximum; the share counts, the
+    starts stay unknown."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    import_series(hass, OUTDOOR, mean=True)
+    import_series(hass, FLOW, mean=True)
+    async_import_statistics(
+        hass,
+        StatisticMetaData(
+            mean_type=StatisticMeanType.ARITHMETIC,
+            has_sum=False,
+            name=None,
+            source="recorder",
+            statistic_id=RUNTIME,
+            unit_class=None,
+            unit_of_measurement="h",
+        ),
+        [
+            # Running all the time: one hour more each hour.
+            StatisticData(
+                start=FIRST_HOUR + timedelta(hours=i),
+                mean=1000.5 + i,
+                min=1000.0 + i,
+                max=1001.0 + i,
+            )
+            for i in range(HOURS)
+        ],
+    )
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "30.0", TEMPERATURE)
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(
+        RUNTIME, "1072", {"unit_of_measurement": "h", "state_class": "measurement"}
+    )
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+                "flow_temp": FLOW,
+                "compressor": COMPRESSOR,
+                "runtime_heating": RUNTIME,
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    below = hass.states.get(
+        registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_continuous_below"
+        )
+    )
+    # 71 hours at 1 °C (the first hour has no hour before it), all running.
+    assert below.state == "2.0"
+    assert below.attributes["days_from_statistics"] == 3
+    (row,) = below.attributes["classes"]
+    assert row["hours"] == 71
+    assert row["share_percent"] == 100
+    assert row["starts_per_day"] is None
+    assert row["minutes_per_start"] is None
+    short = hass.states.get(
+        registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_short_runs_from"
+        )
+    )
+    assert short.state == "unknown"
+    assert short.attributes["reason"] == "too_few_hours"

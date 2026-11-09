@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **„Kleinste Heizleistung“ sagt, was gemeint ist.** Die Hilfe zum Feld nennt jetzt „Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch“. Mit dem kleinsten gemessenen Stromverbrauch (etwa 0,8 kW statt 6,9 kW Wärme) lag die Erwartung, ab wann die Wärmepumpe durchlaufen sollte, viel zu warm. Bestehende Einträge: unter *Einstellungen* prüfen. Anlass: Rückmeldung aus dem simon42-Forum.
+- **Daikin (P1P2MQTT): „Läuft durch unter“ gleich nach dem Update, auch für die Zeit davor.** Der Rückblick brauchte bisher Laufzeit- **und** Startzähler im Heizbetrieb; P1P2MQTT zählt die Starts aber nur gesamt, deshalb begann die Tabelle erst mit der Einrichtung („noch zu wenige Stunden“). Jetzt reicht der Laufzeitzähler: Die Tage aus dem Rückblick zählen für den Laufzeitanteil und „Läuft durch unter“, Starts je Tag, Minuten je Start und „Kurzläufe ab“ kommen weiter nur aus Tagen mit bekannten Starts. Die P1P2MQTT-Vorlage trägt `Hours_Compressor_Heating` selbst ein; bestehende Einträge: unter *Neu konfigurieren* im Abschnitt „Ein Zähler für alle Betriebsarten, Sonderzähler“ als „Laufzeit Kompressor Heizen“ eintragen. Das Feld bietet jetzt auch Zähler ohne Geräteklasse an (Einheit h, min, s oder d), und ein Zähler mit `state_class: measurement` wie bei P1P2MQTT funktioniert auch (Stundenänderung aus dem Stunden-Maximum, in derselben Statistik-Abfrage). Anlass: Rückmeldung aus dem simon42-Forum.
 
 ## 0.6.1 – 2026-11-09
 

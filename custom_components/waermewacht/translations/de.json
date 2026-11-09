@@ -97,8 +97,8 @@
               "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
               "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
               "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
-              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
-              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit."
+              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“, P1P2MQTT „Hours_Compressor_Heating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick der Kurzläufe, zusammen mit der Laufzeit; kein Zähler aller Starts."
             }
           },
           "measurements": {
@@ -178,8 +178,8 @@
               "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
               "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
               "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
-              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
-              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit.",
+              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“, P1P2MQTT „Hours_Compressor_Heating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick der Kurzläufe, zusammen mit der Laufzeit; kein Zähler aller Starts.",
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
               "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
             }

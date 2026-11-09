@@ -22,9 +22,15 @@ limit (bivalence point) unless the unit only switches on and off.
 
 Sources: per day, the diary's histogram "classes" (from the runs, exact to
 the second, and the hourly outdoor means of that day, written at midnight)
-or, for days without it, the long-term statistics of a run time counter and
-a start counter of heating (look-back, only templates or mappings that have
-them). Classes count from 24 hours (own assumption, one day).
+or, for days without it, the long-term statistics of a run time counter of
+heating and, if there is one, a start counter of heating (look-back, only
+templates or mappings that have them). Without a start counter (P1P2MQTT
+counts the starts of all modes only) the look-back days count for the share
+and "runs continuously below", not for starts and minutes per start: each
+class keeps the hours and seconds whose starts are known apart. A counter
+without a sum (state class measurement, P1P2MQTT's hours) gives its hourly
+change as the step of the hourly maximum (runtime.py). Classes count from 24
+hours (own assumption, one day).
 """
 
 from __future__ import annotations
@@ -110,12 +116,14 @@ def day_classes(
 
 def statistics_classes(
     runtime_minutes: Mapping[datetime, float],
-    starts: Mapping[datetime, float],
+    starts: Mapping[datetime, float] | None,
     outdoor: Mapping[datetime, float],
     tz: tzinfo,
 ) -> dict[date, dict[str, list[float]]]:
     """The same histogram per local day from the hourly change of a run time
-    counter (minutes) and a start counter of heating (look-back)."""
+    counter (minutes) and a start counter of heating (look-back), plus the
+    hours and seconds whose starts are known: [hours, seconds, starts,
+    hours with starts, seconds with starts]. `starts` None: no start counter."""
     days: dict[date, dict[str, list[float]]] = {}
     for hour, minutes in runtime_minutes.items():
         temperature = outdoor.get(hour)
@@ -123,13 +131,15 @@ def statistics_classes(
             continue
         # A counter jumping (reset, new unit) is no hour of running.
         seconds = min(minutes * 60, 3600.0)
-        started = starts.get(hour) or 0
         row = days.setdefault(hour.astimezone(tz).date(), {}).setdefault(
-            _key(temperature), [0.0, 0.0, 0.0]
+            _key(temperature), [0.0, 0.0, 0.0, 0.0, 0.0]
         )
         row[0] += 1
         row[1] += seconds
-        row[2] += max(started, 0)
+        if starts is not None:
+            row[2] += max(starts.get(hour) or 0, 0)
+            row[3] += 1
+            row[4] += seconds
     return days
 
 
@@ -141,26 +151,39 @@ class DutyClass:
     hours: float
     heating_seconds: float
     starts: int
+    # Hours and seconds whose starts are known (look-back without a start
+    # counter leaves them out); None: all of them.
+    start_hours: float | None = None
+    start_seconds: float | None = None
 
     @property
     def share(self) -> float:
         return self.heating_seconds / (self.hours * 3600) if self.hours else 0.0
 
     @property
-    def starts_per_day(self) -> float:
-        return 24 * self.starts / self.hours if self.hours else 0.0
+    def hours_with_starts(self) -> float:
+        return self.hours if self.start_hours is None else self.start_hours
+
+    @property
+    def starts_per_day(self) -> float | None:
+        hours = self.hours_with_starts
+        return 24 * self.starts / hours if hours else None
 
     @property
     def minutes_per_start(self) -> float | None:
-        return self.heating_seconds / 60 / self.starts if self.starts else None
+        seconds = (
+            self.heating_seconds if self.start_seconds is None else self.start_seconds
+        )
+        return seconds / 60 / self.starts if self.starts else None
 
     def as_dict(self) -> dict[str, Any]:
         per_start = self.minutes_per_start
+        per_day = self.starts_per_day
         return {
             "lower": self.lower,
             "hours": round(self.hours, 1),
             "share_percent": round(100 * self.share, 1),
-            "starts_per_day": round(self.starts_per_day, 1),
+            "starts_per_day": None if per_day is None else round(per_day, 1),
             "minutes_per_start": None if per_start is None else round(per_start),
         }
 
@@ -203,6 +226,7 @@ def duty_figures(
         if first <= (day := date.fromisoformat(entry["day"])) <= last
     }
     statistics = statistics or {}
+    # Per class: hours, seconds, starts, hours and seconds with starts.
     sums: dict[float, list[float]] = {}
     days = from_statistics = 0
     day = first
@@ -212,15 +236,22 @@ def duty_figures(
             from_statistics += 1
         if classes:
             days += 1
-            for key, (hours, seconds, starts) in classes.items():
-                row = sums.setdefault(float(key), [0.0, 0.0, 0.0])
+            for key, values in classes.items():
+                hours, seconds, starts, *known = values
+                # The diary's rows (three values) know every start.
+                start_hours, start_seconds = known or (hours, seconds)
+                row = sums.setdefault(float(key), [0.0] * 5)
                 row[0] += hours
                 row[1] += seconds
                 row[2] += starts
+                row[3] += start_hours
+                row[4] += start_seconds
         day += timedelta(days=1)
     rows = [
-        DutyClass(lower, hours, seconds, int(starts))
-        for lower, (hours, seconds, starts) in sorted(sums.items())
+        DutyClass(lower, hours, seconds, int(starts), start_hours, start_seconds)
+        for lower, (hours, seconds, starts, start_hours, start_seconds) in sorted(
+            sums.items()
+        )
     ]
     below, below_reason = _continuous_below(rows)
     short, short_reason = _short_runs_from(rows, short_minutes)
@@ -249,7 +280,7 @@ def _continuous_below(rows: Sequence[DutyClass]) -> tuple[float | None, str | No
 def _short_runs_from(
     rows: Sequence[DutyClass], short_minutes: float
 ) -> tuple[float | None, str | None]:
-    usable = [r for r in rows if r.hours >= MIN_CLASS_HOURS and r.starts]
+    usable = [r for r in rows if r.hours_with_starts >= MIN_CLASS_HOURS and r.starts]
     if not usable:
         return None, TOO_FEW_HOURS
     found: float | None = None
@@ -319,6 +350,18 @@ def duty_attributes(duty: Mapping[str, Any], key: str) -> dict[str, Any]:
         "expected_continuous_below": duty.get("expected_continuous_below"),
         "short_run_minutes": duty.get("short_run_minutes"),
     }
+
+
+def hour_steps(highest: Mapping[datetime, float]) -> dict[datetime, float]:
+    """Hourly change of a counter without a sum from its hourly maxima: the
+    step from the hour before, only between neighbouring hours and never
+    negative (a reset or a gap gives no hour)."""
+    result: dict[datetime, float] = {}
+    for hour, value in highest.items():
+        before = highest.get(hour - HOUR)
+        if before is not None and value >= before:
+            result[hour] = value - before
+    return result
 
 
 def runtime_minutes(change: float | None, unit: str | None) -> float | None:

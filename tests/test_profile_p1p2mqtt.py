@@ -53,6 +53,7 @@ EXPECTED = {
     Signal.COOLING_FLAG: B + "mode_climate_cooling",
     Signal.HEATING_FLAG: B + "mode_climate_heating",  # not the request
     Signal.STARTS_TOTAL: M + "starts_compressor",
+    Signal.RUNTIME_HEATING: M + "hours_compressor_heating",
     Signal.OUTDOOR_TEMP: S + "temperature_outside",  # not the outdoor unit's
     Signal.FLOW_TEMP: S + "temperature_r1t_hp2gas_water",  # before the BUH
     Signal.RETURN_TEMP: S + "temperature_r4t_return_water",  # not R9T
@@ -91,6 +92,7 @@ def test_real_installation() -> None:
         Signal.COOLING_FLAG: b + "mode_climate_cooling",
         Signal.HEATING_FLAG: b + "mode_climate_heating",
         Signal.STARTS_TOTAL: m + "starts_compressor",
+        Signal.RUNTIME_HEATING: m + "hours_compressor_heating",
         Signal.OUTDOOR_TEMP: s + "temperature_outside",
         Signal.FLOW_TEMP: s + "temperature_r1t_hp2gas_water",
         Signal.RETURN_TEMP: s + "temperature_r4t_return_water",

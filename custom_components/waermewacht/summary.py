@@ -76,6 +76,7 @@ T = {
         "run time/start counter heating",
         "Laufzeit-/Startzähler Heizen",
     ),
+    "heating_runtime": ("run time counter heating", "Laufzeitzähler Heizen"),
     "measurements": ("Measurements", "Messwerte"),
     "outdoor": ("outdoor", "außen"),
     "flow": ("flow", "Vorlauf"),
@@ -259,6 +260,8 @@ def heat_pump_summary(
         + (
             f", {t('heating_counters')} ✓"
             if Signal.RUNTIME_HEATING in mapped and Signal.STARTS_HEATING in mapped
+            else f", {t('heating_runtime')} ✓"
+            if Signal.RUNTIME_HEATING in mapped
             else ""
         )
     )

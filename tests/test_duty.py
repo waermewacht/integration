@@ -16,6 +16,7 @@ from custom_components.waermewacht.duty import (
     day_classes,
     duty_figures,
     expected_continuous_below,
+    hour_steps,
     runtime_minutes,
     statistics_classes,
 )
@@ -71,8 +72,55 @@ def test_statistics_classes() -> None:
     outdoor = {T0: 1.0, T0 + H: 1.5, T0 + 2 * H: 3.0}
     days = statistics_classes(hours, starts, outdoor, BERLIN)
     (day,) = days.values()
-    assert day["0"] == [2, 3600, 1]
-    assert day["2"] == [1, 1800, 1]
+    assert day["0"] == [2, 3600, 1, 2, 3600]
+    assert day["2"] == [1, 1800, 1, 1, 1800]
+
+
+def test_statistics_classes_without_start_counter() -> None:
+    """P1P2MQTT: run time only, the starts stay unknown."""
+    hours = {T0 + n * H: 60.0 for n in range(30)}
+    outdoor = dict.fromkeys(hours, -3.0)
+    days = statistics_classes(hours, None, outdoor, BERLIN)
+    rows = [row for day in days.values() for row in day.values()]
+    assert all(row[2:] == [0, 0, 0] for row in rows)
+    figures = duty_figures(
+        [], T0.date(), (T0 + 30 * H).date(), short_minutes=10, statistics=days
+    )
+    (cls,) = figures.classes
+    assert cls.share == 1.0
+    assert cls.starts_per_day is None
+    assert cls.minutes_per_start is None
+    assert figures.continuous_below == -2.0
+    assert figures.short_reason == TOO_FEW_HOURS
+    assert cls.as_dict()["starts_per_day"] is None
+
+
+def test_starts_only_from_days_that_know_them() -> None:
+    """A diary day with starts beside look-back days without: starts per day
+    and minutes per start come from the diary day alone, the share from all."""
+    first = date(2026, 12, 1)
+    diary = [{"day": "2026-12-03", "classes": {"0": [24, 24 * 1800, 24]}}]
+    look_back = {
+        first: {"0": [24, 24 * 3600, 0, 0, 0]},
+        first + timedelta(days=1): {"0": [24, 24 * 3600, 0, 0, 0]},
+    }
+    figures = duty_figures(
+        diary, first, first + timedelta(days=2), short_minutes=10, statistics=look_back
+    )
+    (cls,) = figures.classes
+    assert cls.hours == 72
+    assert cls.share == (24 * 3600 * 2 + 24 * 1800) / (72 * 3600)
+    assert cls.starts_per_day == 24
+    assert cls.minutes_per_start == 30
+    assert figures.days_from_statistics == 2
+
+
+def test_hour_steps() -> None:
+    """Whole hours, state class measurement: the step of the hourly maximum;
+    a gap or a drop gives no hour."""
+    highest = {T0: 100.0, T0 + H: 101.0, T0 + 2 * H: 101.0, T0 + 4 * H: 103.0}
+    highest[T0 + 5 * H] = 2.0  # reset
+    assert hour_steps(highest) == {T0 + H: 1.0, T0 + 2 * H: 0.0}
 
 
 def test_statistics_classes_skips_jumps_and_gaps() -> None:
@@ -83,7 +131,7 @@ def test_statistics_classes_skips_jumps_and_gaps() -> None:
         BERLIN,
     )
     (day,) = days.values()
-    assert day["0"] == [1, 3600, 0]  # capped at one hour, the drop skipped
+    assert day["0"] == [1, 3600, 0, 1, 3600]  # capped at one hour, the drop skipped
 
 
 def test_runtime_minutes() -> None:

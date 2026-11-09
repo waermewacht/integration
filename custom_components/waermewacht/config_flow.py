@@ -106,6 +106,7 @@ from .const import (
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .day_counters import async_wrong_counters, wrong_kind
+from .duty import MINUTE_FACTORS
 from .entity import own_entities
 from .health import DROP_PERCENT, MILD_FROM
 from .health_extra import LPH_FACTORS
@@ -207,9 +208,19 @@ def _selector(signal: Signal) -> selector.EntitySelector:
     elif signal is Signal.COOLING_MODE:
         filters = selector.EntityFilterSelectorConfig(domain=["select", "sensor"])
     elif signal is Signal.RUNTIME_HEATING:
-        # Hours, minutes or seconds of compressor heating (duty.py).
-        filters = selector.EntityFilterSelectorConfig(
-            domain="sensor", device_class="duration"
+        # Hours, minutes or seconds of compressor heating (duty.py), also
+        # without a device class (P1P2MQTT: "h", state class measurement).
+        return selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                filter=[
+                    selector.EntityFilterSelectorConfig(
+                        domain="sensor", device_class="duration"
+                    ),
+                    selector.EntityFilterSelectorConfig(
+                        domain="sensor", unit_of_measurement=list(MINUTE_FACTORS)
+                    ),
+                ]
+            )
         )
     elif signal in (Signal.STARTS_TOTAL, Signal.STARTS_HEATING):
         # Also a counter helper counting the starts (forum 07.11.); its state

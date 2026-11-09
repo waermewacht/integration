@@ -53,6 +53,8 @@ calls DHW_Demand the DHW flow switch of hybrids: with a gas boiler for hot
 water a tap may show as DHW.
 
 Starts: "Starts_Compressor" (0xB8 subtype 04) without unit and state class.
+Run time: "Hours_Compressor_Heating" in whole hours, state
+class measurement, no device class (real fixture); no starts per mode.
 Flow: "Flow" in L/min, state class measurement, no device class (0x13 byte
 9; some systems report 0.0). Flow temperature: R1T (after the heat pump's
 heat exchanger, before the backup heater or gas boiler) first, named
@@ -106,6 +108,9 @@ P1P2MQTT = Template(
         Signal.COOLING_FLAG: ((_B, _key(_S1, "Climate_Cooling")),),
         Signal.HEATING_FLAG: ((_B, _key(_S1, "Climate_Heating")),),
         Signal.STARTS_TOTAL: ((_S, _key(_C, "Starts_Compressor")),),
+        # Whole hours, state class measurement: the look-back of run time
+        # per outdoor class (duty.py); no start counter of heating.
+        Signal.RUNTIME_HEATING: ((_S, _key(_C, "Hours_Compressor_Heating")),),
         # Outside sensor (or external R6T), else the outdoor unit's own.
         Signal.OUTDOOR_TEMP: (
             (_S, _key(_T, "Temperature_Outside")),

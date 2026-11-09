@@ -139,6 +139,7 @@ from .duty import (
     day_classes,
     duty_figures,
     expected_continuous_below,
+    hour_steps,
     runtime_minutes,
     statistics_classes,
 )
@@ -1225,7 +1226,9 @@ class HeatPumpRuntime:
         changes: tuple[Signal, ...] = (),
     ) -> dict[Signal, dict[datetime, float]]:
         """Hourly means of several temperatures, and the hourly change of
-        the counters in `changes`, in one statistics query."""
+        the counters in `changes`, in one statistics query. A counter without
+        a sum (state class measurement, P1P2MQTT's hours) has no change: its
+        step of the hourly maximum stands in (hour_steps)."""
         ids = {
             s: e
             for s in (*signals, *changes)
@@ -1241,19 +1244,23 @@ class HeatPumpRuntime:
             set(ids.values()),
             "hour",
             {"temperature": UnitOfTemperature.CELSIUS},
-            {"mean", "change"} if changes else {"mean"},
+            {"mean", "change", "max"} if changes else {"mean"},
         )
         result: dict[Signal, dict[datetime, float]] = {}
         for signal, entity_id in ids.items():
             field = "change" if signal in changes else "mean"
             values = result.setdefault(signal, {})
+            highest: dict[datetime, float] = {}
             for row in rows.get(entity_id, []):
-                if (value := row.get(field)) is None:
-                    continue
                 hour = row["start"]
                 if not isinstance(hour, datetime):
                     hour = dt_util.utc_from_timestamp(hour)
-                values[hour] = value
+                if (value := row.get(field)) is not None:
+                    values[hour] = value
+                elif signal in changes and (top := row.get("max")) is not None:
+                    highest[hour] = top
+            if signal in changes and not values and highest:
+                values.update(hour_steps(highest))
         return result
 
     def _boiler_entities(self) -> dict[str, str]:
@@ -1336,9 +1343,9 @@ class HeatPumpRuntime:
         """Run time per outdoor class of the current and the previous season
         (duty.py): the diary's classes, for older days the counters."""
         statistics: dict[date, dict[str, list[float]]] = {}
-        if (entity_id := self.entities.get(Signal.RUNTIME_HEATING)) and (
-            Signal.STARTS_HEATING in self.entities
-        ):
+        # A start counter is optional: without it the look-back gives the
+        # share, not the starts (P1P2MQTT counts all modes' starts only).
+        if entity_id := self.entities.get(Signal.RUNTIME_HEATING):
             state = self.hass.states.get(entity_id)
             unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) if state else None
             minutes = {
@@ -1349,7 +1356,12 @@ class HeatPumpRuntime:
             if not minutes and temps.get(Signal.RUNTIME_HEATING):
                 self._count("unit:runtime_heating")
             statistics = statistics_classes(
-                minutes, temps.get(Signal.STARTS_HEATING, {}), outdoor, self.tz
+                minutes,
+                temps.get(Signal.STARTS_HEATING, {})
+                if Signal.STARTS_HEATING in self.entities
+                else None,
+                outdoor,
+                self.tz,
             )
         yesterday = now.astimezone(self.tz).date() - timedelta(days=1)
         local = lambda at: at.astimezone(self.tz).date()  # noqa: E731

@@ -480,12 +480,12 @@ FIELD_HELP = {
         "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
     ),
     "runtime_heating": (
-        'The heat pump\'s own counter of compressor hours (or minutes) in heating, e.g. EMS-ESP "uptimecompheating". Only for the look-back of run time per outdoor temperature; without it the table starts with the setup.',
-        "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+        'The heat pump\'s own counter of compressor hours (or minutes) in heating, e.g. EMS-ESP "uptimecompheating", P1P2MQTT "Hours_Compressor_Heating". Only for the look-back of run time per outdoor temperature; without it the table starts with the setup.',
+        "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“, P1P2MQTT „Hours_Compressor_Heating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
     ),
     "starts_heating": (
-        'The heat pump\'s own counter of compressor starts in heating, e.g. EMS-ESP "heatingstarts". Only for the look-back, together with the run time.',
-        "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit.",
+        'The heat pump\'s own counter of compressor starts in heating, e.g. EMS-ESP "heatingstarts". Only for the look-back of short runs, together with the run time; not a counter of all starts.',
+        "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick der Kurzläufe, zusammen mit der Laufzeit; kein Zähler aller Starts.",
     ),
     "elec_standby": (
         "Only if the heat pump meters this electricity apart (Lambda). Otherwise Wärmewacht separates standby itself.",
