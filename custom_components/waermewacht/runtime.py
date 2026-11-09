@@ -151,11 +151,11 @@ from .health_extra import (
     compare_defrost_classes,
     defrost_classes,
     defrost_figures,
+    flow_lph,
     flow_plausibility,
     oversizing,
     spread_figure,
     standby_rise,
-    to_lph,
 )
 from .heat_load import (
     CURRENT_SEASON,
@@ -2268,10 +2268,8 @@ class HeatPumpRuntime:
         elif signal is Signal.FLOW_RATE:
             value = _float(state)
             try:
-                self._flow_rate_lph = (
-                    None
-                    if value is None
-                    else to_lph(value, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+                self._flow_rate_lph = flow_lph(
+                    value, state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
                 )
             except KeyError:
                 self._flow_rate_lph = None

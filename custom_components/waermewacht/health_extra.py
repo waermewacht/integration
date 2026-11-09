@@ -462,6 +462,20 @@ def to_lph(value: float, unit: str | None) -> float:
     return value * LPH_FACTORS[(unit or "").lower()]
 
 
+def flow_lph(value: float | None, unit: str | None) -> float | None:
+    """Flow in l/h, None without a real value; raises KeyError for unknown units.
+
+    A negative flow is never a measurement, whatever the source: taken as 0
+    it raised "flow 0 while heating" and pulled the mean flow down. Seen
+    with EMS-ESP 3.8.x, which shows the heat pump's "below measuring range"
+    (0xFFFF, under about 900 l/h) as -1; fixed there in 3.9.0
+    (emsesp/EMS-ESP32#3385).
+    """
+    if value is None or value < 0:
+        return None
+    return to_lph(value, unit)
+
+
 def expected_flow(heat_kwh: float, seconds: float, spread: float) -> float:
     """Flow in l/h that carries the mean heat power at this spread."""
     watts = 1000 * heat_kwh / (seconds / 3600)
