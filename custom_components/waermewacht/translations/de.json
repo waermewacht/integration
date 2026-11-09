@@ -434,7 +434,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",
@@ -519,7 +519,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",

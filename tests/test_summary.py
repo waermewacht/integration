@@ -42,7 +42,7 @@ def test_template_entry_with_everything() -> None:
         "- **Messwerte:** außen ✓, Vorlauf ✓, Rücklauf ✓\n"
         "- **Strompreis:** fest 27,75 ct/kWh\n"
         "- **PV-Aufteilung:** aus\n"
-        "- **Grenzen:** 4 Starts/h, – Starts/Tag, Kurzlauf 12 min, kritisch 6 min"
+        "- **Grenzen:** 4 Starts/h, Kurzlauf 12 min, kritisch 6 min"
     )
 
 

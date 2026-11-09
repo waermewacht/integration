@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Einstellungen: Hinweis zur PV-Aufteilung klarer.** Sind Einspeise-, PV- oder Batteriezähler aus Tarifwacht oder Einspeisewacht vorbelegt, sagt der Hinweis jetzt auch, dass die Aufteilung erst mit dem Netzbezug-Zähler beginnt. Den schlägt Wärmewacht bewusst nicht vor, weil sonst jedes Speichern die Aufteilung einschalten würde; bisher konnte man meinen, mit den vorbelegten Zählern sei sie schon an. Die Zusammenfassung oben nennt „Starts/Tag“ nur noch, wenn eine Grenze eingetragen ist (bisher „– Starts/Tag“). Anlass: eigene Prüfung.
+
 ## 0.4.9 – 2026-11-09
 
 - **Behoben: Stillstand zu groß ohne Kompressor bei einem Wärmezähler in ganzen kWh.** Ohne „Kompressor läuft“ entscheidet die Wärme, ob Strom Lauf oder Stillstand ist: Lauf nur, wenn die Wärme der Betriebsart seit dem letzten Stromwert stieg. Ein Wärmezähler in 1-kWh-Schritten (etwa ein Wärmemengenzähler über wM-Bus) steigt aber nur alle ein, zwei Stunden, der Strom meldet sich alle paar Minuten – fast der ganze Laufstrom zwischen zwei Wärmeschritten landete im Stillstand, „AZ Heizen“ war zu hoch. Jetzt zählt Strom bis 2 Stunden nach dem letzten Wärmeschritt derselben Betriebsart als Lauf, dasselbe Fenster wie seit Kurzem im Rückblick. Mit „Erzeugte Wärme gesamt“ gilt ein Wärmeschritt nur für die Betriebsart, der er zugerechnet wurde. Zähler mit Nachkommastellen und Einträge mit Kompressor bleiben, wie sie sind. Rest: Nach mehr als 2 Stunden Pause zählt der Strom bis zum ersten Wärmeschritt weiter als Stillstand, echter Stillstand kurz nach einem Lauf als Lauf. Die Zusammenfassung im Zahnrad nennt das jetzt unter „Was fehlt“ („Ohne Kompressor zählt bei einem Wärmezähler in ganzen kWh ein Teil des Laufstroms als Stillstand – Kompressor eintragen, wenn vorhanden.“). Kein zusätzliches Speichern, keine zusätzliche Abfrage. Schon gebuchter Strom ändert sich nicht. Anlass: eigene Prüfung.

@@ -434,7 +434,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Tarifwacht “{entry}” – please check."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Tarifwacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",
@@ -519,7 +519,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Einspeisewacht “{entry}” – please check."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Einspeisewacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",

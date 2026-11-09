@@ -1912,12 +1912,12 @@ def _set(data: dict, path: str, value: str) -> None:
 # suggested from a sister integration, or where to get them (config_flow).
 COST_HINTS = {
     "init_tarifwacht": (
-        "Meters suggested from Tarifwacht “{entry}” – please check.",
-        "Zähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen.",
+        "Meters suggested from Tarifwacht “{entry}” – please check. The split only starts once you also choose the grid import meter.",
+        "Zähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst.",
     ),
     "init_einspeisewacht": (
-        "Meters suggested from Einspeisewacht “{entry}” – please check.",
-        "Zähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen.",
+        "Meters suggested from Einspeisewacht “{entry}” – please check. The split only starts once you also choose the grid import meter.",
+        "Zähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst.",
     ),
     "init_tip": (
         "Tip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already.",

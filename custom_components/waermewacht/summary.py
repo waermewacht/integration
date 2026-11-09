@@ -268,14 +268,15 @@ def heat_pump_summary(
     else:
         pv = t("off")
     lines.append(f"**{t('pv')}:** {pv}")
+    # Starts per day only when set: empty means no such limit.
     per_day = options.get(CONF_STARTS_PER_DAY)
-    lines.append(
-        f"**{t('limits')}:** "
-        f"{_num(options.get(CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR), lang)} {t('per_hour')}, "
-        f"{_num(per_day, lang) if per_day else '–'} {t('per_day')}, "
-        f"{t('short')} {_num(options.get(CONF_SHORT_RUN, DEFAULT_SHORT_RUN_MINUTES), lang)} min, "
-        f"{t('critical')} {_num(options.get(CONF_CRITICAL_RUN, DEFAULT_CRITICAL_RUN_MINUTES), lang)} min"
-    )
+    limits = [
+        f"{_num(options.get(CONF_STARTS_PER_HOUR, DEFAULT_STARTS_PER_HOUR), lang)} {t('per_hour')}",
+        *([f"{_num(per_day, lang)} {t('per_day')}"] if per_day else []),
+        f"{t('short')} {_num(options.get(CONF_SHORT_RUN, DEFAULT_SHORT_RUN_MINUTES), lang)} min",
+        f"{t('critical')} {_num(options.get(CONF_CRITICAL_RUN, DEFAULT_CRITICAL_RUN_MINUTES), lang)} min",
+    ]
+    lines.append(f"**{t('limits')}:** {', '.join(limits)}")
 
     hints = []
     h = lambda key: HINTS[key][lang]  # noqa: E731
