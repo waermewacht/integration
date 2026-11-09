@@ -201,6 +201,11 @@ async def async_get_config_entry_diagnostics(
             "verdict": runtime._flow_verdict,
             "zero_flow_seconds": round(runtime._zero_flow.seconds),
         },
+        # Carnot efficiency factor per period (health check 4.14).
+        "efficiency_factors": {
+            k: f.as_attributes() | {"value": f.value}
+            for k, f in runtime.efficiency_factors.items()
+        },
         "charges_kept": len(runtime.charges),
         "states": states,
         "since": runtime.since.isoformat() if runtime.since else None,

@@ -108,6 +108,7 @@ const TEXT = {
       heat_per_degree_day_season: "Wärme je Gradtag",
       flow_at_zero: "Vorlauf bei 0 °C",
       oversize_factor: "Leistung/Heizlast",
+      efficiency_factor: "Gütegrad Heizen",
       gas_heat_load_per_kelvin: "Heizlast je Kelvin",
       gas_heat_load_design: "Heizlast Norm",
       gas_heating_limit: "Heizgrenze",
@@ -143,6 +144,9 @@ const TEXT = {
     ownShare: (parts) => `eigen: ${parts}`,
     ownModes: { heating: "Heizen", dhw: "WW", cooling: "Kühlen" },
     previous: "Vorsaison",
+    factorField: (lo, hi) => `Feldtest ${lo}–${hi}`,
+    factorFlowOnly: "ohne Rücklauf, eher zu hoch",
+    factorDays: (have, need) => `${have} von ${need} Heiztagen`,
     sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
     signature: "Energiesignatur",
@@ -282,6 +286,7 @@ const TEXT = {
       heat_per_degree_day_season: "Heat per degree day",
       flow_at_zero: "Flow at 0 °C",
       oversize_factor: "Power/heat load",
+      efficiency_factor: "Carnot efficiency",
       gas_heat_load_per_kelvin: "Heat load per kelvin",
       gas_heat_load_design: "Design heat load",
       gas_heating_limit: "Heating limit",
@@ -314,6 +319,9 @@ const TEXT = {
     ownShare: (parts) => `own: ${parts}`,
     ownModes: { heating: "heating", dhw: "DHW", cooling: "cooling" },
     previous: "previous season",
+    factorField: (lo, hi) => `field test ${lo}–${hi}`,
+    factorFlowOnly: "without return, rather too high",
+    factorDays: (have, need) => `${have} of ${need} heating days`,
     sameLastYear: "last year to date",
     curve: "Performance curve heating",
     signature: "Energy signature",
@@ -972,8 +980,27 @@ class WaermewachtCard extends HTMLElement {
         || previous(perDegree.previous_season, 2)),
       this._own("flow_at_zero", t.tiles.flow_at_zero, previous(flow.previous_season, 1, " °C")),
       this._own("oversize_factor", t.tiles.oversize_factor),
+      this._efficiencyFactor(t),
     ]);
     return (charts.length ? `<div class="charts">${charts.join("")}</div>` : "") + tiles;
+  }
+
+  /** Carnot efficiency factor while heating (carnot.py): the field range of
+   * Fraunhofer ISE beside it; without a return temperature a note instead
+   * (the factor comes out too high); before 14 heating days the progress. */
+  _efficiencyFactor(t) {
+    const state = this._state("efficiency_factor");
+    if (!state) return "";
+    const a = state.attributes;
+    let extra = "";
+    if (a.reason === "too_few_days") {
+      extra = t.factorDays(a.days ?? 0, 14);
+    } else if (a.sink === "flow_only") {
+      extra = t.factorFlowOnly;
+    } else if (a.field_reference) {
+      extra = t.factorField(this._num(a.field_reference.min, 2), this._num(a.field_reference.max, 2));
+    }
+    return this._own("efficiency_factor", t.tiles.efficiency_factor, extra);
   }
 
   /** Energy signature of a heat load sensor (attributes of heat_load.py):

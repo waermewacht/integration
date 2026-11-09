@@ -59,6 +59,12 @@ from .backfill import (
     compare_on_source,
     energy_between,
 )
+from .carnot import (
+    MONTH_MIN_DAYS,
+    SEASON_MIN_DAYS,
+    EfficiencyFactor,
+    efficiency_factor,
+)
 from .charges import (
     COARSE_LATE,
     DISINFECTION_TEMP_C,
@@ -427,6 +433,12 @@ class HeatPumpRuntime:
         self._unavailable_since: dict[str, datetime] = {}
         self._last_tick: datetime | None = None
         self.outdoor = Mean()  # outdoor temperature today, for the diary
+        # Outdoor temperature while the compressor heats, today (sink and
+        # source of the Carnot efficiency factor, carnot.py).
+        self.outdoor_heating = Mean()
+        # Carnot efficiency factor while heating: season, month, previous
+        # season (daily analysis, from the diary).
+        self.efficiency_factors: dict[str, EfficiencyFactor] = {}
         # Figures of the daily analysis (health_extra.py) and the data sheet.
         self.rated_power: float | None = options.get(CONF_RATED_POWER)
         self.min_power: float | None = options.get(CONF_MIN_POWER)
@@ -1247,6 +1259,35 @@ class HeatPumpRuntime:
             start, end
         )
 
+    def _efficiency_factors(
+        self, now: datetime, current: datetime, previous: datetime
+    ) -> dict[str, EfficiencyFactor]:
+        """Carnot efficiency factor of the season so far, the month so far
+        and the previous season (complete days of the diary, carnot.py)."""
+        yesterday = now.astimezone(self.tz).date() - timedelta(days=1)
+        month = period_start(Period.MONTH, now, self.tz, self.marks.season_month)
+        assert month is not None
+        local = lambda at: at.astimezone(self.tz).date()  # noqa: E731
+        spans = {
+            "season": (local(current), yesterday, SEASON_MIN_DAYS),
+            "month": (local(month), yesterday, MONTH_MIN_DAYS),
+            "previous_season": (
+                local(previous),
+                local(current) - timedelta(days=1),
+                SEASON_MIN_DAYS,
+            ),
+        }
+        return {
+            name: efficiency_factor(
+                self.diary,
+                first,
+                last,
+                min_days=min_days,
+                min_electricity=self.min_electricity,
+            )
+            for name, (first, last, min_days) in spans.items()
+        }
+
     def seasons(self, now: datetime) -> tuple[datetime, datetime]:
         """Starts of the current and the previous heating season."""
         current = period_start(Period.SEASON, now, self.tz, self.marks.season_month)
@@ -1351,6 +1392,7 @@ class HeatPumpRuntime:
             self._health_findings(now, hours, outdoor, current, previous, compared)
             today = now.astimezone(self.tz).date()
             self.spread_7d = spread_figure(self.diary, today)
+            self.efficiency_factors = self._efficiency_factors(now, current, previous)
             self.oversize = oversizing(
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )
@@ -1742,6 +1784,7 @@ class HeatPumpRuntime:
                 "spread": self.spread.as_dict(),
                 "flow": self.flow.as_dict(),
                 "flow_rate": self.flow_rate.as_dict(),
+                "outdoor_heating": self.outdoor_heating.as_dict(),
                 # Late sources (hourly statistics, previous-day values)
                 # have not booked the day yet at midnight.
                 "energy": None
@@ -2592,6 +2635,8 @@ class HeatPumpRuntime:
             value := _float(self.hass.states.get(entity_id))
         ) is not None:
             self.outdoor.add(value, 60)
+            if self._sampling:
+                self.outdoor_heating.add(value, 60)
         if (
             self.hourly
             and now.minute % 10 == 2
@@ -2635,6 +2680,7 @@ class HeatPumpRuntime:
                 self._judge_flow()
                 self._update_status_finding(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
+            self.outdoor_heating = Mean()
             self.flow_rate = Mean()
             prune(
                 self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS), self.gaps
@@ -2925,6 +2971,7 @@ class HeatPumpRuntime:
             ),
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
             "outdoor": self.outdoor.as_dict(),
+            "outdoor_heating": self.outdoor_heating.as_dict(),
             "charge": self.charge_tracker.as_dict(),
             "last_disinfection": _iso(self.last_disinfection),
             "hot": self._hot,
@@ -2994,6 +3041,7 @@ class HeatPumpRuntime:
             k: float(v) for k, v in data.get("stuck_seconds", {}).items()
         }
         self.outdoor = Mean.from_dict(data.get("outdoor"))
+        self.outdoor_heating = Mean.from_dict(data.get("outdoor_heating"))
         self.charge_tracker.restore(data.get("charge", {}), saved_at, dt_util.utcnow())
         last = data.get("last_disinfection")
         self.last_disinfection = datetime.fromisoformat(last) if last else None

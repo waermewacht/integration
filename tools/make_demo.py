@@ -46,6 +46,13 @@ sys.path.insert(0, str(ROOT))
 from custom_components.waermewacht.activity import combine  # noqa: E402
 from custom_components.waermewacht.averages import Mean  # noqa: E402
 from custom_components.waermewacht.backfill import by_hour, energy_between  # noqa: E402
+from custom_components.waermewacht.carnot import (  # noqa: E402
+    MONTH_MIN_DAYS,
+    SEASON_MIN_DAYS,
+    EfficiencyFactor,
+    efficiency_factor,
+    field_reference,
+)
 from custom_components.waermewacht.charges import (  # noqa: E402
     Charge,
     ChargeTracker,
@@ -426,6 +433,7 @@ class Sim:
         self.marks = PeriodMarks(TZ, DEFAULT_SEASON_START_MONTH)
         self.diary: list[dict[str, Any]] = []
         self.spread, self.flow_mean, self.outdoor_mean = Mean(), Mean(), Mean()
+        self.outdoor_heating = Mean()
         self.started = False
         self.analysis: dict[str, Any] = {}
         self.today: list[dict[str, Any]] = []
@@ -702,9 +710,12 @@ class Sim:
             if day_changed:
                 self._write_diary(at)
             self.spread, self.flow_mean, self.outdoor_mean = Mean(), Mean(), Mean()
+            self.outdoor_heating = Mean()
             prune(self.runs, self.defrosts, at - timedelta(days=HISTORY_DAYS))
             prune_charges(self.charges, at - timedelta(days=HISTORY_DAYS))
         self.outdoor_mean.add(self.outdoor, 60)
+        if self.on and self.activity is Activity.HEATING:
+            self.outdoor_heating.add(self.outdoor, 60)
         local = at.astimezone(TZ)
         if (
             local.date() == self.sc.moment.date()
@@ -770,6 +781,7 @@ class Sim:
                 "spread": self.spread.as_dict(),
                 "flow": self.flow_mean.as_dict(),
                 "flow_rate": Mean().as_dict(),
+                "outdoor_heating": self.outdoor_heating.as_dict(),
                 "energy": None
                 if energy is None
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
@@ -810,6 +822,33 @@ class Sim:
         )
         assert previous is not None
         return current, previous
+
+    def efficiency_factors(
+        self, now: datetime, current: datetime, previous: datetime
+    ) -> dict[str, EfficiencyFactor]:
+        """runtime._efficiency_factors, rebuilt."""
+        yesterday = now.astimezone(TZ).date() - DAY
+        month = period_start(Period.MONTH, now, TZ, DEFAULT_SEASON_START_MONTH)
+        assert month is not None
+        spans = {
+            "season": (current.astimezone(TZ).date(), yesterday, SEASON_MIN_DAYS),
+            "month": (month.astimezone(TZ).date(), yesterday, MONTH_MIN_DAYS),
+            "previous_season": (
+                previous.astimezone(TZ).date(),
+                current.astimezone(TZ).date() - DAY,
+                SEASON_MIN_DAYS,
+            ),
+        }
+        return {
+            name: efficiency_factor(
+                self.diary,
+                first,
+                last,
+                min_days=min_days,
+                min_electricity=MIN_ELECTRICITY,
+            )
+            for name, (first, last, min_days) in spans.items()
+        }
 
     def _analyse(self, now: datetime) -> dict[str, Any]:
         """runtime._async_refresh_analysis and _health_findings, rebuilt."""
@@ -897,6 +936,7 @@ class Sim:
                 mild_days, mild_from=AUX_MILD_FROM, threshold_kwh=AUX_KWH
             ),
             "spread_7d": spread_figure(self.diary, today),
+            "efficiency_factors": self.efficiency_factors(now, current, previous),
             "oversize": oversizing(load, RATED_KW, min_kw=MIN_KW),
             "standby_rise": standby_rise(self.diary, today, TZ),
             "dhw_efficiency_drop": dhw_efficiency_drop(
@@ -1214,6 +1254,26 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     )
     put("heating_limit", _r(load.heating_limit, 1) if sufficient else None, "°C", 1)
     put("heat_load_design", _r(load.standard_kw, 2) if sufficient else None, "kW", 1)
+    factors = a["efficiency_factors"]
+    season_factor = factors["season"]
+    put(
+        "efficiency_factor",
+        _r(season_factor.value, 2),
+        None,
+        2,
+        **season_factor.as_attributes(),
+        month={
+            "value": _r(factors["month"].value, 2),
+            "days": factors["month"].days,
+            "reason": factors["month"].reason,
+        },
+        previous_season={
+            "value": _r(factors["previous_season"].value, 2),
+            "days": factors["previous_season"].days,
+            "reason": factors["previous_season"].reason,
+        },
+        field_reference=field_reference(),
+    )
     spread_7d = a["spread_7d"]
     put("spread_7d", _r(spread_7d.value, 1), "K", 1, **spread_7d.as_attributes())
     oversize = a["oversize"]

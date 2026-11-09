@@ -211,6 +211,9 @@
       "spread_7d": {
         "default": "mdi:arrow-expand-vertical"
       },
+      "efficiency_factor": {
+        "default": "mdi:speedometer"
+      },
       "oversize_factor": {
         "default": "mdi:resize"
       },

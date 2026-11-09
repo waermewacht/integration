@@ -1,0 +1,205 @@
+"""Carnot efficiency factor ("Gütegrad") while heating, health check 4.14.
+
+Pure Python, no Home Assistant imports. Design and sources:
+docs/GESUNDHEITSCHECK.md 4.14.
+
+The factor is the measured performance over the best one possible at the
+same temperatures: COP_Carnot = T_sink / (T_sink - T_source) in kelvin, the
+sink the mean of flow and return, the source the outdoor air, heating only
+(Fraunhofer ISE, WP-QS im Bestand; Günther et al., HPC 2026, section 4.2:
+air/water 0.32-0.44, mean 0.39, 36 units, annual values). It takes the
+weather and the heating curve out of the performance factor.
+
+From the diary, per day with heating: heat and electricity of heating
+("energy"), flow and spread while the compressor heats ("flow", "spread"),
+the outdoor temperature under the same condition ("outdoor_heating"; older
+entries fall back to the day mean "outdoor"). A period's factor is the
+electricity an ideal machine would have needed over the electricity used,
+sum(heat / COP_Carnot) / sum(electricity): heat-weighted, so mild days with
+little heat and a huge Carnot COP do not distort it (own choice; Fraunhofer
+forms it from annual values).
+
+Days with backup heater electricity are left out: whether a heat counter
+holds the heater's heat depends on the source, and Fraunhofer's SPF 2 is
+the heat pump alone. Without a return temperature the sink is the flow
+temperature, which makes the Carnot COP smaller and the factor too high
+(flow 35 °C, spread 5 K, outdoor 0 °C: 6.8 %); the attribute says so.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
+from datetime import date
+from typing import Any
+
+from .averages import Mean
+from .energy import Kind
+from .model import Mode
+
+KELVIN = 273.15
+# Fraunhofer ISE WP-QS, air/water heat pumps, space heating, annual values.
+FIELD_FACTOR = 0.39
+FIELD_RANGE = (0.32, 0.44)
+FIELD_UNITS = 36
+# A day counts with this much heating time (as the flow temperature of 4.5).
+MIN_HEATING_SECONDS = 2 * 3600.0
+# Own assumption: below this lift the Carnot COP grows so large that 0.5 K
+# of sensor error moves a day by more than 5 %.
+MIN_LIFT_K = 10.0
+# Own assumption: a few counter steps of a heater are no heater day.
+MAX_AUX_KWH = 0.1
+MONTH_MIN_DAYS = 7
+SEASON_MIN_DAYS = 14
+
+TOO_FEW_DAYS = "too_few_days"
+TOO_LITTLE_ELECTRICITY = "too_little_electricity"
+
+# Why a diary day did not count (counted per period, diagnostics only).
+SKIP_NO_ENERGY = "no_energy"
+SKIP_LITTLE_HEATING = "little_heating"
+SKIP_AUX = "aux"
+SKIP_NO_OUTDOOR = "no_outdoor"
+SKIP_SMALL_LIFT = "small_lift"
+
+
+def carnot_cop(sink: float, source: float) -> float | None:
+    """Carnot COP of heating between the temperatures in °C; None below the
+    smallest lift."""
+    lift = sink - source
+    if lift < MIN_LIFT_K:
+        return None
+    return (sink + KELVIN) / lift
+
+
+@dataclass(frozen=True)
+class FactorDay:
+    """What one diary day adds to the factor."""
+
+    heat: float  # kWh heating
+    electricity: float  # kWh heating, compressor while running
+    sink: float  # °C
+    source: float  # °C
+    cop: float  # Carnot
+    flow_only: bool  # no spread: the sink is the flow temperature
+    day_mean_source: bool  # no outdoor mean while heating
+
+
+def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
+    """The day's contribution, or the reason it does not count."""
+    energy = entry.get("energy") or {}
+    heat = float(energy.get(f"{Kind.HEAT.value}_{Mode.HEATING.value}", 0.0))
+    electricity = float(energy.get(f"{Kind.ELEC.value}_{Mode.HEATING.value}", 0.0))
+    aux = float(energy.get(f"{Kind.AUX.value}_{Mode.HEATING.value}", 0.0))
+    if heat <= 0 or electricity <= 0:
+        return SKIP_NO_ENERGY
+    flow = Mean.from_dict(entry.get("flow"))
+    if flow.seconds < MIN_HEATING_SECONDS or flow.value is None:
+        return SKIP_LITTLE_HEATING
+    if aux > MAX_AUX_KWH:
+        return SKIP_AUX
+    spread = Mean.from_dict(entry.get("spread"))
+    # A negative spread means swapped sensors (repair issue of its own).
+    flow_only = spread.value is None or spread.seconds <= 0 or spread.value < 0
+    sink = flow.value if flow_only else flow.value - spread.value / 2
+    outdoor = Mean.from_dict(entry.get("outdoor_heating"))
+    day_mean = outdoor.value is None
+    source = entry.get("outdoor") if day_mean else outdoor.value
+    if source is None:
+        return SKIP_NO_OUTDOOR
+    cop = carnot_cop(sink, float(source))
+    if cop is None:
+        return SKIP_SMALL_LIFT
+    return FactorDay(heat, electricity, sink, float(source), cop, flow_only, day_mean)
+
+
+@dataclass(frozen=True)
+class EfficiencyFactor:
+    """Carnot efficiency factor of a period; value None with a reason."""
+
+    value: float | None
+    days: int
+    heat_kwh: float
+    electricity_kwh: float
+    sink: float | None  # °C, heat-weighted
+    source: float | None  # °C, heat-weighted
+    carnot_cop: float | None  # heat over ideal electricity
+    flow_only_days: int
+    day_mean_days: int
+    skipped: dict[str, int] = field(default_factory=dict)
+    reason: str | None = None
+
+    def as_attributes(self) -> dict[str, Any]:
+        return {
+            "reason": self.reason,
+            "days": self.days,
+            "sink_temp": _round(self.sink, 1),
+            "source_temp": _round(self.source, 1),
+            "carnot_cop": _round(self.carnot_cop, 2),
+            # "mean_flow_return" or "flow_only" (factor too high, see module).
+            "sink": "flow_only" if self.flow_only_days else "mean_flow_return",
+            "source": "day_mean" if self.day_mean_days else "while_heating",
+            "skipped_days": dict(sorted(self.skipped.items())),
+        }
+
+
+def efficiency_factor(
+    entries: Iterable[Mapping[str, Any]],
+    first: date,
+    last: date,
+    *,
+    min_days: int,
+    min_electricity: float = 0.0,
+) -> EfficiencyFactor:
+    """Factor over the diary days first … last (both included)."""
+    heat = electricity = ideal = sink = source = 0.0
+    days = flow_only = day_mean = 0
+    skipped: dict[str, int] = {}
+    for entry in entries:
+        if not first <= date.fromisoformat(entry["day"]) <= last:
+            continue
+        found = factor_day(entry)
+        if isinstance(found, str):
+            skipped[found] = skipped.get(found, 0) + 1
+            continue
+        days += 1
+        heat += found.heat
+        electricity += found.electricity
+        ideal += found.heat / found.cop
+        sink += found.heat * found.sink
+        source += found.heat * found.source
+        flow_only += found.flow_only
+        day_mean += found.day_mean_source
+    reason = None
+    if days < min_days:
+        reason = TOO_FEW_DAYS
+    elif electricity < min_electricity:
+        reason = TOO_LITTLE_ELECTRICITY
+    return EfficiencyFactor(
+        value=None if reason else ideal / electricity,
+        days=days,
+        heat_kwh=heat,
+        electricity_kwh=electricity,
+        sink=sink / heat if heat else None,
+        source=source / heat if heat else None,
+        carnot_cop=heat / ideal if ideal else None,
+        flow_only_days=flow_only,
+        day_mean_days=day_mean,
+        skipped=skipped,
+        reason=reason,
+    )
+
+
+def field_reference() -> dict[str, Any]:
+    """The field values to compare with (attribute)."""
+    return {
+        "mean": FIELD_FACTOR,
+        "min": FIELD_RANGE[0],
+        "max": FIELD_RANGE[1],
+        "units": FIELD_UNITS,
+        "source": "Fraunhofer ISE WP-QS (air/water, space heating)",
+    }
+
+
+def _round(value: float | None, digits: int) -> float | None:
+    return None if value is None else round(value, digits)

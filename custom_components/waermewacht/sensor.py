@@ -34,6 +34,7 @@ from homeassistant.util import dt as dt_util
 from . import WaermewachtConfigEntry, is_gas
 from .allocation import NONE
 from .binary_sensor import health_checks
+from .carnot import field_reference
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
@@ -815,6 +816,34 @@ def _spread_7d(runtime: HeatPumpRuntime) -> float | None:
     return None if figure is None else _round(figure.value, 1)
 
 
+def _efficiency_factor(runtime: HeatPumpRuntime) -> float | None:
+    figure = runtime.efficiency_factors.get("season")
+    return None if figure is None else _round(figure.value, 2)
+
+
+def _efficiency_factor_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    """Season in detail; month and previous season as value and days."""
+    factors = runtime.efficiency_factors
+    if (season := factors.get("season")) is None:
+        return {}
+
+    def short(name: str) -> dict[str, Any] | None:
+        if (figure := factors.get(name)) is None:
+            return None
+        return {
+            "value": _round(figure.value, 2),
+            "days": figure.days,
+            "reason": figure.reason,
+        }
+
+    return {
+        **season.as_attributes(),
+        "month": short("month"),
+        "previous_season": short("previous_season"),
+        "field_reference": field_reference(),
+    }
+
+
 def _oversize(runtime: HeatPumpRuntime) -> float | None:
     figure = runtime.oversize
     return None if figure is None else _round(figure.factor, 2)
@@ -843,6 +872,24 @@ ANALYSIS = [
             and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
         ),
         attributes=lambda r: {} if r.spread_7d is None else r.spread_7d.as_attributes(),
+    ),
+    HeatPumpSensorDescription(
+        # Carnot efficiency factor while heating (health check 4.14): from the
+        # diary, so only with an activity, a flow temperature and daily
+        # energy at midnight (not for hourly statistics or previous-day
+        # values).
+        key="efficiency_factor",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value=_efficiency_factor,
+        needs=lambda r: (
+            HAS_OUTDOOR(r)
+            and r.has_activity
+            and Signal.FLOW_TEMP in r.entities
+            and not r.hourly
+            and not r.template.previous_day
+        ),
+        attributes=_efficiency_factor_attributes,
     ),
     HeatPumpSensorDescription(
         key="oversize_factor",

@@ -404,7 +404,16 @@ async def test_spread_standby_and_oversize_from_the_diary(
                 "spread": {"weighted": 5.0 * 12 * 3600, "seconds": 12 * 3600}
                 if recent
                 else {"weighted": 0.0, "seconds": 0.0},
-                "energy": {"standby_heating": watts * 12 / 1000},
+                "energy": {"standby_heating": watts * 12 / 1000}
+                | ({"heat_heating": 40.0, "elec_heating": 10.0} if recent else {}),
+                # Carnot efficiency factor: flow 35 °C, spread 5 K, 0 °C
+                # outside while heating (sink 32.5 °C, Carnot COP 9.405).
+                "flow": {"weighted": 35.0 * 12 * 3600, "seconds": 12 * 3600}
+                if recent
+                else {"weighted": 0.0, "seconds": 0.0},
+                "outdoor_heating": {"weighted": 0.0, "seconds": 12 * 3600}
+                if recent
+                else {"weighted": 0.0, "seconds": 0.0},
             }
         )
     entry.runtime_data.diary = diary
@@ -426,6 +435,15 @@ async def test_spread_standby_and_oversize_from_the_diary(
     assert oversize.state == "unknown"  # three days give no heat load
     assert oversize.attributes["reason"] == "heat_load_insufficient"
     assert oversize.attributes["rated_kw"] == 8.0
+    # Seven heating days (all in January): the month has a factor, COP 4
+    # against a Carnot COP of 9.405; the season needs 14 days.
+    factor = state("efficiency_factor")
+    assert factor.state == "unknown"
+    assert factor.attributes["reason"] == "too_few_days"
+    assert factor.attributes["days"] == 7
+    assert factor.attributes["month"]["value"] == pytest.approx(0.43)
+    assert factor.attributes["sink"] == "mean_flow_return"
+    assert factor.attributes["field_reference"]["mean"] == 0.39
     # Standby rose from 25 W to 45 W: more than +50 % and +10 W.
     standby = state("standby")
     assert standby.attributes["rising"] is True

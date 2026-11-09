@@ -912,6 +912,9 @@
       "spread_7d": {
         "name": "Flow-return spread 7 days"
       },
+      "efficiency_factor": {
+        "name": "Carnot efficiency heating season"
+      },
       "oversize_factor": {
         "name": "Power per heat load"
       },

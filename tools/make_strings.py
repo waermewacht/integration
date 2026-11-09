@@ -162,6 +162,11 @@ SENSORS = {
         "Spreizung 7 Tage",
         "mdi:arrow-expand-vertical",
     ),
+    "efficiency_factor": (
+        "Carnot efficiency heating season",
+        "Gütegrad Heizen Saison",
+        "mdi:speedometer",
+    ),
     "oversize_factor": (
         "Power per heat load",
         "Leistung je Heizlast",

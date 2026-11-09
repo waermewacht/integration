@@ -912,6 +912,9 @@
       "spread_7d": {
         "name": "Spreizung 7 Tage"
       },
+      "efficiency_factor": {
+        "name": "Gütegrad Heizen Saison"
+      },
       "oversize_factor": {
         "name": "Leistung je Heizlast"
       },
