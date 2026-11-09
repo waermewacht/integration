@@ -76,6 +76,8 @@ from .const import (
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_SOURCE,
+    CONF_STARTS_NOW,
+    CONF_STARTS_OFFSET,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
@@ -1066,6 +1068,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     }
                 )
             data[SISTERS_OFFERED] = True
+            self._apply_starts_now(data, options)
             price_entity = data.get(CONF_ELECTRICITY_PRICE_ENTITY)
             unit = _unit_of(self.hass, price_entity) if price_entity else None
             if price_entity and price_factor(unit) is None:
@@ -1199,11 +1202,19 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     ): number(0.5, 1.0, 0.01, "")
                 }
             )
+        starts_now = self._starts_now(mapped)
         for name, keys in OPTIONAL_SECTIONS.items():
+            part = {marker(key): fields[key] for key in keys}
+            if name == "limits" and starts_now is not None:
+                part[
+                    vol.Optional(
+                        CONF_STARTS_NOW, description={"suggested_value": starts_now}
+                    )
+                ] = number(0, 10_000_000, 1, "")
             schema = schema.extend(
                 {
                     vol.Optional(name): section(
-                        vol.Schema({marker(key): fields[key] for key in keys}),
+                        vol.Schema(part),
                         {"collapsed": name not in expanded},
                     )
                 }
@@ -1232,6 +1243,33 @@ class WaermewachtOptionsFlow(OptionsFlow):
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    def _runtime(self) -> Any:
+        if self.config_entry.state is not ConfigEntryState.LOADED:
+            return None
+        return getattr(self.config_entry, "runtime_data", None)
+
+    def _starts_now(self, mapped: set[Signal]) -> int | None:
+        """Starts total shown in the field: only without a start counter of
+        the heat pump and with the entry loaded (the own count lives there)."""
+        runtime = self._runtime()
+        if Signal.STARTS_TOTAL in mapped or runtime is None:
+            return None
+        total, _ = runtime.starts_total()
+        return total
+
+    def _apply_starts_now(self, data: dict[str, Any], options: dict[str, Any]) -> None:
+        """The entered total becomes the offset to the own count; without a
+        new total the stored offset stays (options are replaced as a whole)."""
+        entered = data.pop(CONF_STARTS_NOW, None)
+        runtime = self._runtime()
+        if entered is not None and runtime is not None:
+            total, _ = runtime.starts_total()
+            if total is None or int(entered) != total:
+                data[CONF_STARTS_OFFSET] = int(entered) - runtime.own_starts
+                return
+        if CONF_STARTS_OFFSET in options:
+            data[CONF_STARTS_OFFSET] = options[CONF_STARTS_OFFSET]
 
     def _boiler_summary(self, *, oil: bool) -> dict[str, str]:
         entry = self.config_entry

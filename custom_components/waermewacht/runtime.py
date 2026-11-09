@@ -101,6 +101,7 @@ from .const import (
     CONF_RATED_POWER,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
+    CONF_STARTS_OFFSET,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
@@ -551,6 +552,9 @@ class HeatPumpRuntime:
         # tolerance (start, end), kept as long as the runs.
         self.gaps: list[tuple[datetime, datetime]] = []
         self.own_starts = 0  # observed starts since setup
+        # Starts before the setup (or a correction), entered as a total in
+        # the options; only without a start counter of the heat pump.
+        self.starts_offset = int(options.get(CONF_STARTS_OFFSET, 0))
         self.spread = Mean()  # flow minus return, compressor heating, today
         self.flow = Mean()  # flow temperature, compressor heating, today
         self.since: datetime | None = None  # first setup
@@ -3012,6 +3016,8 @@ class HeatPumpRuntime:
         if entity_id := self.entities.get(Signal.STARTS_TOTAL):
             value = _float(self.hass.states.get(entity_id))
             return (int(value) if value is not None else None), "heat_pump"
+        if self.starts_offset:
+            return self.own_starts + self.starts_offset, "since_setup_corrected"
         return self.own_starts, "since_setup"
 
     def cycling_problem(self, now: datetime | None = None) -> dict[str, Any]:

@@ -9,6 +9,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
@@ -163,6 +164,39 @@ async def test_restart_during_run_is_no_new_start(
     await tick(hass, freezer, 1)
     assert value(hass, entry, "starts_today") == 1
     assert value(hass, entry, "starts_total") == 1
+
+
+@pytest.mark.freeze_time(START)
+async def test_starts_total_corrected_in_the_options(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Without a start counter of the heat pump: the total shown in the
+    options is the own count; an entered total becomes the offset."""
+    entry = await setup(hass)
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await hass.async_block_till_done()
+    await tick(hass, freezer, 10)
+    assert value(hass, entry, "starts_total") == 1
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    limits = next(
+        v for k, v in result["data_schema"].schema.items() if str(k) == "limits"
+    )
+    field = next(k for k in limits.schema.schema if str(k) == "starts_now")
+    assert field.description["suggested_value"] == 1
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"limits": {"starts_now": 3600}}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["starts_offset"] == 3599
+    assert "starts_now" not in entry.options
+    await hass.async_block_till_done()
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "starts_total") == 3600
+    # Saved again without a new total: the offset stays.
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {})
+    assert entry.options["starts_offset"] == 3599
 
 
 @pytest.mark.freeze_time(START)

@@ -240,6 +240,7 @@ Several heat pumps: add one entry each.
 | Efficiency dropped from | 15 % | Health check: drop of the heating performance factor against the previous season at the same outdoor temperature; off again only 5 points lower (own assumption). |
 | Thermal disinfection from | 60 °C | Hot water temperature from which a charge counts as thermal disinfection. DVGW W 551 requires 60 °C at the outlet; the storage sensor often reads a little lower. |
 | Season starts in | July | Start of the season (heating period July to June). |
+| Starts total (as of now, e.g. from the heat pump's display) | – | Only without a start counter of the heat pump. The field shows the current "Starts total"; enter the number from the display and Wärmewacht counts on from it (it keeps only the difference to its own count). Correct it again any time, e.g. when Wärmewacht missed starts while Home Assistant was off. |
 
 Every optional field may stay empty. Sources of the defaults in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) (German). If you change the season start, Wärmewacht recomputes the current season from the long-term statistics (standby before the setup estimated per hour).
 
@@ -390,7 +391,7 @@ Most cycling sensors need "Compressor running". Defrosts only need the activity.
 | --- | --- | --- |
 | Starts today, Starts yesterday | – | observed compressor starts; on "Starts today" the projection to a year (below) |
 | Starts season | – | Starts since the start of the season from the heat pump's counter and its long-term statistics. If the statistics do not reach back that far, it counts from their first value. Attributes `since` and `per_day`. For comparison: 90 % of the air/water heat pumps in the Fraunhofer field test stay below 5,500 starts a year, about 15 a day. Needs the start counter and the outdoor temperature (set with the daily analysis). |
-| Starts total | – | the heat pump's counter if mapped (attribute `source: heat_pump`), otherwise starts observed since the setup (`since_setup`) |
+| Starts total | – | the heat pump's counter if mapped (attribute `source: heat_pump`), otherwise starts observed since the setup (`since_setup`), counted on from a total entered in the settings (`since_setup_corrected`) |
 | Run time today | min | compressor run time, in steps of 5 minutes |
 | Run time per start today, 7 days, month | min | mean duration of the runs that ended in the period |
 | Short runs today | – | runs below the short-run limit; attributes `threshold_minutes`, `critical_runs`, `critical_threshold_minutes` |

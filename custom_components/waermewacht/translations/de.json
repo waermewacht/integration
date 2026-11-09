@@ -362,7 +362,8 @@
               "aux_mild_from": "Heizstab: milde Witterung ab",
               "efficiency_drop_percent": "Effizienz gesunken ab",
               "disinfection_temp": "Thermische Desinfektion ab",
-              "season_start_month": "Saison beginnt im"
+              "season_start_month": "Saison beginnt im",
+              "starts_now": "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)"
             },
             "data_description": {
               "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
@@ -370,7 +371,8 @@
               "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
               "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
               "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
-              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
+              "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
@@ -467,7 +469,8 @@
               "aux_mild_from": "Heizstab: milde Witterung ab",
               "efficiency_drop_percent": "Effizienz gesunken ab",
               "disinfection_temp": "Thermische Desinfektion ab",
-              "season_start_month": "Saison beginnt im"
+              "season_start_month": "Saison beginnt im",
+              "starts_now": "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)"
             },
             "data_description": {
               "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
@@ -475,7 +478,8 @@
               "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
               "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
               "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
-              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
+              "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
@@ -552,7 +556,8 @@
               "aux_mild_from": "Heizstab: milde Witterung ab",
               "efficiency_drop_percent": "Effizienz gesunken ab",
               "disinfection_temp": "Thermische Desinfektion ab",
-              "season_start_month": "Saison beginnt im"
+              "season_start_month": "Saison beginnt im",
+              "starts_now": "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)"
             },
             "data_description": {
               "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
@@ -560,7 +565,8 @@
               "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
               "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
               "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
-              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
+              "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }
@@ -637,7 +643,8 @@
               "aux_mild_from": "Heizstab: milde Witterung ab",
               "efficiency_drop_percent": "Effizienz gesunken ab",
               "disinfection_temp": "Thermische Desinfektion ab",
-              "season_start_month": "Saison beginnt im"
+              "season_start_month": "Saison beginnt im",
+              "starts_now": "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)"
             },
             "data_description": {
               "min_electricity": "Darunter ist die Arbeitszahl unbekannt statt zufällig.",
@@ -645,7 +652,8 @@
               "aux_mild_from": "Tagesmittel der Außentemperatur, ab dem die Wärmepumpe allein heizen sollte.",
               "efficiency_drop_percent": "Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter.",
               "disinfection_temp": "Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt (DVGW W 551: 60 °C am Austritt; der Speicherfühler zeigt oft weniger).",
-              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet."
+              "season_start_month": "Die laufende Saison wird aus der Statistik neu berechnet.",
+              "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
           }

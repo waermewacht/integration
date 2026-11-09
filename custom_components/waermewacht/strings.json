@@ -362,7 +362,8 @@
               "aux_mild_from": "Backup heater: mild weather from",
               "efficiency_drop_percent": "Efficiency dropped from",
               "disinfection_temp": "Thermal disinfection from",
-              "season_start_month": "Season starts in"
+              "season_start_month": "Season starts in",
+              "starts_now": "Starts total (as of now, e.g. from the heat pump's display)"
             },
             "data_description": {
               "min_electricity": "Below it the ratio is unknown instead of a random value.",
@@ -370,7 +371,8 @@
               "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
               "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
               "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
-              "season_start_month": "The current season is recomputed from the statistics."
+              "season_start_month": "The current season is recomputed from the statistics.",
+              "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
@@ -467,7 +469,8 @@
               "aux_mild_from": "Backup heater: mild weather from",
               "efficiency_drop_percent": "Efficiency dropped from",
               "disinfection_temp": "Thermal disinfection from",
-              "season_start_month": "Season starts in"
+              "season_start_month": "Season starts in",
+              "starts_now": "Starts total (as of now, e.g. from the heat pump's display)"
             },
             "data_description": {
               "min_electricity": "Below it the ratio is unknown instead of a random value.",
@@ -475,7 +478,8 @@
               "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
               "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
               "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
-              "season_start_month": "The current season is recomputed from the statistics."
+              "season_start_month": "The current season is recomputed from the statistics.",
+              "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
@@ -552,7 +556,8 @@
               "aux_mild_from": "Backup heater: mild weather from",
               "efficiency_drop_percent": "Efficiency dropped from",
               "disinfection_temp": "Thermal disinfection from",
-              "season_start_month": "Season starts in"
+              "season_start_month": "Season starts in",
+              "starts_now": "Starts total (as of now, e.g. from the heat pump's display)"
             },
             "data_description": {
               "min_electricity": "Below it the ratio is unknown instead of a random value.",
@@ -560,7 +565,8 @@
               "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
               "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
               "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
-              "season_start_month": "The current season is recomputed from the statistics."
+              "season_start_month": "The current season is recomputed from the statistics.",
+              "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }
@@ -637,7 +643,8 @@
               "aux_mild_from": "Backup heater: mild weather from",
               "efficiency_drop_percent": "Efficiency dropped from",
               "disinfection_temp": "Thermal disinfection from",
-              "season_start_month": "Season starts in"
+              "season_start_month": "Season starts in",
+              "starts_now": "Starts total (as of now, e.g. from the heat pump's display)"
             },
             "data_description": {
               "min_electricity": "Below it the ratio is unknown instead of a random value.",
@@ -645,7 +652,8 @@
               "aux_mild_from": "Daily mean outdoor temperature from which the heat pump should heat alone.",
               "efficiency_drop_percent": "Drop of the heating ratio against the previous season at the same outdoor temperature; off again 5 points lower.",
               "disinfection_temp": "Hot water temperature from which a charge counts as thermal disinfection (DVGW W 551: 60 °C at the outlet; the storage sensor may read lower).",
-              "season_start_month": "The current season is recomputed from the statistics."
+              "season_start_month": "The current season is recomputed from the statistics.",
+              "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
           }

@@ -240,6 +240,7 @@ Mehrere Wärmepumpen: je einen Eintrag anlegen.
 | Effizienz gesunken ab | 15 % | Gesundheits-Check: Rückgang der AZ Heizen gegenüber der Vorsaison bei gleicher Außentemperatur; aus erst 5 Punkte darunter (eigene Annahme). |
 | Thermische Desinfektion ab | 60 °C | Warmwasser-Temperatur, ab der eine Ladung als thermische Desinfektion zählt. DVGW W 551 verlangt 60 °C am Austritt; der Speicherfühler zeigt oft etwas weniger. |
 | Saison beginnt im | Juli | Beginn der Saison (Heizperiode Juli bis Juni). |
+| Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe) | – | Nur ohne Startzähler der Wärmepumpe. Das Feld zeigt den aktuellen Stand von „Starts gesamt“; die Zahl vom Display eintragen, Wärmewacht zählt ab diesem Wert weiter (es merkt sich nur die Differenz zur eigenen Zählung). Jederzeit wieder korrigierbar, etwa wenn Wärmewacht Starts verpasst hat, weil Home Assistant aus war. |
 
 Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md). Wird der Saisonbeginn geändert, berechnet Wärmewacht die laufende Saison aus der Langzeitstatistik neu (Stillstand vor der Einrichtung stundenweise geschätzt).
 
@@ -390,7 +391,7 @@ Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen 
 | --- | --- | --- |
 | Starts heute, Starts gestern | – | beobachtete Kompressorstarts; an „Starts heute“ die Hochrechnung aufs Jahr (unten) |
 | Starts Saison | – | Starts seit Saisonbeginn aus dem Zähler der Wärmepumpe und seiner Langzeitstatistik. Reicht die Statistik nicht so weit zurück, zählt er ab ihrem ersten Wert. Attribute `since` und `per_day`. Zur Einordnung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feldtest liegen unter 5.500 Starts im Jahr, etwa 15 am Tag. Braucht den Startzähler und die Außentemperatur (wird mit der täglichen Analyse bestimmt). |
-| Starts gesamt | – | Zähler der Wärmepumpe, wenn zugeordnet (Attribut `source: heat_pump`), sonst beobachtete Starts seit der Einrichtung (`since_setup`) |
+| Starts gesamt | – | Zähler der Wärmepumpe, wenn zugeordnet (Attribut `source: heat_pump`), sonst beobachtete Starts seit der Einrichtung (`since_setup`), mit einem in den Einstellungen eingetragenen Stand ab diesem weitergezählt (`since_setup_corrected`) |
 | Laufzeit heute | min | Kompressor-Laufzeit, in Schritten von 5 Minuten |
 | Laufzeit pro Start heute, 7 Tage, Monat | min | mittlere Dauer der Läufe, die im Zeitraum endeten |
 | Kurzläufe heute | – | Läufe unter der Kurzlauf-Grenze; Attribute `threshold_minutes`, `critical_runs`, `critical_threshold_minutes` |

@@ -621,6 +621,10 @@ OPTION_LABELS = {
         "Conspicuous above starts per day",
         "Auffällig ab Starts pro Tag über",
     ),
+    "starts_now": (
+        "Starts total (as of now, e.g. from the heat pump's display)",
+        "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)",
+    ),
     "season_start_month": ("Season starts in", "Saison beginnt im"),
     "aux_mild_from": (
         "Backup heater: mild weather from",
@@ -647,6 +651,10 @@ OPTION_LABELS = {
     "min_power_kw": ("Smallest heating power", "Kleinste Heizleistung"),
 }
 OPTION_HELP = {
+    "starts_now": (
+        "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time.",
+        "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar.",
+    ),
     "starts_per_day": (
         "Optional, e.g. for a heat pump that only switches on and off: more starts within the last 24 hours make cycling conspicuous. Empty: off.",
         "Optional, z. B. für eine Wärmepumpe, die nur ein- und ausschaltet: Mehr Starts in den letzten 24 Stunden machen das Takten auffällig. Leer: aus.",
@@ -787,6 +795,7 @@ OPTION_SECTIONS = {
             "efficiency_drop_percent",
             "disinfection_temp",
             "season_start_month",
+            "starts_now",
         ),
     ),
 }
