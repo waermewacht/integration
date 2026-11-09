@@ -9,7 +9,7 @@ here (`de` for a German Home Assistant, English otherwise).
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from typing import Any
 
 from .allocation import PROPORTIONAL, rule_for
@@ -144,6 +144,14 @@ HINTS = {
         "No outdoor temperature: no performance curve, heat load or degree days.",
         "Keine Außentemperatur: keine AZ-Kennlinie, Heizlast und Gradtage.",
     ),
+    "outdoor_statistics": (
+        "Outdoor temperature without long-term statistics (no state class): no performance curve, heat load or degree days.",
+        "Außentemperatur ohne Langzeitstatistik (keine state_class): keine AZ-Kennlinie, Heizlast und Gradtage.",
+    ),
+    "flow_statistics": (
+        "Flow or return temperature without long-term statistics (no state class): no flow temperature at 0 °C, the efficiency factor only from the setup.",
+        "Vor- oder Rücklauf ohne Langzeitstatistik (keine state_class): kein Vorlauf bei 0 °C, Gütegrad erst ab der Einrichtung.",
+    ),
     "design": (
         "No design outdoor temperature: heat load per kelvin only.",
         "Keine Normaußentemperatur: Heizlast nur je Kelvin.",
@@ -222,11 +230,14 @@ def heat_pump_summary(
     template_label: str | None,
     language: str | None,
     coarse_heat: bool = False,
+    no_statistics: Collection[Signal] = (),
 ) -> str:
     """The summary of a heat pump entry (entities: signal -> entity id).
 
     `coarse_heat`: a heat meter of a mode steps in whole kWh (known only
     from the loaded entry, `HeatPumpRuntime.coarse_heat_modes`).
+    `no_statistics`: temperatures without a state class, so without
+    long-term statistics (known from the states).
     """
     lang = _lang(language)
     t = lambda key: T[key][lang]  # noqa: E731
@@ -307,8 +318,12 @@ def heat_pump_summary(
         hints.append(h("activity"))
     if Signal.OUTDOOR_TEMP not in mapped:
         hints.append(h("outdoor"))
+    elif Signal.OUTDOOR_TEMP in no_statistics:
+        hints.append(h("outdoor_statistics"))
     elif options.get(CONF_DESIGN_TEMP) is None:
         hints.append(h("design"))
+    if {Signal.FLOW_TEMP, Signal.RETURN_TEMP} & set(no_statistics) & mapped:
+        hints.append(h("flow_statistics"))
     if fixed is None and not options.get(CONF_ELECTRICITY_PRICE_ENTITY):
         hints.append(h("price"))
     if options.get(CONF_GRID_IMPORT_ENTITY) and not (

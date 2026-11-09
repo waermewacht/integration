@@ -193,3 +193,23 @@ def test_whole_kwh_heat_meter_without_compressor() -> None:
         " with a heat meter in whole kWh – map the compressor if there is one."
         in english
     )
+
+
+def test_temperatures_without_statistics() -> None:
+    """Modbus sensors without a state class (forum, PN 09.11.): no
+    performance curve and heat load, no flow temperature at 0 °C."""
+    from custom_components.waermewacht.model import Signal
+
+    text = heat_pump_summary(
+        EMS_ESP,
+        {"electricity_price": 30.0, "design_outdoor_temp": -12.0},
+        None,
+        "de",
+        no_statistics={Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP},
+    )
+    assert "- Außentemperatur ohne Langzeitstatistik (keine state_class)" in text
+    assert "- Vor- oder Rücklauf ohne Langzeitstatistik (keine state_class)" in text
+    complete = heat_pump_summary(
+        EMS_ESP, {"electricity_price": 30.0, "design_outdoor_temp": -12.0}, None, "de"
+    )
+    assert "Langzeitstatistik" not in complete

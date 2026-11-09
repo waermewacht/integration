@@ -1241,6 +1241,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
             template.label if template else None,
             self.hass.config.language,
             coarse_heat=bool(coarse_heat_modes and coarse_heat_modes()),
+            no_statistics=self._no_statistics(),
         )
         return self.async_show_form(
             step_id=step_id,
@@ -1248,6 +1249,18 @@ class WaermewachtOptionsFlow(OptionsFlow):
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    def _no_statistics(self) -> set[Signal]:
+        """Mapped temperatures whose state has no state class: Home Assistant
+        keeps no long-term statistics of them (the look-back needs them)."""
+        entities = self.config_entry.data.get(CONF_ENTITIES, {})
+        result = set()
+        for signal in (Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP, Signal.RETURN_TEMP):
+            entity_id = entities.get(signal.value)
+            state = self.hass.states.get(entity_id) if entity_id else None
+            if state is not None and not state.attributes.get("state_class"):
+                result.add(signal)
+        return result
 
     def _runtime(self) -> Any:
         if self.config_entry.state is not ConfigEntryState.LOADED:
