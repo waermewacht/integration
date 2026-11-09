@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.11 – 2026-11-09
 
 - **„Zähler stehen still“ ohne Fehlalarm nach dem Update auf 0.4.10.** Wer 0.4.10 nach einer falsch gebuchten Nacht mitten am Tag installiert, hat beim Bosch-HomeCom-Eintrag noch den Endstand des Vortags als Basis; die Werte des Tages bleiben darunter und galten als Stillstand. Die Prüfung schaut jetzt auf den zuletzt gelesenen Wert: Steigt er, steht der Zähler nicht still. Gebucht wird wie in 0.4.10 (der Tag kommt in der Nacht danach, ab dem ersten Tag über dem Vortag ist alles wieder normal).
 
