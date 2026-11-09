@@ -55,6 +55,10 @@ HEISHAMON = Template(
         Signal.FLOW_TEMP: ((_S, "TOP6"),),  # Main_Outlet_Temp
         Signal.RETURN_TEMP: ((_S, "TOP5"),),  # Main_Inlet_Temp
         Signal.FLOW_RATE: ((_S, "TOP1"),),  # Pump_Flow in L/min
+        # DHW_Temp, "Aquarea Tank Actual Tank Temperature"; missing until
+        # 0.4.12 (reported in waermewacht/integration#1 by the author of
+        # `aquarea`).
+        Signal.DHW_TEMP: ((_S, "TOP10"),),
         # See ACTIVITY_PARTS below: the defrost switch and the set mode.
         Signal.DEFROST_FLAG: (("switch", "SET12"), ("binary_sensor", "SET12")),
         Signal.COOLING_MODE: (("select", "SET9"),),
