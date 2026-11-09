@@ -144,6 +144,64 @@ def test_day_counter_stale_value_dated_by_its_change() -> None:
     assert counter.update(5.0, local(27, 12)).delta == pytest.approx(4.9)
 
 
+def test_day_counter_rest_of_the_previous_day_after_midnight() -> None:
+    """Bosch HomeCom since 1.6.2 (2026-11-09): the previous day's last hour
+    arrives at 00:41, today's values from 00:42. Only the rise is booked,
+    and the new day starts with the step back."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(4.95, local(26, 23, 16))
+    late = counter.update(5.25, local(27, 0, 41))
+    assert late.event is CounterEvent.LATE
+    assert late.delta == pytest.approx(0.30)
+    reset = counter.update(0.0, local(27, 0, 42))
+    assert reset.event is CounterEvent.RESET
+    assert reset.delta == 0
+    assert counter.update(0.3, local(27, 1, 43)).delta == pytest.approx(0.3)
+    assert counter.update(2.06, local(27, 9)).delta == pytest.approx(1.76)
+
+
+def test_day_counter_rest_of_the_day_survives_a_restart() -> None:
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(4.95, local(26, 23, 16))
+    counter.update(5.25, local(27, 0, 41))
+    restored = Counter(max_kw=50.0, day_tz=BERLIN)
+    restored.restore(counter.as_dict())
+    assert restored.value_day == counter.value_day
+    reset = restored.update(0.1, local(27, 0, 50))
+    assert reset.event is CounterEvent.RESET
+    assert reset.delta == pytest.approx(0.1)
+
+
+def test_day_counter_rising_after_midnight_books_every_rise_once() -> None:
+    """No step back after the late value (a day without energy before, the
+    source's first value of today above it): each rise is booked once."""
+    counter = Counter(max_kw=50.0, day_tz=BERLIN)
+    counter.update(0.0, local(26, 23, 30))
+    booked = sum(
+        counter.update(value, moment).delta
+        for value, moment in (
+            (0.2, local(27, 0, 41)),
+            (0.5, local(27, 1, 41)),
+            (0.9, local(27, 2, 41)),
+            (1.4, local(27, 4, 41)),
+        )
+    )
+    assert booked == pytest.approx(1.4)
+    # The next day starts anew with its first lower value.
+    reset = counter.update(0.2, local(28, 0, 30))
+    assert reset.event is CounterEvent.RESET
+    assert reset.delta == pytest.approx(0.2)
+
+
+def test_previous_day_values_are_never_the_rest_of_a_day() -> None:
+    """MELCloud: the new previous-day value after midnight is a whole day."""
+    counter = Counter(max_kw=20.0, day_tz=BERLIN, previous_day=True)
+    counter.update(10.0, local(26, 23))
+    update = counter.update(12.0, local(27, 0, 30))
+    assert update.event is CounterEvent.RESET
+    assert update.delta == pytest.approx(12.0)
+
+
 @pytest.mark.parametrize("month", [1, 7])
 def test_utc_days_with_a_reset_at_local_midnight(month: int) -> None:
     """ViCare Vitocal 151-A starts its day values at local midnight, the

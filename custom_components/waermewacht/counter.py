@@ -42,6 +42,13 @@ CATCH_UP_HOURS = 1.0
 # comes, if plausible for the time since the value before the jump. Waited
 # for this long at most (own assumption; glitches seen lasted one reading).
 JUMP_RECOVERY = timedelta(hours=24)
+# A day value that rose after local midnight, within this time of the last
+# reading, is the rest of the previous day: Bosch HomeCom since 1.6.2 reads
+# the previous day until its last hour arrived (00:41: 5.25 after 4.95 at
+# 23:16), then today's (00:42: 0.0). A pause longer than this over midnight
+# leaves the new day's value to the new day (own assumption; HomeCom fetches
+# hourly, the late value came 85 minutes after the last one).
+LATE_DAY_GAP = timedelta(hours=3)
 
 # A day counter (energy "today") taken for a lifetime counter: it falls by half
 # or more at the same local hour on different days (own assumption; the rule of
@@ -67,6 +74,8 @@ class CounterEvent(StrEnum):
     DIP = "dip"  # step back (noise, defrost): baseline held, nothing booked
     RESET = "reset"  # counter started anew: new baseline
     JUMP = "jump"  # implausibly large increase: new baseline, nothing booked
+    # Day values: the rest of the previous day after midnight (LATE_DAY_GAP).
+    LATE = "late"
     # Fall back after a jump to at least the value before it: the real
     # increase across the glitch is booked (less what was booked during it).
     RECOVERED = "recovered"
@@ -178,7 +187,10 @@ class Counter:
     `day_tz` marks a day counter (cloud day values, e.g. Bosch HomeCom): it
     starts anew when the local date in `day_tz` changes. The first value of a
     new day is energy of that day, even when it is higher than the last
-    value of the day before (long pause). Within a day it behaves like a
+    value of the day before after a long pause. Higher within LATE_DAY_GAP of
+    the last reading, it is the rest of the day before: only the rise is
+    booked, and the new day starts with the step back that follows (or with
+    the next day). Not for previous-day values. Within a day it behaves like a
     lifetime counter: a step back is a dip (observed at the change from
     summer time, when the doubled hour is overwritten), never a new day.
     A day value is plausible up to `max_kw` since local midnight; the gap
@@ -197,6 +209,9 @@ class Counter:
     rose_time: datetime | None = None
     # The latest jump while it may still fall back (lifetime counters only).
     jump: PendingJump | None = None
+    # Day counters: the local date the baseline belongs to when it is not the
+    # date of `last_time` (the rest of the previous day read after midnight).
+    value_day: date | None = None
 
     def update(self, value: float, at: datetime) -> CounterUpdate:
         """Process a reading in kWh taken at `at` (timezone-aware)."""
@@ -288,11 +303,34 @@ class Counter:
         if value == previous_value:
             # Attribute updates: the time of the last change dates the value.
             return CounterUpdate()
+        today = at.astimezone(self.day_tz).date()
+        baseline_day = self.value_day or previous.astimezone(self.day_tz).date()
+        if baseline_day != today:
+            if (
+                not self.previous_day
+                and value > previous_value
+                and (
+                    self.value_day is not None
+                    or (
+                        baseline_day == today - timedelta(days=1)
+                        and at - previous <= LATE_DAY_GAP
+                    )
+                )
+                and self._plausible_rise(value - previous_value, previous, at)
+            ):
+                # The rest of the day before (or more of it): book the rise,
+                # keep the baseline on its day.
+                self.last_value, self.last_time = value, at
+                self.value_day = baseline_day
+                return CounterUpdate(
+                    delta=value - previous_value, event=CounterEvent.LATE
+                )
+            if not self._plausible_day_value(value, at):
+                return CounterUpdate(event=CounterEvent.JUMP)
+            self.last_value, self.last_time, self.value_day = value, at, None
+            return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
         if not self._plausible_day_value(value, at):
             return CounterUpdate(event=CounterEvent.JUMP)
-        if self._new_day(previous, at):
-            self.last_value, self.last_time = value, at
-            return CounterUpdate(delta=max(value, 0.0), event=CounterEvent.RESET)
         delta = value - previous_value
         self.last_time = at
         if delta < 0:
@@ -300,10 +338,12 @@ class Counter:
         self.last_value = value
         return CounterUpdate(delta=delta)
 
-    def _new_day(self, previous: datetime, at: datetime) -> bool:
-        return (
-            previous.astimezone(self.day_tz).date() != at.astimezone(self.day_tz).date()
-        )
+    def _plausible_rise(self, delta: float, previous: datetime, at: datetime) -> bool:
+        """A rise within `max_kw` for the time since the previous reading."""
+        if self.max_kw is None:
+            return True
+        hours = (at - previous).total_seconds() / 3600
+        return delta <= self.max_kw * POWER_MARGIN * hours + JUMP_TOLERANCE_KWH
 
     def _plausible_day_value(self, value: float, at: datetime) -> bool:
         if self.max_kw is None:
@@ -324,6 +364,8 @@ class Counter:
         }
         if self.jump is not None:
             data["jump"] = self.jump.as_dict()
+        if self.value_day is not None:
+            data["value_day"] = self.value_day.isoformat()
         return data
 
     def restore(self, data: dict[str, Any]) -> None:
@@ -334,3 +376,5 @@ class Counter:
         self.rose_time = datetime.fromisoformat(rose_time) if rose_time else None
         jump = data.get("jump")
         self.jump = PendingJump.from_dict(jump) if jump else None
+        value_day = data.get("value_day")
+        self.value_day = date.fromisoformat(value_day) if value_day else None
