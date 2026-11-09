@@ -279,6 +279,10 @@ UNAVAILABLE_LIMIT = timedelta(minutes=60)
 RESTART_BASELINE = timedelta(days=28)
 # Daily diary kept in the history file (about 150 bytes a day).
 DIARY_DAYS = 1100
+# "unavailable" here means no measurement, not a source that is down:
+# EMS-ESP 3.9 marks the flow of Bosch/Buderus heat pumps unavailable below
+# their measuring range (about 900 l/h; 3.8 showed -1). No repair issue.
+NO_VALUE_UNAVAILABLE = frozenset({Signal.FLOW_RATE})
 # Last rejected counter jumps with their readings, for the diagnostics.
 JUMPS_KEPT = 5
 # Performance curve and heat load: shortly after the start, then daily.
@@ -2383,7 +2387,7 @@ class HeatPumpRuntime:
         signal = self._signal_of.get(entity_id)
         if signal is None:
             return
-        if state.state == "unavailable":
+        if state.state == "unavailable" and signal not in NO_VALUE_UNAVAILABLE:
             self._unavailable_since.setdefault(entity_id, at)
         else:
             self._unavailable_since.pop(entity_id, None)

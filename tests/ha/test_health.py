@@ -131,6 +131,20 @@ async def test_source_unavailable_for_an_hour(
 
 
 @pytest.mark.freeze_time(START)
+async def test_flow_rate_unavailable_is_no_outage(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """EMS-ESP 3.9 marks the flow unavailable below the measuring range."""
+    flow_rate = "sensor.boiler_pc0flow"
+    hass.states.async_set(flow_rate, "900", {"unit_of_measurement": "L/h"})
+    entry = await setup(hass, flow_rate=flow_rate)
+    hass.states.async_set(flow_rate, "unavailable")
+    await tick(hass, freezer, 11)
+    await tick(hass, freezer, 70)
+    assert issue(hass, entry, "source_unavailable") is None
+
+
+@pytest.mark.freeze_time(START)
 async def test_health_sensors_need_outdoor_and_backup_heater(
     hass: HomeAssistant,
 ) -> None:

@@ -561,6 +561,10 @@ function topicKind(topic) {
 
 // Cards on the page: re-rendered when data they wait for arrive.
 const CARDS = new Set();
+// The month chart is drawn in the card's width (up to CHART_WIDTH), so its
+// labels stay readable on a phone instead of shrinking with the picture.
+const CHART_WIDTH = 560;
+const CHART_MIN_WIDTH = 280;
 function renderAll() {
   for (const card of CARDS) {
     card._states = null;
@@ -588,10 +592,25 @@ function sources(hass, deviceId) {
 class WaermewachtCard extends HTMLElement {
   connectedCallback() {
     CARDS.add(this);
+    this._resize ||= new ResizeObserver(() => {
+      if (this._drawnWidth !== undefined && this._chartWidth() !== this._drawnWidth) {
+        this._states = null;
+        this._render();
+      }
+    });
+    this._resize.observe(this);
   }
 
   disconnectedCallback() {
     CARDS.delete(this);
+    this._resize?.disconnect();
+  }
+
+  /** Width to draw the month chart in: the card's inner width, rounded. */
+  _chartWidth() {
+    const inner = this.clientWidth - 32; // ha-card padding
+    if (!(inner > 0)) return CHART_WIDTH;
+    return Math.max(CHART_MIN_WIDTH, Math.min(CHART_WIDTH, Math.round(inner / 10) * 10));
   }
 
   /** The one topic of a topic card (subclass); null for the card with all. */
@@ -1293,7 +1312,8 @@ class WaermewachtCard extends HTMLElement {
    * the current season (as the figures above) in full colour, those before
    * paler, a thin line where the season begins. */
   _monthChart(t, months, seasonKey) {
-    const W = 560;
+    const W = this._chartWidth();
+    this._drawnWidth = W;
     const H = 200;
     const L = 34;
     const B = 22;
