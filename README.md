@@ -46,7 +46,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **AZ-Kennlinie und Heizlast:** Arbeitszahl Heizen über der Außentemperatur und Heizlast aus der Energiesignatur. Als Sensoren und per Aktion für beliebige Zeiträume. Dazu Kennwerte wie Gradtage, Vorlauf bei 0 °C (die Heizkurve), Spreizung an kalten Tagen und Leistung je Heizlast.
 - **Gas- oder Ölheizung vor dem Umstieg:** Heizlast, Heizgrenze und Warmwasseranteil aus dem Gas- oder Ölverbrauch der letzten 365 Tage, als eigener Eintrag ([mehr](#gasheizung-vor-dem-umstieg)).
 - **Bericht für einen beliebigen Zeitraum** per Aktion, je Monat aufgeschlüsselt. Auch **vor der Einrichtung**, so weit die Langzeitstatistik deiner Zähler zurückreicht.
-- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p-Brücke oder ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus über das Gateway MX300/MX400 (Integration `buderus`) und EMS-ESP-Hybridanlagen (HM200); erprobt außerdem Daikin Altherma (P1P2MQTT) und Lambda. Andere Wärmepumpen ordnest du von Hand zu.
+- **Vorlagen für EMS-ESP und Bosch HomeCom:** finden Bosch/Buderus-Wärmepumpen selbst und füllen die Entitäten aus. Als Beta dazu Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), iDM, Mitsubishi Ecodan (MELCloud, F1p-Brücke oder ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus über das Gateway MX300/MX400 (Integration `buderus`) und EMS-ESP-Hybridanlagen (HM200); erprobt außerdem Daikin Altherma (P1P2MQTT), Lambda und Viessmann (ViCare, E3-Regler). Andere Wärmepumpen ordnest du von Hand zu.
 - **Schont SD-Karten:** schreibt nur, wenn sich etwas geändert hat, und dann höchstens alle 10 Minuten. Dazu am Ende eines Laufs, um Mitternacht und beim Beenden. Die Sensoren aktualisieren sich einmal pro Minute und bei Ereignissen.
 
 ## Was Wärmewacht anders macht als Template-Sensoren
@@ -77,7 +77,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | [Panasonic Aquarea über HeishaMon](https://github.com/kamaradclimber/heishamon-homeassistant) (`aquarea`) | Beta, aus dem Quellcode; Energie aus den Leistungen aufsummiert, kein Heizstab |
 | [Lambda](https://github.com/GuidoJeuken-6512/lambda_heat_pumps) (`lambda_heat_pumps`) | Vorlage, erprobt an einer EU13L; eigene Zähler für Abtauen und Stillstand |
 | [iDM Navigator 2.0](https://github.com/Xerolux/idm-heatpump-hass) (`idm_heatpump`, mit Weboberfläche) | Beta, aus dem Quellcode |
-| [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (Core `vicare`) | Beta, aus dem Quellcode; **nur Takte und Strom, keine Arbeitszahl** |
+| [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (Core `vicare`) | Vorlage, erprobt an einer Vitocal 151-A (E3-Regler; ältere Vitotronic-Regler aus dem Quellcode); **nur Takte und Strom, keine Arbeitszahl** |
 | [Mitsubishi Ecodan über MELCloud](https://www.home-assistant.io/integrations/melcloud/) (Core `melcloud`, ab HA 2026.5) | Beta, aus dem Quellcode; Arbeitszahlen ohne Takte |
 | [Vaillant myVAILLANT](https://github.com/signalkraft/mypyllant-component) (`mypyllant`) | Beta, aus dem Quellcode; Arbeitszahlen ohne Takte |
 | [Mitsubishi Ecodan über F1p-Brücke](https://github.com/F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT) (MQTT, CN105) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
@@ -1034,7 +1034,7 @@ Willst du die Datei nicht öffentlich teilen, ist das in Ordnung: Dann reichen m
 
 Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**Besitzt du eine Wärmepumpe mit Beta-Vorlage?** Besonders bei Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) und Vaillant (myVAILLANT) beruhen einzelne Annahmen nur auf dem Quellcode der Integrationen. Eine Rückmeldung mit Diagnose-Datei nach ein paar Tagen Betrieb hilft, sie zu bestätigen: ob die Zahlen plausibel sind und wann die Tageswerte springen.
+**Besitzt du eine Wärmepumpe mit Beta-Vorlage?** Besonders bei Mitsubishi Ecodan (MELCloud) und Vaillant (myVAILLANT) beruhen einzelne Annahmen nur auf dem Quellcode der Integrationen. Eine Rückmeldung mit Diagnose-Datei nach ein paar Tagen Betrieb hilft, sie zu bestätigen: ob die Zahlen plausibel sind und wann die Tageswerte springen.
 
 **Wärmepumpe ohne Vorlage?** Richte Wärmewacht manuell ein (mindestens Wärme und Strom Heizen und „Kompressor läuft“) und hänge die Diagnose-Datei an ein Issue. Unter `source` stehen dann alle Entitäten der Geräte dahinter, mit Plattform, unique_id, Einheit und Zustand. Daraus lässt sich eine Vorlage bauen.
 

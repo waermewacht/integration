@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Viessmann ViCare nicht mehr Beta.** Geprüft an einer echten Vitocal 151-A (E3-Regler): Alle Zuordnungen der Vorlage stimmen, die Tageswerte für Strom Heizen und Warmwasser kommen an (Dank an den Nutzer aus Issue #1). In der Einrichtung steht sie deshalb jetzt ohne „(beta)“. Ältere Vitotronic-Regler und geteilte Anlagen (Vitocal 200-A) beruhen weiter auf dem Quellcode. Home Assistant liefert bei ViCare weiter keine erzeugte Wärme, also keine Arbeitszahlen.
 - **Einstellungen: Hinweis zur PV-Aufteilung klarer.** Sind Einspeise-, PV- oder Batteriezähler aus Tarifwacht oder Einspeisewacht vorbelegt, sagt der Hinweis jetzt auch, dass die Aufteilung erst mit dem Netzbezug-Zähler beginnt. Den schlägt Wärmewacht bewusst nicht vor, weil sonst jedes Speichern die Aufteilung einschalten würde; bisher konnte man meinen, mit den vorbelegten Zählern sei sie schon an. Die Zusammenfassung oben nennt „Starts/Tag“ nur noch, wenn eine Grenze eingetragen ist (bisher „– Starts/Tag“). Anlass: eigene Prüfung.
 - **Zusammenfassung im Zahnrad mit Überschriften wie in den anderen Wachten:** oben „Eingerichtet“, darunter „Was fehlt“ (ohne Doppelpunkt), nur wenn etwas fehlt. Inhalt unverändert.
 

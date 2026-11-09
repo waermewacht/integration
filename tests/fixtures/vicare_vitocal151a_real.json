@@ -1,0 +1,559 @@
+{
+  "prefix": "1000000000000001_1000000000000002",
+  "gateway": "1000000000000001",
+  "device_serial": "1000000000000002",
+  "model": "E3 Vitocal 10",
+  "manufacturer": "Viessmann",
+  "entities": [
+    {
+      "entity_id": "binary_sensor.e3_vitocal_compresseur",
+      "unique_id": "1000000000000001_1000000000000002-compressor_active-0",
+      "state": "on",
+      "attributes": {
+        "device_class": "running"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.e3_vitocal_hors_gel",
+      "unique_id": "1000000000000001_1000000000000002-frost_protection_active-0",
+      "state": "off",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.e3_vitocal_one_time_charge",
+      "unique_id": "1000000000000001_1000000000000002-one_time_charge",
+      "state": "off",
+      "attributes": {
+        "device_class": "running"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "binary_sensor.e3_vitocal_pompe_de_circulation",
+      "unique_id": "1000000000000001_1000000000000002-circulationpump_active-0",
+      "state": "on",
+      "attributes": {
+        "device_class": "running"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "button.e3_vitocal_activer_la_charge_unique",
+      "unique_id": "1000000000000001_1000000000000002-activate_onetimecharge",
+      "state": "unknown",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "button.e3_vitocal_deactivate_one_time_charge",
+      "unique_id": "1000000000000001_1000000000000002-deactivate_onetimecharge",
+      "state": "unknown",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "climate.e3_vitocal_chauffage",
+      "unique_id": "1000000000000001_1000000000000002-heating-0",
+      "state": "auto",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_decalage_de_la_courbe_de_chauffe",
+      "unique_id": "1000000000000001_1000000000000002-heating curve shift-0",
+      "state": "4",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_hysteresis_d_arret_ecs",
+      "unique_id": "1000000000000001_1000000000000002-dhw_hysteresis_switch_off",
+      "state": "0.6",
+      "attributes": {
+        "unit_of_measurement": "K",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_hysteresis_de_mise_en_marche_ecs",
+      "unique_id": "1000000000000001_1000000000000002-dhw_hysteresis_switch_on",
+      "state": "4.3",
+      "attributes": {
+        "unit_of_measurement": "K",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_pente_de_la_courbe_de_chauffe",
+      "unique_id": "1000000000000001_1000000000000002-heating curve slope-0",
+      "state": "1.7",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_temperature_de_chauffage_confort",
+      "unique_id": "1000000000000001_1000000000000002-comfort_heating_temperature-0",
+      "state": "25",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_temperature_de_chauffage_normal",
+      "unique_id": "1000000000000001_1000000000000002-normal_heating_temperature-0",
+      "state": "25",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_temperature_de_chauffage_reduit",
+      "unique_id": "1000000000000001_1000000000000002-reduced_heating_temperature-0",
+      "state": "25",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "number.e3_vitocal_temperature_de_l_eau_chaude_sanitaire",
+      "unique_id": "1000000000000001_1000000000000002-dhw_temperature",
+      "state": "61",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "select.e3_vitocal_dhw_operating_mode",
+      "unique_id": "1000000000000001_1000000000000002-dhw_operating_mode",
+      "state": "efficient_with_min_comfort",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_compressor_inlet_pressure",
+      "unique_id": "1000000000000001_1000000000000002-compressor_inlet_pressure-0",
+      "state": "5.96",
+      "attributes": {
+        "unit_of_measurement": "bar",
+        "device_class": "pressure"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_compressor_inlet_temperature",
+      "unique_id": "1000000000000001_1000000000000002-compressor_inlet_temperature-0",
+      "state": "24.9",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_compressor_outlet_temperature",
+      "unique_id": "1000000000000001_1000000000000002-compressor_outlet_temperature-0",
+      "state": "69.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_condenser_liquid_temperature",
+      "unique_id": "1000000000000001_1000000000000002-condenser_liquid_temperature-0",
+      "state": "30.7",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_d_electricite_aujourd_hui",
+      "unique_id": "1000000000000001_1000000000000002-power consumption today",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_d_electricite_cette_annee",
+      "unique_id": "1000000000000001_1000000000000002-power consumption this year",
+      "state": "3636.3",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_de_l_ecs_aujourd_hui",
+      "unique_id": "1000000000000001_1000000000000002-energy_dhw_summary_consumption_heating_currentday",
+      "state": "0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_de_l_ecs_ce_mois_ci",
+      "unique_id": "1000000000000001_1000000000000002-energy_dhw_summary_consumption_heating_currentmonth",
+      "state": "13.6",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_de_l_ecs_cette_annee",
+      "unique_id": "1000000000000001_1000000000000002-energy_dhw_summary_consumption_heating_currentyear",
+      "state": "370.5",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_de_l_ecs_des_sept_derniers_jours",
+      "unique_id": "1000000000000001_1000000000000002-energy_summary_dhw_consumption_heating_lastsevendays",
+      "state": "13.8",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_du_chauffage_aujourd_hui",
+      "unique_id": "1000000000000001_1000000000000002-energy_summary_consumption_heating_currentday",
+      "state": "1.8",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_du_chauffage_ce_mois_ci",
+      "unique_id": "1000000000000001_1000000000000002-energy_summary_consumption_heating_currentmonth",
+      "state": "261.6",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_du_chauffage_cette_annee",
+      "unique_id": "1000000000000001_1000000000000002-energy_summary_consumption_heating_currentyear",
+      "state": "2538.8",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_consommation_electrique_du_chauffage_des_sept_derniers_jours",
+      "unique_id": "1000000000000001_1000000000000002-energy_summary_consumption_heating_lastsevendays",
+      "state": "264.7",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_debit_volumique",
+      "unique_id": "1000000000000001_1000000000000002-volumetric_flow",
+      "state": "1.526",
+      "attributes": {
+        "unit_of_measurement": "m³/h",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_demarrages_du_compresseur",
+      "unique_id": "1000000000000001_1000000000000002-compressor_starts-0",
+      "state": "5727",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_dhw_energy_consumption_this_year",
+      "unique_id": "1000000000000001_1000000000000002-energy_consumption_dhw_this_year",
+      "state": "336.0",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_energie",
+      "unique_id": "1000000000000001_1000000000000002-power consumption this month",
+      "state": "210.9",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_evaporator_liquid_temperature",
+      "unique_id": "1000000000000001_1000000000000002-evaporator_liquid_temperature-0",
+      "state": "13.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_evaporator_overheat_temperature",
+      "unique_id": "1000000000000001_1000000000000002-evaporator_overheat_temperature-0",
+      "state": "15.0",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_force_du_signal",
+      "unique_id": "1000000000000001_1000000000000002-wifi_signal_strength",
+      "state": "-26",
+      "attributes": {
+        "unit_of_measurement": "dBm",
+        "device_class": "signal_strength",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_heating_energy_consumption_this_year",
+      "unique_id": "1000000000000001_1000000000000002-energy_consumption_heating_this_year",
+      "state": "3161.9",
+      "attributes": {
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_heating_rod_hours",
+      "unique_id": "1000000000000001_1000000000000002-heating_rod_hours",
+      "state": "127",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_heating_rod_starts",
+      "unique_id": "1000000000000001_1000000000000002-heating_rod_starts",
+      "state": "834",
+      "attributes": {
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_heures_de_fonctionnement_du_compresseur",
+      "unique_id": "1000000000000001_1000000000000002-compressor_hours-0",
+      "state": "11824",
+      "attributes": {
+        "unit_of_measurement": "h",
+        "state_class": "total_increasing"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_phase_du_compresseur",
+      "unique_id": "1000000000000001_1000000000000002-compressor_phase-0",
+      "state": "ready",
+      "attributes": {},
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_seasonal_performance_factor",
+      "unique_id": "1000000000000001_1000000000000002-spf_total",
+      "state": "3.7",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_seasonal_performance_factor_domestic_hot_water",
+      "unique_id": "1000000000000001_1000000000000002-spf_dhw",
+      "state": "3.8",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_seasonal_performance_factor_heating",
+      "unique_id": "1000000000000001_1000000000000002-spf_heating",
+      "state": "3.5",
+      "attributes": {
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_supply_pressure",
+      "unique_id": "1000000000000001_1000000000000002-supply_pressure",
+      "state": "1.7",
+      "attributes": {
+        "unit_of_measurement": "bar",
+        "device_class": "pressure",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_de_depart",
+      "unique_id": "1000000000000001_1000000000000002-supply_temperature-0",
+      "state": "52.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_de_depart_de_la_chaudiere",
+      "unique_id": "1000000000000001_1000000000000002-boiler_supply_temperature",
+      "state": "50.4",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_de_depart_du_circuit_primaire",
+      "unique_id": "1000000000000001_1000000000000002-primary_circuit_supply_temperature",
+      "state": "17.9",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_de_depart_du_circuit_secondaire",
+      "unique_id": "1000000000000001_1000000000000002-secondary_circuit_supply_temperature",
+      "state": "36.6",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_de_retour",
+      "unique_id": "1000000000000001_1000000000000002-return_temperature",
+      "state": "49.3",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_du_ballon_d_eau_chaude_sanitaire",
+      "unique_id": "1000000000000001_1000000000000002-dhw_storage_temperature",
+      "state": "45.8",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_exterieure",
+      "unique_id": "1000000000000001_1000000000000002-outside_temperature",
+      "state": "20",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_maximale_de_l_ecs",
+      "unique_id": "1000000000000001_1000000000000002-hotwater_max_temperature",
+      "state": "61",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "sensor.e3_vitocal_temperature_minimale_de_l_ecs",
+      "unique_id": "1000000000000001_1000000000000002-hotwater_min_temperature",
+      "state": "9",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      },
+      "disabled_by_default": false
+    },
+    {
+      "entity_id": "water_heater.e3_vitocal_eau_chaude_sanitaire",
+      "unique_id": "1000000000000001_1000000000000002-0",
+      "state": "on",
+      "attributes": {},
+      "disabled_by_default": false
+    }
+  ]
+}

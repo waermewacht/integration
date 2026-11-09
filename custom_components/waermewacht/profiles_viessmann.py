@@ -2,8 +2,10 @@
 
 Read at Home Assistant core dev 8f785c4 (2026-10-28) with PyViCare 2.63.0,
 the version its manifest pins. Derived from source code and the test data of
-both projects, not from a real installation: experimental until a recorded
-fixture exists.
+both projects. Checked on 2026-11-09 against a real E3 (Vitocal 151-A,
+tests/fixtures/vicare_vitocal151a_real.json): every E3 signal found, day
+values arrive. Not experimental since then (owner's decision 2026-11-09);
+Vitotronic controllers and split systems are still from the source only.
 
 Unique ids are "<gateway serial>_<device serial or id>-<key>[-<component>]"
 (entity.py); "-" in the device serial is replaced by "_", so the first "-"
@@ -150,7 +152,7 @@ class ViCareTemplate(Template):
 
 _S, _B = "sensor", "binary_sensor"
 VICARE = ViCareTemplate(
-    experimental=True,
+    experimental=False,
     key="vicare",
     label="Viessmann ViCare",
     platform="vicare",

@@ -26,6 +26,7 @@ from custom_components.waermewacht.templates import TEMPLATES
 from .conftest import load_fixture
 
 E3 = "vicare_vitocal250a.json"
+REAL = "vicare_vitocal151a_real.json"
 LEGACY = "vicare_vitocal333g.json"
 SPLIT = "vicare_vitocal200a.json"
 
@@ -67,6 +68,35 @@ def test_e3_finds_cycling_and_electricity() -> None:
     # E3: the phase carries no activity (ready / not_ready).
     assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
     assert not any(s in match.entities for s in HEAT_SIGNALS.values())
+
+
+def test_real_vitocal_151a() -> None:
+    """A real E3 (Vitocal 151-A, French entity names, 2026-11-09): every
+    signal the template knows for E3 is found, the phase is left out."""
+    (match,) = find(VICARE, entries(REAL))
+    s, b = "sensor.e3_vitocal_", "binary_sensor.e3_vitocal_"
+    assert match.prefix == load_fixture(REAL)["prefix"]
+    assert match.entities == {
+        Signal.ELEC_HEATING: s + "consommation_electrique_du_chauffage_aujourd_hui",
+        Signal.ELEC_DHW: s + "consommation_electrique_de_l_ecs_aujourd_hui",
+        Signal.COMPRESSOR: b + "compresseur",
+        Signal.STARTS_TOTAL: s + "demarrages_du_compresseur",
+        Signal.OUTDOOR_TEMP: s + "temperature_exterieure",
+        Signal.FLOW_TEMP: s + "temperature_de_depart_du_circuit_secondaire",
+        Signal.RETURN_TEMP: s + "temperature_de_retour",
+        Signal.DHW_TEMP: s + "temperature_du_ballon_d_eau_chaude_sanitaire",
+    }
+    # No cooling on this one; E3 has no hot water flag and no mode.
+    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
+    rows = {e["entity_id"]: e for e in load_fixture(REAL)["entities"]}
+    for signal, entity_id in match.entities.items():
+        if signal in ENERGY_SIGNALS:
+            assert rows[entity_id]["attributes"] == {
+                "unit_of_measurement": "kWh",
+                "device_class": "energy",
+                "state_class": "total_increasing",
+            }, entity_id
+    assert VICARE.is_foreign_activity(rows[s + "phase_du_compresseur"]["state"])
 
 
 def test_e3_enabled_by_default_is_enough() -> None:

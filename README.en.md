@@ -46,7 +46,7 @@ The user interface is available in German and English and follows the language o
 - **Performance curve and heat load:** heating performance factor over the outdoor temperature and heat load from the energy signature. As sensors and via actions for any period. Plus figures such as degree days, flow temperature at 0 °C (the heating curve), spread on cold days and power per heat load.
 - **Gas or oil boiler before switching:** heat load, heating limit and hot water share from the gas or oil consumption of the last 365 days, as an entry of its own ([more](#gas-boiler-before-switching)).
 - **Report for any period** via an action, broken down by month. Also **before the setup**, as far back as the long-term statistics of your meters go.
-- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), iDM, Viessmann (ViCare), Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and EMS-ESP hybrid systems (HM200); tested as well: Daikin Altherma (P1P2MQTT) and Lambda. Other heat pumps are mapped by hand.
+- **Templates for EMS-ESP and Bosch HomeCom:** find Bosch/Buderus heat pumps on their own and fill in the entities. As beta also Luxtronik (alpha innotec, Novelan), Stiebel Eltron/Tecalor (ISG), Panasonic Aquarea (HeishaMon), iDM, Mitsubishi Ecodan (MELCloud, F1p bridge or ESPHome), Vaillant (myVAILLANT), Waterkotte, Buderus via the MX300/MX400 gateway (integration `buderus`) and EMS-ESP hybrid systems (HM200); tested as well: Daikin Altherma (P1P2MQTT), Lambda and Viessmann (ViCare, E3 controllers). Other heat pumps are mapped by hand.
 - **Easy on SD cards:** writes only when something changed, and then at most every 10 minutes. In addition at the end of a run, at midnight and on shutdown. Sensors update once a minute and on events.
 
 ## What Wärmewacht does differently from template sensors
@@ -77,7 +77,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | [Panasonic Aquarea via HeishaMon](https://github.com/kamaradclimber/heishamon-homeassistant) (`aquarea`) | beta, from the source code; energy summed up from the power values, no backup heater |
 | [Lambda](https://github.com/GuidoJeuken-6512/lambda_heat_pumps) (`lambda_heat_pumps`) | template, tested on an EU13L; own meters for defrost and standby |
 | [iDM Navigator 2.0](https://github.com/Xerolux/idm-heatpump-hass) (`idm_heatpump`, with web interface) | beta, from the source code |
-| [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (core `vicare`) | beta, from the source code; **cycling and electricity only, no performance factor** |
+| [Viessmann ViCare](https://www.home-assistant.io/integrations/vicare/) (core `vicare`) | template, tested on a Vitocal 151-A (E3 controller; older Vitotronic controllers from the source code); **cycling and electricity only, no performance factor** |
 | [Mitsubishi Ecodan via MELCloud](https://www.home-assistant.io/integrations/melcloud/) (core `melcloud`, HA 2026.5+) | beta, from the source code; performance factors without cycling |
 | [Vaillant myVAILLANT](https://github.com/signalkraft/mypyllant-component) (`mypyllant`) | beta, from the source code; performance factors without cycling |
 | [Mitsubishi Ecodan via F1p bridge](https://github.com/F1p/Home-Assistant-Mitsubishi-CN105-to-MQTT) (MQTT, CN105) | beta, from the source code; performance factors, cycling and defrosts |
@@ -1034,7 +1034,7 @@ If you would rather not share the file publicly, that is fine: the report and th
 
 Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an English summary at the end).
 
-**Do you own a heat pump with a beta template?** Especially for Viessmann (ViCare), Mitsubishi Ecodan (MELCloud) and Vaillant (myVAILLANT) some assumptions rest on the integrations' source code only. Feedback with a diagnostics file after a few days of operation helps to confirm them: whether the figures are plausible and when the day values jump.
+**Do you own a heat pump with a beta template?** Especially for Mitsubishi Ecodan (MELCloud) and Vaillant (myVAILLANT) some assumptions rest on the integrations' source code only. Feedback with a diagnostics file after a few days of operation helps to confirm them: whether the figures are plausible and when the day values jump.
 
 **Heat pump without a template?** Set up Wärmewacht manually (at least heat and electricity for heating and "Compressor running") and attach the diagnostics file to an issue. Under `source` it lists every entity of the devices behind it, with platform, unique_id, unit and state. That is enough to build a template.
 
