@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **„Kleinste Heizleistung“ sagt, was gemeint ist.** Die Hilfe zum Feld nennt jetzt „Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch“. Mit dem kleinsten gemessenen Stromverbrauch (etwa 0,8 kW statt 6,9 kW Wärme) lag die Erwartung, ab wann die Wärmepumpe durchlaufen sollte, viel zu warm. Bestehende Einträge: unter *Einstellungen* prüfen. Anlass: Rückmeldung aus dem simon42-Forum.
+
 ## 0.6.1 – 2026-11-09
 
 - **Zahnrad: Hinweis auf Temperaturen ohne Langzeitstatistik.** Hat die Außen-, Vor- oder Rücklauftemperatur keine `state_class` (etwa selbst angelegte Modbus- oder Template-Sensoren), führt Home Assistant für sie keine Langzeitstatistik – dann fehlen AZ-Kennlinie, Heizlast und Gradtage bzw. „Vorlauf bei 0 °C“, und der Gütegrad hat keinen Rückblick, ohne dass man sah, warum. Die Übersicht oben im Zahnrad sagt es jetzt unter „Was fehlt“ („Außentemperatur ohne Langzeitstatistik (keine state_class): keine AZ-Kennlinie, Heizlast und Gradtage.“). Abhilfe: beim Sensor `state_class: measurement` setzen; die Statistik beginnt dann ab da. Anlass: Rückmeldung per PN aus dem simon42-Forum.

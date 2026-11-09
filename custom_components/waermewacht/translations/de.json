@@ -348,7 +348,7 @@
             },
             "data_description": {
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
-              "min_power_kw": "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
+              "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
           "limits": {
@@ -455,7 +455,7 @@
             },
             "data_description": {
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
-              "min_power_kw": "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
+              "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
           "limits": {
@@ -542,7 +542,7 @@
             },
             "data_description": {
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
-              "min_power_kw": "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
+              "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
           "limits": {
@@ -629,7 +629,7 @@
             },
             "data_description": {
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
-              "min_power_kw": "Aus dem Datenblatt; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
+              "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
           "limits": {

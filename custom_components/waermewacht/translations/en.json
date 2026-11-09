@@ -348,7 +348,7 @@
             },
             "data_description": {
               "rated_power_kw": "From the data sheet; gives the power per heat load.",
-              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+              "min_power_kw": "Heat output in kW from the data sheet (e.g. “min. heating capacity A15W35”), not the electricity drawn; shows whether cycling in mild weather is to be expected."
             }
           },
           "limits": {
@@ -455,7 +455,7 @@
             },
             "data_description": {
               "rated_power_kw": "From the data sheet; gives the power per heat load.",
-              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+              "min_power_kw": "Heat output in kW from the data sheet (e.g. “min. heating capacity A15W35”), not the electricity drawn; shows whether cycling in mild weather is to be expected."
             }
           },
           "limits": {
@@ -542,7 +542,7 @@
             },
             "data_description": {
               "rated_power_kw": "From the data sheet; gives the power per heat load.",
-              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+              "min_power_kw": "Heat output in kW from the data sheet (e.g. “min. heating capacity A15W35”), not the electricity drawn; shows whether cycling in mild weather is to be expected."
             }
           },
           "limits": {
@@ -629,7 +629,7 @@
             },
             "data_description": {
               "rated_power_kw": "From the data sheet; gives the power per heat load.",
-              "min_power_kw": "From the data sheet; shows whether cycling in mild weather is to be expected."
+              "min_power_kw": "Heat output in kW from the data sheet (e.g. “min. heating capacity A15W35”), not the electricity drawn; shows whether cycling in mild weather is to be expected."
             }
           },
           "limits": {
