@@ -306,3 +306,48 @@ def test_factor_attributes() -> None:
     assert attributes["previous_winter"] is None
     assert attributes["field_reference"]["period"] == "November to March"
     assert factor_attributes({}) == {}
+
+
+# Lower heating curve.
+
+
+def test_lower_flow_saving_matches_carnot() -> None:
+    # Sink 32.5 °C, source 0 °C: 1 K lower raises the Carnot COP from
+    # 305.65/32.5 to 304.65/31.5, saving 1 - 9.405/9.671 = 2.75 % at the
+    # same factor.
+    days = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    result = efficiency_factor(days, DAY, DAY + timedelta(days=13), min_days=14)
+    saved = result.lower_flow_kwh
+    assert set(saved) == {1, 2, 3}
+    assert saved[1] / result.electricity_kwh == pytest.approx(
+        1 - carnot_cop(32.5, 0.0) / carnot_cop(31.5, 0.0), abs=1e-6
+    )
+    assert saved[1] < saved[2] < saved[3]
+    attributes = result.as_attributes()
+    assert attributes["lower_flow_percent"]["1"] == pytest.approx(2.7, abs=0.1)
+    assert attributes["lower_flow_kwh"]["2"] == round(saved[2], 1)
+
+
+def test_lower_flow_skips_days_at_the_smallest_lift() -> None:
+    # Lift 10.5 K: 1 K lower falls below the smallest lift, no saving.
+    days = [
+        entry(DAY + timedelta(days=i), flow=25.0, spread=5.0, outdoor_heating=12.0)
+        for i in range(7)
+    ]
+    result = efficiency_factor(days, DAY, DAY + timedelta(days=6), min_days=7)
+    assert result.value is not None
+    assert result.lower_flow_kwh == {1: 0.0, 2: 0.0, 3: 0.0}
+
+
+def test_lower_flow_without_value() -> None:
+    result = efficiency_factor([entry()], DAY, DAY, min_days=7)
+    assert result.value is None and result.lower_flow_kwh == {}
+    assert result.as_attributes()["lower_flow_kwh"] is None
+
+
+def test_factor_attributes_price() -> None:
+    days = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    season = efficiency_factor(days, DAY, DAY + timedelta(days=13), min_days=14)
+    attributes = factor_attributes({"season": season, "previous_season": season}, 0.3)
+    assert attributes["price_eur_per_kwh"] == 0.3
+    assert attributes["previous_season"]["lower_flow_kwh"]["2"] > 0

@@ -149,6 +149,10 @@ const TEXT = {
     factorField: (lo, hi) => `Feldtest Nov–März ${lo}–${hi}`,
     factorFlowOnly: "ohne Rücklauf, eher zu hoch",
     factorWinter: "Winter",
+    lowerFlow: "Heizkurve 2 K tiefer",
+    lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
+    lowerFlowEuro: (eur) => `≈ ${eur} € weniger`,
+    seasonSoFar: "Saison bisher",
     dutyChart: "Laufzeit Heizen je Außentemperatur",
     dutySeries: "Anteil der Zeit",
     dutyExpected: (v) => `erwartet unter ${v} °C`,
@@ -335,6 +339,10 @@ const TEXT = {
     factorField: (lo, hi) => `field test Nov–Mar ${lo}–${hi}`,
     factorFlowOnly: "without return, rather too high",
     factorWinter: "winter",
+    lowerFlow: "Heating curve 2 K lower",
+    lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
+    lowerFlowEuro: (eur) => `≈ ${eur} € less`,
+    seasonSoFar: "season so far",
     dutyChart: "Heating run time per outdoor temperature",
     dutySeries: "Share of the time",
     dutyExpected: (v) => `expected below ${v} °C`,
@@ -1039,6 +1047,7 @@ class WaermewachtCard extends HTMLElement {
       this._own("flow_at_zero", t.tiles.flow_at_zero, previous(flow.previous_season, 1, " °C")),
       this._own("oversize_factor", t.tiles.oversize_factor),
       this._efficiencyFactor(t),
+      this._lowerFlow(t),
     ]);
     return (charts.length ? `<div class="charts">${charts.join("")}</div>` : "") + tiles;
   }
@@ -1063,6 +1072,23 @@ class WaermewachtCard extends HTMLElement {
         ? `${t.factorWinter} ${this._num(winter, 2)} · ${field}` : field;
     }
     return this._own("efficiency_factor", t.tiles.efficiency_factor, extra);
+  }
+
+  /** What a heating curve 2 K lower would have saved (carnot.py): the
+   * previous season when it has a value (a whole season), else the current
+   * one so far; euro with the fixed electricity price. */
+  _lowerFlow(t) {
+    const state = this._state("efficiency_factor");
+    if (!state) return "";
+    const a = state.attributes;
+    const previous = a.previous_season?.lower_flow_kwh;
+    const saved = previous || a.lower_flow_kwh;
+    if (!saved || saved["2"] === undefined || saved["2"] === null) return "";
+    const kwh = saved["2"];
+    const parts = [];
+    if (a.price_eur_per_kwh) parts.push(t.lowerFlowEuro(this._num(kwh * a.price_eur_per_kwh, 0)));
+    parts.push(previous ? t.previousSeason : t.seasonSoFar);
+    return this._tile(this._entities.efficiency_factor, t.lowerFlow, parts.join(" · "), t.lowerFlowValue(this._num(kwh, 0)));
   }
 
   /** Energy signature of a heat load sensor (attributes of heat_load.py):

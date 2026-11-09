@@ -32,6 +32,18 @@ COP differed by -0.4 to +1.4 %, mean +0.5 %. Stricter filters (neighbour
 hours heating too, near-full hours only) left too few hours and did worse.
 Not yet checked on a heat pump that cycles a lot (spring).
 
+Lower heating curve (health check 4.14, second part): with the period's
+own factor g, the electricity at a sink k kelvin lower is
+sum(heat / (g * COP_Carnot(sink - k, source))); the saving is the
+difference to sum(heat / (g * COP_Carnot(sink, source))), which equals the
+electricity used. Same heat (the rooms stay warm), same factor, the whole
+sink moves by k. A day whose lower sink falls below the smallest lift
+keeps its electricity (no saving counted). Checked against field values:
+Carnot alone gives +2.6 % per kelvin at 35 °C sink and 0 °C outside, +2.0 %
+at 45 °C; Brudermueller et al. 2025 found SCOP +0.11 and -2.61 %
+electricity per kelvin on average (708 heat pumps). At a small lift the
+factor tends to fall, so the figure is rather an upper bound.
+
 Days with backup heater electricity are left out: whether a heat counter
 holds the heater's heat depends on the source, and Fraunhofer's SPF 2 is
 the heat pump alone. Without a return temperature the sink is the flow
@@ -65,6 +77,8 @@ MIN_LIFT_K = 10.0
 MAX_AUX_KWH = 0.1
 # Heating-only hours a statistics day needs (as heating_curve).
 MIN_STATISTICS_HOURS = 2
+# Kelvin a lower heating curve is shown for.
+LOWER_FLOW_KELVINS = (1, 2, 3)
 MONTH_MIN_DAYS = 7
 SEASON_MIN_DAYS = 14
 # Fraunhofer's reference period: November to March (Günther et al. 2026).
@@ -207,6 +221,8 @@ class EfficiencyFactor:
     statistics_days: int = 0
     skipped: dict[str, int] = field(default_factory=dict)
     reason: str | None = None
+    # kWh a heating curve k kelvin lower would have saved (with a value).
+    lower_flow_kwh: dict[int, float] = field(default_factory=dict)
 
     def as_attributes(self) -> dict[str, Any]:
         return {
@@ -221,6 +237,22 @@ class EfficiencyFactor:
             # Days from the hourly statistics (look-back) among `days`.
             "days_from_statistics": self.statistics_days,
             "skipped_days": dict(sorted(self.skipped.items())),
+            **self.lower_flow_attributes(),
+        }
+
+    def lower_flow_attributes(self) -> dict[str, Any]:
+        """Saving of a heating curve 1, 2, 3 K lower: kWh and percent of the
+        heating electricity (keys as strings for JSON)."""
+        if self.value is None or not self.lower_flow_kwh:
+            return {"lower_flow_kwh": None, "lower_flow_percent": None}
+        return {
+            "lower_flow_kwh": {
+                str(k): round(v, 1) for k, v in self.lower_flow_kwh.items()
+            },
+            "lower_flow_percent": {
+                str(k): round(100 * v / self.electricity_kwh, 1)
+                for k, v in self.lower_flow_kwh.items()
+            },
         }
 
 
@@ -242,6 +274,7 @@ def efficiency_factor(
         if first <= (day := date.fromisoformat(entry["day"])) <= last
     }
     statistics = statistics or {}
+    counted: list[FactorDay] = []
     heat = electricity = ideal = sink = source = 0.0
     days = flow_only = day_mean = from_statistics = 0
     skipped: dict[str, int] = {}
@@ -258,6 +291,7 @@ def efficiency_factor(
             skipped[found] = skipped.get(found, 0) + 1
             continue
         days += 1
+        counted.append(found)
         heat += found.heat
         electricity += found.electricity
         ideal += found.heat / found.cop
@@ -271,8 +305,9 @@ def efficiency_factor(
         reason = TOO_FEW_DAYS
     elif electricity < min_electricity:
         reason = TOO_LITTLE_ELECTRICITY
+    value = None if reason else ideal / electricity
     return EfficiencyFactor(
-        value=None if reason else ideal / electricity,
+        value=value,
         days=days,
         heat_kwh=heat,
         electricity_kwh=electricity,
@@ -284,7 +319,24 @@ def efficiency_factor(
         statistics_days=from_statistics,
         skipped=skipped,
         reason=reason,
+        lower_flow_kwh={} if value is None else lower_flow_savings(counted, value),
     )
+
+
+def lower_flow_savings(days: Iterable[FactorDay], factor: float) -> dict[int, float]:
+    """kWh saved by a sink k kelvin lower, for each k of LOWER_FLOW_KELVINS
+    (see the module)."""
+    days = list(days)
+    result: dict[int, float] = {}
+    for kelvin in LOWER_FLOW_KELVINS:
+        saved = 0.0
+        for day in days:
+            lower = carnot_cop(day.sink - kelvin, day.source)
+            if lower is None:
+                continue
+            saved += day.heat / (factor * day.cop) - day.heat / (factor * lower)
+        result[kelvin] = saved
+    return result
 
 
 def winter_span(first: date, last: date) -> tuple[date, date] | None:
@@ -318,7 +370,9 @@ def factor_spans(
     return spans
 
 
-def factor_attributes(factors: Mapping[str, EfficiencyFactor]) -> dict[str, Any]:
+def factor_attributes(
+    factors: Mapping[str, EfficiencyFactor], price_eur_per_kwh: float | None = None
+) -> dict[str, Any]:
     """Attributes of the sensor: the season in detail, the other periods as
     value, days and reason (None for a winter not begun yet)."""
     if (season := factors.get("season")) is None:
@@ -331,6 +385,7 @@ def factor_attributes(factors: Mapping[str, EfficiencyFactor]) -> dict[str, Any]
             "value": _round(figure.value, 2),
             "days": figure.days,
             "reason": figure.reason,
+            "lower_flow_kwh": figure.lower_flow_attributes()["lower_flow_kwh"],
         }
 
     return {
@@ -341,6 +396,8 @@ def factor_attributes(factors: Mapping[str, EfficiencyFactor]) -> dict[str, Any]
         "winter": short("winter"),
         "previous_winter": short("previous_winter"),
         "field_reference": field_reference(),
+        # Fixed electricity price for the euro of the lower heating curve.
+        "price_eur_per_kwh": price_eur_per_kwh,
     }
 
 

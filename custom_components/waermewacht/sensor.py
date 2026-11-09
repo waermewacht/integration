@@ -823,7 +823,7 @@ def _efficiency_factor(runtime: HeatPumpRuntime) -> float | None:
 
 
 def _efficiency_factor_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
-    return factor_attributes(runtime.efficiency_factors)
+    return factor_attributes(runtime.efficiency_factors, runtime.electricity_price)
 
 
 def _oversize(runtime: HeatPumpRuntime) -> float | None:

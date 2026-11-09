@@ -1324,7 +1324,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         _r(factors["season"].value, 2),
         None,
         2,
-        **factor_attributes(factors),
+        **factor_attributes(factors, ELECTRICITY_PRICE),
     )
     spread_7d = a["spread_7d"]
     put("spread_7d", _r(spread_7d.value, 1), "K", 1, **spread_7d.as_attributes())
