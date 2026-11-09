@@ -251,6 +251,9 @@ def _selector(signal: Signal) -> selector.EntitySelector:
 
 # A template's form: what it did not find, collapsed at the end.
 MORE = "more"
+# Filled by templates only for a look-back (duty.py): they do not open their
+# collapsed section, or every EMS-ESP entry would show it open.
+QUIET_SIGNALS = frozenset({Signal.RUNTIME_HEATING, Signal.STARTS_HEATING})
 
 
 def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.Schema:
@@ -295,7 +298,9 @@ def entities_schema(values: dict[str, str], top: set[str] | None = None) -> vol.
                 ),
                 {
                     "collapsed": name in collapsible
-                    and not any(values.get(s.value) for s in signals)
+                    and not any(
+                        values.get(s.value) for s in signals if s not in QUIET_SIGNALS
+                    )
                 },
             )
             for name, signals in groups.items()

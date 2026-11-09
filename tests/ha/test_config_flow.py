@@ -440,6 +440,26 @@ async def test_own_sensor_as_source_is_refused(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.CREATE_ENTRY
 
 
+def test_look_back_counters_keep_their_section_collapsed() -> None:
+    """The EMS-ESP template fills the run time and start counters of heating
+    (look-back only): the special meters section stays collapsed; a real
+    special meter still opens it."""
+    from custom_components.waermewacht.config_flow import entities_schema
+
+    def totals(values: dict[str, str]) -> bool:
+        schema = entities_schema(values).schema
+        return next(v for k, v in schema.items() if str(k) == "totals").options[
+            "collapsed"
+        ]
+
+    quiet = {
+        "runtime_heating": "sensor.boiler_uptimecompheating",
+        "starts_heating": "sensor.boiler_heatingstarts",
+    }
+    assert totals(quiet) is True
+    assert totals({**quiet, "elec_total": "sensor.elec"}) is False
+
+
 async def test_options(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
     entry.add_to_hass(hass)

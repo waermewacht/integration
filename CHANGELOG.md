@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Neu konfigurieren: Sonderzähler-Abschnitt bleibt eingeklappt.** Seit 0.6.0 trägt die EMS-ESP-Vorlage die Zähler „Laufzeit Kompressor Heizen“ und „Kompressorstarts Heizen“ ein (für den Rückblick der Laufzeit je Außentemperatur). Dadurch klappte der Abschnitt „Ein Zähler für alle Betriebsarten, Sonderzähler“ bei jedem EMS-ESP-Eintrag auf. Diese zwei Zähler öffnen ihn nicht mehr; ein echter Sonderzähler schon. Anlass: eigene Prüfung.
+- **Karte „Takte“: Diagramm ohne Sommer.** Das Diagramm „Laufzeit Heizen je Außentemperatur“ endet eine Klasse über der wärmsten mit Heizbetrieb, statt bis 35 °C nur Nullen zu zeigen.
+
 ## 0.6.0 – 2026-11-09
 
 - **Behoben: „Quelle nicht erreichbar“ für den Durchfluss bei EMS-ESP 3.9.** Bosch- und Buderus-Wärmepumpen melden den Durchfluss erst ab etwa 900 l/h. EMS-ESP 3.8 zeigte darunter −1 (seit 0.4.12 als „kein Wert“ behandelt), EMS-ESP 3.9 macht die Entität dann „nicht verfügbar“. Wärmewacht hielt das nach einer Stunde für eine ausgefallene Quelle und meldete den Reparaturhinweis „Quelle nicht erreichbar“. Beim Durchfluss heißt „nicht verfügbar“ jetzt nur „kein Messwert“: kein Hinweis, Mittelwert und „Durchfluss 0 beim Heizen“ wie bei unbekannt. Für alle anderen Entitäten bleibt der Hinweis. Anlass: Rückmeldung aus dem simon42-Forum.

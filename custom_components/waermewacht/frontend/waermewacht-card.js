@@ -956,7 +956,11 @@ class WaermewachtCard extends HTMLElement {
    * season the sensors show; the minutes per start in the tooltip. */
   _dutyChart(t) {
     const state = this._state("continuous_below");
-    const rows = (state?.attributes.classes || []).filter((c) => c.hours >= (state.attributes.min_class_hours ?? 24));
+    const counted = (state?.attributes.classes || []).filter((c) => c.hours >= (state.attributes.min_class_hours ?? 24));
+    // Summer classes without any heating would only stretch the axis: up to
+    // one class above the warmest with heating.
+    const last = counted.map((c) => c.share_percent > 0).lastIndexOf(true);
+    const rows = counted.slice(0, last + 2);
     if (rows.length < 2) return "";
     const series = [{
       color: COLORS.current,
