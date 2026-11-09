@@ -51,6 +51,7 @@ from homeassistant.util import dt as dt_util
 from .activity import combine
 from .averages import Mean
 from .backfill import (
+    COARSE_WINDOW,
     HourlyChanges,
     boiler_hours,
     bookable_hours,
@@ -2361,7 +2362,7 @@ class HeatPumpRuntime:
             mode = self.tracker.mode
             if mode is None or not has_elec(self.entities, mode):
                 mode = Mode.HEATING
-            kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
+            kind = Kind.ELEC if self._running(mode, previous, at) else Kind.STANDBY
         elif signal is Signal.HEAT_TOTAL:
             # One heat meter for heating and hot water: the mode running or
             # (defrost, pump overrun, standby) the mode that ran last, else
@@ -2392,7 +2393,7 @@ class HeatPumpRuntime:
                 if self.template.day_values:
                     self._pending.append((mode, kwh, at))
                     return
-                kind = Kind.ELEC if self._running(mode, previous) else Kind.STANDBY
+                kind = Kind.ELEC if self._running(mode, previous, at) else Kind.STANDBY
             else:
                 kind = Kind.AUX
         defrost = self._defrost_of(signal, kind, at)
@@ -2459,16 +2460,33 @@ class HeatPumpRuntime:
             self._dirty = True
         self._pending = waiting
 
-    def _running(self, mode: Mode, previous: datetime | None) -> bool:
-        """Whether electricity of `mode` since `previous` came from a run.
+    def _running(self, mode: Mode, previous: datetime | None, at: datetime) -> bool:
+        """Whether electricity of `mode` from `previous` to `at` came from a run.
 
         Standby: the mode delivered no heat and (with a compressor state) the
         compressor did not run in that mode.
+
+        Without a compressor state and with a heat meter in whole kWh, the
+        heat steps only every hour or two while the electricity reports every
+        few minutes: electricity counts as running within COARSE_WINDOW hours
+        after the last heat step of its mode, the same window as the look-back
+        (backfill.near_heat_hours), so live and look-back agree. No rebooking:
+        a run after a longer pause counts as standby until its first heat
+        step, standby right after a run as running.
         """
         if self._heat_moved(mode, previous):
             return True
         if Signal.COMPRESSOR not in self.entities:
-            return not has_heat(self.entities, mode)
+            if not has_heat(self.entities, mode):
+                return True
+            # Per mode: a step of the common heat meter (HEAT_TOTAL) marks
+            # only the mode it was booked to.
+            heat_at = self._heat_at.get(mode)
+            return (
+                heat_at is not None
+                and self.heat_coarse(mode)
+                and at - heat_at <= timedelta(hours=COARSE_WINDOW)
+            )
         if not self.tracker.was_running_since(previous):
             return False
         if Signal.ACTIVITY not in self.entities:
@@ -2726,6 +2744,24 @@ class HeatPumpRuntime:
         ]
         coarse = any(s in self.entities and s not in self.decimal for s in signals)
         return 1.0 if coarse else 0.01
+
+    def heat_coarse(self, mode: Mode) -> bool:
+        """Whether the heat meter of `mode` (its own or the common one) steps
+        in whole kWh: it has a reading and never showed decimals."""
+        if self.hourly:
+            return False  # unrounded hourly statistics
+        signal = heat_signal(self.entities, mode)
+        counter = self.counters.get(signal)
+        return (
+            signal in self.entities
+            and signal not in self.decimal
+            and counter is not None
+            and counter.last_value is not None
+        )
+
+    def coarse_heat_modes(self) -> list[Mode]:
+        """The modes whose heat meter steps in whole kWh (settings summary)."""
+        return [m for m in Mode if has_heat(self.entities, m) and self.heat_coarse(m)]
 
     def reliable(self, totals: Totals, *modes: Mode) -> bool:
         """Whether rounding of the counters stays within 5 % of the electricity."""

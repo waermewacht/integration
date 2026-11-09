@@ -159,3 +159,35 @@ def test_oil_tank_by_hand() -> None:
     assert "- **Oil price:** 98.5 €/100 l" in text
     assert "design temperature -10 °C" in text
     assert "Missing" not in text
+
+
+def test_whole_kwh_heat_meter_without_compressor() -> None:
+    """Without a compressor a heat meter in whole kWh costs running
+    electricity (standby until its first step); with one nothing is said."""
+    meters = {"heat_total": "sensor.wmz", "elec_total": "sensor.elec"}
+    hint = (
+        "- Ohne Kompressor zählt bei einem Wärmezähler in ganzen kWh ein Teil des"
+        " Laufstroms als Stillstand – Kompressor eintragen, wenn vorhanden."
+    )
+    text = heat_pump_summary(meters, {}, None, "de", coarse_heat=True)
+    hints = text.split("**Was fehlt:**\n")[1].split("\n")
+    assert (
+        hints[
+            hints.index(
+                "- Kein Kompressor-Zustand: keine Läufe und Starts, Stillstand nur über die Wärme."
+            )
+            + 1
+        ]
+        == hint
+    )
+    assert hint not in heat_pump_summary(meters, {}, None, "de")
+    with_compressor = {**meters, "compressor": "binary_sensor.c"}
+    assert "ganzen kWh" not in heat_pump_summary(
+        with_compressor, {}, None, "de", coarse_heat=True
+    )
+    english = heat_pump_summary(meters, {}, None, "en", coarse_heat=True)
+    assert (
+        "- Without a compressor, part of the running electricity counts as standby"
+        " with a heat meter in whole kWh – map the compressor if there is one."
+        in english
+    )

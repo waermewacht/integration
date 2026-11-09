@@ -23,6 +23,7 @@ import voluptuous as vol
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
     ConfigEntry,
+    ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -1181,11 +1182,22 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 }
             )
         template = TEMPLATES.get(self.config_entry.data.get(CONF_TEMPLATE) or "")
+        # Whole kWh is known only from the readings of the loaded entry.
+        coarse_heat_modes = (
+            getattr(
+                getattr(self.config_entry, "runtime_data", None),
+                "coarse_heat_modes",
+                None,
+            )
+            if self.config_entry.state is ConfigEntryState.LOADED
+            else None
+        )
         placeholders["summary"] = heat_pump_summary(
             self.config_entry.data.get(CONF_ENTITIES, {}),
             self.config_entry.options,
             template.label if template else None,
             self.hass.config.language,
+            coarse_heat=bool(coarse_heat_modes and coarse_heat_modes()),
         )
         return self.async_show_form(
             step_id=step_id,

@@ -129,6 +129,12 @@ HINTS = {
         "No compressor state: no runs and starts, standby only from the heat.",
         "Kein Kompressor-Zustand: keine Läufe und Starts, Stillstand nur über die Wärme.",
     ),
+    "coarse_heat": (
+        "Without a compressor, part of the running electricity counts as standby "
+        "with a heat meter in whole kWh – map the compressor if there is one.",
+        "Ohne Kompressor zählt bei einem Wärmezähler in ganzen kWh ein Teil des "
+        "Laufstroms als Stillstand – Kompressor eintragen, wenn vorhanden.",
+    ),
     "outdoor": (
         "No outdoor temperature: no performance curve, heat load or degree days.",
         "Keine Außentemperatur: keine AZ-Kennlinie, Heizlast und Gradtage.",
@@ -208,8 +214,13 @@ def heat_pump_summary(
     options: Mapping[str, Any],
     template_label: str | None,
     language: str | None,
+    coarse_heat: bool = False,
 ) -> str:
-    """The summary of a heat pump entry (entities: signal -> entity id)."""
+    """The summary of a heat pump entry (entities: signal -> entity id).
+
+    `coarse_heat`: a heat meter of a mode steps in whole kWh (known only
+    from the loaded entry, `HeatPumpRuntime.coarse_heat_modes`).
+    """
     lang = _lang(language)
     t = lambda key: T[key][lang]  # noqa: E731
     mapped = {Signal(k) for k in entities if k in Signal._value2member_map_}
@@ -276,6 +287,8 @@ def heat_pump_summary(
         hints.append(h("dhw_heat"))
     if Signal.COMPRESSOR not in mapped:
         hints.append(h("compressor"))
+        if coarse_heat:
+            hints.append(h("coarse_heat"))
     if not has_activity(mapped):
         hints.append(h("activity"))
     if Signal.OUTDOOR_TEMP not in mapped:
