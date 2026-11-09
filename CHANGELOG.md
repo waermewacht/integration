@@ -1,11 +1,9 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.12 – 2026-11-09
 
 - **Neu: Warnung bei einem Kompressor, der nur Text meldet.** Wählt man als Kompressor einen Status-Sensor (etwa „state_4“ bei Genvex Connect/Nilan), erkennt Wärmewacht nie einen Lauf und zählte bisher stillschweigend nichts. Einrichtung und *Neu konfigurieren* lehnen so eine Entität jetzt ab („Der Kompressor meldet einen Text statt an/aus oder einer Zahl …“); „unbekannt“ oder „nicht verfügbar“ beim Einrichten zählt nicht als Text. Bestehende Einträge bekommen den Reparaturhinweis **„Kompressor ohne auswertbaren Wert“** mit dem gemeldeten Wert; er verschwindet, sobald der Kompressor an/aus oder eine Zahl meldet. Anlass: Rückmeldung in Issue #4.
-
 - **Negativer Durchfluss gilt als „kein Wert“.** Ein Durchfluss unter 0 ist nie ein Messwert, egal aus welcher Quelle. Bisher nahm Wärmewacht ihn als „kein Durchfluss“: Nach 15 Minuten Heizen kam der Reparaturhinweis „Durchfluss 0 beim Heizen“, und der mittlere Durchfluss für „Durchfluss plausibel“ wurde zu klein. Jetzt zählt er wie „nicht verfügbar“ weder für den Hinweis noch für den Mittelwert; ein echter Durchfluss 0 meldet sich weiter. Gesehen bei EMS-ESP 3.8.x: Bosch- und Buderus-Wärmepumpen melden den Durchfluss (`pc0flow`) erst ab etwa 900 l/h, darunter zeigt EMS-ESP −1 l/h. Behoben ist das in EMS-ESP 3.9.0 (EMS-ESP-Issue #3385), dort heißt es dann „unbekannt“. Anlass: Rückmeldung aus dem simon42-Forum.
-
 - **HeishaMon (Panasonic Aquarea): Speichertemperatur wird jetzt vorbelegt.** Die Vorlage füllt „Warmwassertemperatur“ mit der Ist-Temperatur des Speichers (`…main_dhw_temp`, HeishaMon `DHW_Temp`). Bisher blieb das Feld leer, damit fehlten die Werte je Warmwasserladung. Bestehende Einträge: unter *Neu konfigurieren* eintragen. Anlass: Rückmeldung in Issue #1.
 
 ## 0.4.11 – 2026-11-09
