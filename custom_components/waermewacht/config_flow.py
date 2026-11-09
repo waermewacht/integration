@@ -28,7 +28,11 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_UNAVAILABLE
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
@@ -119,7 +123,13 @@ from .model import (
 from .oil import BOILER_TYPES, CUSTOM, KWH_PER_LITRE_HS
 from .oil import efficiency as boiler_type_efficiency
 from .prices import ACCEPTED_UNITS, price_factor
-from .profiles import Match, RegistryEntry, drop_foreign_activity, find
+from .profiles import (
+    Match,
+    RegistryEntry,
+    drop_foreign_activity,
+    find,
+    parse_compressor,
+)
 from .sisters import suggestions
 from .summary import boiler_summary, heat_pump_summary
 from .templates import TEMPLATES
@@ -326,6 +336,16 @@ def validate(hass: HomeAssistant, entities: dict[str, str]) -> str | None:
     # the building's heat).
     if has_boiler(signals) and not has_heat(signals, Mode.HEATING):
         return "boiler_without_heat_pump"
+    # A status text as compressor ("state_4", forum/issue #4 2026-11-09):
+    # no run would ever be counted, without any notice.
+    if (entity_id := entities.get(Signal.COMPRESSOR.value)) is not None:
+        state = hass.states.get(entity_id)
+        if (
+            state is not None
+            and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
+            and parse_compressor(state.state) is None
+        ):
+            return "compressor_text"
     for signal in ENERGY_SIGNALS:
         if (entity_id := entities.get(signal.value)) is None:
             continue

@@ -405,6 +405,9 @@ class HeatPumpRuntime:
         self.heat_modes = frozenset(m for m in Mode if has_heat(self.entities, m))
         # The activity entity showed a value that carries no activity here.
         self._activity_foreign = False
+        # The compressor entity's last value when it was neither on/off nor
+        # a number (a status text such as "state_4"): no runs are counted.
+        self._compressor_text: str | None = None
         # Health check: daily findings (memory only), their state across
         # restarts, and the minute checks of the repair issues.
         self.findings: dict[str, Finding] = {
@@ -2226,6 +2229,11 @@ class HeatPumpRuntime:
             self._handle_counter(signal, state, at)
         elif signal is Signal.COMPRESSOR:
             on = parse_compressor(state.state)
+            self._compressor_text = (
+                state.state
+                if on is None and state.state not in ("unavailable", "unknown")
+                else None
+            )
             had_open = self.tracker.open_run is not None
             run = self.tracker.set_compressor(on, at)
             if gaps := self.tracker.take_gaps():
@@ -2689,6 +2697,12 @@ class HeatPumpRuntime:
         self._set_issue(
             "activity_foreign",
             [activity] if activity and self._activity_foreign else [],
+        )
+        compressor = self.entities.get(Signal.COMPRESSOR)
+        self._set_issue(
+            "compressor_text",
+            [compressor] if compressor and self._compressor_text else [],
+            value=self._compressor_text or "",
         )
         swapped = self._swapped is not None and all(
             s in self.entities for s in (Signal.FLOW_TEMP, Signal.RETURN_TEMP)

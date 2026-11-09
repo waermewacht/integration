@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Neu: Warnung bei einem Kompressor, der nur Text meldet.** Wählt man als Kompressor einen Status-Sensor (etwa „state_4“ bei Genvex Connect/Nilan), erkennt Wärmewacht nie einen Lauf und zählte bisher stillschweigend nichts. Einrichtung und *Neu konfigurieren* lehnen so eine Entität jetzt ab („Der Kompressor meldet einen Text statt an/aus oder einer Zahl …“); „unbekannt“ oder „nicht verfügbar“ beim Einrichten zählt nicht als Text. Bestehende Einträge bekommen den Reparaturhinweis **„Kompressor ohne auswertbaren Wert“** mit dem gemeldeten Wert; er verschwindet, sobald der Kompressor an/aus oder eine Zahl meldet. Anlass: Rückmeldung in Issue #4.
+
 ## 0.4.11 – 2026-11-09
 
 - **„Zähler stehen still“ ohne Fehlalarm nach dem Update auf 0.4.10.** Wer 0.4.10 nach einer falsch gebuchten Nacht mitten am Tag installiert, hat beim Bosch-HomeCom-Eintrag noch den Endstand des Vortags als Basis; die Werte des Tages bleiben darunter und galten als Stillstand. Die Prüfung schaut jetzt auf den zuletzt gelesenen Wert: Steigt er, steht der Zähler nicht still. Gebucht wird wie in 0.4.10 (der Tag kommt in der Nacht danach, ab dem ersten Tag über dem Vortag ist alles wieder normal).

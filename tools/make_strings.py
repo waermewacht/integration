@@ -863,6 +863,12 @@ def _build(lang: int) -> dict:
                         "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
                     )
                 ),
+                "compressor_text": t(
+                    (
+                        "The compressor reports a text instead of on/off or a number. Choose an entity that is on while it runs or above 0 (speed, frequency, capacity in %); a status text is not enough.",
+                        "Der Kompressor meldet einen Text statt an/aus oder einer Zahl. Wähle eine Entität, die beim Lauf an ist oder über 0 liegt (Drehzahl, Frequenz, Leistung in %); ein Status-Text reicht nicht.",
+                    )
+                ),
                 "aux_twice": t(
                     (
                         "Backup heater either per mode or as total, not both.",
@@ -1119,6 +1125,20 @@ def _build(lang: int) -> dict:
                     (
                         "{entities} of {name} reports values that carry no activity on this device (for ViCare E3 controllers 'ready' / 'not_ready'). Defrosts and the mode of runs stay empty. Remove the entity under Devices & services → Wärmewacht → Reconfigure.",
                         "{entities} von {name} meldet Werte, die bei diesem Gerät keine Betriebsart tragen (bei ViCare-E3-Reglern „ready“ / „not_ready“). Abtauungen und die Betriebsart der Läufe bleiben leer. Entferne die Entität unter Geräte & Dienste → Wärmewacht → Neu konfigurieren.",
+                    )
+                ),
+            },
+            "compressor_text": {
+                "title": t(
+                    (
+                        "Wärmewacht: compressor without a usable value",
+                        "Wärmewacht: Kompressor ohne auswertbaren Wert",
+                    )
+                ),
+                "description": t(
+                    (
+                        '{entities} of {name} reports "{value}". As compressor Wärmewacht needs on/off or a number that is above 0 while it runs (speed, frequency, capacity in %); until then no runs are counted. Choose a fitting entity under Devices & services → Wärmewacht → Reconfigure.',
+                        "{entities} von {name} meldet „{value}“. Als Kompressor braucht Wärmewacht an/aus oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Leistung in %); bis dahin zählt Wärmewacht keine Läufe. Wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren eine passende Entität.",
                     )
                 ),
             },

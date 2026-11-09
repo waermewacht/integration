@@ -246,6 +246,7 @@
     "error": {
       "no_mode": "Choose a heat and an electricity meter for at least one mode, or at least the compressor (then cycling and electricity only, no ratios).",
       "energy_unit": "An energy meter has no unit Wh, kWh or MWh.",
+      "compressor_text": "The compressor reports a text instead of on/off or a number. Choose an entity that is on while it runs or above 0 (speed, frequency, capacity in %); a status text is not enough.",
       "aux_twice": "Backup heater either per mode or as total, not both.",
       "elec_twice": "Compressor electricity either per mode or as total, not both.",
       "heat_twice": "Heat either per mode or as one meter for all modes (heat produced total), not both.",
@@ -1184,6 +1185,10 @@
     "activity_foreign": {
       "title": "Wärmewacht: activity entity without an activity",
       "description": "{entities} of {name} reports values that carry no activity on this device (for ViCare E3 controllers 'ready' / 'not_ready'). Defrosts and the mode of runs stay empty. Remove the entity under Devices & services → Wärmewacht → Reconfigure."
+    },
+    "compressor_text": {
+      "title": "Wärmewacht: compressor without a usable value",
+      "description": "{entities} of {name} reports \"{value}\". As compressor Wärmewacht needs on/off or a number that is above 0 while it runs (speed, frequency, capacity in %); until then no runs are counted. Choose a fitting entity under Devices & services → Wärmewacht → Reconfigure."
     },
     "flow_return_swapped": {
       "title": "Wärmewacht: flow and return swapped?",

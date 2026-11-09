@@ -58,6 +58,7 @@ ISSUES = (
     "outdoor_temp_implausible",
     "flow_return_swapped",
     "activity_foreign",
+    "compressor_text",
     "energy_stale",
     "source_changed",
     "flow_implausible",

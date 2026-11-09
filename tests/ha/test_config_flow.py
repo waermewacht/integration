@@ -371,6 +371,45 @@ async def test_manual_compressor_only_is_cycling(hass: HomeAssistant) -> None:
     assert result["result"].unique_id == "binary_sensor.compressor"
 
 
+async def test_status_text_as_compressor_is_refused(hass: HomeAssistant) -> None:
+    """A status text (Genvex Connect "state_4", issue #4 2026-11-09) never
+    tells a run; a capacity in % does."""
+    hass.states.async_set("sensor.vmc_status", "state_4")
+    hass.states.async_set("sensor.pac_capacity", "0.0", {"unit_of_measurement": "%"})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**EMPTY_SECTIONS, "operation": {"compressor": "sensor.vmc_status"}},
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "compressor_text"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**EMPTY_SECTIONS, "operation": {"compressor": "sensor.pac_capacity"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_unavailable_compressor_is_no_text(hass: HomeAssistant) -> None:
+    hass.states.async_set("sensor.pac_capacity", "unavailable")
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "manual"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**EMPTY_SECTIONS, "operation": {"compressor": "sensor.pac_capacity"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
 async def test_own_sensor_as_source_is_refused(hass: HomeAssistant) -> None:
     """Standby electricity mapped to the entry's own standby sensor (ViCare
     user, 2026-11): the entry would read its own results."""

@@ -246,6 +246,7 @@
     "error": {
       "no_mode": "Für mindestens einen Modus einen Wärme- und einen Stromzähler wählen oder wenigstens den Kompressor (dann nur Takte und Strom, keine Arbeitszahlen).",
       "energy_unit": "Ein Energiezähler hat nicht die Einheit Wh, kWh oder MWh.",
+      "compressor_text": "Der Kompressor meldet einen Text statt an/aus oder einer Zahl. Wähle eine Entität, die beim Lauf an ist oder über 0 liegt (Drehzahl, Frequenz, Leistung in %); ein Status-Text reicht nicht.",
       "aux_twice": "Heizstab entweder je Modus oder gesamt, nicht beides.",
       "elec_twice": "Strom Kompressor entweder je Modus oder gesamt, nicht beides.",
       "heat_twice": "Wärme entweder je Betriebsart oder als ein Zähler für alle (Erzeugte Wärme gesamt), nicht beides.",
@@ -1184,6 +1185,10 @@
     "activity_foreign": {
       "title": "Wärmewacht: Betriebsart-Entität ohne Betriebsart",
       "description": "{entities} von {name} meldet Werte, die bei diesem Gerät keine Betriebsart tragen (bei ViCare-E3-Reglern „ready“ / „not_ready“). Abtauungen und die Betriebsart der Läufe bleiben leer. Entferne die Entität unter Geräte & Dienste → Wärmewacht → Neu konfigurieren."
+    },
+    "compressor_text": {
+      "title": "Wärmewacht: Kompressor ohne auswertbaren Wert",
+      "description": "{entities} von {name} meldet „{value}“. Als Kompressor braucht Wärmewacht an/aus oder eine Zahl, die beim Lauf über 0 liegt (Drehzahl, Frequenz, Leistung in %); bis dahin zählt Wärmewacht keine Läufe. Wähle unter Geräte & Dienste → Wärmewacht → Neu konfigurieren eine passende Entität."
     },
     "flow_return_swapped": {
       "title": "Wärmewacht: Vor- und Rücklauf vertauscht?",

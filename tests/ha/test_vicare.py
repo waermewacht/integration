@@ -158,6 +158,28 @@ async def test_e3_phase_without_activity_raises_an_issue(
 
 
 @pytest.mark.freeze_time(START)
+async def test_status_text_as_compressor_raises_an_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """An entry from before the form refused it (issue #4, 2026-11-09): a
+    status text as compressor counts nothing; a repair issue says so and
+    goes away with a usable value."""
+    status = "sensor.vmc_status"
+    hass.states.async_set(status, "off")
+    entry = await setup(hass, {"compressor": status})
+    hass.states.async_set(status, "state_4")
+    await tick(hass, freezer, 11)
+    issues = ir.async_get(hass)
+    issue = issues.async_get_issue(DOMAIN, f"{entry.entry_id}_compressor_text")
+    assert issue is not None
+    assert issue.translation_placeholders["entities"] == status
+    assert issue.translation_placeholders["value"] == "state_4"
+    hass.states.async_set(status, "on")
+    await tick(hass, freezer, 1)
+    assert issues.async_get_issue(DOMAIN, f"{entry.entry_id}_compressor_text") is None
+
+
+@pytest.mark.freeze_time(START)
 async def test_vitotronic_defrost_from_the_phase(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
