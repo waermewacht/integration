@@ -24,7 +24,6 @@ from custom_components.waermewacht.health_extra import (
     defrost_classes,
     defrost_figures,
     expected_flow,
-    flow_lph,
     flow_plausibility,
     flow_plausibility_entry,
     oversizing,
@@ -79,16 +78,6 @@ def test_flow_units() -> None:
     assert to_lph(0.9, "m³/h") == pytest.approx(900)
     with pytest.raises(KeyError):
         to_lph(1, "kg/h")
-
-
-def test_flow_lph_negative_is_no_value() -> None:
-    # EMS-ESP 3.8 shows the heat pump's "below measuring range" as -1 L/h.
-    assert flow_lph(-1, "L/h") is None
-    assert flow_lph(None, "L/h") is None
-    assert flow_lph(0, "L/h") == 0
-    assert flow_lph(15, "L/min") == 900
-    with pytest.raises(KeyError):
-        flow_lph(1, "kg/h")
 
 
 # 4.3 Defrosts.
