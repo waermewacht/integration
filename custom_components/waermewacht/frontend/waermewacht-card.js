@@ -144,8 +144,9 @@ const TEXT = {
     ownShare: (parts) => `eigen: ${parts}`,
     ownModes: { heating: "Heizen", dhw: "WW", cooling: "Kühlen" },
     previous: "Vorsaison",
-    factorField: (lo, hi) => `Feldtest ${lo}–${hi}`,
+    factorField: (lo, hi) => `Feldtest Nov–März ${lo}–${hi}`,
     factorFlowOnly: "ohne Rücklauf, eher zu hoch",
+    factorWinter: "Winter",
     factorDays: (have, need) => `${have} von ${need} Heiztagen`,
     sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
@@ -319,8 +320,9 @@ const TEXT = {
     ownShare: (parts) => `own: ${parts}`,
     ownModes: { heating: "heating", dhw: "DHW", cooling: "cooling" },
     previous: "previous season",
-    factorField: (lo, hi) => `field test ${lo}–${hi}`,
+    factorField: (lo, hi) => `field test Nov–Mar ${lo}–${hi}`,
     factorFlowOnly: "without return, rather too high",
+    factorWinter: "winter",
     factorDays: (have, need) => `${have} of ${need} heating days`,
     sameLastYear: "last year to date",
     curve: "Performance curve heating",
@@ -998,7 +1000,11 @@ class WaermewachtCard extends HTMLElement {
     } else if (a.sink === "flow_only") {
       extra = t.factorFlowOnly;
     } else if (a.field_reference) {
-      extra = t.factorField(this._num(a.field_reference.min, 2), this._num(a.field_reference.max, 2));
+      // The field test covers November to March: the winter compares with it.
+      const field = t.factorField(this._num(a.field_reference.min, 2), this._num(a.field_reference.max, 2));
+      const winter = a.winter?.value;
+      extra = winter !== null && winter !== undefined
+        ? `${t.factorWinter} ${this._num(winter, 2)} · ${field}` : field;
     }
     return this._own("efficiency_factor", t.tiles.efficiency_factor, extra);
   }

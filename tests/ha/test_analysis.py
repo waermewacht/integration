@@ -444,6 +444,9 @@ async def test_spread_standby_and_oversize_from_the_diary(
     assert factor.attributes["month"]["value"] == pytest.approx(0.43)
     assert factor.attributes["sink"] == "mean_flow_return"
     assert factor.attributes["field_reference"]["mean"] == 0.39
+    # Winter since 1 November: the same seven days, too few.
+    assert factor.attributes["winter"]["days"] == 7
+    assert factor.attributes["winter"]["reason"] == "too_few_days"
     # Standby rose from 25 W to 45 W: more than +50 % and +10 W.
     standby = state("standby")
     assert standby.attributes["rising"] is True

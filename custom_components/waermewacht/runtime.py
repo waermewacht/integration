@@ -60,11 +60,10 @@ from .backfill import (
     energy_between,
 )
 from .carnot import (
-    MONTH_MIN_DAYS,
-    SEASON_MIN_DAYS,
     EfficiencyFactor,
     FactorDay,
     efficiency_factor,
+    factor_spans,
     statistics_days,
 )
 from .charges import (
@@ -1276,21 +1275,13 @@ class HeatPumpRuntime:
         previous: datetime,
         statistics: dict[date, FactorDay | str],
     ) -> dict[str, EfficiencyFactor]:
-        """Carnot efficiency factor of the season so far, the month so far
-        and the previous season (complete days of the diary, carnot.py)."""
+        """Carnot efficiency factor of the season and the month so far, the
+        previous season and the winters (complete days, carnot.py)."""
         yesterday = now.astimezone(self.tz).date() - timedelta(days=1)
         month = period_start(Period.MONTH, now, self.tz, self.marks.season_month)
         assert month is not None
         local = lambda at: at.astimezone(self.tz).date()  # noqa: E731
-        spans = {
-            "season": (local(current), yesterday, SEASON_MIN_DAYS),
-            "month": (local(month), yesterday, MONTH_MIN_DAYS),
-            "previous_season": (
-                local(previous),
-                local(current) - timedelta(days=1),
-                SEASON_MIN_DAYS,
-            ),
-        }
+        spans = factor_spans(local(current), local(previous), local(month), yesterday)
         return {
             name: efficiency_factor(
                 self.diary,

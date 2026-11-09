@@ -47,12 +47,11 @@ from custom_components.waermewacht.activity import combine  # noqa: E402
 from custom_components.waermewacht.averages import Mean  # noqa: E402
 from custom_components.waermewacht.backfill import by_hour, energy_between  # noqa: E402
 from custom_components.waermewacht.carnot import (  # noqa: E402
-    MONTH_MIN_DAYS,
-    SEASON_MIN_DAYS,
     EfficiencyFactor,
     FactorDay,
     efficiency_factor,
-    field_reference,
+    factor_attributes,
+    factor_spans,
     statistics_days,
 )
 from custom_components.waermewacht.charges import (  # noqa: E402
@@ -838,15 +837,12 @@ class Sim:
         yesterday = now.astimezone(TZ).date() - DAY
         month = period_start(Period.MONTH, now, TZ, DEFAULT_SEASON_START_MONTH)
         assert month is not None
-        spans = {
-            "season": (current.astimezone(TZ).date(), yesterday, SEASON_MIN_DAYS),
-            "month": (month.astimezone(TZ).date(), yesterday, MONTH_MIN_DAYS),
-            "previous_season": (
-                previous.astimezone(TZ).date(),
-                current.astimezone(TZ).date() - DAY,
-                SEASON_MIN_DAYS,
-            ),
-        }
+        spans = factor_spans(
+            current.astimezone(TZ).date(),
+            previous.astimezone(TZ).date(),
+            month.astimezone(TZ).date(),
+            yesterday,
+        )
         return {
             name: efficiency_factor(
                 self.diary,
@@ -1275,24 +1271,12 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     put("heating_limit", _r(load.heating_limit, 1) if sufficient else None, "°C", 1)
     put("heat_load_design", _r(load.standard_kw, 2) if sufficient else None, "kW", 1)
     factors = a["efficiency_factors"]
-    season_factor = factors["season"]
     put(
         "efficiency_factor",
-        _r(season_factor.value, 2),
+        _r(factors["season"].value, 2),
         None,
         2,
-        **season_factor.as_attributes(),
-        month={
-            "value": _r(factors["month"].value, 2),
-            "days": factors["month"].days,
-            "reason": factors["month"].reason,
-        },
-        previous_season={
-            "value": _r(factors["previous_season"].value, 2),
-            "days": factors["previous_season"].days,
-            "reason": factors["previous_season"].reason,
-        },
-        field_reference=field_reference(),
+        **factor_attributes(factors),
     )
     spread_7d = a["spread_7d"]
     put("spread_7d", _r(spread_7d.value, 1), "K", 1, **spread_7d.as_attributes())

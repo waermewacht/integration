@@ -67,6 +67,9 @@ MAX_AUX_KWH = 0.1
 MIN_STATISTICS_HOURS = 2
 MONTH_MIN_DAYS = 7
 SEASON_MIN_DAYS = 14
+# Fraunhofer's reference period: November to March (Günther et al. 2026).
+WINTER_FIRST_MONTH = 11
+WINTER_LAST_MONTH = 3
 
 TOO_FEW_DAYS = "too_few_days"
 TOO_LITTLE_ELECTRICITY = "too_little_electricity"
@@ -284,6 +287,63 @@ def efficiency_factor(
     )
 
 
+def winter_span(first: date, last: date) -> tuple[date, date] | None:
+    """The first November to March within first … last (clipped to it),
+    the field test's period; None if it has not begun yet."""
+    start = date(first.year, WINTER_FIRST_MONTH, 1)
+    if start < first:
+        start = date(first.year + 1, WINTER_FIRST_MONTH, 1)
+    end = min(date(start.year + 1, WINTER_LAST_MONTH, 31), last)
+    return None if start > end else (start, end)
+
+
+def factor_spans(
+    season: date, previous: date, month: date, yesterday: date
+) -> dict[str, tuple[date, date, int]]:
+    """Periods of the sensor: name -> (first day, last day, minimum days).
+    Season and month so far, the previous season, and the winter (November
+    to March, compared with the field test) of both."""
+    previous_end = season - timedelta(days=1)
+    spans = {
+        "season": (season, yesterday, SEASON_MIN_DAYS),
+        "month": (month, yesterday, MONTH_MIN_DAYS),
+        "previous_season": (previous, previous_end, SEASON_MIN_DAYS),
+    }
+    for name, first, last in (
+        ("winter", season, yesterday),
+        ("previous_winter", previous, previous_end),
+    ):
+        if (span := winter_span(first, last)) is not None:
+            spans[name] = (*span, SEASON_MIN_DAYS)
+    return spans
+
+
+def factor_attributes(factors: Mapping[str, EfficiencyFactor]) -> dict[str, Any]:
+    """Attributes of the sensor: the season in detail, the other periods as
+    value, days and reason (None for a winter not begun yet)."""
+    if (season := factors.get("season")) is None:
+        return {}
+
+    def short(name: str) -> dict[str, Any] | None:
+        if (figure := factors.get(name)) is None:
+            return None
+        return {
+            "value": _round(figure.value, 2),
+            "days": figure.days,
+            "reason": figure.reason,
+        }
+
+    return {
+        **season.as_attributes(),
+        "month": short("month"),
+        "previous_season": short("previous_season"),
+        # November to March, the period of the field test.
+        "winter": short("winter"),
+        "previous_winter": short("previous_winter"),
+        "field_reference": field_reference(),
+    }
+
+
 def field_reference() -> dict[str, Any]:
     """The field values to compare with (attribute)."""
     return {
@@ -292,6 +352,7 @@ def field_reference() -> dict[str, Any]:
         "max": FIELD_RANGE[1],
         "units": FIELD_UNITS,
         "source": "Fraunhofer ISE WP-QS (air/water, space heating)",
+        "period": "November to March",
     }
 
 

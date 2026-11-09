@@ -34,7 +34,7 @@ from homeassistant.util import dt as dt_util
 from . import WaermewachtConfigEntry, is_gas
 from .allocation import NONE
 from .binary_sensor import health_checks
-from .carnot import field_reference
+from .carnot import factor_attributes
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
@@ -822,26 +822,7 @@ def _efficiency_factor(runtime: HeatPumpRuntime) -> float | None:
 
 
 def _efficiency_factor_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
-    """Season in detail; month and previous season as value and days."""
-    factors = runtime.efficiency_factors
-    if (season := factors.get("season")) is None:
-        return {}
-
-    def short(name: str) -> dict[str, Any] | None:
-        if (figure := factors.get(name)) is None:
-            return None
-        return {
-            "value": _round(figure.value, 2),
-            "days": figure.days,
-            "reason": figure.reason,
-        }
-
-    return {
-        **season.as_attributes(),
-        "month": short("month"),
-        "previous_season": short("previous_season"),
-        "field_reference": field_reference(),
-    }
+    return factor_attributes(runtime.efficiency_factors)
 
 
 def _oversize(runtime: HeatPumpRuntime) -> float | None:

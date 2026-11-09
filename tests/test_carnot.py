@@ -19,9 +19,12 @@ from custom_components.waermewacht.carnot import (
     FactorDay,
     carnot_cop,
     efficiency_factor,
+    factor_attributes,
     factor_day,
+    factor_spans,
     field_reference,
     statistics_days,
+    winter_span,
 )
 from custom_components.waermewacht.energy import Totals
 
@@ -257,3 +260,49 @@ def test_old_diary_day_prefers_statistics() -> None:
     # Without a statistics day the old diary day counts with its day mean.
     alone = efficiency_factor([old], DAY, DAY, min_days=1)
     assert alone.day_mean_days == 1 and alone.source == 8.0
+
+
+# Winter (November to March), the field test's period.
+
+
+def test_winter_span() -> None:
+    # Season from 1 July: the winter of that season, clipped to yesterday.
+    assert winter_span(date(2026, 7, 1), date(2026, 10, 31)) is None
+    assert winter_span(date(2026, 7, 1), date(2026, 12, 9)) == (
+        date(2026, 11, 1),
+        date(2026, 12, 9),
+    )
+    assert winter_span(date(2025, 7, 1), date(2026, 6, 30)) == (
+        date(2025, 11, 1),
+        date(2026, 3, 31),
+    )
+    # Season from 1 January: November and December of that year only.
+    assert winter_span(date(2026, 1, 1), date(2026, 12, 31)) == (
+        date(2026, 11, 1),
+        date(2026, 12, 31),
+    )
+
+
+def test_factor_spans() -> None:
+    spans = factor_spans(
+        date(2026, 7, 1), date(2025, 7, 1), date(2026, 12, 1), date(2026, 12, 9)
+    )
+    assert spans["season"] == (date(2026, 7, 1), date(2026, 12, 9), 14)
+    assert spans["month"] == (date(2026, 12, 1), date(2026, 12, 9), 7)
+    assert spans["previous_season"] == (date(2025, 7, 1), date(2026, 6, 30), 14)
+    assert spans["winter"] == (date(2026, 11, 1), date(2026, 12, 9), 14)
+    assert spans["previous_winter"] == (date(2025, 11, 1), date(2026, 3, 31), 14)
+    before = factor_spans(
+        date(2026, 7, 1), date(2025, 7, 1), date(2026, 10, 1), date(2026, 10, 9)
+    )
+    assert "winter" not in before
+
+
+def test_factor_attributes() -> None:
+    days = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    season = efficiency_factor(days, DAY, DAY + timedelta(days=13), min_days=14)
+    attributes = factor_attributes({"season": season, "winter": season})
+    assert attributes["winter"]["value"] == pytest.approx(0.43)
+    assert attributes["previous_winter"] is None
+    assert attributes["field_reference"]["period"] == "November to March"
+    assert factor_attributes({}) == {}
