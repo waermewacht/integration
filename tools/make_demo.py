@@ -50,8 +50,10 @@ from custom_components.waermewacht.carnot import (  # noqa: E402
     MONTH_MIN_DAYS,
     SEASON_MIN_DAYS,
     EfficiencyFactor,
+    FactorDay,
     efficiency_factor,
     field_reference,
+    statistics_days,
 )
 from custom_components.waermewacht.charges import (  # noqa: E402
     Charge,
@@ -422,6 +424,7 @@ class Sim:
         }
         self.own: dict[datetime, dict[str, float]] = {}
         self.flow_hours: dict[datetime, float] = {}
+        self.ret_hours: dict[datetime, float] = {}
         self.starts_hours: dict[datetime, int] = {}  # counter at the hour's end
         # Wärmewacht (from the setup on).
         self.tracker = RunTracker()
@@ -642,6 +645,7 @@ class Sim:
         # The source puts standby into the heating meter (like Bosch, EMS-ESP).
         self.src[elec_signal][hour] = self.src[elec_signal].get(hour, 0.0) + elec
         self.flow_hours[hour] = self.flow_hours.get(hour, 0.0) + self.flow * dt / 3600
+        self.ret_hours[hour] = self.ret_hours.get(hour, 0.0) + self.ret * dt / 3600
         boiler = self.boiler_kw * dt / 3600
         if boiler:
             signal = Signal.BOILER_HEAT_HEATING
@@ -824,7 +828,11 @@ class Sim:
         return current, previous
 
     def efficiency_factors(
-        self, now: datetime, current: datetime, previous: datetime
+        self,
+        now: datetime,
+        current: datetime,
+        previous: datetime,
+        statistics: dict[date, FactorDay | str],
     ) -> dict[str, EfficiencyFactor]:
         """runtime._efficiency_factors, rebuilt."""
         yesterday = now.astimezone(TZ).date() - DAY
@@ -846,6 +854,7 @@ class Sim:
                 last,
                 min_days=min_days,
                 min_electricity=MIN_ELECTRICITY,
+                statistics=statistics,
             )
             for name, (first, last, min_days) in spans.items()
         }
@@ -936,7 +945,18 @@ class Sim:
                 mild_days, mild_from=AUX_MILD_FROM, threshold_kwh=AUX_KWH
             ),
             "spread_7d": spread_figure(self.diary, today),
-            "efficiency_factors": self.efficiency_factors(now, current, previous),
+            "efficiency_factors": self.efficiency_factors(
+                now,
+                current,
+                previous,
+                statistics_days(
+                    hours,
+                    flow,
+                    {h: v for h, v in self.ret_hours.items() if h in outdoor},
+                    outdoor,
+                    TZ,
+                ),
+            ),
             "oversize": oversizing(load, RATED_KW, min_kw=MIN_KW),
             "standby_rise": standby_rise(self.diary, today, TZ),
             "dhw_efficiency_drop": dhw_efficiency_drop(

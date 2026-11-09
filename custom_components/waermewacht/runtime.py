@@ -63,7 +63,9 @@ from .carnot import (
     MONTH_MIN_DAYS,
     SEASON_MIN_DAYS,
     EfficiencyFactor,
+    FactorDay,
     efficiency_factor,
+    statistics_days,
 )
 from .charges import (
     COARSE_LATE,
@@ -1193,28 +1195,36 @@ class HeatPumpRuntime:
         self, signal: Signal, start: datetime, end: datetime
     ) -> dict[datetime, float]:
         """Hourly means of a temperature from the long-term statistics."""
-        entity_id = self.entities.get(signal)
-        if entity_id is None or start >= end:
+        return (await self._async_means((signal,), start, end)).get(signal, {})
+
+    async def _async_means(
+        self, signals: tuple[Signal, ...], start: datetime, end: datetime
+    ) -> dict[Signal, dict[datetime, float]]:
+        """Hourly means of several temperatures in one statistics query."""
+        ids = {s: e for s in signals if (e := self.entities.get(s)) is not None}
+        if not ids or start >= end:
             return {}
         rows = await get_instance(self.hass).async_add_executor_job(
             statistics_during_period,
             self.hass,
             start,
             end,
-            {entity_id},
+            set(ids.values()),
             "hour",
             {"temperature": UnitOfTemperature.CELSIUS},
             {"mean"},
         )
-        outdoor: dict[datetime, float] = {}
-        for row in rows.get(entity_id, []):
-            if (mean := row.get("mean")) is None:
-                continue
-            hour = row["start"]
-            if not isinstance(hour, datetime):
-                hour = dt_util.utc_from_timestamp(hour)
-            outdoor[hour] = mean
-        return outdoor
+        result: dict[Signal, dict[datetime, float]] = {}
+        for signal, entity_id in ids.items():
+            means = result.setdefault(signal, {})
+            for row in rows.get(entity_id, []):
+                if (mean := row.get("mean")) is None:
+                    continue
+                hour = row["start"]
+                if not isinstance(hour, datetime):
+                    hour = dt_util.utc_from_timestamp(hour)
+                means[hour] = mean
+        return result
 
     def _boiler_entities(self) -> dict[str, str]:
         """The boiler's mapped entities (a change starts boiler_from anew)."""
@@ -1260,7 +1270,11 @@ class HeatPumpRuntime:
         )
 
     def _efficiency_factors(
-        self, now: datetime, current: datetime, previous: datetime
+        self,
+        now: datetime,
+        current: datetime,
+        previous: datetime,
+        statistics: dict[date, FactorDay | str],
     ) -> dict[str, EfficiencyFactor]:
         """Carnot efficiency factor of the season so far, the month so far
         and the previous season (complete days of the diary, carnot.py)."""
@@ -1284,6 +1298,7 @@ class HeatPumpRuntime:
                 last,
                 min_days=min_days,
                 min_electricity=self.min_electricity,
+                statistics=statistics,
             )
             for name, (first, last, min_days) in spans.items()
         }
@@ -1374,7 +1389,12 @@ class HeatPumpRuntime:
                     self.starts_baseline, kept, self.starts_total()[0], current, now
                 )
                 self._starts_seen = (entity_id, *kept) if kept else None
-            flow = await self._async_mean_hours(Signal.FLOW_TEMP, previous, now)
+            # Flow and return in one query: the return only adds a series
+            # for the look-back of the Carnot efficiency factor.
+            temps = await self._async_means(
+                (Signal.FLOW_TEMP, Signal.RETURN_TEMP), previous, now
+            )
+            flow = temps.get(Signal.FLOW_TEMP, {})
             if flow:
                 self.flow_curves = {
                     name: flow_curve(
@@ -1392,7 +1412,18 @@ class HeatPumpRuntime:
             self._health_findings(now, hours, outdoor, current, previous, compared)
             today = now.astimezone(self.tz).date()
             self.spread_7d = spread_figure(self.diary, today)
-            self.efficiency_factors = self._efficiency_factors(now, current, previous)
+            self.efficiency_factors = self._efficiency_factors(
+                now,
+                current,
+                previous,
+                statistics_days(
+                    hours,
+                    flow,
+                    temps.get(Signal.RETURN_TEMP, {}),
+                    outdoor,
+                    self.tz,
+                ),
+            )
             self.oversize = oversizing(
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )

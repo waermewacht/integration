@@ -19,6 +19,19 @@ sum(heat / COP_Carnot) / sum(electricity): heat-weighted, so mild days with
 little heat and a huge Carnot COP do not distort it (own choice; Fraunhofer
 forms it from annual values).
 
+Look-back from the long-term statistics, for days without a diary entry
+that knows the outdoor temperature while heating (before the setup, before
+this was added): hourly means of flow, return and outdoor temperature, only
+the heating-only hours with at least 0.3 kWh of heating heat (the hours of
+"flow at 0 °C", heating_curve.heating_weights), the day's Carnot COP
+weighted with their heat; the day's energy from all its hours. An hourly
+mean includes the minutes the compressor stood still, which would lower
+the sink. Checked on the owner's heat pump (2026-11-09, 10 days, 7-19 h of
+heating a day, raw history while heating as reference): the day's Carnot
+COP differed by -0.4 to +1.4 %, mean +0.5 %. Stricter filters (neighbour
+hours heating too, near-full hours only) left too few hours and did worse.
+Not yet checked on a heat pump that cycles a lot (spring).
+
 Days with backup heater electricity are left out: whether a heat counter
 holds the heater's heat depends on the source, and Fraunhofer's SPF 2 is
 the heat pump alone. Without a return temperature the sink is the flow
@@ -30,11 +43,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timedelta, tzinfo
 from typing import Any
 
 from .averages import Mean
-from .energy import Kind
+from .energy import Kind, Totals
+from .heating_curve import FLOW_MAX, FLOW_MIN, heating_weights
 from .model import Mode
 
 KELVIN = 273.15
@@ -49,6 +63,8 @@ MIN_HEATING_SECONDS = 2 * 3600.0
 MIN_LIFT_K = 10.0
 # Own assumption: a few counter steps of a heater are no heater day.
 MAX_AUX_KWH = 0.1
+# Heating-only hours a statistics day needs (as heating_curve).
+MIN_STATISTICS_HOURS = 2
 MONTH_MIN_DAYS = 7
 SEASON_MIN_DAYS = 14
 
@@ -83,6 +99,7 @@ class FactorDay:
     cop: float  # Carnot
     flow_only: bool  # no spread: the sink is the flow temperature
     day_mean_source: bool  # no outdoor mean while heating
+    from_statistics: bool = False  # hourly means, not the diary
 
 
 def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
@@ -113,6 +130,64 @@ def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
     return FactorDay(heat, electricity, sink, float(source), cop, flow_only, day_mean)
 
 
+def statistics_days(
+    hours: Mapping[datetime, Totals],
+    flow: Mapping[datetime, float],
+    ret: Mapping[datetime, float],
+    outdoor: Mapping[datetime, float],
+    tz: tzinfo,
+) -> dict[date, FactorDay | str]:
+    """Days from the hourly statistics (look-back, see the module): the
+    day's energy from all its hours, sink and source from its heating-only
+    hours, weighted with their heat."""
+    energy: dict[date, list[float]] = {}
+    for hour, totals in hours.items():
+        day = energy.setdefault(hour.astimezone(tz).date(), [0.0, 0.0, 0.0])
+        day[0] += totals.get(Kind.HEAT, Mode.HEATING)
+        day[1] += totals.get(Kind.ELEC, Mode.HEATING)
+        day[2] += totals.get(Kind.AUX, Mode.HEATING)
+    # Per day: heat, heat / Carnot COP, heat * sink, heat * source, hours,
+    # hours without a return temperature.
+    sums: dict[date, list[float]] = {}
+    for hour, heat in heating_weights(hours).items():
+        value, source = flow.get(hour), outdoor.get(hour)
+        if value is None or source is None or not FLOW_MIN <= value <= FLOW_MAX:
+            continue
+        back = ret.get(hour)
+        flow_only = back is None or back > value
+        sink = value if flow_only else (value + back) / 2
+        if (cop := carnot_cop(sink, source)) is None:
+            continue
+        row = sums.setdefault(hour.astimezone(tz).date(), [0.0] * 6)
+        row[0] += heat
+        row[1] += heat / cop
+        row[2] += heat * sink
+        row[3] += heat * source
+        row[4] += 1
+        row[5] += flow_only
+    days: dict[date, FactorDay | str] = {}
+    for day, (heat, electricity, aux) in energy.items():
+        if heat <= 0 or electricity <= 0:
+            days[day] = SKIP_NO_ENERGY
+        elif aux > MAX_AUX_KWH:
+            days[day] = SKIP_AUX
+        elif (row := sums.get(day)) is None or row[4] < MIN_STATISTICS_HOURS:
+            days[day] = SKIP_LITTLE_HEATING
+        else:
+            weight, ideal, sink, source, _, flow_only = row
+            days[day] = FactorDay(
+                heat=heat,
+                electricity=electricity,
+                sink=sink / weight,
+                source=source / weight,
+                cop=weight / ideal,
+                flow_only=flow_only > 0,
+                day_mean_source=False,
+                from_statistics=True,
+            )
+    return days
+
+
 @dataclass(frozen=True)
 class EfficiencyFactor:
     """Carnot efficiency factor of a period; value None with a reason."""
@@ -126,6 +201,7 @@ class EfficiencyFactor:
     carnot_cop: float | None  # heat over ideal electricity
     flow_only_days: int
     day_mean_days: int
+    statistics_days: int = 0
     skipped: dict[str, int] = field(default_factory=dict)
     reason: str | None = None
 
@@ -139,6 +215,8 @@ class EfficiencyFactor:
             # "mean_flow_return" or "flow_only" (factor too high, see module).
             "sink": "flow_only" if self.flow_only_days else "mean_flow_return",
             "source": "day_mean" if self.day_mean_days else "while_heating",
+            # Days from the hourly statistics (look-back) among `days`.
+            "days_from_statistics": self.statistics_days,
             "skipped_days": dict(sorted(self.skipped.items())),
         }
 
@@ -150,15 +228,29 @@ def efficiency_factor(
     *,
     min_days: int,
     min_electricity: float = 0.0,
+    statistics: Mapping[date, FactorDay | str] | None = None,
 ) -> EfficiencyFactor:
-    """Factor over the diary days first … last (both included)."""
+    """Factor over the days first … last (both included): a diary day that
+    knows the outdoor temperature while heating, else the statistics day
+    (`statistics_days`), else the diary day with the day mean."""
+    diary = {
+        day: entry
+        for entry in entries
+        if first <= (day := date.fromisoformat(entry["day"])) <= last
+    }
+    statistics = statistics or {}
     heat = electricity = ideal = sink = source = 0.0
-    days = flow_only = day_mean = 0
+    days = flow_only = day_mean = from_statistics = 0
     skipped: dict[str, int] = {}
-    for entry in entries:
-        if not first <= date.fromisoformat(entry["day"]) <= last:
+    for day in _dates(first, last):
+        entry = diary.get(day)
+        found: FactorDay | str | None = None if entry is None else factor_day(entry)
+        if found is None or (isinstance(found, FactorDay) and found.day_mean_source):
+            better = statistics.get(day)
+            if isinstance(better, FactorDay) or found is None:
+                found = better
+        if found is None:
             continue
-        found = factor_day(entry)
         if isinstance(found, str):
             skipped[found] = skipped.get(found, 0) + 1
             continue
@@ -170,6 +262,7 @@ def efficiency_factor(
         source += found.heat * found.source
         flow_only += found.flow_only
         day_mean += found.day_mean_source
+        from_statistics += found.from_statistics
     reason = None
     if days < min_days:
         reason = TOO_FEW_DAYS
@@ -185,6 +278,7 @@ def efficiency_factor(
         carnot_cop=heat / ideal if ideal else None,
         flow_only_days=flow_only,
         day_mean_days=day_mean,
+        statistics_days=from_statistics,
         skipped=skipped,
         reason=reason,
     )
@@ -199,6 +293,13 @@ def field_reference() -> dict[str, Any]:
         "units": FIELD_UNITS,
         "source": "Fraunhofer ISE WP-QS (air/water, space heating)",
     }
+
+
+def _dates(first: date, last: date) -> Iterable[date]:
+    day = first
+    while day <= last:
+        yield day
+        day += timedelta(days=1)
 
 
 def _round(value: float | None, digits: int) -> float | None:

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -15,11 +16,14 @@ from custom_components.waermewacht.carnot import (
     SKIP_SMALL_LIFT,
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
+    FactorDay,
     carnot_cop,
     efficiency_factor,
     factor_day,
     field_reference,
+    statistics_days,
 )
+from custom_components.waermewacht.energy import Totals
 
 H = 3600.0
 DAY = date(2026, 12, 1)
@@ -164,3 +168,92 @@ def test_field_reference() -> None:
     reference = field_reference()
     assert reference["mean"] == 0.39
     assert (reference["min"], reference["max"]) == (0.32, 0.44)
+
+
+# Look-back from the hourly statistics.
+
+BERLIN = ZoneInfo("Europe/Berlin")
+
+
+def hourly(
+    day: date,
+    hours: int,
+    *,
+    heat: float = 1.0,
+    elec: float = 0.25,
+    aux: float = 0.0,
+    dhw: float = 0.0,
+    flow: float = 35.0,
+    ret: float | None = 30.0,
+    outdoor: float = 0.0,
+) -> tuple[dict, dict, dict, dict]:
+    """`hours` heating hours from 06:00 local of `day`."""
+    totals, flows, rets, outs = {}, {}, {}, {}
+    first = datetime.combine(day, time(6), tzinfo=BERLIN).astimezone(UTC)
+    for n in range(hours):
+        hour = first + timedelta(hours=n)
+        values = {"heat_heating": heat, "elec_heating": elec}
+        if aux:
+            values["aux_heating"] = aux
+        if dhw:
+            values["heat_dhw"] = dhw
+        totals[hour] = Totals(values)
+        flows[hour] = flow
+        if ret is not None:
+            rets[hour] = ret
+        outs[hour] = outdoor
+    return totals, flows, rets, outs
+
+
+def test_statistics_day() -> None:
+    days = statistics_days(*hourly(DAY, 10), BERLIN)
+    found = days[DAY]
+    assert isinstance(found, FactorDay) and found.from_statistics
+    assert found.heat == pytest.approx(10.0) and found.electricity == pytest.approx(2.5)
+    assert found.sink == pytest.approx(32.5) and found.source == 0.0
+    assert found.cop == pytest.approx(9.405, abs=1e-3)
+    assert not found.flow_only
+
+
+def test_statistics_day_reasons() -> None:
+    assert statistics_days(*hourly(DAY, 1), BERLIN)[DAY] == SKIP_LITTLE_HEATING
+    assert statistics_days(*hourly(DAY, 5, aux=1.0), BERLIN)[DAY] == SKIP_AUX
+    # Hot water in every hour: no heating-only hour.
+    assert statistics_days(*hourly(DAY, 5, dhw=0.5), BERLIN)[DAY] == SKIP_LITTLE_HEATING
+    # Too little heat per hour (0.3 kWh is the limit).
+    assert (
+        statistics_days(*hourly(DAY, 5, heat=0.2), BERLIN)[DAY] == SKIP_LITTLE_HEATING
+    )
+    without_return = statistics_days(*hourly(DAY, 5, ret=None), BERLIN)[DAY]
+    assert isinstance(without_return, FactorDay) and without_return.flow_only
+
+
+def test_diary_while_heating_wins_statistics_fill_in() -> None:
+    # Days 1-7 only in the statistics (before the setup), days 8-14 in the
+    # diary with the outdoor mean while heating: all 14 count.
+    totals, flows, rets, outs = {}, {}, {}, {}
+    for n in range(14):
+        parts = hourly(DAY + timedelta(days=n), 10)
+        for target, part in zip((totals, flows, rets, outs), parts, strict=True):
+            target.update(part)
+    statistics = statistics_days(totals, flows, rets, outs, BERLIN)
+    diary = [entry(DAY + timedelta(days=n)) for n in range(7, 14)]
+    result = efficiency_factor(
+        diary, DAY, DAY + timedelta(days=13), min_days=14, statistics=statistics
+    )
+    assert result.days == 14 and result.statistics_days == 7
+    assert result.value == pytest.approx(4.0 / 9.405, abs=1e-3)
+    assert result.as_attributes()["days_from_statistics"] == 7
+
+
+def test_old_diary_day_prefers_statistics() -> None:
+    # A diary day from before the update (day mean outdoor 8 °C, no mean
+    # while heating) loses against the statistics day (0 °C while heating).
+    old = entry(outdoor_heating=None, outdoor=8.0)
+    statistics = statistics_days(*hourly(DAY, 10), BERLIN)
+    result = efficiency_factor([old], DAY, DAY, min_days=1, statistics=statistics)
+    assert result.statistics_days == 1 and result.day_mean_days == 0
+    assert result.source == 0.0
+    # Without a statistics day the old diary day counts with its day mean.
+    alone = efficiency_factor([old], DAY, DAY, min_days=1)
+    assert alone.day_mean_days == 1 and alone.source == 8.0
