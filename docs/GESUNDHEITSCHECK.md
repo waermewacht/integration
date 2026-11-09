@@ -271,6 +271,42 @@ Attribut `field_reference` an „AZ Heizen+WW Saison“: Fraunhofer ISE WP-QS (L
 
 **Anzeige.** Binärsensor „Auffällige Statusmeldungen“ (`status_messages`) und „Befund Statusmeldungen“, nur mit Betriebsart-Entität. Attribute: `entries_7d`, `most_frequent`, `most_frequent_count`, `protection`, `waiting`, `unclassified` (je Text die Anzahl; nicht aufgezeichnet), `days_observed`, `threshold_entries`, `reason`. Gesundheitskarte und Blueprint: „Durchflussüberwachung 12× in 7 Tagen“.
 
+### 4.14 Gütegrad und „Was bringt weniger Vorlauf?“ (Entwurf 2026-11-09, nicht umgesetzt)
+
+**Was und warum.** Die Arbeitszahl hängt vor allem an zwei Temperaturen: draußen (Wetter) und im Heizkreis (Heizkurve). Ein schlechter Monat sagt deshalb wenig über die Maschine. Der **Gütegrad** nimmt beide heraus: gemessene Arbeitszahl ÷ bestmögliche Arbeitszahl bei denselben Temperaturen (Carnot). Er zeigt, wie gut die Wärmepumpe aus ihren Bedingungen etwas macht, und ist über Monate, Saisons und Anlagen vergleichbar. Auf ihm baut die zweite Kennzahl auf: wie viel Strom eine um 1, 2 oder 3 K tiefere Heizkurve gespart hätte. Das ist der häufigste Rat zur Effizienz, aber kaum jemand weiß, was er der eigenen Anlage bringt.
+
+**Definition (wie Fraunhofer ISE, WP-QS im Bestand).** COP_Carnot = T_Senke / (T_Senke − T_Quelle), Temperaturen in Kelvin. **Senke = Mittel aus Vor- und Rücklauf, Quelle = Eintritt der Quelle**, bei Luft also die Außentemperatur. Nur Heizbetrieb; Strom von Verdichter, Regelung und Quellenantrieb (SPF 2); Wärme vor dem Speicher (Günther u. a. 2026, Abschnitt 4.2). Gemessen aus Jahreswerten (November 2023 bis März 2024): **Luft/Wasser 0,32 bis 0,44, Mittel 0,39 (36 Anlagen)**, Sole/Wasser 0,44 bis 0,52, Mittel 0,46 (9 Anlagen). Gegenüber der Feldmessung 2008/09 im Mittel +30 % bei Luft/Wasser. Fixed-Speed- und zweistufige Geräte liegen eher unten; mit der Temperaturdifferenz hängt der Wert in der Stichprobe nicht zusammen. Abtauungen, Teillast und Takte stecken mit drin (Jahreswert, kein Prüfstandspunkt).
+
+Nicht verwechseln: heatpumpmonitor.org rechnet „% of Carnot“ mit Aufschlägen (Kondensation = Vorlauf + 2 K, Verdampfung = außen − 6 K) und kommt so meist auf 45 bis 55 % (OpenEnergyMonitor, „% of ideal Carnot COP“). Die Aufschläge verkleinern die Carnot-Arbeitszahl, der Gütegrad wird größer. Wärmewacht rechnet ohne Aufschläge wie Fraunhofer, damit 0,39 als Vergleich gilt.
+
+**Rechnung (Vorschlag).**
+
+- Grundlage ist das Tagesbuch (4.11): je Tag Wärme, Strom und Heizstab Heizen (`energy`), Vorlauf- und Spreizungsmittel im Heizbetrieb (`flow`, `spread`). T_Senke = Vorlauf − Spreizung/2.
+- **Neu im Tagesbuch:** `outdoor_heating`, das Mittel der Außentemperatur unter derselben Bedingung wie Vorlauf und Spreizung (Kompressor im Heizbetrieb), als `Mean` wie `flow`. Das Tagesmittel `outdoor` mischt Stunden ohne Lauf ein. Einträge ohne das Feld nehmen `outdoor` (Attribut `source_temp: day_mean`). Ein paar Bytes je Tag, kein zusätzliches Speichern.
+- **Heizstab heraus:** Wärme und Strom der Wärmepumpe = Heizen minus Heizstab (Heizstabwärme = Heizstabstrom, Wirkungsgrad 1). Sonst zieht ein Heizstabtag den Gütegrad nach unten, obwohl die Wärmepumpe gut lief.
+- **Gütegrad eines Zeitraums = Σ (Q_Tag / COP_Carnot,Tag) ÷ Σ W_Tag**, also Strom einer idealen Maschine ÷ Strom der echten. Wärmegewichtet: Kalte Tage mit viel Wärme zählen stärker, milde Tage mit wenig Wärme und großem COP_Carnot verzerren nicht. Fraunhofer bildet den Wert aus Jahreswerten; die Rechnung je Tag ist **eigene Wahl** (genauer, weil COP_Carnot nicht linear in der Temperatur ist). Der Unterschied ist klein; im README steht trotzdem „Vergleichswert, kein Prüfstandswert“.
+- **Welche Tage:** mindestens 2 h Heizbetrieb (wie 4.5), Strom Heizen ab dem Mindeststrom, T_Senke − T_Quelle ab 10 K (**eigene Annahme**: darunter wird COP_Carnot sehr groß, und 0,5 K Fühlerfehler ändern den Tag um über 5 %). Zeiträume: Monat ab 7 Tagen, Saison ab 14 Tagen (wie 4.5), sonst unbekannt mit `reason` (`too_few_days`, `no_flow_temp`, `no_activity`, `no_daily_energy`).
+- **Ohne Rücklauf:** Senke = Vorlauf. Die Carnot-Arbeitszahl wird damit zu klein und der Gütegrad zu groß (Vorlauf 35 °C, Spreizung 5 K, außen 0 °C: COP_Carnot 8,80 statt 9,40, Gütegrad 6,8 % zu hoch). Attribut `sink_temp: flow_only`, in der Karte dann kein Vergleich mit dem Feldwert. Alternative: unbekannt (offene Frage).
+- **Kein Rückblick:** Vorlauf im Heizbetrieb gibt es nur im Tagesbuch, also ab der Einrichtung (die Langzeitstatistik der Vorlauf-Entität mischt Warmwasser und Stillstand ein, verworfen wie in 4.11). Erste Werte nach 7 bzw. 14 Heiztagen. Quellen ohne Tagesenergie im Tagebuch (Stundenstatistik, Vortageswerte wie HomeCom und MELCloud) und ohne Betriebsart bekommen keinen Gütegrad.
+
+**Was bringt weniger Vorlauf (Vorschlag).**
+
+- Mit dem eigenen Gütegrad g des Zeitraums: Strom bei k Kelvin tieferer Heizkurve W_k = Σ Q_Tag / (g × COP_Carnot(T_Senke − k, T_Quelle)), Ersparnis = W − W_k, für k = 1, 2, 3, in kWh, Prozent und Euro (fester Strompreis bzw. Mittel des Preis-Sensors wie bei den Kosten). Für die laufende Saison bisher und die Vorsaison, **keine Hochrechnung auf ein Jahr**.
+- Annahmen, im README genannt: gleiche Wärme (die Räume bleiben warm, sonst geht es nicht), gleicher Gütegrad, Spreizung unverändert (die ganze Senke wandert um k).
+- **Gegenprobe mit Feldwerten.** Die Carnot-Formel allein ergibt je Kelvin tiefer eine um 2,6 % höhere Arbeitszahl bei 35 °C Senke und 0 °C draußen, um 2,0 % bei 45 °C. Brudermueller u. a. (2025; 708 Wärmepumpen, Heizkurve 1 K parallel tiefer, eigenes COP-Modell je Anlage): **SCOP im Mittel +0,11, Strom −2,61 %**; sie zitieren Lämmle u. a. mit +0,10 bis 0,13 je Kelvin (49 Anlagen). Die Rechnung liegt also im belegten Bereich.
+- **Grenzen.** Ob die Räume warm bleiben, weiß Wärmewacht nicht; deshalb nur 1 bis 3 K und keine Empfehlung „stell auf X °C“. Bei sehr tiefem Vorlauf kann der Gütegrad sinken (Teillast, mehr Takte), die Zahl ist eher eine obere Grenze. Nur lesen, nie steuern: Wärmewacht ändert die Heizkurve nicht.
+- Warum es sich lohnt: In 57 % der Fälle ist die Heizkurve zu hoch eingestellt, und 68 % der befragten Nutzer wünschen sich Rückmeldung zu Ersparnis und Effizienz (beides zitiert in Brudermueller u. a. 2025, Diskussion).
+
+**Anzeige (Vorschlag).**
+
+- Sensor **„Gütegrad Heizen Saison“** (Zahl mit 2 Nachkommastellen wie bei Fraunhofer, `state_class: measurement`; Prozent siehe offene Fragen). Attribute: `month`, `previous_season`, `days`, `sink_temp`, `source_temp`, `carnot_cop`, `reason`, `field_reference` (Mittel 0,39, Spanne 0,32–0,44, n = 36, Quelle), `savings` je k mit `kwh`, `percent`, `eur`. Große Attribute nicht aufzeichnen.
+- Gesundheitskarte: eine Zeile „Gütegrad 0,41 (Feldtest Luft/Wasser 0,32–0,44)“, darunter „Heizkurve 2 K tiefer: ≈ 120 kWh, 35 € weniger in dieser Saison“. Kein Binärsensor, kein Alarm: kein Fehler, nur eine Einordnung.
+- Demo mitziehen (`tools/make_demo.py` kennt Vorlauf, Spreizung und Tagesbuch schon).
+
+**Last.** Gerechnet im täglichen Lauf gegen 3 Uhr aus dem Tagebuch: keine zusätzliche Statistik-Abfrage, keine neue Datei, kein zusätzliches Speichern. Rechenaufwand: eine Schleife über die Tage von höchstens zwei Saisons.
+
+**Später.** 4.1 „Effizienz gesunken“ könnte den Gütegrad statt der Arbeitszahl je Klasse vergleichen: Eine geänderte Heizkurve verfälscht ihn kaum, die Schaltfläche „Effizienzvergleich neu starten“ wäre seltener nötig. Erst, wenn der Gütegrad an echten Anlagen eine Saison lang ruhig läuft.
+
 ## 5. Rangfolge
 
 Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf). Bewertung vor der Umsetzung; was inzwischen umgesetzt ist, steht oben unter „Stand“.
@@ -289,6 +325,7 @@ Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Qu
 | 10 | 4.9 Warmwasser | mittel | mittel | nein (Ladungen nicht verdrahtet) | später |
 | 11 | 4.8 Stillstand | niedrig (bei Bosch Modellwert) | niedrig | ja | Attribut |
 | – | 4.10 e Durchfluss | mittel | unbekannt | Tagesbuch + neues Mittel Durchfluss | Reparatur |
+| – | 4.14 Gütegrad, weniger Vorlauf | hoch (Optimierung mit Zahl) | mittel–hoch (Physik und zwei Feldstudien; Fühlerorte) | Tagesbuch + `outdoor_heating` | Sensor + Attribute |
 
 ## 6. MVP
 
@@ -381,12 +418,16 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 - WPsmart im Bestand: Bericht-URL und genaue Definition der „maximalen Vorlauftemperatur bei −3 °C“ nachtragen (in `ENTWICKLUNG.md` §3).
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.
 - Abtauen (4.3): Quelle für übliche Häufigkeit und Dauer suchen; ohne Feuchte bleibt es Attribut.
+- 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später.
 - ~~Tagesbuch (4.11) mit dem Inhaber abstimmen~~ Erlaubt 2026-10-27 (`ENTWICKLUNG.md` §6), umgesetzt in 0.1.0b7.
 
 ## Quellen
 
 - Fraunhofer ISE, WP-QS im Bestand: [Schlussbericht 25.11.2025](https://www.ise.fraunhofer.de/content/dam/ise/de/documents/projekte/WP-QS_Schlussbericht.pdf) (Werte in `ENTWICKLUNG.md` §3) und Pressemitteilung 2025 (77 Wärmepumpen; Luft/Wasser JAZ Mittel 3,4, Spanne 2,6–4,9; Heizstab 1,3 %; Schalthäufigkeit bei einigen sehr hoch; Überdimensionierung häufig).
 - Fraunhofer ISE, WPsmart im Bestand, Schlussbericht 2020 (29 Luft/Wasser-Anlagen; JAZ Mittel 3,1; mittlere Spreizung 6,8 K; maximale Vorlauftemperatur ~43,6 °C bei −3 °C). URL nachtragen.
+- Günther, D., Wapler, J., Helmling, S.: Detailed efficiency analysis for heat pumps in existing single-family houses within a large-scale field test. 15th IEA Heat Pump Conference 2026, BRE1.1, [doi:10.23697/xxqr-vx51](https://doi.org/10.23697/xxqr-vx51) (Abschnitt 4.2: Gütegrad „Carnot Efficiency Factor“, Definition und Werte; abgerufen 2026-11-09).
+- Brudermueller, T. u. a.: Estimation of energy efficiency of heat pumps in residential buildings using real operation data. Nature Communications 16, 2834 (2025), [doi:10.1038/s41467-025-58014-y](https://doi.org/10.1038/s41467-025-58014-y) (Heizkurve 1 K tiefer: SCOP +0,11, Strom −2,61 %; Lämmle u. a. +0,10–0,13 je K; Heizkurve in 57 % zu hoch; abgerufen 2026-11-09).
+- OpenEnergyMonitor: [% of ideal Carnot COP](https://docs.openenergymonitor.org/heatpumpmonitor/prc_carnot.html) (Rechnung mit Aufschlägen +2 K/−6 K, meist 45–55 %; abgerufen 2026-11-09).
 - [heatpumpmonitor.org](https://heatpumpmonitor.org/): Luft-Wärmepumpen, SEPEMO H4, 3,86 bei 170 Anlagen (Stand der Recherche Oktober 2026).
 - Home Assistant Quality Scale, Regel [repair-issues](https://contributors.home-assistant.io/core/quality-scale/repair-issues/) (abgerufen 2026-10-27).
 - DVGW W 551 (2004), 60 °C am Austritt des Trinkwassererwärmers (wie in `charges.py`).
