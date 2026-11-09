@@ -89,6 +89,8 @@ const TEXT = {
       defrosts_today: "Abtauungen heute",
       spread_7d: "Spreizung 7 Tage",
       starts_season: "Starts Saison",
+      continuous_below: "Läuft durch unter",
+      short_runs_from: "Kurzläufe ab",
       starts_per_year: "Starts pro Jahr",
       run_minutes_week: "Lauf/Start 7 Tage",
       standby_power_7d: "Stillstand 7 Tage",
@@ -147,6 +149,14 @@ const TEXT = {
     factorField: (lo, hi) => `Feldtest Nov–März ${lo}–${hi}`,
     factorFlowOnly: "ohne Rücklauf, eher zu hoch",
     factorWinter: "Winter",
+    dutyChart: "Laufzeit Heizen je Außentemperatur",
+    dutySeries: "Anteil der Zeit",
+    dutyExpected: (v) => `erwartet unter ${v} °C`,
+    dutyReasons: {
+      never_continuous: "läuft nirgends durch",
+      too_few_hours: "noch zu wenige Stunden",
+      no_short_runs: "keine Kurzläufe",
+    },
     factorDays: (have, need) => `${have} von ${need} Heiztagen`,
     sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
@@ -268,6 +278,8 @@ const TEXT = {
       defrosts_today: "Defrosts today",
       spread_7d: "Spread 7 days",
       starts_season: "Starts season",
+      continuous_below: "Runs continuously below",
+      short_runs_from: "Short runs from",
       starts_per_year: "Starts per year",
       run_minutes_week: "Run/start 7 days",
       standby_power_7d: "Standby 7 days",
@@ -323,6 +335,14 @@ const TEXT = {
     factorField: (lo, hi) => `field test Nov–Mar ${lo}–${hi}`,
     factorFlowOnly: "without return, rather too high",
     factorWinter: "winter",
+    dutyChart: "Heating run time per outdoor temperature",
+    dutySeries: "Share of the time",
+    dutyExpected: (v) => `expected below ${v} °C`,
+    dutyReasons: {
+      never_continuous: "never runs continuously",
+      too_few_hours: "too few hours yet",
+      no_short_runs: "no short runs",
+    },
     factorDays: (have, need) => `${have} of ${need} heating days`,
     sameLastYear: "last year to date",
     curve: "Performance curve heating",
@@ -881,7 +901,43 @@ class WaermewachtCard extends HTMLElement {
       this._own("starts_season", t.tiles.starts_season,
         season.per_day !== undefined ? t.perDay(this._num(season.per_day, 1)) : ""),
       this._own("standby_power_7d", t.tiles.standby_power_7d),
-    ]);
+      this._duty(t, "continuous_below"),
+      this._duty(t, "short_runs_from"),
+    ]) + this._dutyChart(t);
+  }
+
+  /** "Runs continuously below" / "Short runs from" (duty.py): the previous
+   * season when it is the one shown, the expectation from heat load and
+   * smallest power, or why there is no value. */
+  _duty(t, key) {
+    const state = this._state(key);
+    if (!state) return "";
+    const a = state.attributes;
+    const parts = [];
+    if (state.state === "unknown" || state.state === "unavailable") {
+      if (a.reason && t.dutyReasons[a.reason]) parts.push(t.dutyReasons[a.reason]);
+    } else if (a.season === "previous") {
+      parts.push(t.previousSeason);
+    }
+    if (key === "continuous_below" && a.expected_continuous_below !== null && a.expected_continuous_below !== undefined) {
+      parts.push(t.dutyExpected(this._num(a.expected_continuous_below, 0)));
+    }
+    return this._own(key, t.tiles[key], parts.join(" · "));
+  }
+
+  /** Share of the time the compressor heats per 2-K outdoor class, of the
+   * season the sensors show; the minutes per start in the tooltip. */
+  _dutyChart(t) {
+    const state = this._state("continuous_below");
+    const rows = (state?.attributes.classes || []).filter((c) => c.hours >= (state.attributes.min_class_hours ?? 24));
+    if (rows.length < 2) return "";
+    const series = [{
+      color: COLORS.current,
+      label: t.dutySeries,
+      line: true,
+      points: rows.map((c) => [c.lower + 1, c.share_percent]),
+    }];
+    return `<div class="charts">${this._xyChart(t.dutyChart, "%", series, this._entities.continuous_below, 0, 0)}</div>`;
   }
 
   /** Starts per year projected from the last 7 days (attributes of "starts

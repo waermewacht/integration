@@ -86,15 +86,19 @@
               "elec_total": "Strom Kompressor gesamt (nur ohne Aufteilung je Modus)",
               "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)",
               "elec_defrost": "Strom Abtauen",
-              "elec_standby": "Strom Stillstand"
+              "elec_standby": "Strom Stillstand",
+              "runtime_heating": "Laufzeit Kompressor Heizen (Zähler)",
+              "starts_heating": "Kompressorstarts Heizen (Zähler)"
             },
-            "description": "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen) oder den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM).",
+            "description": "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder Zähler für Laufzeit und Starts im Heizbetrieb hat (Rückblick der Laufzeit je Außentemperatur).",
             "data_description": {
               "heat_total": "Ein Wärmemengenzähler für Heizen und Warmwasser (z. B. zwischen Wärmepumpe und Pufferspeicher). Wärmewacht bucht ihn auf die laufende Betriebsart; für Warmwasser braucht es die Betriebsart. Dann die Wärme je Betriebsart leer lassen; Kühlen behält einen eigenen Zähler.",
               "elec_total": "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
               "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
               "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
-              "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab."
+              "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
+              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit."
             }
           },
           "measurements": {
@@ -146,6 +150,8 @@
               "aux_total": "Strom Heizstab gesamt (nur ohne Aufteilung je Modus)",
               "elec_defrost": "Strom Abtauen",
               "elec_standby": "Strom Stillstand",
+              "runtime_heating": "Laufzeit Kompressor Heizen (Zähler)",
+              "starts_heating": "Kompressorstarts Heizen (Zähler)",
               "outdoor_temp": "Außentemperatur",
               "flow_temp": "Vorlauftemperatur",
               "return_temp": "Rücklauftemperatur",
@@ -172,6 +178,8 @@
               "aux_total": "Nur, wenn es den Heizstab nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
               "elec_defrost": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
               "elec_standby": "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
+              "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+              "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit.",
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
               "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
             }
@@ -911,6 +919,12 @@
       },
       "spread_7d": {
         "name": "Spreizung 7 Tage"
+      },
+      "continuous_below": {
+        "name": "Läuft durch unter"
+      },
+      "short_runs_from": {
+        "name": "Kurzläufe ab"
       },
       "efficiency_factor": {
         "name": "Gütegrad Heizen Saison"

@@ -38,6 +38,7 @@ from .carnot import factor_attributes
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
+from .duty import duty_attributes, duty_value
 from .energy import (
     SEASONAL_MODES,
     Kind,
@@ -853,6 +854,20 @@ ANALYSIS = [
             and _has(Signal.FLOW_TEMP, Signal.RETURN_TEMP)(r)
         ),
         attributes=lambda r: {} if r.spread_7d is None else r.spread_7d.as_attributes(),
+    ),
+    # Run time per outdoor class (health check 4.15): from the diary's
+    # classes and the counters of heating; the season like the heat load.
+    *(
+        HeatPumpSensorDescription(
+            key=key,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+            suggested_display_precision=0,
+            value=lambda r, key=key: duty_value(r.duty, key),
+            needs=lambda r: Signal.COMPRESSOR in r.entities and HAS_OUTDOOR(r),
+            attributes=lambda r, key=key: duty_attributes(r.duty, key),
+        )
+        for key in ("continuous_below", "short_runs_from")
     ),
     HeatPumpSensorDescription(
         # Carnot efficiency factor while heating (health check 4.14): from the

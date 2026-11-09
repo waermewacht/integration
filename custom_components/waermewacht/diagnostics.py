@@ -22,6 +22,7 @@ from homeassistant.util import dt as dt_util
 from . import GasConfigEntry, WaermewachtConfigEntry, is_gas
 from .anonymize import Masker
 from .const import CONF_ENTITIES, CONF_TEMPLATE
+from .duty import duty_attributes
 from .heat_load import heat_load_as_dict
 from .heating_curve import flow_curve_as_dict
 from .periods import Period
@@ -200,6 +201,11 @@ async def async_get_config_entry_diagnostics(
         "flow": {
             "verdict": runtime._flow_verdict,
             "zero_flow_seconds": round(runtime._zero_flow.seconds),
+        },
+        # Run time per outdoor class (health check 4.15).
+        "duty": {
+            key: duty_attributes(runtime.duty, key)
+            for key in ("continuous_below", "short_runs_from")
         },
         # Carnot efficiency factor per period (health check 4.14).
         "efficiency_factors": {

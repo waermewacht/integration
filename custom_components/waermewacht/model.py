@@ -77,6 +77,10 @@ class Signal(StrEnum):
     HEATING_FLAG = "heating_flag"
     COOLING_MODE = "cooling_mode"
     STARTS_TOTAL = "starts_total"
+    # Counters of the heat pump for heating only (run time, starts): the
+    # look-back of run time per outdoor class (duty.py).
+    RUNTIME_HEATING = "runtime_heating"
+    STARTS_HEATING = "starts_heating"
     # Measurements.
     OUTDOOR_TEMP = "outdoor_temp"
     FLOW_TEMP = "flow_temp"

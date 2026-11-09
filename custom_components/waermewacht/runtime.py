@@ -132,6 +132,15 @@ from .cycling import (
 )
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
+from .duty import (
+    DutyFigures,
+    choose,
+    day_classes,
+    duty_figures,
+    expected_continuous_below,
+    runtime_minutes,
+    statistics_classes,
+)
 from .energy import Kind, Totals, building_hours, replace_boiler
 from .entity import own_entities
 from .health import (
@@ -437,6 +446,10 @@ class HeatPumpRuntime:
         # Outdoor temperature while the compressor heats, today (sink and
         # source of the Carnot efficiency factor, carnot.py).
         self.outdoor_heating = Mean()
+        # Outdoor mean per UTC hour of today and yesterday (classes of the
+        # diary, duty.py); the run time per class of the analysis.
+        self.outdoor_hourly: dict[datetime, Mean] = {}
+        self.duty: dict[str, Any] = {}
         # Carnot efficiency factor while heating: season, month, previous
         # season (daily analysis, from the diary).
         self.efficiency_factors: dict[str, EfficiencyFactor] = {}
@@ -1197,10 +1210,19 @@ class HeatPumpRuntime:
         return (await self._async_means((signal,), start, end)).get(signal, {})
 
     async def _async_means(
-        self, signals: tuple[Signal, ...], start: datetime, end: datetime
+        self,
+        signals: tuple[Signal, ...],
+        start: datetime,
+        end: datetime,
+        changes: tuple[Signal, ...] = (),
     ) -> dict[Signal, dict[datetime, float]]:
-        """Hourly means of several temperatures in one statistics query."""
-        ids = {s: e for s in signals if (e := self.entities.get(s)) is not None}
+        """Hourly means of several temperatures, and the hourly change of
+        the counters in `changes`, in one statistics query."""
+        ids = {
+            s: e
+            for s in (*signals, *changes)
+            if (e := self.entities.get(s)) is not None
+        }
         if not ids or start >= end:
             return {}
         rows = await get_instance(self.hass).async_add_executor_job(
@@ -1211,18 +1233,19 @@ class HeatPumpRuntime:
             set(ids.values()),
             "hour",
             {"temperature": UnitOfTemperature.CELSIUS},
-            {"mean"},
+            {"mean", "change"} if changes else {"mean"},
         )
         result: dict[Signal, dict[datetime, float]] = {}
         for signal, entity_id in ids.items():
-            means = result.setdefault(signal, {})
+            field = "change" if signal in changes else "mean"
+            values = result.setdefault(signal, {})
             for row in rows.get(entity_id, []):
-                if (mean := row.get("mean")) is None:
+                if (value := row.get(field)) is None:
                     continue
                 hour = row["start"]
                 if not isinstance(hour, datetime):
                     hour = dt_util.utc_from_timestamp(hour)
-                means[hour] = mean
+                values[hour] = value
         return result
 
     def _boiler_entities(self) -> dict[str, str]:
@@ -1292,6 +1315,63 @@ class HeatPumpRuntime:
                 statistics=statistics,
             )
             for name, (first, last, min_days) in spans.items()
+        }
+
+    def _duty(
+        self,
+        now: datetime,
+        current: datetime,
+        previous: datetime,
+        temps: dict[Signal, dict[datetime, float]],
+        outdoor: dict[datetime, float],
+    ) -> dict[str, Any]:
+        """Run time per outdoor class of the current and the previous season
+        (duty.py): the diary's classes, for older days the counters."""
+        statistics: dict[date, dict[str, list[float]]] = {}
+        if (entity_id := self.entities.get(Signal.RUNTIME_HEATING)) and (
+            Signal.STARTS_HEATING in self.entities
+        ):
+            state = self.hass.states.get(entity_id)
+            unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) if state else None
+            minutes = {
+                h: m
+                for h, change in temps.get(Signal.RUNTIME_HEATING, {}).items()
+                if (m := runtime_minutes(change, unit)) is not None
+            }
+            if not minutes and temps.get(Signal.RUNTIME_HEATING):
+                self._count("unit:runtime_heating")
+            statistics = statistics_classes(
+                minutes, temps.get(Signal.STARTS_HEATING, {}), outdoor, self.tz
+            )
+        yesterday = now.astimezone(self.tz).date() - timedelta(days=1)
+        local = lambda at: at.astimezone(self.tz).date()  # noqa: E731
+        short_minutes = self.short_seconds / 60
+        seasons: dict[str, DutyFigures] = {
+            "current": duty_figures(
+                self.diary,
+                local(current),
+                yesterday,
+                short_minutes=short_minutes,
+                statistics=statistics,
+            ),
+            "previous": duty_figures(
+                self.diary,
+                local(previous),
+                local(current) - timedelta(days=1),
+                short_minutes=short_minutes,
+                statistics=statistics,
+            ),
+        }
+        load = self.heat_load
+        return {
+            **seasons,
+            "season": choose(seasons["previous"], seasons["current"]),
+            "expected_continuous_below": None
+            if load is None or not (load.sufficient or load.preliminary)
+            else expected_continuous_below(
+                load.heating_limit, load.slope_kw_per_k, self.min_power
+            ),
+            "short_run_minutes": short_minutes,
         }
 
     def seasons(self, now: datetime) -> tuple[datetime, datetime]:
@@ -1383,7 +1463,10 @@ class HeatPumpRuntime:
             # Flow and return in one query: the return only adds a series
             # for the look-back of the Carnot efficiency factor.
             temps = await self._async_means(
-                (Signal.FLOW_TEMP, Signal.RETURN_TEMP), previous, now
+                (Signal.FLOW_TEMP, Signal.RETURN_TEMP),
+                previous,
+                now,
+                changes=(Signal.RUNTIME_HEATING, Signal.STARTS_HEATING),
             )
             flow = temps.get(Signal.FLOW_TEMP, {})
             if flow:
@@ -1415,6 +1498,7 @@ class HeatPumpRuntime:
                     self.tz,
                 ),
             )
+            self.duty = self._duty(now, current, previous, temps, outdoor)
             self.oversize = oversizing(
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )
@@ -1807,6 +1891,21 @@ class HeatPumpRuntime:
                 "flow": self.flow.as_dict(),
                 "flow_rate": self.flow_rate.as_dict(),
                 "outdoor_heating": self.outdoor_heating.as_dict(),
+                # Hours, heating seconds and heating starts per outdoor
+                # class (duty.py); only with a compressor state.
+                "classes": day_classes(
+                    self.runs,
+                    self.tracker.open_run,
+                    {
+                        h: m.value
+                        for h, m in self.outdoor_hourly.items()
+                        if start <= h < end and m.value is not None
+                    },
+                    min(now, end),
+                    self.gaps,
+                )
+                if Signal.COMPRESSOR in self.entities
+                else None,
                 # Late sources (hourly statistics, previous-day values)
                 # have not booked the day yet at midnight.
                 "energy": None
@@ -2657,6 +2756,8 @@ class HeatPumpRuntime:
             value := _float(self.hass.states.get(entity_id))
         ) is not None:
             self.outdoor.add(value, 60)
+            hour = now.replace(minute=0, second=0, microsecond=0)
+            self.outdoor_hourly.setdefault(hour, Mean()).add(value, 60)
             if self._sampling:
                 self.outdoor_heating.add(value, 60)
         if (
@@ -2703,6 +2804,11 @@ class HeatPumpRuntime:
                 self._update_status_finding(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             self.outdoor_heating = Mean()
+            self.outdoor_hourly = {
+                h: m
+                for h, m in self.outdoor_hourly.items()
+                if h >= self.window("yesterday", now)[0]
+            }
             self.flow_rate = Mean()
             prune(
                 self.runs, self.defrosts, now - timedelta(days=HISTORY_DAYS), self.gaps
@@ -2994,6 +3100,9 @@ class HeatPumpRuntime:
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
             "outdoor": self.outdoor.as_dict(),
             "outdoor_heating": self.outdoor_heating.as_dict(),
+            "outdoor_hourly": {
+                h.isoformat(): m.as_dict() for h, m in self.outdoor_hourly.items()
+            },
             "charge": self.charge_tracker.as_dict(),
             "last_disinfection": _iso(self.last_disinfection),
             "hot": self._hot,
@@ -3064,6 +3173,10 @@ class HeatPumpRuntime:
         }
         self.outdoor = Mean.from_dict(data.get("outdoor"))
         self.outdoor_heating = Mean.from_dict(data.get("outdoor_heating"))
+        self.outdoor_hourly = {
+            datetime.fromisoformat(h): Mean.from_dict(m)
+            for h, m in (data.get("outdoor_hourly") or {}).items()
+        }
         self.charge_tracker.restore(data.get("charge", {}), saved_at, dt_util.utcnow())
         last = data.get("last_disinfection")
         self.last_disinfection = datetime.fromisoformat(last) if last else None

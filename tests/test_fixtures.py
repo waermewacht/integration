@@ -44,6 +44,8 @@ def test_template_finds_every_signal() -> None:
         Signal.COMPRESSOR: "binary_sensor.boiler_hpcompon",
         Signal.ACTIVITY: "sensor.boiler_hpactivity",
         Signal.STARTS_TOTAL: "sensor.boiler_totalcompstarts",
+        Signal.RUNTIME_HEATING: "sensor.boiler_uptimecompheating",
+        Signal.STARTS_HEATING: "sensor.boiler_heatingstarts",
         Signal.OUTDOOR_TEMP: "sensor.boiler_outdoortemp",
         Signal.FLOW_TEMP: "sensor.boiler_hptc1",
         Signal.RETURN_TEMP: "sensor.boiler_hptc0",

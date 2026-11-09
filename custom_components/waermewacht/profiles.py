@@ -359,6 +359,10 @@ EMS_ESP = Template(
             (_S, "totalcompstarts"),
             (_S, "total_compressor_control_starts"),
         ),
+        # Heating only (0x495): run time in minutes and starts; the look-back
+        # of run time per outdoor class (duty.py).
+        Signal.RUNTIME_HEATING: ((_S, "uptimecompheating"),),
+        Signal.STARTS_HEATING: ((_S, "heatingstarts"),),
         Signal.OUTDOOR_TEMP: (
             (_S, "outdoortemp"),
             (_S, "outside_temperature"),

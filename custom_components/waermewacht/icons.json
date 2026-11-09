@@ -211,6 +211,12 @@
       "spread_7d": {
         "default": "mdi:arrow-expand-vertical"
       },
+      "continuous_below": {
+        "default": "mdi:sine-wave"
+      },
+      "short_runs_from": {
+        "default": "mdi:timer-sand"
+      },
       "efficiency_factor": {
         "default": "mdi:speedometer"
       },

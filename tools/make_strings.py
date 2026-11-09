@@ -162,6 +162,16 @@ SENSORS = {
         "Spreizung 7 Tage",
         "mdi:arrow-expand-vertical",
     ),
+    "continuous_below": (
+        "Runs continuously below",
+        "Läuft durch unter",
+        "mdi:sine-wave",
+    ),
+    "short_runs_from": (
+        "Short runs from",
+        "Kurzläufe ab",
+        "mdi:timer-sand",
+    ),
     "efficiency_factor": (
         "Carnot efficiency heating season",
         "Gütegrad Heizen Saison",
@@ -372,6 +382,14 @@ FIELDS = {
     ),
     "activity": ("Activity", "Betriebsart (Aktivität)"),
     "starts_total": ("Compressor starts total", "Kompressorstarts gesamt"),
+    "runtime_heating": (
+        "Compressor run time heating (counter)",
+        "Laufzeit Kompressor Heizen (Zähler)",
+    ),
+    "starts_heating": (
+        "Compressor starts heating (counter)",
+        "Kompressorstarts Heizen (Zähler)",
+    ),
     "heat_total": (
         "Heat produced total (meter, only without per mode)",
         "Erzeugte Wärme gesamt (Zähler, nur ohne Aufteilung je Modus)",
@@ -461,6 +479,14 @@ FIELD_HELP = {
         "Only if the heat pump meters this electricity apart (Lambda, iDM).",
         "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda, iDM).",
     ),
+    "runtime_heating": (
+        'The heat pump\'s own counter of compressor hours (or minutes) in heating, e.g. EMS-ESP "uptimecompheating". Only for the look-back of run time per outdoor temperature; without it the table starts with the setup.',
+        "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
+    ),
+    "starts_heating": (
+        'The heat pump\'s own counter of compressor starts in heating, e.g. EMS-ESP "heatingstarts". Only for the look-back, together with the run time.',
+        "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick, zusammen mit der Laufzeit.",
+    ),
     "elec_standby": (
         "Only if the heat pump meters this electricity apart (Lambda). Otherwise Wärmewacht separates standby itself.",
         "Nur, wenn die Wärmepumpe diesen Strom getrennt zählt (Lambda). Sonst trennt Wärmewacht den Stillstand selbst ab.",
@@ -510,10 +536,18 @@ SECTIONS = {
             "One meter for all modes, special meters",
             "Ein Zähler für alle Betriebsarten, Sonderzähler",
         ),
-        ("heat_total", "elec_total", "aux_total", "elec_defrost", "elec_standby"),
         (
-            "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), or counts the electricity of defrosts and standby apart (Lambda, iDM).",
-            "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen) oder den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM).",
+            "heat_total",
+            "elec_total",
+            "aux_total",
+            "elec_defrost",
+            "elec_standby",
+            "runtime_heating",
+            "starts_heating",
+        ),
+        (
+            "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), counts the electricity of defrosts and standby apart (Lambda, iDM), or has counters of run time and starts in heating (look-back of the run time per outdoor temperature).",
+            "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder Zähler für Laufzeit und Starts im Heizbetrieb hat (Rückblick der Laufzeit je Außentemperatur).",
         ),
     ),
     "measurements": (

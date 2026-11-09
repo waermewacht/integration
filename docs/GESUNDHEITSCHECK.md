@@ -311,6 +311,35 @@ Nicht verwechseln: heatpumpmonitor.org rechnet „% of Carnot“ mit Aufschläge
 
 **Später.** 4.1 „Effizienz gesunken“ könnte den Gütegrad statt der Arbeitszahl je Klasse vergleichen: Eine geänderte Heizkurve verfälscht ihn kaum, die Schaltfläche „Effizienzvergleich neu starten“ wäre seltener nötig. Erst, wenn der Gütegrad an echten Anlagen eine Saison lang ruhig läuft.
 
+### 4.15 Laufzeit und Takten je Außentemperatur (Entwurf 2026-11-09; umgesetzt in `duty.py`)
+
+**Umsetzung (Entscheidungen des Inhabers 2026-11-09):** Rückblick über die Zähler: Signale `runtime_heating` und `starts_heating`, von den Vorlagen gefüllt (EMS-ESP `uptimecompheating`, `heatingstarts`; nicht die Hybrid-Vorlage, dort zählen `boiler_*` den Kessel), sonst Felder im eingeklappten Abschnitt „Sonderzähler“; die Zusammenfassung nennt sie nur, wenn eingetragen. Abweichend vom Entwurf: ohne Warmwasser-Spalte (die Zähler kennen sie nicht); „Läuft durch unter“ = Obergrenze der **wärmsten** Klasse mit ≥ 90 % statt der zusammenhängenden von der kältesten aufwärts – bei einer Hybridanlage (Kessel allein unter −4 °C) und mit einer Übergangsklasse kam sonst „läuft nirgends durch“ heraus. Ein Start zählt als Heizen, wenn der Lauf überwiegend heizt; Stunden mit mehr als 10 min ohne bekannten Kompressorstatus fallen heraus. Saisonwahl wie die Heizlast (`duty.choose`). Sensoren `continuous_below`, `short_runs_from`, Diagnose `duty`. **Prüfung** an der Anlage des Inhabers (31.10.–9.11., 215 Stunden): Laufzeit Heizen aus `uptimecompheating` 129,4 h gegen 129,7 h aus dem Rohverlauf (Kompressor an, Betriebsart nicht Warmwasser), je Klasse ±1 %; Starts `heatingstarts` 23 = 23 Starts aus „aus → an“ mit Betriebsart Heizen (dazu `wwstartshp` 10 = 10 Warmwasser, `totalcompstarts` 33). Eine naive Zählung jeder Flanke ergab 60, weil auch „nicht verfügbar → an“ zählte; die Lauferkennung der Integration zählt das nicht. Demo: Januar läuft durch unter 2 °C (erwartet −0,3 °C), Herbst (Ein/Aus, taktend) unter −8 °C mit Kurzläufen ab 4 °C, Hybrid unter 4 °C.
+
+**Was und warum.** Ob und warum eine Wärmepumpe taktet, hängt fast nur an der Außentemperatur: Ist der Wärmebedarf kleiner als die kleinste Leistung, muss sie ein- und ausschalten. Heute zeigt Wärmewacht Takte nur je Tag und je Woche („Starts heute“, „Auffälliges Takten“, Hochrechnung „Starts pro Jahr“), nicht wo auf der Temperaturskala sie entstehen. Neu: je Außentemperatur-Klasse der **Laufzeitanteil im Heizbetrieb**, **Starts je Tag** und **Minuten je Start**, daraus zwei Kennwerte: **„Läuft durch unter“** (die wärmste Klasse, in der sie praktisch durchläuft) und **„Kurzläufe ab“** (die kälteste Klasse, in der die Läufe im Mittel unter der Kurzlauf-Grenze liegen). Das erklärt Takten statt es nur zu zählen: „taktet ab 10 °C mit 25-Minuten-Läufen“ führt direkt zu Heizgrenze, Hysterese oder Sommerbetrieb.
+
+**Beispiel (Anlage des Inhabers, Vorsaison 2025/26 und Saison bis 9.11., Stundenwerte aus Laufzeit- und Startzählern von EMS-ESP):** Laufzeitanteil Heizen −10/−8 °C 92–93 %, −4/−2 °C ~70 %, +2/+4 °C ~50 %, +8/+10 °C 17–24 %, +14…+18 °C 3–9 %; Starts je Tag in allen Klassen ~3–5, Minuten je Start von über 1000 (unter −8 °C) bis 30–55 (+14…+18 °C). „Läuft durch unter“ läge bei etwa −6 °C (Schwelle 90 %). Gegenprobe mit Heizlast (~100 W/K, Heizgrenze ~15 °C) und kleinster Leistung (1,8 kW laut Datenblatt): Durchlauf erwartet unter 15 − 1800/100 = −3 °C; gemessen ~70 % bei −4/−2 °C (Warmwasser und Abtauen unterbrechen). Passt in der Richtung.
+
+**Grenze: keine Leistungsgrenze aus der Laufzeit.** Bei modulierenden Wärmepumpen heißt 100 % Laufzeit nur „taktet nicht“, nicht „volle Leistung“: Sie läuft durch und regelt herunter. Ein Bivalenzpunkt oder „zu klein“ lässt sich daraus nur bei Ein/Aus-Geräten ablesen. Dafür bräuchte es die Modulation (Verdichterdrehzahl, Leistung in %); nicht Teil dieses Entwurfs.
+
+**Daten (Vorschlag).**
+
+- **Ab jetzt, für alle Quellen mit Kompressor:** Das Tagebuch bekommt je Tag ein kleines Histogramm `classes`: je 2-K-Klasse des Stundenmittels draußen die Stunden, die Laufsekunden im Heizbetrieb und die Starts (Heizen). Quelle sind die Läufe (`runs`, sekundengenau) und das Außentemperatur-Mittel je Stunde, das Wärmewacht im Minutentakt ohnehin bildet; geschrieben mit dem Tagebuch um Mitternacht. Typisch 2–5 Klassen je Tag, etwa 60 Bytes. Klassen nach Stunden statt nach dem Tagesmittel, weil ein Tag mit −2 °C nachts und +8 °C mittags sonst in einer Klasse verschwimmt.
+- **Rückblick, nur wo die Wärmepumpe Zähler hat:** Laufzeit Heizen (Minuten oder Stunden) und Starts Heizen mit Langzeitstatistik, je Stunde die Änderung. EMS-ESP (`uptimecompheating`, `heatingstarts`), Luxtronik, Lambda, Stiebel ISG und andere führen solche Zähler; heute sind sie keine Signale. **Entscheidung nötig** (siehe offene Fragen): als Signal in den Vorlagen, ohne eigenes Formularfeld (nur Vorlage) oder im eingeklappten Abschnitt „Sonderzähler“. Ohne Zähler beginnt die Tabelle mit dem Update.
+- Klassen zählen ab 24 Stunden (**eigene Annahme**, ein Tag), Starts nur im Heizbetrieb (sonst mischen sich Warmwasser-Ladungen ein: bei der Anlage des Inhabers 7–15 % Laufzeit Warmwasser in jeder Klasse).
+
+**Kennwerte (Vorschlag).**
+
+- **„Läuft durch unter“** (°C, Obergrenze der wärmsten Klasse mit Laufzeitanteil Heizen ≥ 90 %; **eigene Annahme**, Warmwasser und Abtauen nehmen auch bei Dauerbedarf ein paar Prozent). Unbekannt mit `never_continuous`, wenn keine Klasse 90 % erreicht (dann läuft sie auch an den kältesten beobachteten Tagen nicht durch).
+- **„Kurzläufe ab“** (°C, Untergrenze der kältesten Klasse, ab der die mittlere Laufzeit je Start unter der eingestellten Kurzlauf-Grenze liegt; dieselbe Einstellung wie „Kurzläufe heute“). Unbekannt mit `no_short_runs`, wenn keine Klasse darunter liegt.
+- **Erwartung aus Heizlast und kleinster Leistung** (nur mit Heizlast und Einstellung „Kleinste Heizleistung“): Heizgrenze − kleinste Leistung / Heizlast je Kelvin, als Attribut `expected_continuous_below` neben dem gemessenen Wert. Weicht der gemessene Wert deutlich nach unten ab, taktet sie mehr, als die Planung erwarten lässt (Hysterese, Mindestlaufzeit, Pufferspeicher). Kein Alarm.
+- Laufende Saison und Vorsaison getrennt (wie die Kennlinie), nie gemischt.
+
+**Anzeige (Vorschlag).** Zwei Sensoren (°C) mit der Klassentabelle als Attribut (`classes`: untere Grenze, Stunden, Laufzeitanteil Heizen und Warmwasser in %, Starts je Tag, Minuten je Start; nicht aufgezeichnet). Karte „Takte“: ein Säulendiagramm Laufzeitanteil über der Außentemperatur, darüber die Minuten je Start, wie die Kennlinie in der Karte „Analyse“. Kein Binärsensor.
+
+**Last.** Die Klassen entstehen beim Mitternachts-Eintrag aus Daten im Speicher; die tägliche Auswertung rechnet sie aus dem Tagebuch. Der Rückblick über Zähler liest zwei Reihen mehr in der täglichen Statistik-Abfrage (oder einmal beim Rückblick und dann im Tagebuch, siehe offene Fragen).
+
+**Später.** Mit Modulation (Verdichterdrehzahl in %) die Leistungsgrenze und den Bivalenzpunkt; „Heizkurve k K tiefer“ (4.14) könnte zeigen, ob eine tiefere Kurve das Takten verschiebt.
+
 ## 5. Rangfolge
 
 Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf). Bewertung vor der Umsetzung; was inzwischen umgesetzt ist, steht oben unter „Stand“.
@@ -422,6 +451,7 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 - WPsmart im Bestand: Bericht-URL und genaue Definition der „maximalen Vorlauftemperatur bei −3 °C“ nachtragen (in `ENTWICKLUNG.md` §3).
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.
 - Abtauen (4.3): Quelle für übliche Häufigkeit und Dauer suchen; ohne Feuchte bleibt es Attribut.
+- 4.15: Rückblick über Laufzeit- und Startzähler – als Signal nur in den Vorlagen, mit Feld im eingeklappten Abschnitt „Sonderzähler“ oder gar nicht (nur ab dem Update)? Rückblick täglich aus der Statistik oder einmal ins Tagebuch übernehmen? Schwelle 90 % für „läuft durch“ an weiteren Anlagen prüfen.
 - 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später.
 - ~~Tagesbuch (4.11) mit dem Inhaber abstimmen~~ Erlaubt 2026-10-27 (`ENTWICKLUNG.md` §6), umgesetzt in 0.1.0b7.
 

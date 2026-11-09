@@ -96,6 +96,14 @@ from custom_components.waermewacht.degree_days import (  # noqa: E402
     degree_days,
     year_before,
 )
+from custom_components.waermewacht.duty import (  # noqa: E402
+    choose,
+    day_classes,
+    duty_attributes,
+    duty_figures,
+    duty_value,
+    expected_continuous_below,
+)
 from custom_components.waermewacht.energy import (  # noqa: E402
     Kind,
     Totals,
@@ -785,6 +793,12 @@ class Sim:
                 "flow": self.flow_mean.as_dict(),
                 "flow_rate": Mean().as_dict(),
                 "outdoor_heating": self.outdoor_heating.as_dict(),
+                "classes": day_classes(
+                    self.runs,
+                    self.tracker.open_run,
+                    {h: v for h, v in self.w.temps.items() if start <= h < end},
+                    min(now, end),
+                ),
                 "energy": None
                 if energy is None
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
@@ -825,6 +839,37 @@ class Sim:
         )
         assert previous is not None
         return current, previous
+
+    def duty(
+        self, now: datetime, current: datetime, previous: datetime, load: Any
+    ) -> dict[str, Any]:
+        """runtime._duty, rebuilt (diary only, no counters)."""
+        yesterday = now.astimezone(TZ).date() - DAY
+        short = SHORT_SECONDS / 60
+        seasons = {
+            "current": duty_figures(
+                self.diary,
+                current.astimezone(TZ).date(),
+                yesterday,
+                short_minutes=short,
+            ),
+            "previous": duty_figures(
+                self.diary,
+                previous.astimezone(TZ).date(),
+                current.astimezone(TZ).date() - DAY,
+                short_minutes=short,
+            ),
+        }
+        return {
+            **seasons,
+            "season": choose(seasons["previous"], seasons["current"]),
+            "expected_continuous_below": None
+            if not (load.sufficient or load.preliminary)
+            else expected_continuous_below(
+                load.heating_limit, load.slope_kw_per_k, MIN_KW
+            ),
+            "short_run_minutes": short,
+        }
 
     def efficiency_factors(
         self,
@@ -941,6 +986,7 @@ class Sim:
                 mild_days, mild_from=AUX_MILD_FROM, threshold_kwh=AUX_KWH
             ),
             "spread_7d": spread_figure(self.diary, today),
+            "duty": self.duty(now, current, previous, load),
             "efficiency_factors": self.efficiency_factors(
                 now,
                 current,
@@ -1270,6 +1316,8 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     )
     put("heating_limit", _r(load.heating_limit, 1) if sufficient else None, "°C", 1)
     put("heat_load_design", _r(load.standard_kw, 2) if sufficient else None, "kW", 1)
+    for key in ("continuous_below", "short_runs_from"):
+        put(key, duty_value(a["duty"], key), "°C", 0, **duty_attributes(a["duty"], key))
     factors = a["efficiency_factors"]
     put(
         "efficiency_factor",

@@ -72,6 +72,10 @@ T = {
     "compressor": ("compressor", "Kompressor"),
     "activity": ("activity", "Betriebsart"),
     "starts": ("start counter", "Startzähler"),
+    "heating_counters": (
+        "run time/start counter heating",
+        "Laufzeit-/Startzähler Heizen",
+    ),
     "measurements": ("Measurements", "Messwerte"),
     "outdoor": ("outdoor", "außen"),
     "flow": ("flow", "Vorlauf"),
@@ -240,6 +244,12 @@ def heat_pump_summary(
         f"**{t('operation')}:** {t('compressor')} {_flag(Signal.COMPRESSOR in mapped)}, "
         f"{t('activity')} {_flag(has_activity(mapped))}, "
         f"{t('starts')} {_flag(Signal.STARTS_TOTAL in mapped)}"
+        # Rare: only named when mapped (look-back of run time per class).
+        + (
+            f", {t('heating_counters')} ✓"
+            if Signal.RUNTIME_HEATING in mapped and Signal.STARTS_HEATING in mapped
+            else ""
+        )
     )
     measured = [
         f"{t('outdoor')} {_flag(Signal.OUTDOOR_TEMP in mapped)}",

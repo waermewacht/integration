@@ -159,6 +159,8 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.AUX_TOTAL,
         Signal.ELEC_DEFROST,
         Signal.ELEC_STANDBY,
+        Signal.RUNTIME_HEATING,
+        Signal.STARTS_HEATING,
     ),
     # Activity from several entities (activity.py), collapsed when unused.
     "activity_parts": (
@@ -202,7 +204,12 @@ def _selector(signal: Signal) -> selector.EntitySelector:
         )
     elif signal is Signal.COOLING_MODE:
         filters = selector.EntityFilterSelectorConfig(domain=["select", "sensor"])
-    elif signal is Signal.STARTS_TOTAL:
+    elif signal is Signal.RUNTIME_HEATING:
+        # Hours, minutes or seconds of compressor heating (duty.py).
+        filters = selector.EntityFilterSelectorConfig(
+            domain="sensor", device_class="duration"
+        )
+    elif signal in (Signal.STARTS_TOTAL, Signal.STARTS_HEATING):
         # Also a counter helper counting the starts (forum 07.11.); its state
         # is a whole number like a sensor's.
         filters = selector.EntityFilterSelectorConfig(domain=["sensor", "counter"])
