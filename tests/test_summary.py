@@ -3,7 +3,13 @@ missing with its consequence."""
 
 from __future__ import annotations
 
-from custom_components.waermewacht.summary import boiler_summary, heat_pump_summary
+import pytest
+
+from custom_components.waermewacht.summary import (
+    _num,
+    boiler_summary,
+    heat_pump_summary,
+)
 
 EMS_ESP = {
     "heat_heating": "sensor.boiler_nrgheat",
@@ -213,3 +219,11 @@ def test_temperatures_without_statistics() -> None:
         EMS_ESP, {"electricity_price": 30.0, "design_outdoor_temp": -12.0}, None, "de"
     )
     assert "Langzeitstatistik" not in complete
+
+
+@pytest.mark.parametrize(
+    ("value", "digits", "expected"),
+    [(90, 0, "90"), (100, 0, "100"), (0, 0, "0"), (0.5, 2, "0,5"), (90.0, 2, "90")],
+)
+def test_number_keeps_whole_numbers(value: float, digits: int, expected: str) -> None:
+    assert _num(value, 1, digits) == expected

@@ -185,7 +185,10 @@ def _lang(language: str | None) -> int:
 
 
 def _num(value: float, lang: int, digits: int = 2) -> str:
-    text = f"{value:.{digits}f}".rstrip("0").rstrip(".")
+    text = f"{value:.{digits}f}"
+    # Only decimals lose their trailing zeros: 90 with no decimals stays 90.
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
     return text.replace(".", ",") if lang else text
 
 
