@@ -48,7 +48,12 @@ Days with backup heater electricity are left out: whether a heat counter
 holds the heater's heat depends on the source, and Fraunhofer's SPF 2 is
 the heat pump alone. Without a return temperature the sink is the flow
 temperature, which makes the Carnot COP smaller and the factor too high
-(flow 35 °C, spread 5 K, outdoor 0 °C: 6.8 %); the attribute says so.
+(flow 35 °C, spread 5 K, outdoor 0 °C: 6.8 %). The attributes give the
+days and the share of the heat counted that way (`flow_only_days`,
+`flow_only_percent`); `sink: flow_only` (and the card's note) only from
+FLOW_ONLY_NOTE_SHARE of the heat on. In the look-back an hour counts
+without a return when the return has no hourly mean or lies above the
+flow; before, a single such hour in the season marked the whole of it.
 """
 
 from __future__ import annotations
@@ -79,6 +84,12 @@ MAX_AUX_KWH = 0.1
 MIN_STATISTICS_HOURS = 2
 # Kelvin a lower heating curve is shown for.
 LOWER_FLOW_KELVINS = (1, 2, 3)
+# Own assumption: from this share of the heat counted without a return the
+# attribute (and the card) says "flow only". Below it the factor is at most
+# ~0.7 % too high (6.8 % at the whole heat, see the module), less than the
+# look-back's own error; a single hour or day without a return (a gap in
+# the return's statistics, a defrost hour) no longer marks the season.
+FLOW_ONLY_NOTE_SHARE = 0.1
 MONTH_MIN_DAYS = 7
 SEASON_MIN_DAYS = 14
 # Fraunhofer's reference period: November to March (Günther et al. 2026).
@@ -114,9 +125,16 @@ class FactorDay:
     sink: float  # °C
     source: float  # °C
     cop: float  # Carnot
-    flow_only: bool  # no spread: the sink is the flow temperature
+    # Share of the heat whose sink is the flow temperature alone (no
+    # spread, no return in the hour): 0 … 1.
+    flow_only_share: float
     day_mean_source: bool  # no outdoor mean while heating
     from_statistics: bool = False  # hourly means, not the diary
+
+    @property
+    def flow_only(self) -> bool:
+        """Part of the day counted without a return temperature."""
+        return self.flow_only_share > 0
 
 
 def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
@@ -144,7 +162,9 @@ def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
     cop = carnot_cop(sink, float(source))
     if cop is None:
         return SKIP_SMALL_LIFT
-    return FactorDay(heat, electricity, sink, float(source), cop, flow_only, day_mean)
+    return FactorDay(
+        heat, electricity, sink, float(source), cop, float(flow_only), day_mean
+    )
 
 
 def statistics_days(
@@ -164,7 +184,7 @@ def statistics_days(
         day[1] += totals.get(Kind.ELEC, Mode.HEATING)
         day[2] += totals.get(Kind.AUX, Mode.HEATING)
     # Per day: heat, heat / Carnot COP, heat * sink, heat * source, hours,
-    # hours without a return temperature.
+    # heat of the hours without a return temperature.
     sums: dict[date, list[float]] = {}
     for hour, heat in heating_weights(hours).items():
         value, source = flow.get(hour), outdoor.get(hour)
@@ -181,7 +201,8 @@ def statistics_days(
         row[2] += heat * sink
         row[3] += heat * source
         row[4] += 1
-        row[5] += flow_only
+        if flow_only:
+            row[5] += heat
     days: dict[date, FactorDay | str] = {}
     for day, (heat, electricity, aux) in energy.items():
         if heat <= 0 or electricity <= 0:
@@ -198,7 +219,7 @@ def statistics_days(
                 sink=sink / weight,
                 source=source / weight,
                 cop=weight / ideal,
-                flow_only=flow_only > 0,
+                flow_only_share=flow_only / weight,
                 day_mean_source=False,
                 from_statistics=True,
             )
@@ -216,13 +237,20 @@ class EfficiencyFactor:
     sink: float | None  # °C, heat-weighted
     source: float | None  # °C, heat-weighted
     carnot_cop: float | None  # heat over ideal electricity
-    flow_only_days: int
+    flow_only_days: int  # days with at least some heat without a return
     day_mean_days: int
     statistics_days: int = 0
     skipped: dict[str, int] = field(default_factory=dict)
     reason: str | None = None
+    # Heat counted without a return temperature (kWh, of heat_kwh).
+    flow_only_kwh: float = 0.0
     # kWh a heating curve k kelvin lower would have saved (with a value).
     lower_flow_kwh: dict[int, float] = field(default_factory=dict)
+
+    @property
+    def flow_only_share(self) -> float:
+        """Share of the heat counted without a return temperature."""
+        return self.flow_only_kwh / self.heat_kwh if self.heat_kwh > 0 else 0.0
 
     def as_attributes(self) -> dict[str, Any]:
         return {
@@ -231,8 +259,13 @@ class EfficiencyFactor:
             "sink_temp": _round(self.sink, 1),
             "source_temp": _round(self.source, 1),
             "carnot_cop": _round(self.carnot_cop, 2),
-            # "mean_flow_return" or "flow_only" (factor too high, see module).
-            "sink": "flow_only" if self.flow_only_days else "mean_flow_return",
+            # "mean_flow_return" or "flow_only" (factor too high, see module),
+            # the latter from FLOW_ONLY_NOTE_SHARE of the heat on.
+            "sink": "flow_only"
+            if self.flow_only_share >= FLOW_ONLY_NOTE_SHARE
+            else "mean_flow_return",
+            "flow_only_days": self.flow_only_days,
+            "flow_only_percent": round(100 * self.flow_only_share, 1),
             "source": "day_mean" if self.day_mean_days else "while_heating",
             # Days from the hourly statistics (look-back) among `days`.
             "days_from_statistics": self.statistics_days,
@@ -275,7 +308,7 @@ def efficiency_factor(
     }
     statistics = statistics or {}
     counted: list[FactorDay] = []
-    heat = electricity = ideal = sink = source = 0.0
+    heat = electricity = ideal = sink = source = flow_only_kwh = 0.0
     days = flow_only = day_mean = from_statistics = 0
     skipped: dict[str, int] = {}
     for day in _dates(first, last):
@@ -298,6 +331,7 @@ def efficiency_factor(
         sink += found.heat * found.sink
         source += found.heat * found.source
         flow_only += found.flow_only
+        flow_only_kwh += found.heat * found.flow_only_share
         day_mean += found.day_mean_source
         from_statistics += found.from_statistics
     reason = None
@@ -319,6 +353,7 @@ def efficiency_factor(
         statistics_days=from_statistics,
         skipped=skipped,
         reason=reason,
+        flow_only_kwh=flow_only_kwh,
         lower_flow_kwh={} if value is None else lower_flow_savings(counted, value),
     )
 

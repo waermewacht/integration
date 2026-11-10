@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- **Gütegrad: „ohne Rücklauf, eher zu hoch“ erst, wenn es etwas ausmacht.** Der Hinweis kam schon, wenn in der ganzen Saison ein einziger Tag oder im Rückblick eine einzige Stunde ohne Rücklauf gerechnet war, etwa bei einer Lücke in der Statistik des Rücklaufs, auch an Anlagen mit Rücklauf. Jetzt zählt der Anteil der Wärme: `sink: flow_only` und der Hinweis in der Karte erst ab einem Zehntel der Wärme (darunter liegt der Gütegrad höchstens etwa 0,7 % zu hoch). Neue Attribute `flow_only_days` (Tage mit Wärme ohne Rücklauf) und `flow_only_percent` (Anteil der Wärme). Anlass: Rückmeldung aus dem simon42-Forum.
+- **Zahnrad: Hinweis zur Langzeitstatistik nennt Vor- oder Rücklauf.** Bisher hieß es „Vor- oder Rücklauf ohne Langzeitstatistik“, ohne zu sagen, welcher, und mit der Folge für den Vorlauf auch dann, wenn nur der Rücklauf fehlte. Jetzt: „Vorlauf ohne Langzeitstatistik (keine state_class): kein Vorlauf bei 0 °C, Gütegrad erst ab der Einrichtung.“ bzw. „Rücklauf ohne Langzeitstatistik (keine state_class): Gütegrad vor der Einrichtung nur mit dem Vorlauf (eher zu hoch).“ Anlass: Rückmeldung aus dem simon42-Forum.
 - **Abschnitt „Sonderzähler“: Beschreibung passt zu 0.6.2.** Sie nannte noch Zähler für Laufzeit *und* Starts im Heizbetrieb; für den Rückblick reicht seit 0.6.2 die Laufzeit allein.
 
 ## 0.6.2 – 2026-11-10

@@ -150,8 +150,12 @@ HINTS = {
         "Außentemperatur ohne Langzeitstatistik (keine state_class): keine AZ-Kennlinie, Heizlast und Gradtage.",
     ),
     "flow_statistics": (
-        "Flow or return temperature without long-term statistics (no state class): no flow temperature at 0 °C, the efficiency factor only from the setup.",
-        "Vor- oder Rücklauf ohne Langzeitstatistik (keine state_class): kein Vorlauf bei 0 °C, Gütegrad erst ab der Einrichtung.",
+        "Flow temperature without long-term statistics (no state class): no flow temperature at 0 °C, the efficiency factor only from the setup.",
+        "Vorlauf ohne Langzeitstatistik (keine state_class): kein Vorlauf bei 0 °C, Gütegrad erst ab der Einrichtung.",
+    ),
+    "return_statistics": (
+        "Return temperature without long-term statistics (no state class): before the setup the efficiency factor counts the flow alone (rather too high).",
+        "Rücklauf ohne Langzeitstatistik (keine state_class): Gütegrad vor der Einrichtung nur mit dem Vorlauf (eher zu hoch).",
     ),
     "design": (
         "No design outdoor temperature: heat load per kelvin only.",
@@ -328,8 +332,13 @@ def heat_pump_summary(
         hints.append(h("outdoor_statistics"))
     elif options.get(CONF_DESIGN_TEMP) is None:
         hints.append(h("design"))
-    if {Signal.FLOW_TEMP, Signal.RETURN_TEMP} & set(no_statistics) & mapped:
+    # Name the sensor: without the flow's statistics there is no look-back
+    # at all, without the return's the look-back counts the flow alone.
+    missing = set(no_statistics) & mapped
+    if Signal.FLOW_TEMP in missing:
         hints.append(h("flow_statistics"))
+    elif Signal.RETURN_TEMP in missing:
+        hints.append(h("return_statistics"))
     if fixed is None and not options.get(CONF_ELECTRICITY_PRICE_ENTITY):
         hints.append(h("price"))
     if options.get(CONF_GRID_IMPORT_ENTITY) and not (

@@ -214,7 +214,22 @@ def test_temperatures_without_statistics() -> None:
         no_statistics={Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP},
     )
     assert "- Außentemperatur ohne Langzeitstatistik (keine state_class)" in text
-    assert "- Vor- oder Rücklauf ohne Langzeitstatistik (keine state_class)" in text
+    assert "- Vorlauf ohne Langzeitstatistik (keine state_class)" in text
+    # Without the flow's statistics the return does not matter any more.
+    assert "Rücklauf ohne" not in text
+    # Only the return (forum 95035 #117): named, with its own consequence.
+    only_return = heat_pump_summary(
+        EMS_ESP,
+        {"electricity_price": 30.0, "design_outdoor_temp": -12.0},
+        None,
+        "de",
+        no_statistics={Signal.RETURN_TEMP},
+    )
+    assert (
+        "- Rücklauf ohne Langzeitstatistik (keine state_class): Gütegrad vor "
+        "der Einrichtung nur mit dem Vorlauf (eher zu hoch)."
+    ) in only_return
+    assert "kein Vorlauf bei 0 °C" not in only_return
     complete = heat_pump_summary(
         EMS_ESP, {"electricity_price": 30.0, "design_outdoor_temp": -12.0}, None, "de"
     )

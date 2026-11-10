@@ -162,9 +162,29 @@ def test_flow_only_is_marked() -> None:
     days = [entry(DAY + timedelta(days=i), spread=None) for i in range(7)]
     result = efficiency_factor(days, DAY, DAY + timedelta(days=6), min_days=7)
     assert result.flow_only_days == 7
-    assert result.as_attributes()["sink"] == "flow_only"
+    attributes = result.as_attributes()
+    assert attributes["sink"] == "flow_only"
+    assert attributes["flow_only_days"] == 7
+    assert attributes["flow_only_percent"] == 100.0
     # The Carnot COP of the flow alone is smaller: the factor comes out higher.
     assert result.value == pytest.approx(4.0 / 8.804, abs=1e-3)
+
+
+def test_a_few_days_without_return_do_not_mark_the_period() -> None:
+    # Forum 95035 #119: one day without a return marked the whole season.
+    days = [entry(DAY + timedelta(days=i)) for i in range(19)]
+    days.append(entry(DAY + timedelta(days=19), spread=None))
+    result = efficiency_factor(days, DAY, DAY + timedelta(days=19), min_days=7)
+    attributes = result.as_attributes()
+    assert attributes["flow_only_days"] == 1
+    assert attributes["flow_only_percent"] == 5.0
+    assert attributes["sink"] == "mean_flow_return"
+    # From a tenth of the heat on it says so.
+    days.append(entry(DAY + timedelta(days=20), spread=None))
+    days.append(entry(DAY + timedelta(days=21), spread=None))
+    more = efficiency_factor(days, DAY, DAY + timedelta(days=21), min_days=7)
+    assert more.as_attributes()["flow_only_percent"] == pytest.approx(13.6)
+    assert more.as_attributes()["sink"] == "flow_only"
 
 
 def test_field_reference() -> None:
@@ -229,6 +249,18 @@ def test_statistics_day_reasons() -> None:
     )
     without_return = statistics_days(*hourly(DAY, 5, ret=None), BERLIN)[DAY]
     assert isinstance(without_return, FactorDay) and without_return.flow_only
+    assert without_return.flow_only_share == pytest.approx(1.0)
+
+
+def test_statistics_day_share_without_return() -> None:
+    # One of ten hours without a return mean: a tenth of the heat, not the
+    # whole day.
+    totals, flows, rets, outs = hourly(DAY, 10)
+    del rets[min(rets)]
+    found = statistics_days(totals, flows, rets, outs, BERLIN)[DAY]
+    assert isinstance(found, FactorDay) and found.flow_only
+    assert found.flow_only_share == pytest.approx(0.1)
+    assert found.sink == pytest.approx(32.75)
 
 
 def test_diary_while_heating_wins_statistics_fill_in() -> None:
