@@ -25,6 +25,7 @@ from custom_components.waermewacht.carnot import (
     field_reference,
     statistics_days,
     winter_span,
+    winter_year,
 )
 from custom_components.waermewacht.energy import Totals
 
@@ -297,22 +298,31 @@ def test_old_diary_day_prefers_statistics() -> None:
 # Winter (November to March), the field test's period.
 
 
+def test_winter_year() -> None:
+    # The heating year runs July to June.
+    assert winter_year(date(2026, 6, 30)) == 2025
+    assert winter_year(date(2026, 7, 1)) == 2026
+    assert winter_year(date(2026, 11, 9)) == 2026
+    assert winter_year(date(2027, 2, 1)) == 2026
+
+
 def test_winter_span() -> None:
-    # Season from 1 July: the winter of that season, clipped to yesterday.
-    assert winter_span(date(2026, 7, 1), date(2026, 10, 31)) is None
-    assert winter_span(date(2026, 7, 1), date(2026, 12, 9)) == (
+    # Clipped to first … last; None before November.
+    assert winter_span(2026, date(2025, 7, 1), date(2026, 10, 31)) is None
+    assert winter_span(2026, date(2025, 7, 1), date(2026, 12, 9)) == (
         date(2026, 11, 1),
         date(2026, 12, 9),
     )
-    assert winter_span(date(2025, 7, 1), date(2026, 6, 30)) == (
+    assert winter_span(2025, date(2025, 7, 1), date(2026, 6, 30)) == (
         date(2025, 11, 1),
         date(2026, 3, 31),
     )
-    # Season from 1 January: November and December of that year only.
-    assert winter_span(date(2026, 1, 1), date(2026, 12, 31)) == (
-        date(2026, 11, 1),
-        date(2026, 12, 31),
+    # Data only from January: the part before is cut off.
+    assert winter_span(2025, date(2026, 1, 1), date(2026, 6, 30)) == (
+        date(2026, 1, 1),
+        date(2026, 3, 31),
     )
+    assert winter_span(2024, date(2026, 1, 1), date(2026, 6, 30)) is None
 
 
 def test_factor_spans() -> None:
@@ -328,6 +338,33 @@ def test_factor_spans() -> None:
         date(2026, 7, 1), date(2025, 7, 1), date(2026, 10, 1), date(2026, 10, 9)
     )
     assert "winter" not in before
+    assert before["previous_winter"] == (date(2025, 11, 1), date(2026, 3, 31), 14)
+    # Spring of the same heating year: the winter just past is "winter".
+    spring = factor_spans(
+        date(2025, 7, 1), date(2024, 7, 1), date(2026, 5, 1), date(2026, 5, 9)
+    )
+    assert spring["winter"] == (date(2025, 11, 1), date(2026, 3, 31), 14)
+    assert spring["previous_winter"] == (date(2024, 11, 1), date(2025, 3, 31), 14)
+
+
+def test_factor_spans_season_from_january() -> None:
+    """A season from January cuts every winter in two; the winters stay
+    November to March (simon42 95035 #126: previous winter 55 days instead
+    of 137, January to March missing)."""
+    spans = factor_spans(
+        date(2026, 1, 1), date(2025, 1, 1), date(2026, 11, 1), date(2026, 11, 9)
+    )
+    assert spans["season"] == (date(2026, 1, 1), date(2026, 11, 9), 14)
+    assert spans["previous_season"] == (date(2025, 1, 1), date(2025, 12, 31), 14)
+    assert spans["winter"] == (date(2026, 11, 1), date(2026, 11, 9), 14)
+    assert spans["previous_winter"] == (date(2025, 11, 1), date(2026, 3, 31), 14)
+    # In February the winter runs on across the new season.
+    february = factor_spans(
+        date(2027, 1, 1), date(2026, 1, 1), date(2027, 2, 1), date(2027, 2, 9)
+    )
+    assert february["winter"] == (date(2026, 11, 1), date(2027, 2, 9), 14)
+    # The statistics begin with the previous season: its winter from January.
+    assert february["previous_winter"] == (date(2026, 1, 1), date(2026, 3, 31), 14)
 
 
 def test_factor_attributes() -> None:

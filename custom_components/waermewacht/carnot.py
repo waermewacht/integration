@@ -374,13 +374,17 @@ def lower_flow_savings(days: Iterable[FactorDay], factor: float) -> dict[int, fl
     return result
 
 
-def winter_span(first: date, last: date) -> tuple[date, date] | None:
-    """The first November to March within first … last (clipped to it),
-    the field test's period; None if it has not begun yet."""
-    start = date(first.year, WINTER_FIRST_MONTH, 1)
-    if start < first:
-        start = date(first.year + 1, WINTER_FIRST_MONTH, 1)
-    end = min(date(start.year + 1, WINTER_LAST_MONTH, 31), last)
+def winter_year(day: date) -> int:
+    """Year of the November that opens the winter of `day`'s heating year
+    (July to June): from July on this year's, before July last year's."""
+    return day.year if day.month >= 7 else day.year - 1
+
+
+def winter_span(year: int, first: date, last: date) -> tuple[date, date] | None:
+    """November of `year` to March of the next, the field test's period,
+    clipped to first … last; None if nothing of it lies within."""
+    start = max(date(year, WINTER_FIRST_MONTH, 1), first)
+    end = min(date(year + 1, WINTER_LAST_MONTH, 31), last)
     return None if start > end else (start, end)
 
 
@@ -388,19 +392,20 @@ def factor_spans(
     season: date, previous: date, month: date, yesterday: date
 ) -> dict[str, tuple[date, date, int]]:
     """Periods of the sensor: name -> (first day, last day, minimum days).
-    Season and month so far, the previous season, and the winter (November
-    to March, compared with the field test) of both."""
+    Season and month so far, the previous season, and the winters (November
+    to March, compared with the field test): the one of yesterday's heating
+    year (July to June) and the one before. Independent of the season start:
+    a season from January would cut every winter in two. Clipped to the
+    start of the previous season, where the loaded statistics begin."""
     previous_end = season - timedelta(days=1)
     spans = {
         "season": (season, yesterday, SEASON_MIN_DAYS),
         "month": (month, yesterday, MONTH_MIN_DAYS),
         "previous_season": (previous, previous_end, SEASON_MIN_DAYS),
     }
-    for name, first, last in (
-        ("winter", season, yesterday),
-        ("previous_winter", previous, previous_end),
-    ):
-        if (span := winter_span(first, last)) is not None:
+    year = winter_year(yesterday)
+    for name, winter in (("winter", year), ("previous_winter", year - 1)):
+        if (span := winter_span(winter, previous, yesterday)) is not None:
             spans[name] = (*span, SEASON_MIN_DAYS)
     return spans
 
