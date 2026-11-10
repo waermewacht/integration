@@ -778,6 +778,7 @@ async def test_options_suggest_meters_and_price_from_tarifwacht(
         "pv": False,
         "heat_load": True,
         "limits": True,
+        "price_change": True,
     }
 
 
