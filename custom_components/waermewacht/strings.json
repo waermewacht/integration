@@ -90,7 +90,7 @@
               "runtime_heating": "Compressor run time heating (counter)",
               "starts_heating": "Compressor starts heating (counter)"
             },
-            "description": "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), counts the electricity of defrosts and standby apart (Lambda, iDM), or has counters of run time and starts in heating (look-back of the run time per outdoor temperature).",
+            "description": "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), counts the electricity of defrosts and standby apart (Lambda, iDM), or has a counter of the run time in heating, optionally also of the starts (look-back of the run time per outdoor temperature).",
             "data_description": {
               "heat_total": "One heat meter for heating and hot water (e.g. between heat pump and buffer tank). Wärmewacht books it to the mode running; needs the activity for hot water. Then leave the heat per mode empty; cooling keeps a meter of its own.",
               "elec_total": "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",

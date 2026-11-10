@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Abschnitt „Sonderzähler“: Beschreibung passt zu 0.6.2.** Sie nannte noch Zähler für Laufzeit *und* Starts im Heizbetrieb; für den Rückblick reicht seit 0.6.2 die Laufzeit allein.
+
 ## 0.6.2 – 2026-11-10
 
 - **„Kleinste Heizleistung“ sagt, was gemeint ist.** Die Hilfe zum Feld nennt jetzt „Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch“. Mit dem kleinsten gemessenen Stromverbrauch (etwa 0,8 kW statt 6,9 kW Wärme) lag die Erwartung, ab wann die Wärmepumpe durchlaufen sollte, viel zu warm. Bestehende Einträge: unter *Einstellungen* prüfen. Anlass: Rückmeldung aus dem simon42-Forum.

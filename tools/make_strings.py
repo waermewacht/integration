@@ -546,8 +546,8 @@ SECTIONS = {
             "starts_heating",
         ),
         (
-            "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), counts the electricity of defrosts and standby apart (Lambda, iDM), or has counters of run time and starts in heating (look-back of the run time per outdoor temperature).",
-            "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder Zähler für Laufzeit und Starts im Heizbetrieb hat (Rückblick der Laufzeit je Außentemperatur).",
+            "Only if the heat pump counts heat or electricity not per mode (then leave the fields per mode empty), counts the electricity of defrosts and standby apart (Lambda, iDM), or has a counter of the run time in heating, optionally also of the starts (look-back of the run time per outdoor temperature).",
+            "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder einen Zähler der Laufzeit im Heizbetrieb hat, gern auch der Starts (Rückblick der Laufzeit je Außentemperatur).",
         ),
     ),
     "measurements": (

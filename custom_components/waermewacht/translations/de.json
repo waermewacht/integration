@@ -90,7 +90,7 @@
               "runtime_heating": "Laufzeit Kompressor Heizen (Zähler)",
               "starts_heating": "Kompressorstarts Heizen (Zähler)"
             },
-            "description": "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder Zähler für Laufzeit und Starts im Heizbetrieb hat (Rückblick der Laufzeit je Außentemperatur).",
+            "description": "Nur, wenn die Wärmepumpe Wärme oder Strom nicht je Betriebsart zählt (dann die Felder je Betriebsart leer lassen), den Strom fürs Abtauen und den Stillstand getrennt zählt (Lambda, iDM) oder einen Zähler der Laufzeit im Heizbetrieb hat, gern auch der Starts (Rückblick der Laufzeit je Außentemperatur).",
             "data_description": {
               "heat_total": "Ein Wärmemengenzähler für Heizen und Warmwasser (z. B. zwischen Wärmepumpe und Pufferspeicher). Wärmewacht bucht ihn auf die laufende Betriebsart; für Warmwasser braucht es die Betriebsart. Dann die Wärme je Betriebsart leer lassen; Kühlen behält einen eigenen Zähler.",
               "elec_total": "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
