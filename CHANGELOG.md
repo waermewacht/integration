@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.5 – 2026-11-10
+
+- **Gasvergleich: Grundpreise nur für die Zeit mit Daten.** Der Gas-Grundpreis (und der Strom-Grundpreis eines eigenen Wärmepumpenzählers) wurde über die ganze Saison verteilt, auch wenn die Zähler erst seit ein paar Tagen Langzeitstatistik haben. Dann stand der Grundpreis von Monaten gegen die Wärme weniger Tage, und die „Ersparnis ggü. Gaskessel“ war zu hoch (Beispiel: 61 € Grundpreis gegen 9 Tage Wärme statt rund 4 €). Jetzt zählen beide ab der ersten Stunde mit Daten. Mit Zählern, die die ganze Saison abdecken, ändert sich nichts.
+
 ## 0.6.4 – 2026-11-10
 
 - **Gütegrad: Winter immer November bis März, auch bei anderem Saisonbeginn.** Die Winterwerte (`winter`, `previous_winter`, mit dem Feldtest verglichen) lagen bisher innerhalb der Saison. Bei einem Saisonbeginn im Januar fielen so Januar bis März aus beiden heraus: Der vorige Winter hatte nur November und Dezember, der laufende fing erst im November an. Jetzt ist `winter` der Winter des laufenden Heizjahrs (Juli bis Juni) und `previous_winter` der davor, unabhängig vom Saisonbeginn. Mit dem vorgegebenen Saisonbeginn im Juli ändert sich nichts. Anlass: Rückmeldung aus dem simon42-Forum.
