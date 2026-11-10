@@ -97,6 +97,7 @@ from .const import (
     CONF_HISTORY,
     CONF_MIN_ELECTRICITY,
     CONF_MIN_POWER,
+    CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
     CONF_RATED_POWER,
     CONF_SEASON_START,
@@ -131,6 +132,7 @@ from .cycling import (
     season_starts_baseline,
     starts_projection,
 )
+from .dated import Dated, Price, dated, value_at
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
 from .duty import (
@@ -366,14 +368,26 @@ class HeatPumpRuntime:
         per_day = options.get(CONF_STARTS_PER_DAY)
         self.starts_per_day: int | None = None if per_day is None else int(per_day)
         self.tz = dt_util.get_default_time_zone()
-        # Prices are entered in ct/kWh; the cost module works in €/kWh.
-        self.electricity_price: float | None = _per_kwh(
-            options.get(CONF_ELECTRICITY_PRICE)
+
+        # Prices are entered in ct/kWh; the cost module works in €/kWh. Each
+        # with its price changes from a date on (dated.py): the options hold
+        # the prices from the start.
+        def dated_option(field: str, scale: float = 1.0) -> Price:
+            return dated(options, field, CONF_PRICE_CHANGES, self.tz, scale)
+
+        self.electricity_prices: Price = dated_option(CONF_ELECTRICITY_PRICE, 0.01)
+        self.electricity_base_prices: Price = dated_option(CONF_ELECTRICITY_BASE_PRICE)
+        self.gas_prices: Price = dated_option(CONF_GAS_PRICE, 0.01)
+        self.gas_base_prices: Price = dated_option(CONF_GAS_BASE_PRICE)
+        price_changes = any(
+            isinstance(p, Dated)
+            for p in (
+                self.electricity_prices,
+                self.electricity_base_prices,
+                self.gas_prices,
+                self.gas_base_prices,
+            )
         )
-        self.electricity_base_price: float | None = options.get(
-            CONF_ELECTRICITY_BASE_PRICE
-        )
-        self.gas_price: float | None = _per_kwh(options.get(CONF_GAS_PRICE))
         # Price sensor (dynamic tariff): costs hour by hour from the
         # statistics, the fixed price for hours without its price. Needs the
         # recorder; without it the fixed price alone counts.
@@ -397,12 +411,13 @@ class HeatPumpRuntime:
                 hass,
                 self.price_entity,
                 self.tz,
-                fixed=self.electricity_price,
+                fixed=self.electricity_prices,
                 day_values=self.template.previous_day,
                 meters=meters if self.grid_entity else None,
                 feed_in_rate=_per_kwh(options.get(CONF_FEED_IN_TARIFF)) or 0.0,
             )
-            if (self.price_entity or self.grid_entity)
+            # With price changes the hours are priced one by one too.
+            if (self.price_entity or self.grid_entity or price_changes)
             and "recorder" in hass.config.components
             else None
         )
@@ -518,7 +533,6 @@ class HeatPumpRuntime:
         self._analysis_day: date | None = None
         self._counter_check_day: date | None = None  # last check of counter kinds
         self._analysing = False
-        self.gas_base_price: float | None = options.get(CONF_GAS_BASE_PRICE)
         day_tz = None
         if self.template.day_values:
             day_tz = self.template.day_timezone or self.tz
@@ -2941,6 +2955,23 @@ class HeatPumpRuntime:
             self._issues[issue_id] = ""
 
     # Figures for the entities.
+
+    # Prices valid now (the dated ones at this moment).
+    @property
+    def electricity_price(self) -> float | None:
+        return value_at(self.electricity_prices, dt_util.utcnow())
+
+    @property
+    def electricity_base_price(self) -> float | None:
+        return value_at(self.electricity_base_prices, dt_util.utcnow())
+
+    @property
+    def gas_price(self) -> float | None:
+        return value_at(self.gas_prices, dt_util.utcnow())
+
+    @property
+    def gas_base_price(self) -> float | None:
+        return value_at(self.gas_base_prices, dt_util.utcnow())
 
     def energy(self, period: Period) -> Totals | None:
         return self.marks.energy(period, self.totals)

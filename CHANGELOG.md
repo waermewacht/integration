@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Preise mit Datum.** Neuer eingeklappter Abschnitt *Preisänderung ab einem Datum* im Zahnrad: Strompreis, Strom-Grundpreis, Gas-Arbeitspreis und Gas-Grundpreis ab einem Tag. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt, auch im Rückblick: Ein neuer Gaspreis macht die Ersparnis der Vorsaison nicht mehr nachträglich größer oder kleiner. Die Preise im Formular sind die Preise ab Beginn, leere Felder bleiben, wie sie sind; eine Änderung lässt sich im selben Abschnitt wieder entfernen. Die Übersicht oben im Zahnrad nennt alle Preisänderungen.
+
 ## 0.6.5 – 2026-11-10
 
 - **Gasvergleich: Grundpreise nur für die Zeit mit Daten.** Der Gas-Grundpreis (und der Strom-Grundpreis eines eigenen Wärmepumpenzählers) wurde über die ganze Saison verteilt, auch wenn die Zähler erst seit ein paar Tagen Langzeitstatistik haben. Dann stand der Grundpreis von Monaten gegen die Wärme weniger Tage, und die „Ersparnis ggü. Gaskessel“ war zu hoch (Beispiel: 61 € Grundpreis gegen 9 Tage Wärme statt rund 4 €). Jetzt zählen beide ab der ersten Stunde mit Daten. Mit Zählern, die die ganze Saison abdecken, ändert sich nichts.

@@ -36,6 +36,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, tzinfo
 
+from .dated import Dated, Price, value_at
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
 from .periods import local_midnight
@@ -158,7 +159,7 @@ def _price(value: float | None) -> float | None:
 def electricity_cost(
     hours: Mapping[datetime, Totals],
     *,
-    price: float | None,
+    price: Price,
     hourly_prices: Mapping[datetime, float] | None = None,
 ) -> ElectricityCost:
     """Cost of the electricity in `hours` (UTC hour start → booked energy).
@@ -166,8 +167,8 @@ def electricity_cost(
     With `hourly_prices` (€/kWh per UTC hour start) each hour is priced on
     its own; an hour without one falls back to the fixed `price`, or without
     that counts as missing. Without `hourly_prices`, `price` applies to all.
+    A dated `price` (dated.Dated) gives each hour the price of its time.
     """
-    price = _price(price)
     fallback = missing = hourly_count = 0
     cost = heat_cost = 0.0
     total = heat_total = missing_kwh = heat_missing = 0.0
@@ -177,7 +178,7 @@ def electricity_cost(
         total += kwh
         heat_total += heat_side
         hourly = None if hourly_prices is None else _price(hourly_prices.get(hour))
-        rate = hourly if hourly is not None else price
+        rate = hourly if hourly is not None else _price(value_at(price, hour))
         if abs(kwh) < NOISE_KWH:
             continue
         if rate is None:
@@ -233,6 +234,24 @@ def base_price_share(
     return annual * share
 
 
+def dated_base_share(
+    annual: Price, start: datetime, end: datetime, tz: tzinfo
+) -> float:
+    """base_price_share of a plain or dated annual price: each segment with
+    the annual price valid in it (none: nothing)."""
+    if not isinstance(annual, Dated):
+        value = _price(annual)
+        return 0.0 if value is None else base_price_share(value, start, end, tz)
+    return sum(
+        (
+            base_price_share(value, lower, upper, tz)
+            for lower, upper, value in annual.segments(start, end)
+            if _price(value) is not None
+        ),
+        0.0,
+    )
+
+
 def _days_in_year(day: date) -> int:
     return (date(day.year + 1, 1, 1) - date(day.year, 1, 1)).days
 
@@ -252,11 +271,11 @@ def compare_with_gas(
     end: datetime,
     tz: tzinfo,
     *,
-    electricity_price: float | None,
+    electricity_price: Price,
     gas_price: float | None,
     hourly_prices: Mapping[datetime, float] | None = None,
-    gas_base_price_per_year: float | None = None,
-    electricity_base_price_per_year: float | None = None,
+    gas_base_price_per_year: Price = None,
+    electricity_base_price_per_year: Price = None,
     boiler_efficiency: float = BOILER_EFFICIENCY_HS,
     factors: EmissionFactors = WITH_UPSTREAM,
     data_from: datetime | None = None,
@@ -296,8 +315,8 @@ def compare_costs(
     tz: tzinfo,
     *,
     gas_price: float | None,
-    gas_base_price_per_year: float | None = None,
-    electricity_base_price_per_year: float | None = None,
+    gas_base_price_per_year: Price = None,
+    electricity_base_price_per_year: Price = None,
     boiler_efficiency: float = BOILER_EFFICIENCY_HS,
     factors: EmissionFactors = WITH_UPSTREAM,
     data_from: datetime | None = None,
@@ -312,14 +331,10 @@ def compare_costs(
 
     gas_price = _price(gas_price)
     gas_energy_cost = None if gas_price is None else gas * gas_price
-    base = _price(gas_base_price_per_year)
-    gas_base_cost = 0.0 if base is None else base_price_share(base, base_start, end, tz)
+    gas_base_cost = dated_base_share(gas_base_price_per_year, base_start, end, tz)
     gas_cost = None if gas_energy_cost is None else gas_energy_cost + gas_base_cost
-    electricity_base = _price(electricity_base_price_per_year)
-    electricity_base_cost = (
-        0.0
-        if electricity_base is None
-        else base_price_share(electricity_base, base_start, end, tz)
+    electricity_base_cost = dated_base_share(
+        electricity_base_price_per_year, base_start, end, tz
     )
     heat_pump_cost = (
         None

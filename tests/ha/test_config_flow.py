@@ -534,6 +534,7 @@ async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
         "pv": True,
         "heat_load": True,
         "limits": True,
+        "price_change": True,
     }
     # No section has a default (the frontend would take it over the values
     # of its fields), and the fields carry the stored values.
@@ -575,6 +576,43 @@ async def test_options_saved_unopened_keep_their_values(hass: HomeAssistant) -> 
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert dict(entry.options) == {**STORED_OPTIONS, "electricity_price": 30.0}
+
+
+async def test_options_price_change_from_a_date(hass: HomeAssistant) -> None:
+    """A price change is added in its section, listed in the summary, kept
+    when saved unchanged and removed again; errors open the section."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="WP", data=entry_data(), options=STORED_OPTIONS
+    )
+    entry.add_to_hass(hass)
+    hass.states.async_set("sensor.grid_import", "100", KWH)
+    hass.states.async_set("sensor.price", "30", {"unit_of_measurement": "ct/kWh"})
+
+    async def save(change: dict) -> dict:
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        sent = unchanged_input(result)
+        sent["price_change"] = change
+        return await hass.config_entries.options.async_configure(
+            result["flow_id"], sent
+        )
+
+    result = await save({"change_gas_price": 14.0})
+    assert result["errors"] == {"base": "change_from_required"}
+    assert collapsed(result)["price_change"] is False
+    result = await save({"change_from": "2027-01-01", "change_gas_price": 14.0})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["price_changes"] == [{"from": "2027-01-01", "gas_price": 14.0}]
+    # Shown on top, kept when saved unchanged.
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    summary = result["description_placeholders"]["summary"]
+    assert "- **Price changes:** from 2027-01-01: gas 14 ct/kWh" in summary
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], unchanged_input(result)
+    )
+    assert entry.options["price_changes"] == [{"from": "2027-01-01", "gas_price": 14.0}]
+    result = await save({"remove_change": "2027-01-01"})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert "price_changes" not in entry.options
 
 
 async def test_reconfigure_shows_stored_meters_in_their_sections(

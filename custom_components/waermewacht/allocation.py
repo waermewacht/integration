@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from .costs import NOISE_KWH
+from .dated import Price, value_at
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
 from .solar import HourFlows, SolarSettings
@@ -128,7 +129,7 @@ def allocate(
     hours: Mapping[datetime, Totals],
     flows: Mapping[datetime, HourFlows],
     prices: Mapping[datetime, float],
-    fixed: float | None,
+    fixed: Price,
     split: SplitSettings,
 ) -> Allocation:
     """Split the heat pump electricity of `hours` (UTC hour starts).
@@ -155,7 +156,7 @@ def allocate(
         own = heat_pump - grid
         rate = _rate(prices.get(hour))
         if rate is None:
-            rate = _rate(fixed)
+            rate = _rate(value_at(fixed, hour))
         saving = 0.0 if rate is None else own * (rate - split.feed_in_rate)
         result = result + Allocation(
             kwh_grid=grid,

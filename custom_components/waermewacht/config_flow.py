@@ -71,6 +71,7 @@ from .const import (
     CONF_MIN_POWER,
     CONF_NAME,
     CONF_OIL_PRICE,
+    CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
     CONF_RATED_POWER,
     CONF_SEASON_START,
@@ -105,6 +106,7 @@ from .const import (
 )
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
+from .dated import CHANGE_FROM as DATED_FROM
 from .day_counters import async_wrong_counters, wrong_kind
 from .duty import MINUTE_FACTORS
 from .entity import own_entities
@@ -1027,7 +1029,54 @@ OPTION_DEFAULTS: dict[str, Any] = {
     CONF_SEASON_START: str(DEFAULT_SEASON_START_MONTH),
 }
 # The section that holds the fields an error is about: shown open.
-ERROR_SECTIONS = {"price_unit": "costs", "battery_both": "pv", "meter_unit": "pv"}
+ERROR_SECTIONS = {
+    "price_unit": "costs",
+    "battery_both": "pv",
+    "meter_unit": "pv",
+    "change_from_required": "price_change",
+    "change_empty": "price_change",
+    "change_exists": "price_change",
+}
+
+# Section "Price change from a date": a new price state (dated.py) or the
+# removal of one. Its fields are not options of their own.
+SECTION_PRICE_CHANGE = "price_change"
+CHANGE_FROM_KEY = DATED_FROM  # as stored
+CHANGE_FROM = "change_from"
+REMOVE_CHANGE = "remove_change"
+CHANGE_FIELDS: dict[str, str] = {
+    "change_electricity_price": CONF_ELECTRICITY_PRICE,
+    "change_electricity_base_price": CONF_ELECTRICITY_BASE_PRICE,
+    "change_gas_price": CONF_GAS_PRICE,
+    "change_gas_base_price": CONF_GAS_BASE_PRICE,
+}
+
+
+def apply_price_change(
+    changes: list[dict[str, Any]], section_input: dict[str, Any] | None
+) -> tuple[list[dict[str, Any]], str | None]:
+    """The price changes after the section's input: one removed and/or one
+    added. (changes, error key or None)."""
+    section_input = section_input or {}
+    result = [dict(c) for c in changes]
+    if remove := section_input.get(REMOVE_CHANGE):
+        result = [c for c in result if str(c[CHANGE_FROM_KEY]) != str(remove)]
+    values = {
+        field: float(section_input[key])
+        for key, field in CHANGE_FIELDS.items()
+        if section_input.get(key) not in ("", None)
+    }
+    day = section_input.get(CHANGE_FROM)
+    if not day and not values:
+        return result, None
+    if not day:
+        return changes, "change_from_required"
+    if not values:
+        return changes, "change_empty"
+    if any(str(c[CHANGE_FROM_KEY]) == str(day) for c in result):
+        return changes, "change_exists"
+    result.append({CHANGE_FROM_KEY: str(day), **values})
+    return sorted(result, key=lambda c: str(c[CHANGE_FROM_KEY])), None
 
 
 # Meters of the house for the split into grid and own electricity.
@@ -1069,7 +1118,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
             data = {
                 k: v
                 for k, v in user_input.items()
-                if k not in OPTIONAL_SECTIONS and v not in ("", None)
+                if k not in OPTIONAL_SECTIONS
+                and k != SECTION_PRICE_CHANGE
+                and v not in ("", None)
             }
             for name, keys in OPTIONAL_SECTIONS.items():
                 if name not in user_input:
@@ -1085,6 +1136,14 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 )
             data[SISTERS_OFFERED] = True
             self._apply_starts_now(data, options)
+            changes, change_error = apply_price_change(
+                list(options.get(CONF_PRICE_CHANGES) or []),
+                user_input.get(SECTION_PRICE_CHANGE),
+            )
+            if changes:
+                data[CONF_PRICE_CHANGES] = changes
+            if change_error:
+                errors["base"] = change_error
             price_entity = data.get(CONF_ELECTRICITY_PRICE_ENTITY)
             unit = _unit_of(self.hass, price_entity) if price_entity else None
             if price_entity and price_factor(unit) is None:
@@ -1111,7 +1170,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
             ):
                 errors["base"] = "meter_unit"
                 placeholders = {"entity": wrong}
-            else:
+            elif not errors:
                 return self.async_create_entry(data=data)
             options = data
         # Sections open: the one an error is about, those with suggestions.
@@ -1235,6 +1294,29 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     )
                 }
             )
+        # Price change from a date (collapsed): new prices, or remove one.
+        change_part: dict[Any, Any] = {
+            vol.Optional(CHANGE_FROM): selector.DateSelector(),
+            **{
+                vol.Optional(key): fields[field] for key, field in CHANGE_FIELDS.items()
+            },
+        }
+        stored = list(self.config_entry.options.get(CONF_PRICE_CHANGES) or [])
+        if stored:
+            change_part[vol.Optional(REMOVE_CHANGE)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[str(c[CHANGE_FROM_KEY]) for c in stored],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
+        schema = schema.extend(
+            {
+                vol.Optional(SECTION_PRICE_CHANGE): section(
+                    vol.Schema(change_part),
+                    {"collapsed": SECTION_PRICE_CHANGE not in expanded},
+                )
+            }
+        )
         template = TEMPLATES.get(self.config_entry.data.get(CONF_TEMPLATE) or "")
         # Whole kWh is known only from the readings of the loaded entry.
         coarse_heat_modes = (

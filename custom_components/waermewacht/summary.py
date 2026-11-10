@@ -10,6 +10,7 @@ here (`de` for a German Home Assistant, English otherwise).
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping
+from datetime import date
 from typing import Any
 
 from .allocation import PROPORTIONAL, rule_for
@@ -19,14 +20,17 @@ from .const import (
     CONF_BOILER_TYPE,
     CONF_CRITICAL_RUN,
     CONF_DESIGN_TEMP,
+    CONF_ELECTRICITY_BASE_PRICE,
     CONF_ELECTRICITY_PRICE,
     CONF_ELECTRICITY_PRICE_ENTITY,
     CONF_FEED_IN_ENTITY,
     CONF_FLOW_IN_CIRCUIT,
+    CONF_GAS_BASE_PRICE,
     CONF_GAS_PRICE,
     CONF_GRID_IMPORT_ENTITY,
     CONF_MANUAL_UNIT,
     CONF_OIL_PRICE,
+    CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
     CONF_SHORT_RUN,
     CONF_STARTS_PER_DAY,
@@ -40,6 +44,7 @@ from .const import (
     TANK,
 )
 from .costs import BOILER_EFFICIENCY_HS
+from .dated import CHANGE_FROM, sorted_changes
 from .model import (
     AUX_SIGNALS,
     ELEC_SIGNALS,
@@ -83,6 +88,12 @@ T = {
     "return": ("return", "Rücklauf"),
     "boiler": ("boiler", "Kessel"),
     "price": ("Electricity price", "Strompreis"),
+    "price_changes": ("Price changes", "Preisänderungen"),
+    "from": ("from", "ab"),
+    "ch_electricity": ("electricity", "Strom"),
+    "ch_electricity_base": ("electricity base", "Strom-Grundpreis"),
+    "ch_gas": ("gas", "Gas"),
+    "ch_gas_base": ("gas base", "Gas-Grundpreis"),
     "fixed": ("fixed", "fest"),
     "sensor": ("sensor", "Sensor"),
     "fallback": ("else", "sonst"),
@@ -188,6 +199,33 @@ def _lang(language: str | None) -> int:
     return 1 if (language or "").lower().startswith("de") else 0
 
 
+CHANGE_UNITS = (
+    (CONF_ELECTRICITY_PRICE, "ch_electricity", "ct/kWh"),
+    (CONF_ELECTRICITY_BASE_PRICE, "ch_electricity_base", "€/a"),
+    (CONF_GAS_PRICE, "ch_gas", "ct/kWh"),
+    (CONF_GAS_BASE_PRICE, "ch_gas_base", "€/a"),
+)
+
+
+def price_change_text(options: Mapping[str, Any], lang: int) -> str | None:
+    """The price changes in one line ("from 01.01.2027: gas 13.98 ct/kWh;
+    …"), None without any."""
+    changes = sorted_changes(options, CONF_PRICE_CHANGES)
+    if not changes:
+        return None
+    parts = []
+    for change in changes:
+        day = date.fromisoformat(str(change[CHANGE_FROM]))
+        when = day.strftime("%d.%m.%Y") if lang else day.isoformat()
+        values = ", ".join(
+            f"{T[label][lang]} {_num(float(change[field]), lang)} {unit}"
+            for field, label, unit in CHANGE_UNITS
+            if change.get(field) is not None
+        )
+        parts.append(f"{T['from'][lang]} {when}: {values}")
+    return "; ".join(parts)
+
+
 def _num(value: float, lang: int, digits: int = 2) -> str:
     text = f"{value:.{digits}f}"
     # Only decimals lose their trailing zeros: 90 with no decimals stays 90.
@@ -291,6 +329,8 @@ def heat_pump_summary(
     else:
         price = t("none")
     lines.append(f"**{t('price')}:** {price}")
+    if changes := price_change_text(options, lang):
+        lines.append(f"**{t('price_changes')}:** {changes}")
     if options.get(CONF_GRID_IMPORT_ENTITY):
         rule = rule_for(
             pv=bool(options.get(CONF_PV_ENTITY)),

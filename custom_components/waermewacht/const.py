@@ -83,6 +83,9 @@ CONF_FEED_IN_TARIFF: Final = "feed_in_tariff"  # ct/kWh, own electricity
 CONF_ELECTRICITY_BASE_PRICE: Final = "electricity_base_price"
 CONF_GAS_PRICE: Final = "gas_price"  # ct/kWh on the gross calorific value (Hs)
 CONF_GAS_BASE_PRICE: Final = "gas_base_price"  # EUR per year
+# Price changes from a date on: [{"from": "YYYY-MM-DD", <price field>: value}]
+# (dated.py); the price fields above are the prices from the start.
+CONF_PRICE_CHANGES: Final = "price_changes"
 CONF_DESIGN_TEMP: Final = "design_outdoor_temp"  # °C, DIN/TS 12831-1 by postcode
 
 # Storage: written every few minutes when something changed, at the end of a

@@ -28,6 +28,7 @@ from homeassistant.util import dt as dt_util
 
 from .allocation import PROPORTIONAL, Allocation, SplitSettings, mode_kwh, rule_for
 from .costs import ElectricityCost
+from .dated import Price, value_at
 from .energy import SEASONAL_MODES, Totals
 from .model import Mode
 from .periods import local_midnight
@@ -40,6 +41,7 @@ from .prices import (
     hours_between,
     period_allocation,
     period_cost,
+    period_gas_price,
     price_days,
     to_eur_per_kwh,
 )
@@ -79,7 +81,7 @@ class PriceFeed:
         entity_id: str | None,
         tz: tzinfo,
         *,
-        fixed: float | None,
+        fixed: Price,
         day_values: bool,
         meters: dict[str, str] | None = None,
         feed_in_rate: float = 0.0,
@@ -326,6 +328,17 @@ class PriceFeed:
                     prices[hour] = means[hour]
                     self.hours_from_states += 1
         return prices
+
+    def gas_price(
+        self, start: datetime, totals: Totals, gas: Price, now: datetime
+    ) -> float | None:
+        """Gas price of the period from `start`, each day's heat at the price
+        of its day (prices.period_gas_price)."""
+        if self.days is None or self.until is None:
+            return value_at(gas, now)
+        return period_gas_price(
+            self.days, start, totals, gas, max(self.until, start, floor_hour(now))
+        )
 
     def period(
         self, start: datetime, totals: Totals, now: datetime

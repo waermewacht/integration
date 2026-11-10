@@ -289,6 +289,9 @@
       "battery_both": "Batterie: bitte Lade- und Entladezähler wählen oder keinen.",
       "meter_unit": "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
       "price_unit": "{entity} meldet seinen Preis in „{unit}“. Möglich sind {units}.",
+      "change_from_required": "Preisänderung: Bitte „Gültig ab“ angeben.",
+      "change_empty": "Preisänderung: Mindestens einen neuen Preis eintragen.",
+      "change_exists": "Preisänderung: Für dieses Datum gibt es schon eine. Erst entfernen, dann neu eintragen.",
       "boiler_efficiency_missing": "Für „Eigener Wert“ den Nutzungsgrad eintragen."
     },
     "step": {
@@ -339,6 +342,25 @@
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
             "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein."
+          },
+          "price_change": {
+            "name": "Preisänderung ab einem Datum (optional)",
+            "data": {
+              "change_from": "Gültig ab",
+              "change_electricity_price": "Strompreis",
+              "change_electricity_base_price": "Strom-Grundpreis",
+              "change_gas_price": "Gas-Arbeitspreis",
+              "change_gas_base_price": "Gas-Grundpreis",
+              "remove_change": "Preisänderung entfernen"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh brutto, Netzbezug. Mit Strompreis-Sensor: für Stunden ohne dessen Preis.",
+              "change_electricity_base_price": "€ je Jahr brutto, nur bei eigenem Wärmepumpenzähler.",
+              "change_gas_price": "ct/kWh brutto, Brennwert.",
+              "change_gas_base_price": "€ je Jahr brutto.",
+              "remove_change": "Danach gelten wieder die Preise davor."
+            },
+            "description": "Neue Preise ab Mitternacht dieses Tages; davor gelten die bisherigen. Die Preise oben gelten ab Beginn. Leer gelassene Felder bleiben, wie sie sind. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt."
           },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",
@@ -447,6 +469,25 @@
             },
             "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
+          "price_change": {
+            "name": "Preisänderung ab einem Datum (optional)",
+            "data": {
+              "change_from": "Gültig ab",
+              "change_electricity_price": "Strompreis",
+              "change_electricity_base_price": "Strom-Grundpreis",
+              "change_gas_price": "Gas-Arbeitspreis",
+              "change_gas_base_price": "Gas-Grundpreis",
+              "remove_change": "Preisänderung entfernen"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh brutto, Netzbezug. Mit Strompreis-Sensor: für Stunden ohne dessen Preis.",
+              "change_electricity_base_price": "€ je Jahr brutto, nur bei eigenem Wärmepumpenzähler.",
+              "change_gas_price": "ct/kWh brutto, Brennwert.",
+              "change_gas_base_price": "€ je Jahr brutto.",
+              "remove_change": "Danach gelten wieder die Preise davor."
+            },
+            "description": "Neue Preise ab Mitternacht dieses Tages; davor gelten die bisherigen. Die Preise oben gelten ab Beginn. Leer gelassene Felder bleiben, wie sie sind. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt."
+          },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",
             "data": {
@@ -534,6 +575,25 @@
             },
             "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
+          "price_change": {
+            "name": "Preisänderung ab einem Datum (optional)",
+            "data": {
+              "change_from": "Gültig ab",
+              "change_electricity_price": "Strompreis",
+              "change_electricity_base_price": "Strom-Grundpreis",
+              "change_gas_price": "Gas-Arbeitspreis",
+              "change_gas_base_price": "Gas-Grundpreis",
+              "remove_change": "Preisänderung entfernen"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh brutto, Netzbezug. Mit Strompreis-Sensor: für Stunden ohne dessen Preis.",
+              "change_electricity_base_price": "€ je Jahr brutto, nur bei eigenem Wärmepumpenzähler.",
+              "change_gas_price": "ct/kWh brutto, Brennwert.",
+              "change_gas_base_price": "€ je Jahr brutto.",
+              "remove_change": "Danach gelten wieder die Preise davor."
+            },
+            "description": "Neue Preise ab Mitternacht dieses Tages; davor gelten die bisherigen. Die Preise oben gelten ab Beginn. Leer gelassene Felder bleiben, wie sie sind. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt."
+          },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",
             "data": {
@@ -620,6 +680,25 @@
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
             "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) oder [Einspeisewacht]({einspeisewacht_url}), sind diese Felder schon ausgefüllt."
+          },
+          "price_change": {
+            "name": "Preisänderung ab einem Datum (optional)",
+            "data": {
+              "change_from": "Gültig ab",
+              "change_electricity_price": "Strompreis",
+              "change_electricity_base_price": "Strom-Grundpreis",
+              "change_gas_price": "Gas-Arbeitspreis",
+              "change_gas_base_price": "Gas-Grundpreis",
+              "remove_change": "Preisänderung entfernen"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh brutto, Netzbezug. Mit Strompreis-Sensor: für Stunden ohne dessen Preis.",
+              "change_electricity_base_price": "€ je Jahr brutto, nur bei eigenem Wärmepumpenzähler.",
+              "change_gas_price": "ct/kWh brutto, Brennwert.",
+              "change_gas_base_price": "€ je Jahr brutto.",
+              "remove_change": "Danach gelten wieder die Preise davor."
+            },
+            "description": "Neue Preise ab Mitternacht dieses Tages; davor gelten die bisherigen. Die Preise oben gelten ab Beginn. Leer gelassene Felder bleiben, wie sie sind. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt."
           },
           "heat_load": {
             "name": "Heizleistung laut Datenblatt (optional)",

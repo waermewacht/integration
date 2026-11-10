@@ -607,6 +607,12 @@ MORE = (
 )
 
 OPTION_LABELS = {
+    "change_from": ("Valid from", "Gültig ab"),
+    "change_electricity_price": ("Electricity price", "Strompreis"),
+    "change_electricity_base_price": ("Electricity base price", "Strom-Grundpreis"),
+    "change_gas_price": ("Gas price", "Gas-Arbeitspreis"),
+    "change_gas_base_price": ("Gas base price", "Gas-Grundpreis"),
+    "remove_change": ("Remove a price change", "Preisänderung entfernen"),
     "min_electricity": (
         "Minimum electricity for a ratio",
         "Mindeststrom für eine Arbeitszahl",
@@ -651,6 +657,23 @@ OPTION_LABELS = {
     "min_power_kw": ("Smallest heating power", "Kleinste Heizleistung"),
 }
 OPTION_HELP = {
+    "change_electricity_price": (
+        "ct/kWh gross, grid electricity. With a price sensor: for hours without its price.",
+        "ct/kWh brutto, Netzbezug. Mit Strompreis-Sensor: für Stunden ohne dessen Preis.",
+    ),
+    "change_electricity_base_price": (
+        "€ per year gross, only for a separate heat pump meter.",
+        "€ je Jahr brutto, nur bei eigenem Wärmepumpenzähler.",
+    ),
+    "change_gas_price": (
+        "ct/kWh gross, gross calorific value.",
+        "ct/kWh brutto, Brennwert.",
+    ),
+    "change_gas_base_price": ("€ per year gross.", "€ je Jahr brutto."),
+    "remove_change": (
+        "Then the prices before apply again.",
+        "Danach gelten wieder die Preise davor.",
+    ),
     "starts_now": (
         "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time.",
         "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar.",
@@ -771,6 +794,24 @@ OPTION_SECTIONS = {
             "battery_charged_entity",
             "battery_discharged_entity",
             "feed_in_tariff",
+        ),
+    ),
+    "price_change": (
+        (
+            "Price change from a date (optional)",
+            "Preisänderung ab einem Datum (optional)",
+        ),
+        (
+            "New prices from midnight of that day; before it the previous ones apply. The prices above apply from the start. Fields left empty stay as they are. Costs and the gas comparison then use, hour by hour or day by day, the price valid at the time.",
+            "Neue Preise ab Mitternacht dieses Tages; davor gelten die bisherigen. Die Preise oben gelten ab Beginn. Leer gelassene Felder bleiben, wie sie sind. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt.",
+        ),
+        (
+            "change_from",
+            "change_electricity_price",
+            "change_electricity_base_price",
+            "change_gas_price",
+            "change_gas_base_price",
+            "remove_change",
         ),
     ),
     "heat_load": (
@@ -989,6 +1030,24 @@ def _build(lang: int) -> dict:
                     (
                         "{entity} reports its price in “{unit}”. Possible are {units}.",
                         "{entity} meldet seinen Preis in „{unit}“. Möglich sind {units}.",
+                    )
+                ),
+                "change_from_required": t(
+                    (
+                        "Price change: please enter “Valid from”.",
+                        "Preisänderung: Bitte „Gültig ab“ angeben.",
+                    )
+                ),
+                "change_empty": t(
+                    (
+                        "Price change: enter at least one new price.",
+                        "Preisänderung: Mindestens einen neuen Preis eintragen.",
+                    )
+                ),
+                "change_exists": t(
+                    (
+                        "Price change: there is already one for this date. Remove it first, then enter it again.",
+                        "Preisänderung: Für dieses Datum gibt es schon eine. Erst entfernen, dann neu eintragen.",
                     )
                 ),
             },

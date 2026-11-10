@@ -518,8 +518,8 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
             runtime.tz,
             electricity_price=runtime.electricity_price,
             gas_price=runtime.gas_price,
-            gas_base_price_per_year=runtime.gas_base_price,
-            electricity_base_price_per_year=runtime.electricity_base_price,
+            gas_base_price_per_year=runtime.gas_base_prices,
+            electricity_base_price_per_year=runtime.electricity_base_prices,
             data_from=runtime.data_from,
         )
     priced = runtime.prices.period(start, totals, now)
@@ -532,9 +532,10 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
         start,
         now,
         runtime.tz,
-        gas_price=runtime.gas_price,
-        gas_base_price_per_year=runtime.gas_base_price,
-        electricity_base_price_per_year=runtime.electricity_base_price,
+        # Dated prices: each day's heat at the gas price of its day.
+        gas_price=runtime.prices.gas_price(start, totals, runtime.gas_prices, now),
+        gas_base_price_per_year=runtime.gas_base_prices,
+        electricity_base_price_per_year=runtime.electricity_base_prices,
         data_from=runtime.data_from,
     )
 

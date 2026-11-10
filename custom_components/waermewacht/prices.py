@@ -32,6 +32,7 @@ from itertools import pairwise
 
 from .allocation import Allocation, SplitSettings, allocate
 from .costs import NO_ELECTRICITY, ElectricityCost, electricity_cost
+from .dated import Dated, Price, value_at
 from .energy import SEASONAL_MODES, Kind, Totals
 from .model import Mode
 from .periods import local_midnight
@@ -140,7 +141,7 @@ class PricedDay:
 def price_days(
     hours: Mapping[datetime, Totals],
     prices: Mapping[datetime, float],
-    fixed: float | None,
+    fixed: Price,
     tz: tzinfo,
     flows: Mapping[datetime, HourFlows] | None = None,
     split: SplitSettings | None = None,
@@ -183,7 +184,7 @@ def period_cost(
     totals: Totals,
     *,
     current: float | None,
-    fixed: float | None,
+    fixed: Price,
     at: datetime,
 ) -> tuple[ElectricityCost, float]:
     """Electricity cost and heat (heating + hot water) of a period from
@@ -223,6 +224,39 @@ def period_cost(
             else electricity.heat_cost_eur - allocation.heat_saving_eur,
         )
     return electricity, totals.heat(*SEASONAL_MODES)
+
+
+def period_gas_price(
+    days: Mapping[datetime, PricedDay],
+    start: datetime,
+    totals: Totals,
+    gas: Price,
+    at: datetime,
+) -> float | None:
+    """Gas price of a period from `start` weighted with the heat of its
+    days (dated.Dated: each day at its price); the heat the days do not hold
+    yet at the price of `at`. A plain price comes back as it is. None if a
+    day with heat has no price."""
+    if not isinstance(gas, Dated):
+        return gas
+    heat = totals.heat(*SEASONAL_MODES)
+    weighted = counted = 0.0
+    for day, priced in days.items():
+        if day < start or priced.heat_kwh <= 0:
+            continue
+        if (price := value_at(gas, day)) is None:
+            return None
+        weighted += priced.heat_kwh * price
+        counted += priced.heat_kwh
+    rest = heat - counted
+    if rest > 0:
+        if (price := value_at(gas, at)) is None:
+            return None
+        weighted += rest * price
+        counted += rest
+    if counted <= 0:
+        return value_at(gas, at)
+    return weighted / counted
 
 
 def price_source(electricity: ElectricityCost) -> str:

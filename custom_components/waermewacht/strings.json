@@ -289,6 +289,9 @@
       "battery_both": "Battery: please choose the charge and the discharge meter, or neither.",
       "meter_unit": "{entity} is no energy meter in Wh, kWh or MWh.",
       "price_unit": "{entity} reports its price in “{unit}”. Possible are {units}.",
+      "change_from_required": "Price change: please enter “Valid from”.",
+      "change_empty": "Price change: enter at least one new price.",
+      "change_exists": "Price change: there is already one for this date. Remove it first, then enter it again.",
       "boiler_efficiency_missing": "For \"Custom value\", enter the efficiency."
     },
     "step": {
@@ -339,6 +342,25 @@
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
             "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on."
+          },
+          "price_change": {
+            "name": "Price change from a date (optional)",
+            "data": {
+              "change_from": "Valid from",
+              "change_electricity_price": "Electricity price",
+              "change_electricity_base_price": "Electricity base price",
+              "change_gas_price": "Gas price",
+              "change_gas_base_price": "Gas base price",
+              "remove_change": "Remove a price change"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh gross, grid electricity. With a price sensor: for hours without its price.",
+              "change_electricity_base_price": "€ per year gross, only for a separate heat pump meter.",
+              "change_gas_price": "ct/kWh gross, gross calorific value.",
+              "change_gas_base_price": "€ per year gross.",
+              "remove_change": "Then the prices before apply again."
+            },
+            "description": "New prices from midnight of that day; before it the previous ones apply. The prices above apply from the start. Fields left empty stay as they are. Costs and the gas comparison then use, hour by hour or day by day, the price valid at the time."
           },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",
@@ -447,6 +469,25 @@
             },
             "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Tarifwacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
+          "price_change": {
+            "name": "Price change from a date (optional)",
+            "data": {
+              "change_from": "Valid from",
+              "change_electricity_price": "Electricity price",
+              "change_electricity_base_price": "Electricity base price",
+              "change_gas_price": "Gas price",
+              "change_gas_base_price": "Gas base price",
+              "remove_change": "Remove a price change"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh gross, grid electricity. With a price sensor: for hours without its price.",
+              "change_electricity_base_price": "€ per year gross, only for a separate heat pump meter.",
+              "change_gas_price": "ct/kWh gross, gross calorific value.",
+              "change_gas_base_price": "€ per year gross.",
+              "remove_change": "Then the prices before apply again."
+            },
+            "description": "New prices from midnight of that day; before it the previous ones apply. The prices above apply from the start. Fields left empty stay as they are. Costs and the gas comparison then use, hour by hour or day by day, the price valid at the time."
+          },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",
             "data": {
@@ -534,6 +575,25 @@
             },
             "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Einspeisewacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
+          "price_change": {
+            "name": "Price change from a date (optional)",
+            "data": {
+              "change_from": "Valid from",
+              "change_electricity_price": "Electricity price",
+              "change_electricity_base_price": "Electricity base price",
+              "change_gas_price": "Gas price",
+              "change_gas_base_price": "Gas base price",
+              "remove_change": "Remove a price change"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh gross, grid electricity. With a price sensor: for hours without its price.",
+              "change_electricity_base_price": "€ per year gross, only for a separate heat pump meter.",
+              "change_gas_price": "ct/kWh gross, gross calorific value.",
+              "change_gas_base_price": "€ per year gross.",
+              "remove_change": "Then the prices before apply again."
+            },
+            "description": "New prices from midnight of that day; before it the previous ones apply. The prices above apply from the start. Fields left empty stay as they are. Costs and the gas comparison then use, hour by hour or day by day, the price valid at the time."
+          },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",
             "data": {
@@ -620,6 +680,25 @@
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
             "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already."
+          },
+          "price_change": {
+            "name": "Price change from a date (optional)",
+            "data": {
+              "change_from": "Valid from",
+              "change_electricity_price": "Electricity price",
+              "change_electricity_base_price": "Electricity base price",
+              "change_gas_price": "Gas price",
+              "change_gas_base_price": "Gas base price",
+              "remove_change": "Remove a price change"
+            },
+            "data_description": {
+              "change_electricity_price": "ct/kWh gross, grid electricity. With a price sensor: for hours without its price.",
+              "change_electricity_base_price": "€ per year gross, only for a separate heat pump meter.",
+              "change_gas_price": "ct/kWh gross, gross calorific value.",
+              "change_gas_base_price": "€ per year gross.",
+              "remove_change": "Then the prices before apply again."
+            },
+            "description": "New prices from midnight of that day; before it the previous ones apply. The prices above apply from the start. Fields left empty stay as they are. Costs and the gas comparison then use, hour by hour or day by day, the price valid at the time."
           },
           "heat_load": {
             "name": "Heating power from the data sheet (optional)",
