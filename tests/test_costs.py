@@ -207,6 +207,34 @@ def test_electricity_base_price_of_a_heat_pump_meter() -> None:
     assert result.savings_eur == pytest.approx(10.0 - 8.5)
 
 
+def test_base_prices_count_from_the_first_hour_with_data() -> None:
+    """Meters with statistics for part of the period only: the base prices
+    cover the same time as the heat, not the whole period."""
+    hours, start, end = two_days()
+    common = {
+        "electricity_price": 0.30,
+        "gas_price": 0.10,
+        "gas_base_price_per_year": 365.0,
+        "electricity_base_price_per_year": 182.5,
+    }
+    second_day = start + timedelta(days=1)
+    result = compare_with_gas(hours, start, end, BERLIN, **common, data_from=second_day)
+    assert result.gas_base_cost_eur == pytest.approx(1.0)  # one day of two
+    assert result.electricity_base_cost_eur == pytest.approx(0.5)
+    assert result.gas_energy_cost_eur == pytest.approx(10.0)  # heat unchanged
+    # Data from before the period: the whole period, as without.
+    earlier = compare_with_gas(
+        hours, start, end, BERLIN, **common, data_from=start - timedelta(days=9)
+    )
+    assert earlier.gas_base_cost_eur == pytest.approx(2.0)
+    assert compare_with_gas(
+        hours, start, end, BERLIN, **common
+    ).gas_base_cost_eur == pytest.approx(2.0)
+    # No data in the period yet: no base price.
+    none = compare_with_gas(hours, start, end, BERLIN, **common, data_from=end)
+    assert none.gas_base_cost_eur == 0.0
+
+
 def test_compare_with_gas_direct_factors_and_efficiency() -> None:
     hours, start, end = two_days()
     result = compare_with_gas(

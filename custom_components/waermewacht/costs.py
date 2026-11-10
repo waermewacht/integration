@@ -23,6 +23,10 @@ Rules (docs/ENTWICKLUNG.md, "Emissionsfaktoren (Stufe 2)"):
 - An annual base price of electricity counts only for a meter of the heat pump
   alone (heat pump tariff); it is prorated the same way and belongs to heating
   and hot water. On the household meter it is paid anyway and left out.
+- Both base prices count from the first hour with data on (`data_from`):
+  a period the meters cover only in part (statistics since a few days)
+  would otherwise set a whole season of base price against a few days of
+  heat.
 """
 
 from __future__ import annotations
@@ -255,6 +259,7 @@ def compare_with_gas(
     electricity_base_price_per_year: float | None = None,
     boiler_efficiency: float = BOILER_EFFICIENCY_HS,
     factors: EmissionFactors = WITH_UPSTREAM,
+    data_from: datetime | None = None,
 ) -> CostComparison:
     """Costs and CO₂ of the heat pump and of a gas boiler in [start, end).
 
@@ -279,6 +284,7 @@ def compare_with_gas(
         electricity_base_price_per_year=electricity_base_price_per_year,
         boiler_efficiency=boiler_efficiency,
         factors=factors,
+        data_from=data_from,
     )
 
 
@@ -294,21 +300,26 @@ def compare_costs(
     electricity_base_price_per_year: float | None = None,
     boiler_efficiency: float = BOILER_EFFICIENCY_HS,
     factors: EmissionFactors = WITH_UPSTREAM,
+    data_from: datetime | None = None,
 ) -> CostComparison:
     """As compare_with_gas, from the electricity cost of [start, end) and the
-    heat of heating and hot water in it (priced elsewhere, prices.py)."""
+    heat of heating and hot water in it (priced elsewhere, prices.py).
+
+    `data_from`: the first hour with data; the base prices count from there
+    (None: from `start`)."""
     gas = gas_for_heat(heat, boiler_efficiency)
+    base_start = start if data_from is None else max(start, data_from)
 
     gas_price = _price(gas_price)
     gas_energy_cost = None if gas_price is None else gas * gas_price
     base = _price(gas_base_price_per_year)
-    gas_base_cost = 0.0 if base is None else base_price_share(base, start, end, tz)
+    gas_base_cost = 0.0 if base is None else base_price_share(base, base_start, end, tz)
     gas_cost = None if gas_energy_cost is None else gas_energy_cost + gas_base_cost
     electricity_base = _price(electricity_base_price_per_year)
     electricity_base_cost = (
         0.0
         if electricity_base is None
-        else base_price_share(electricity_base, start, end, tz)
+        else base_price_share(electricity_base, base_start, end, tz)
     )
     heat_pump_cost = (
         None

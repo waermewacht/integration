@@ -512,6 +512,9 @@ class HeatPumpRuntime:
         self.degree_days_previous: DegreeDays | None = None
         self.degree_days_same_period: DegreeDays | None = None
         self.analysed_at: datetime | None = None
+        # First hour with data since the previous season (daily analysis):
+        # base prices count from there (costs.compare_costs).
+        self.data_from: datetime | None = None
         self._analysis_day: date | None = None
         self._counter_check_day: date | None = None  # last check of counter kinds
         self._analysing = False
@@ -1471,6 +1474,7 @@ class HeatPumpRuntime:
                 previous.astimezone(self.tz).date(),
                 max(previous.astimezone(self.tz).date(), year_before(today)),
             )
+            self.data_from = min(hours) if hours else None
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
             if (entity_id := self.entities.get(Signal.STARTS_TOTAL)) is not None:

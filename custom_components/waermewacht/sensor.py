@@ -520,6 +520,7 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
             gas_price=runtime.gas_price,
             gas_base_price_per_year=runtime.gas_base_price,
             electricity_base_price_per_year=runtime.electricity_base_price,
+            data_from=runtime.data_from,
         )
     priced = runtime.prices.period(start, totals, now)
     if priced is None:  # prices not read yet (shortly after the start)
@@ -534,6 +535,7 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
         gas_price=runtime.gas_price,
         gas_base_price_per_year=runtime.gas_base_price,
         electricity_base_price_per_year=runtime.electricity_base_price,
+        data_from=runtime.data_from,
     )
 
 
