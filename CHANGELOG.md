@@ -2,7 +2,9 @@
 
 ## 0.6.6 – 2026-11-11
 
-- **Preise mit Datum.** Neuer eingeklappter Abschnitt *Preisänderung ab einem Datum* im Zahnrad: Strompreis, Strom-Grundpreis, Gas-Arbeitspreis und Gas-Grundpreis ab einem Tag. Kosten und Gasvergleich rechnen dann jede Stunde bzw. jeden Tag mit dem Preis, der damals galt, auch im Rückblick: Ein neuer Gaspreis macht die Ersparnis der Vorsaison nicht mehr nachträglich größer oder kleiner. Die Preise im Formular sind die Preise ab Beginn, leere Felder bleiben, wie sie sind; eine Änderung lässt sich im selben Abschnitt wieder entfernen. Die Übersicht oben im Zahnrad nennt alle Preisänderungen.
+### Neu
+
+- **Preise mit Datum.** Im Zahnrad gibt es den eingeklappten Abschnitt *Preisänderung ab einem Datum*: Strompreis, Strom-Grundpreis, Gas-Arbeitspreis und Gas-Grundpreis ab einem Tag. Kosten und Gasvergleich rechnen dann mit dem Preis, der damals galt, auch im Rückblick: Ein neuer Gaspreis verändert die Ersparnis der Vorsaison nicht mehr. Die Preise im Formular gelten ab Beginn, eine Änderung lässt sich im selben Abschnitt wieder entfernen, und die Übersicht oben im Zahnrad nennt alle.
 
 ## 0.6.5 – 2026-11-10
 
