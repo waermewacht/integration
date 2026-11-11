@@ -295,3 +295,32 @@ def test_p1p2mqtt_claims_no_other_fixture(fixture: str) -> None:
     assert find(P1P2MQTT, entries(fixture, P1P2MQTT.platform)) == []
     for entity in load_fixture(fixture)["entities"]:
         assert P1P2MQTT.split(entity["unique_id"]) is None, entity["unique_id"]
+
+
+def test_self_made_activity_next_to_flags() -> None:
+    """A self-made activity entity ("Heizung"/"Warmwasser") next to the
+    template's flags, without DHW_Demand (simon42 forum, 2026-11-11): the
+    template has no words of its own, the manual words apply, and hot water
+    wins over a heating flag that stays on."""
+    assert P1P2MQTT.parse_activity("Warmwasser") is Activity.DHW
+    assert P1P2MQTT.parse_activity("Heizung") is Activity.HEATING
+    assert P1P2MQTT.parse_activity("Abtauen") is Activity.DEFROST
+    # EMS-ESP's index numbers mean nothing here.
+    assert P1P2MQTT.parse_activity("3") is Activity.OTHER
+    configured = {
+        Signal.ACTIVITY,
+        Signal.HEATING_FLAG,
+        Signal.COOLING_FLAG,
+        Signal.DEFROST_FLAG,
+    }
+    states = {
+        Signal.HEATING_FLAG: "on",
+        Signal.COOLING_FLAG: "off",
+        Signal.DEFROST_FLAG: "off",
+    }
+    dhw = P1P2MQTT.parse_activity("Warmwasser")
+    assert combine(dhw, states, configured) is Activity.DHW
+    assert combine(Activity.HEATING, states, configured) is Activity.HEATING
+    # A defrost flag still beats the charge.
+    states[Signal.DEFROST_FLAG] = "on"
+    assert combine(dhw, states, configured) is Activity.DEFROST

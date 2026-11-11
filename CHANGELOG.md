@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Bitte prüfen
+
+- **Ein Stromzähler für alle Betriebsarten (oder ein gemeinsamer Wärmezähler): einmal „Rückblick neu berechnen“ drücken.** Das gilt, wenn die Wärmezähler eine kürzere Langzeitstatistik haben als der Stromzähler. Dann waren AZ Heizen+WW Monat, Saison und gesamt viel zu niedrig, siehe „Behoben“. Die Schaltfläche steht auf der Geräteseite der Wärmepumpe unter *Konfiguration* und rechnet die Zeit vor der Einrichtung neu, ohne die Werte seit der Einrichtung zu ändern.
+
+### Behoben
+
+- **AZ Heizen+WW viel zu niedrig, wenn der Stromzähler länger Statistik hat als die Wärmezähler.** Für die Zeit vor der Einrichtung zählte jede Stunde mit Strom, aber ohne Wärme als Stillstand, auch wenn die Wärmezähler damals noch gar keine Statistik hatten. Mit einem gemeinsamen Stromzähler, der seit Jahren zählt, neben Wärmemengenzählern seit einer Woche wurde so fast alles Stillstand: AZ Heizen und AZ Warmwasser stimmten, AZ Heizen+WW (mit Stillstand) fiel auf 0,02. Jetzt beginnt der Rückblick für zusammengehörige Zähler erst in der Stunde, ab der alle Statistik haben: Wärme und Strom einer Betriebsart, ein gemeinsamer Stromzähler mit allen Wärmezählern. Zähler je Betriebsart kürzen sich nur gegenseitig, eine kürzere Warmwasser-Statistik kürzt das Heizen nicht. (danke an MelleD, simon42-Forum)
+- **Eigene Betriebsart neben einer Vorlage ohne eigene Wörter (Daikin P1P2MQTT).** Eine selbst angelegte Betriebsart-Entität mit „Heizung“/„Warmwasser“ wurde nicht verstanden: Alles zählte als „sonstige“, der Strom eines gemeinsamen Zählers landete nie bei Warmwasser, und die AZ Warmwasser blieb unbekannt. Vorlagen ohne eigene Wörter lesen eine solche Entität jetzt mit den Wörtern der manuellen Zuordnung. Ist kein Flag für Warmwasser oder Kühlen eingetragen, zählt die Betriebsart-Entität an dessen Stelle; ein „Heizen läuft“, das während der Warmwasserladung an bleibt, verdeckt sie nicht mehr. Ein eingetragenes Flag entscheidet weiter wie bisher. (danke an octek0815, simon42-Forum)
+
 ## 0.6.6 – 2026-11-11
 
 ### Neu

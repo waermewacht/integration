@@ -8,8 +8,10 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from custom_components.waermewacht.backfill import (
+    balance_groups,
     by_hour,
     coarse,
+    common_hours,
     compare_on_source,
     energy_between,
     hour_totals,
@@ -214,3 +216,70 @@ def test_cycling_unit_compared_with_one_method() -> None:
     shown = drop(booked)
     assert shown.problem is True
     assert shown.evidence["drop_percent"] == pytest.approx(18.1, abs=0.2)
+
+
+def test_look_back_starts_where_heat_and_electricity_have_statistics() -> None:
+    """A meter for all modes with long statistics next to heat meters added
+    later: the hours before the heat meters are no standby (simon42 forum,
+    2026-11-11: heating+hot water with standby 0.02)."""
+    configured = {Signal.ELEC_TOTAL, Signal.HEAT_HEATING, Signal.HEAT_DHW}
+    hourly = {
+        Signal.ELEC_TOTAL: {hour(n): 0.5 for n in range(48)},
+        # Not whole kWh: no neighbouring hours count as running (COARSE_WINDOW).
+        Signal.HEAT_HEATING: {hour(n): 2.05 for n in range(24, 48)},
+        Signal.HEAT_DHW: {hour(n): 0.0 for n in range(30, 48)},
+    }
+    common = common_hours(hourly, configured)
+    assert min(common[Signal.ELEC_TOTAL]) == hour(30)
+    assert min(common[Signal.HEAT_HEATING]) == hour(30)
+    total = energy_between(common, None, hour(48))
+    assert total.standby() == 0
+    assert total.get(Kind.ELEC, Mode.HEATING) == pytest.approx(9.0)
+    # Before the fix: 12 kWh of standby from the hours without heat rows.
+    assert energy_between(hourly, None, hour(48)).standby() == pytest.approx(12.0)
+    # A configured heat meter without any statistics: no look-back at all.
+    assert common_hours({**hourly, Signal.HEAT_DHW: {}}, configured) == {}
+    # Cooling and the backup heater do not cut the look-back.
+    late = {
+        **hourly,
+        Signal.HEAT_COOLING: {hour(47): 0.0},
+        Signal.AUX_HEATING: {hour(40): 0.0},
+    }
+    both = {*configured, Signal.HEAT_COOLING, Signal.AUX_HEATING}
+    assert min(common_hours(late, both)[Signal.ELEC_TOTAL]) == hour(30)
+    # Nothing of it configured: unchanged.
+    assert common_hours(hourly, set()) is hourly
+
+
+def test_look_back_per_mode_pair() -> None:
+    """Counters per mode: a hot water pair with shorter statistics (EMS-ESP
+    after a change of its id format) cuts only hot water, not heating."""
+    configured = {
+        Signal.HEAT_HEATING,
+        Signal.ELEC_HEATING,
+        Signal.HEAT_DHW,
+        Signal.ELEC_DHW,
+        Signal.HEAT_COOLING,
+    }
+    hourly = {
+        Signal.HEAT_HEATING: {hour(n): 2.05 for n in range(48)},
+        Signal.ELEC_HEATING: {hour(n): 0.55 for n in range(48)},
+        Signal.HEAT_DHW: {hour(n): 1.05 for n in range(40, 48)},
+        Signal.ELEC_DHW: {hour(n): 0.35 for n in range(20, 48)},
+        Signal.HEAT_COOLING: {hour(n): 0.0 for n in range(48)},
+    }
+    assert sorted(map(sorted, balance_groups(configured))) == [
+        sorted({Signal.HEAT_DHW, Signal.ELEC_DHW}),
+        sorted({Signal.HEAT_HEATING, Signal.ELEC_HEATING}),
+    ]
+    common = common_hours(hourly, configured)
+    assert min(common[Signal.HEAT_HEATING]) == hour(0)
+    assert min(common[Signal.ELEC_DHW]) == hour(40)
+    assert min(common[Signal.HEAT_COOLING]) == hour(0)
+    assert energy_between(common, None, hour(48)).standby() == 0
+    # Without the rule the hot water electricity of hours 20-39 is standby.
+    assert energy_between(hourly, None, hour(48)).standby() == pytest.approx(7.0)
+    # A common electricity meter joins every heat meter into one group.
+    assert balance_groups(
+        {Signal.ELEC_TOTAL, Signal.HEAT_HEATING, Signal.HEAT_DHW}
+    ) == [{Signal.ELEC_TOTAL, Signal.HEAT_HEATING, Signal.HEAT_DHW}]

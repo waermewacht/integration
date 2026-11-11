@@ -78,3 +78,18 @@ def test_cooling_mode_words() -> None:
     assert cooling_mode("Kühlen")
     assert not cooling_mode("Heat+DHW")
     assert not cooling_mode(None)
+
+
+def test_activity_entity_stands_in_for_a_missing_flag() -> None:
+    """Hot water or cooling of the activity entity counts at the rank of its
+    flag when that flag is not configured; a configured flag still decides."""
+    configured = {Signal.ACTIVITY, Signal.HEATING_FLAG, Signal.DEFROST_FLAG}
+    states = {Signal.HEATING_FLAG: "on", Signal.DEFROST_FLAG: "off"}
+    assert combine(Activity.DHW, states, configured) is Activity.DHW
+    assert combine(Activity.COOLING, states, configured) is Activity.COOLING
+    assert combine(Activity.OFF, states, configured) is Activity.HEATING
+    # With the hot water flag configured (and off) the flags decide as before.
+    with_dhw = {*configured, Signal.DHW_FLAG}
+    assert combine(Activity.DHW, {**states, Signal.DHW_FLAG: "off"}, with_dhw) is (
+        Activity.HEATING
+    )

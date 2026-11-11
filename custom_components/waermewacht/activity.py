@@ -8,8 +8,9 @@ the defrost is a switch).
 
 Rule: an "on" flag wins, in the order defrost, hot water, cooling, heating
 (a defrost runs while heating is requested; hot water has priority over
-heating). Then the activity entity, where "heating" becomes "cooling" while
-the set mode cools. With flags only, all flags off is OFF - unless the
+heating). Hot water or cooling from the activity entity counts at the rank
+of its flag where that flag is not configured. Then the activity entity,
+where "heating" becomes "cooling" while the set mode cools. With flags only, all flags off is OFF - unless the
 compressor runs: a run serves some mode, and without a flag that is heating
 (Waterkotte has a heating release, not a heating state; P1P2MQTT may miss a
 hot water flag). A flag that could still decide but is unknown makes the
@@ -28,6 +29,7 @@ FLAGS: tuple[tuple[Signal, Activity], ...] = (
     (Signal.COOLING_FLAG, Activity.COOLING),
     (Signal.HEATING_FLAG, Activity.HEATING),
 )
+DHW, COOLING = Activity.DHW, Activity.COOLING
 ON = ("on", "true", "1")
 OFF = ("off", "false", "0")
 # Words of a set operating mode that cools (HeishaMon "Cool", "Auto(Cool)").
@@ -58,7 +60,19 @@ def combine(
     if fallback and activity is Activity.DEFROST:
         return Activity.DEFROST
     flags = [(s, a) for s, a in FLAGS if s in configured]
-    for signal, flag_activity in flags:
+    for signal, flag_activity in FLAGS:
+        if signal not in configured:
+            # Hot water or cooling from the activity entity stands in for a
+            # missing flag, at the flag's rank: a heating flag that stays on
+            # during a charge (P1P2MQTT with a self-made activity, no
+            # DHW_Demand) does not hide it.
+            if (
+                fallback
+                and flag_activity in (DHW, COOLING)
+                and activity is flag_activity
+            ):
+                return activity
+            continue
         state = (states.get(signal) or "").strip().casefold()
         if state in ON:
             return flag_activity

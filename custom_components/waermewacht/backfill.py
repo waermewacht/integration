@@ -55,6 +55,78 @@ YIELD_EPSILON = 0.001
 COARSE_WINDOW = 2
 HOUR = timedelta(hours=1)
 
+# Counters that decide heat against electricity (and so standby) in an hour,
+# heating and hot water: per mode, or the common meters. Cooling and the
+# backup heater are left out: a cooling meter added later must not cut the
+# look-back.
+BALANCE_MODES = (Mode.HEATING, Mode.DHW)
+BALANCE_HEAT = (*(HEAT_SIGNALS[m] for m in BALANCE_MODES), Signal.HEAT_TOTAL)
+BALANCE_ELEC = (*(ELEC_SIGNALS[m] for m in BALANCE_MODES), Signal.ELEC_TOTAL)
+
+
+def balance_groups(configured: Collection[Signal]) -> list[set[Signal]]:
+    """Counters whose hours only count together: heat and electricity of one
+    mode; a common electricity meter with every heat meter, a common heat
+    meter with every electricity meter. Overlapping groups merge."""
+    heat = {s for s in BALANCE_HEAT if s in configured}
+    elec = {s for s in BALANCE_ELEC if s in configured}
+    groups = [
+        group
+        for mode in BALANCE_MODES
+        if len(
+            group := {
+                s for s in (HEAT_SIGNALS[mode], ELEC_SIGNALS[mode]) if s in configured
+            }
+        )
+        > 1
+    ]
+    if Signal.ELEC_TOTAL in elec and heat:
+        groups.append({Signal.ELEC_TOTAL, *heat})
+    if Signal.HEAT_TOTAL in heat and elec:
+        groups.append({Signal.HEAT_TOTAL, *elec})
+    merged: list[set[Signal]] = []
+    for group in groups:
+        for other in [m for m in merged if m & group]:
+            group |= other
+            merged.remove(other)
+        merged.append(group)
+    return merged
+
+
+def common_hours(
+    hourly: HourlyChanges, configured: Collection[Signal]
+) -> HourlyChanges:
+    """`hourly` with each balance group (`balance_groups`) from the first
+    hour in which all of its counters have statistics; a group with a
+    counter without any statistics is left out. Other signals stay.
+
+    Before, an hour with electricity but no heat row looked like standby: a
+    meter for all modes with years of statistics next to heat meters added
+    a week ago made all of it standby (simon42 forum, 2026-11-11: heating and
+    hot water alone right, both together with standby 0.02). Per mode, a hot
+    water pair with shorter statistics (EMS-ESP after a change of its id
+    format) does not cut the heating.
+    """
+    starts: dict[Signal, datetime | None] = {}
+    for group in balance_groups(configured):
+        start = (
+            max(min(hourly[s]) for s in group)
+            if all(hourly.get(s) for s in group)
+            else None
+        )
+        starts.update(dict.fromkeys(group, start))
+    if not starts:
+        return hourly
+    result: dict[Signal, Mapping[datetime, float]] = {}
+    for signal, values in hourly.items():
+        if signal not in starts:
+            result[signal] = values
+        elif (start := starts[signal]) is not None and (
+            kept := {h: v for h, v in values.items() if h >= start}
+        ):
+            result[signal] = kept
+    return result
+
 
 def hour_totals(
     changes: Mapping[Signal, float],

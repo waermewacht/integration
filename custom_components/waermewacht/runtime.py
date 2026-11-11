@@ -56,6 +56,7 @@ from .backfill import (
     boiler_hours,
     bookable_hours,
     by_hour,
+    common_hours,
     compare_on_source,
     energy_between,
 )
@@ -2097,7 +2098,9 @@ class HeatPumpRuntime:
                 # The cloud reordered its series since the start: stop.
                 self._mapping_ok = False
                 return
-            plausible = await self._async_source_hours(start - HOURLY_LOOKBACK, end)
+            plausible = await self._async_source_hours(
+                start - HOURLY_LOOKBACK, end, common=False
+            )
             hours, next_start = bookable_hours(plausible, start, end)
             booked = by_hour(
                 plausible, self.heat_modes, self.template.heat_includes_electricity
@@ -2119,12 +2122,17 @@ class HeatPumpRuntime:
         start: datetime,
         end: datetime,
         signals: Collection[Signal] | None = None,
+        *,
+        common: bool = True,
     ) -> HourlyChanges:
         """Hourly changes of the source counters, by signal.
 
         A counter may also exist under an older id with longer statistics
         (EMS-ESP after a change of its id format): its hours fill in where
-        the configured entity has none.
+        the configured entity has none. All counters (`signals` None) start
+        where heat and electricity both have statistics
+        (backfill.common_hours); `common` False for the hourly booking of a
+        cloud source, which waits for missing rows itself (bookable_hours).
         """
         history: dict[str, list[str]] = self.entry.data.get(CONF_HISTORY, {})
         ids = {
@@ -2155,6 +2163,8 @@ class HeatPumpRuntime:
                 self._count(f"hour_rejected:{signal}")
             if merged:
                 result[signal] = merged
+        if signals is None and common:
+            return common_hours(result, ids)
         return result
 
     # Report for any period.

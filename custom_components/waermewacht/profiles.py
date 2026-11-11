@@ -127,13 +127,18 @@ class Template:
         )
 
     def parse_activity(self, state: str | None) -> Activity | None:
-        """Map an activity state; None while unknown, OTHER if not recognized."""
+        """Map an activity state; None while unknown, OTHER if not recognized.
+
+        A template without words of its own (activity from flags, P1P2MQTT)
+        reads a self-made activity entity with the words of a manual mapping.
+        """
         if state is None or state in ("unknown", "unavailable", ""):
             return None
         key = state.strip().casefold()
         if key in self.activity_foreign:
             return None
-        return self.activity_values.get(key, Activity.OTHER)
+        values = self.activity_values or SELF_MADE_ACTIVITY
+        return values.get(key, Activity.OTHER)
 
     def is_foreign_activity(self, state: str | None) -> bool:
         return (state or "").strip().casefold() in self.activity_foreign
@@ -274,6 +279,12 @@ EMS_ESP_ACTIVITY |= _words(
         Activity.DEFROST: ("Abtauung", "Abtaubetrieb", "defrosting"),
     }
 )
+# A self-made activity entity next to a template without words (see
+# Template.parse_activity): the words without EMS-ESP's index numbers, which
+# mean nothing there.
+SELF_MADE_ACTIVITY = {
+    word: a for word, a in EMS_ESP_ACTIVITY.items() if not word.isdigit()
+}
 
 # Keys after "<device>_": current names (EMS-ESP >= 3.7, "dhw_…") first, then
 # the 3.6-compatible formats ("…ww", "ww…"); within each, the counters in
@@ -431,7 +442,7 @@ EMS_ESP = Template(
 #   boiler's too. A boiler device that is itself a heat pump has none of
 #   these (boiler.cpp registers them only `if (!isHeatPump())`).
 EMS_ESP_HEATPUMP_ACTIVITY = {
-    **{word: a for word, a in EMS_ESP_ACTIVITY.items() if not word.isdigit()},
+    **SELF_MADE_ACTIVITY,
     "0": Activity.OFF,
     "1": Activity.HEATING,
     "2": Activity.DHW,
