@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.6.7 – 2026-11-11
 
 ### Bitte prüfen
 
