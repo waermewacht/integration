@@ -98,7 +98,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Anlass.** Die Schaltfläche „Effizienzvergleich neu starten“ wird als „aktualisieren“ verstanden. Im Forum wurde sie zusammen mit „Rückblick neu berechnen“ gedrückt, ohne dass sich an der Anlage etwas geändert hatte. Danach war die Prüfung 28 Tage lang blind. Wie lange, zeigte nirgends ein Datum, und rückgängig machen ließ es sich nicht. Außerdem muss der Nutzer selbst wissen, dass eine gewollte Änderung der Heizkurve den Vergleich verfälscht. Das widerspricht „erst Erkennung, dann Feld“.
 
-**Schritt 0 (geprüft 2026-11-11, Langzeitstatistik der Anlage des Inhabers, Saison 2025/26 und 2026/27, Skript im Scratchpad; Zahlen nur in `NOTES.md`).** Als Probe dienten alle 31 Fenster von 28 Tagen der Vorsaison, jeweils gegen den Rest derselben Saison. Echte Defekte gab es dort keine, jeder Ausschlag ist also Rauschen oder Fehlalarm. In der Vorsaison wurde die Heizkurve im Herbst um gut 8 K gesenkt.
+**Schritt 0 (geprüft 2026-11-11, Langzeitstatistik der Anlage des Inhabers, Saison 2025/26 und 2026/27, Skript und Rohdaten lokal in `raw/`, nicht im Repo; Zahlen nur in `NOTES.md`).** Als Probe dienten alle 31 Fenster von 28 Tagen der Vorsaison, jeweils gegen den Rest derselben Saison. Echte Defekte gab es dort keine, jeder Ausschlag ist also Rauschen oder Fehlalarm. In der Vorsaison wurde die Heizkurve im Herbst um gut 8 K gesenkt.
 
 | Variante | Streuung | größter Ausschlag | Tage im Vergleich | Fenster mit hoher Heizkurve |
 |---|---|---|---|---|
