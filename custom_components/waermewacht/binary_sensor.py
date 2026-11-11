@@ -96,7 +96,7 @@ class HealthProblem(HeatPumpEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     # Lists per class, day or text: shown, not recorded (write load).
     _unrecorded_attributes = frozenset(
-        {"classes", "days", "protection", "waiting", "unclassified"}
+        {"classes", "days", "protection", "waiting", "unclassified", "by_outdoor"}
     )
 
     def __init__(self, entry: WaermewachtConfigEntry, key: str) -> None:

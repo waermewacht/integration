@@ -16,9 +16,13 @@ from custom_components.waermewacht.backfill import (
     energy_between,
     hour_totals,
 )
-from custom_components.waermewacht.curve import curve_as_dicts, performance_curve
+from custom_components.waermewacht.curve import daily_samples
 from custom_components.waermewacht.energy import Kind, Totals
-from custom_components.waermewacht.health import efficiency_drop
+from custom_components.waermewacht.health import (
+    BASIS_OUTDOOR,
+    baseline_drop,
+    outdoor_days,
+)
 from custom_components.waermewacht.model import Mode, Signal, has_elec
 
 H0 = datetime(2026, 7, 15, 0, tzinfo=UTC)
@@ -175,17 +179,17 @@ def test_cycling_unit_compared_with_one_method() -> None:
     tell it apart. A real drop of 20 % then hides behind the lower previous
     season; on the source counters alone it shows."""
     tz = ZoneInfo("Europe/Berlin")
-    start = SWITCH - timedelta(days=28)
+    start = SWITCH - timedelta(days=32)
     source: dict[Signal, dict[datetime, float]] = {
         Signal.HEAT_HEATING: {},
         Signal.ELEC_HEATING: {},
     }
     own: dict[datetime, Totals] = {}
     outdoor: dict[datetime, float] = {}
-    for n in range(56 * 24):
+    for n in range(60 * 24):
         at = start + timedelta(hours=n)
         day = n // 24
-        outdoor[at] = 5.0 if day % 2 else 9.0  # two classes, 14 days each
+        outdoor[at] = 4.0 if day % 2 else 9.0  # 5 K apart
         running = 0.15 if at < SWITCH else 0.1875  # ratio 4.0, then 3.2
         source[Signal.HEAT_HEATING][at] = 0.6
         source[Signal.ELEC_HEATING][at] = running + 0.02
@@ -196,17 +200,13 @@ def test_cycling_unit_compared_with_one_method() -> None:
         own[at] = exact
 
     def drop(hours: dict[datetime, Totals]):
-        def curve(a: datetime, b: datetime):
-            return curve_as_dicts(
-                performance_curve(
-                    {h: t for h, t in hours.items() if a <= h < b},
-                    {h: v for h, v in outdoor.items() if a <= h < b},
-                    tz,
-                )
-            )
-
-        end = start + timedelta(days=56)
-        return efficiency_drop(curve(SWITCH, end), curve(start, SWITCH))
+        days = outdoor_days(daily_samples(hours, outdoor, tz))
+        switch = SWITCH.astimezone(tz).date()
+        return baseline_drop(
+            [d for d in days if d.day >= switch],
+            [d for d in days if d.day < switch],
+            basis=BASIS_OUTDOOR,
+        )
 
     booked = by_hour(source)
     mixed = {h: booked[h] if h < SWITCH else own[h] for h in booked}

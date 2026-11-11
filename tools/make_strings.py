@@ -338,7 +338,10 @@ STATUS_STATES = {
     "too_few_days": ("Too few days", "Zu wenige Tage"),
     "too_little_electricity": ("Too little electricity", "Zu wenig Strom"),
     "too_few_charges": ("Too few charges", "Zu wenige Ladungen"),
-    "comparison_restarted": ("Comparison restarted", "Vergleich neu gestartet"),
+    "outside_previous_range": (
+        "Flow or weather unlike the previous season",
+        "Vorlauf oder Wetter anders als Vorsaison",
+    ),
     "no_aux_counter": ("No backup heater meter", "Kein Heizstab-Zähler"),
     "no_outdoor_temp": ("No outdoor temperature", "Keine Außentemperatur"),
 }
@@ -347,11 +350,6 @@ BUTTONS = {
         "Report for a bug report",
         "Bericht für Fehlermeldung",
         "mdi:clipboard-text-outline",
-    ),
-    "restart_comparison": (
-        "Restart efficiency comparison",
-        "Effizienzvergleich neu starten",
-        "mdi:restart",
     ),
     "rebuild_history": (
         "Recalculate look-back",

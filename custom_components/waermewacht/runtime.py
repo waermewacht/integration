@@ -61,6 +61,7 @@ from .backfill import (
     energy_between,
 )
 from .carnot import (
+    FLOW_ONLY_NOTE_SHARE,
     EfficiencyFactor,
     FactorDay,
     efficiency_factor,
@@ -150,17 +151,23 @@ from .energy import Kind, Totals, building_hours, replace_boiler
 from .entity import own_entities
 from .health import (
     AUX_KWH,
+    BASIS_LIFT,
+    BASIS_OUTDOOR,
     CHARGE_DAYS,
     DROP_PERCENT,
     MILD_FROM,
+    MIN_PREVIOUS_DAYS,
     NO_AUX,
     NOT_ANALYSED,
-    RESTARTED,
+    BaselineDay,
     Finding,
     aux_dhw_charges,
     aux_mild_weather,
+    baseline_drop,
     dhw_efficiency_drop,
-    efficiency_drop,
+    flow_only_share,
+    lift_days,
+    outdoor_days,
     outdoor_problem,
     window_days,
 )
@@ -280,8 +287,6 @@ STUCK_COARSE = timedelta(hours=6)
 # Previous-day values move once a day: more than a day of running.
 STUCK_PREVIOUS_DAY = timedelta(hours=30)
 UNAVAILABLE_LIMIT = timedelta(minutes=60)
-# After "restart comparison" the first weeks are the new reference.
-RESTART_BASELINE = timedelta(days=28)
 # Daily diary kept in the history file (about 150 bytes a day).
 DIARY_DAYS = 1100
 # "unavailable" here means no measurement, not a source that is down:
@@ -460,7 +465,6 @@ class HeatPumpRuntime:
         # in the live file.
         self.status = StatusCounter()
         self._efficiency_on = False
-        self.comparison_reset_at: datetime | None = None
         self._stuck_seconds: dict[str, float] = {}  # running time without rise
         self._unavailable_since: dict[str, datetime] = {}
         self._last_tick: datetime | None = None
@@ -1522,7 +1526,9 @@ class HeatPumpRuntime:
                     )
                 }
             compared = await self._async_comparison_hours(previous, now, hours)
-            self._health_findings(now, hours, outdoor, current, previous, compared)
+            self._health_findings(
+                now, hours, outdoor, current, previous, compared, temps
+            )
             today = now.astimezone(self.tz).date()
             self.spread_7d = spread_figure(self.diary, today)
             self.efficiency_factors = self._efficiency_factors(
@@ -1620,46 +1626,16 @@ class HeatPumpRuntime:
         current: datetime,
         previous: datetime,
         compared: dict[datetime, Totals],
+        temps: dict[Signal, dict[datetime, float]],
     ) -> None:
         """Efficiency drop and backup heater on mild days (health.py).
 
         `compared`: the hours the efficiency comparison uses, booked the same
-        way on both sides (`_async_comparison_hours`).
+        way on both sides (`_async_comparison_hours`); `temps`: hourly means
+        of flow and return.
         """
 
-        def curve(start: datetime, end: datetime) -> list[dict[str, Any]]:
-            return curve_as_dicts(
-                performance_curve(
-                    {h: t for h, t in compared.items() if start <= h < end},
-                    {h: v for h, v in outdoor.items() if start <= h < end},
-                    self.tz,
-                    min_electricity=self.min_electricity,
-                )
-            )
-
-        reset = self.comparison_reset_at
-        if reset is not None and reset < previous:
-            reset = self.comparison_reset_at = None  # older than both seasons
-            self._dirty = True
-        if reset is None:
-            drop = efficiency_drop(
-                curve(current, now),
-                curve(previous, current),
-                threshold=self.drop_threshold,
-                was_on=self._efficiency_on,
-            )
-        elif reset >= current and now < reset + RESTART_BASELINE:
-            drop = Finding(None, RESTARTED)
-        else:
-            # After a deliberate change: the weeks after the reset are the
-            # reference (or the rest of the previous season after it).
-            end = reset + RESTART_BASELINE if reset >= current else current
-            drop = efficiency_drop(
-                curve(end, now),
-                curve(reset, end),
-                threshold=self.drop_threshold,
-                was_on=self._efficiency_on,
-            )
+        drop = self._efficiency_drop(now, outdoor, current, previous, compared, temps)
         if drop.problem is not None:
             self._efficiency_on = drop.problem
             self._dirty = True
@@ -1817,15 +1793,65 @@ class HeatPumpRuntime:
         await self.async_save()
         self._notify()
 
-    async def async_restart_comparison(self) -> None:
-        """Button: compare efficiency anew from now (after a deliberate
-        change such as a new heating curve)."""
-        self.comparison_reset_at = dt_util.utcnow()
-        self._efficiency_on = False
-        self.findings["efficiency_drop"] = Finding(None, RESTARTED)
-        self._dirty = True
-        await self.async_save()
-        self._notify()
+    def _efficiency_drop(
+        self,
+        now: datetime,
+        outdoor: dict[datetime, float],
+        current: datetime,
+        previous: datetime,
+        compared: dict[datetime, Totals],
+        temps: dict[Signal, dict[datetime, float]],
+    ) -> Finding:
+        """4.1a: the previous season's baseline model against the complete
+        days of the current one. With a flow temperature in the statistics
+        the lift is the model's x, else the outdoor day mean; both seasons
+        take the sink alike (flow only when one lacks the return)."""
+        local = lambda at: at.astimezone(self.tz).date()  # noqa: E731
+        first, today = local(current), local(now)
+        start = local(previous)
+
+        def split(days: list[BaselineDay]) -> tuple[list[BaselineDay], ...]:
+            return (
+                [d for d in days if first <= d.day < today],
+                [d for d in days if start <= d.day < first],
+            )
+
+        samples = daily_samples(compared, outdoor, self.tz)
+        basis = BASIS_OUTDOOR
+        cur, prev = split(outdoor_days(samples))
+        flow = temps.get(Signal.FLOW_TEMP, {})
+        if flow:
+            ret = temps.get(Signal.RETURN_TEMP, {})
+
+            def lifted(flow_only: bool) -> list[tuple[BaselineDay, float]]:
+                found = statistics_days(
+                    compared,
+                    flow,
+                    ret,
+                    outdoor,
+                    self.tz,
+                    with_aux=True,
+                    flow_only=flow_only,
+                )
+                return lift_days(found, samples)
+
+            days = lifted(False)
+            sides = [
+                [(d, s) for d, s in days if first <= d.day < today],
+                [(d, s) for d, s in days if start <= d.day < first],
+            ]
+            if any(flow_only_share(side) >= FLOW_ONLY_NOTE_SHARE for side in sides):
+                days = lifted(True)
+            lift_cur, lift_prev = split([d for d, _ in days])
+            if len(lift_prev) >= MIN_PREVIOUS_DAYS or len(prev) < MIN_PREVIOUS_DAYS:
+                basis, cur, prev = BASIS_LIFT, lift_cur, lift_prev
+        return baseline_drop(
+            cur,
+            prev,
+            basis=basis,
+            threshold=self.drop_threshold,
+            was_on=self._efficiency_on,
+        )
 
     def _check_source_gap(self, now: datetime) -> None:
         """An open run is uncertain when an energy counter, the compressor or
@@ -3158,7 +3184,6 @@ class HeatPumpRuntime:
             "pending": [[m.value, kwh, at.isoformat()] for m, kwh, at in self._pending],
             "heat_at": {m.value: at.isoformat() for m, at in self._heat_at.items()},
             "efficiency_on": self._efficiency_on,
-            "comparison_reset_at": _iso(self.comparison_reset_at),
             "starts_seen": (
                 [*self._starts_seen[:2], self._starts_seen[2].isoformat()]
                 if self._starts_seen
@@ -3233,8 +3258,6 @@ class HeatPumpRuntime:
         self._efficiency_on = data.get("efficiency_on", False)
         if seen := data.get("starts_seen"):
             self._starts_seen = (seen[0], int(seen[1]), datetime.fromisoformat(seen[2]))
-        reset = data.get("comparison_reset_at")
-        self.comparison_reset_at = datetime.fromisoformat(reset) if reset else None
         self._stuck_seconds = {
             k: float(v) for k, v in data.get("stuck_seconds", {}).items()
         }

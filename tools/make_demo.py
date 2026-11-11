@@ -116,11 +116,13 @@ from custom_components.waermewacht.gas import analyse as analyse_gas  # noqa: E4
 from custom_components.waermewacht.gas import window as gas_window  # noqa: E402
 from custom_components.waermewacht.health import (  # noqa: E402
     AUX_KWH,
+    BASIS_LIFT,
     Finding,
     aux_dhw_charges,
     aux_mild_weather,
+    baseline_drop,
     dhw_efficiency_drop,
-    efficiency_drop,
+    lift_days,
     status,
     window_days,
 )
@@ -840,6 +842,27 @@ class Sim:
         assert previous is not None
         return current, previous
 
+    def efficiency_drop(self, hours, outdoor, flow, now, current, previous):
+        """4.1a as runtime._efficiency_drop: the previous season's baseline
+        model of the lift against the complete days of the current one."""
+        found = statistics_days(
+            hours,
+            flow,
+            {h: v for h, v in self.ret_hours.items() if h in outdoor},
+            outdoor,
+            TZ,
+            with_aux=True,
+        )
+        days = [d for d, _ in lift_days(found, daily_samples(hours, outdoor, TZ))]
+        first, today = current.astimezone(TZ).date(), now.astimezone(TZ).date()
+        start = previous.astimezone(TZ).date()
+        return baseline_drop(
+            [d for d in days if first <= d.day < today],
+            [d for d in days if start <= d.day < first],
+            basis=BASIS_LIFT,
+            threshold=DROP_THRESHOLD,
+        )
+
     def duty(
         self, now: datetime, current: datetime, previous: datetime, load: Any
     ) -> dict[str, Any]:
@@ -979,8 +1002,8 @@ class Sim:
                 max(previous.astimezone(TZ).date(), year_before(today)),
             ),
             "flow_curves": flow_curves,
-            "efficiency_drop": efficiency_drop(
-                curves["current"], curves["previous"], threshold=DROP_THRESHOLD
+            "efficiency_drop": self.efficiency_drop(
+                hours, outdoor, flow, now, current, previous
             ),
             "aux_mild_weather": aux_mild_weather(
                 mild_days, mild_from=AUX_MILD_FROM, threshold_kwh=AUX_KWH

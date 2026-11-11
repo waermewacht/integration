@@ -151,18 +151,16 @@ async def test_health_sensors_need_outdoor_and_backup_heater(
     entry = await setup(hass)
     assert entity_id(hass, entry, "binary_sensor", "efficiency_drop") is None
     assert entity_id(hass, entry, "sensor", "efficiency_drop_status") is None
-    assert entity_id(hass, entry, "button", "restart_comparison") is None
 
     other = await setup(hass, outdoor_temp=OUTDOOR)
     assert entity_id(hass, other, "binary_sensor", "efficiency_drop")
-    assert entity_id(hass, other, "button", "restart_comparison")
     assert entity_id(hass, other, "binary_sensor", "aux_mild_weather") is None
     assert entity_id(hass, other, "sensor", "efficiency_drop_status")
     assert entity_id(hass, other, "sensor", "aux_mild_weather_status") is None
 
 
 @pytest.mark.freeze_time(START)
-async def test_unknown_with_reason_and_restart(hass: HomeAssistant) -> None:
+async def test_unknown_with_reason(hass: HomeAssistant) -> None:
     """Without a recorder there is no analysis: unknown, with the reason."""
     entry = await setup(hass, outdoor_temp=OUTDOOR, aux_heating=AUX)
     drop = entity_id(hass, entry, "binary_sensor", "efficiency_drop")
@@ -185,15 +183,34 @@ async def test_unknown_with_reason_and_restart(hass: HomeAssistant) -> None:
         assert "ok" in state.attributes["options"]
     cycling = entity_id(hass, entry, "sensor", "cycling_problem_status")
     assert hass.states.get(cycling).state == "ok"
-
-    button = entity_id(hass, entry, "button", "restart_comparison")
-    await hass.services.async_call(
-        "button", "press", {"entity_id": button}, blocking=True
+    assert hass.states.get(drop_status).state == "not_analysed_yet"
+    assert (
+        "outside_previous_range" in hass.states.get(drop_status).attributes["options"]
     )
+
+
+@pytest.mark.freeze_time(START)
+async def test_retired_restart_button_is_removed(hass: HomeAssistant) -> None:
+    """The button "Restart efficiency comparison" (until 0.6.7) leaves the
+    registry at the next setup instead of staying as "no longer provided"."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    old = registry.async_get_or_create(
+        "button",
+        DOMAIN,
+        f"{entry.entry_id}_restart_comparison",
+        config_entry=entry,
+    )
+    assert registry.async_get(old.entity_id) is not None
+    set_counters(hass, 1000.5, 300.5)
+    hass.states.async_set(COMPRESSOR, "off")
+    hass.states.async_set(ACTIVITY, "aus")
+    assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.states.get(drop).attributes["reason"] == "comparison_restarted"
-    assert hass.states.get(drop_status).state == "comparison_restarted"
-    assert entry.runtime_data.comparison_reset_at is not None
+    assert registry.async_get(old.entity_id) is None
+    assert entity_id(hass, entry, "button", "rebuild_history")
 
 
 @pytest.mark.freeze_time(START)

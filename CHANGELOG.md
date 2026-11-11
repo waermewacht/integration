@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Bitte prüfen
+
+- **Schaltfläche „Effizienzvergleich neu starten“ entfällt.** Wer sie in einer Automation oder auf einem Dashboard hat, nimmt sie dort heraus; Home Assistant entfernt die Entität beim Update. Ein laufender Neustart endet sofort, „Effizienz gesunken“ urteilt gleich wieder.
+- **Neue Attribute an „Effizienz gesunken“.** `ratio_previous_same_weather` heißt jetzt `ratio_expected`, statt `classes` gibt es `by_outdoor`. Wer sie in eigenen Vorlagen nutzt (etwa die Markdown-Karte aus dem README), passt sie an. Der Grund `comparison_restarted` entfällt, neu ist `outside_previous_range`.
+
+### Geändert
+
+- **„Effizienz gesunken“ rechnet Wetter und Vorlauf heraus.** Bisher verglich Wärmewacht die AZ Heizen je Außentemperatur mit der Vorsaison. Eine geänderte Heizkurve verfälschte das: Eine gesenkte versteckte einen echten Verlust, eine gehobene sah wie einer aus. Deshalb gab es die Schaltfläche, die den Vergleich für 28 Tage neu startete, und die wurde leicht gedrückt, ohne dass sich etwas geändert hatte. Jetzt lernt Wärmewacht aus der Vorsaison, wie viel Strom die Anlage je kWh Wärme bei welchem Hub braucht (Vor- und Rücklauf minus Außentemperatur), und vergleicht die laufende Saison mit dieser Erwartung. An einer echten Anlage streute der Vergleich über zwei Saisons nur noch um etwa 2 % statt 5 %, auch über eine gesenkte Heizkurve hinweg. Kennt die Vorsaison den Vorlauf oder das Wetter der laufenden Saison nicht, heißt es „Vorlauf oder Wetter anders als Vorsaison“, statt zu raten. Ohne Vorlauf mit Langzeitstatistik rechnet das Modell mit der Außentemperatur, so wie bisher. Die Karte zeigt „AZ Heizen 4,2, erwartet 4,3“. Herleitung in `docs/GESUNDHEITSCHECK.md` 4.1a. (danke an ottokar und octek0815, simon42-Forum)
+
 ## 0.6.7 – 2026-11-11
 
 ### Bitte prüfen

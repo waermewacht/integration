@@ -173,10 +173,18 @@ def statistics_days(
     ret: Mapping[datetime, float],
     outdoor: Mapping[datetime, float],
     tz: tzinfo,
+    *,
+    with_aux: bool = False,
+    flow_only: bool = False,
 ) -> dict[date, FactorDay | str]:
     """Days from the hourly statistics (look-back, see the module): the
     day's energy from all its hours, sink and source from its heating-only
-    hours, weighted with their heat."""
+    hours, weighted with their heat.
+
+    For the efficiency comparison (health.baseline_drop): `with_aux` keeps
+    the days with backup heater electricity and adds it to the electricity
+    (boundary H3); `flow_only` takes the flow alone as the sink on every
+    day, so both seasons count alike when one of them lacks the return."""
     energy: dict[date, list[float]] = {}
     for hour, totals in hours.items():
         day = energy.setdefault(hour.astimezone(tz).date(), [0.0, 0.0, 0.0])
@@ -191,8 +199,8 @@ def statistics_days(
         if value is None or source is None or not FLOW_MIN <= value <= FLOW_MAX:
             continue
         back = ret.get(hour)
-        flow_only = back is None or back > value
-        sink = value if flow_only else (value + back) / 2
+        no_return = flow_only or back is None or back > value
+        sink = value if no_return else (value + back) / 2
         if (cop := carnot_cop(sink, source)) is None:
             continue
         row = sums.setdefault(hour.astimezone(tz).date(), [0.0] * 6)
@@ -201,25 +209,25 @@ def statistics_days(
         row[2] += heat * sink
         row[3] += heat * source
         row[4] += 1
-        if flow_only:
+        if no_return:
             row[5] += heat
     days: dict[date, FactorDay | str] = {}
     for day, (heat, electricity, aux) in energy.items():
         if heat <= 0 or electricity <= 0:
             days[day] = SKIP_NO_ENERGY
-        elif aux > MAX_AUX_KWH:
+        elif aux > MAX_AUX_KWH and not with_aux:
             days[day] = SKIP_AUX
         elif (row := sums.get(day)) is None or row[4] < MIN_STATISTICS_HOURS:
             days[day] = SKIP_LITTLE_HEATING
         else:
-            weight, ideal, sink, source, _, flow_only = row
+            weight, ideal, sink, source, _, without_return = row
             days[day] = FactorDay(
                 heat=heat,
-                electricity=electricity,
+                electricity=electricity + (aux if with_aux else 0.0),
                 sink=sink / weight,
                 source=source / weight,
                 cop=weight / ideal,
-                flow_only_share=flow_only / weight,
+                flow_only_share=without_return / weight,
                 day_mean_source=False,
                 from_statistics=True,
             )

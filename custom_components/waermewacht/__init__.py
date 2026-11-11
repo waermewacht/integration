@@ -186,6 +186,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
         await async_register_card(hass)
     if is_gas(entry):
         return await _async_setup_gas(hass, entry)
+    _remove_retired_entities(hass, entry)
     moved = _adopt_new_signals(hass, entry)
     runtime = HeatPumpRuntime(hass, entry, moved)
     await runtime.async_start()
@@ -207,6 +208,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: WaermewachtConfigEntry) 
     # once per sensor: at the setup, and for a sensor that appears later.
     runtime.spawn(runtime.async_import_history(), "import_history", background=True)
     return True
+
+
+# Entities a heat pump entry no longer has (key after "<entry id>_").
+# "restart_comparison": button "Restart efficiency comparison", until 0.6.7;
+# the comparison takes the heating curve out itself since (health 4.1a).
+RETIRED_KEYS = (("button", "restart_comparison"),)
+
+
+@callback
+def _remove_retired_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop retired entities from the registry, else they stay behind as
+    "no longer provided"."""
+    registry = er.async_get(hass)
+    for domain, key in RETIRED_KEYS:
+        if entity_id := registry.async_get_entity_id(
+            domain, DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
 
 
 async def _async_setup_gas(hass: HomeAssistant, entry: ConfigEntry) -> bool:

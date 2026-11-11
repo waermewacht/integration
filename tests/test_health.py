@@ -9,128 +9,117 @@ import pytest
 from custom_components.waermewacht.curve import DaySample
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.health import (
+    BASIS_LIFT,
     NO_PREVIOUS,
     NO_PREVIOUS_YEAR,
+    OUTSIDE_RANGE,
     TOO_FEW_CHARGES,
     TOO_FEW_CLASSES,
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
+    BaselineDay,
     aux_mild_weather,
+    baseline_drop,
     dhw_efficiency_drop,
-    efficiency_drop,
+    outdoor_days,
     outdoor_problem,
     window_days,
     year_earlier,
 )
 from custom_components.waermewacht.model import Mode
 
-
-def row(lower: float, days: int, heat: float, ratio: float, **extra) -> dict:
-    return {
-        "lower": lower,
-        "upper": lower + 2,
-        "days": days,
-        "heat_kwh": heat,
-        "electricity_kwh": heat / ratio,
-        "ratio": ratio,
-        "sparse": False,
-        **extra,
-    }
+D0 = date(2025, 10, 1)
 
 
-def test_same_efficiency_is_no_problem() -> None:
-    previous = [row(0, 10, 300, 3.0), row(2, 10, 250, 3.4)]
-    current = [row(0, 8, 240, 3.0), row(2, 9, 220, 3.4)]
-    result = efficiency_drop(current, previous)
-    assert result.problem is False
-    assert result.evidence["drop_percent"] == pytest.approx(0.0, abs=0.05)
+def lifted(
+    n: int, lift: float, *, cop_at_20: float = 4.0, loss: float = 0.0, start: int = 0
+) -> list[BaselineDay]:
+    """n days at one lift; 1/COP = 0.1 + 0.0075 * lift (4.0 at 20 K), times
+    (1 + loss) for a real loss (more electricity for the same heat)."""
+    days = []
+    for i in range(n):
+        x = lift + (i % 5) - 2  # spread of 4 K around the lift
+        inverse = (0.1 + 0.0075 * x) * (4.0 / cop_at_20) * (1 + loss)
+        heat = 30.0 + (i % 3)
+        days.append(
+            BaselineDay(D0 + timedelta(days=start + i), heat, heat * inverse, x, 5.0)
+        )
+    return days
 
 
-def test_drop_compares_like_with_like() -> None:
-    """Colder this season: the overall ratio falls, but not per class."""
-    previous = [row(0, 10, 300, 3.0), row(6, 30, 600, 4.0)]
-    current = [row(0, 30, 900, 3.0), row(6, 5, 100, 4.0)]
-    assert efficiency_drop(current, previous).problem is False
+def test_baseline_unchanged_is_fine_and_a_loss_is_found() -> None:
+    previous = lifted(60, 20.0) + lifted(60, 26.0, start=60)
+    same = baseline_drop(lifted(20, 22.0, start=200), previous, basis=BASIS_LIFT)
+    assert same.problem is False
+    assert same.evidence["drop_percent"] == pytest.approx(0.0, abs=0.1)
+    assert same.evidence["days_compared"] == 20
+    lost = baseline_drop(
+        lifted(20, 22.0, start=200, loss=0.25), previous, basis=BASIS_LIFT
+    )
+    assert lost.problem is True
+    assert lost.evidence["drop_percent"] == pytest.approx(20.0, abs=0.1)
+    assert lost.evidence["ratio_expected"] > lost.evidence["ratio_current"]
+    assert lost.evidence["by_outdoor"][0]["days"] == 20
 
 
-def test_drop_of_twenty_percent_is_a_problem() -> None:
-    previous = [row(0, 10, 300, 3.0), row(2, 10, 250, 3.5)]
-    current = [row(0, 10, 300, 2.4), row(2, 10, 250, 2.8)]
-    result = efficiency_drop(current, previous)
-    assert result.problem is True
-    assert result.evidence["drop_percent"] == pytest.approx(20.0, abs=0.1)
-    assert result.evidence["ratio_previous_same_weather"] == pytest.approx(
-        3.21, abs=0.01
+def test_baseline_a_lower_heating_curve_is_no_alarm() -> None:
+    """The lift falls by 6 K: the ratio rises, the model expects exactly that
+    (no alarm, no restart needed); a loss at the same time still shows. The
+    previous season had a few mild days at the lower lift too."""
+    previous = lifted(30, 20.0) + lifted(90, 26.0, start=30)
+    lower = baseline_drop(lifted(20, 20.0, start=200), previous, basis=BASIS_LIFT)
+    assert lower.problem is False
+    assert lower.evidence["drop_percent"] == pytest.approx(0.0, abs=0.1)
+    both = baseline_drop(
+        lifted(20, 20.0, start=200, loss=0.2), previous, basis=BASIS_LIFT
+    )
+    assert both.problem is True
+
+
+def test_baseline_hysteresis() -> None:
+    previous = lifted(60, 20.0) + lifted(60, 26.0, start=60)
+    slight = lifted(20, 24.0, start=200, loss=0.12)  # 10.7 % more electricity
+    assert baseline_drop(slight, previous, basis=BASIS_LIFT).problem is False
+    assert (
+        baseline_drop(slight, previous, basis=BASIS_LIFT, was_on=True).problem is True
+    )
+    better = lifted(20, 24.0, start=200, loss=0.05)
+    assert (
+        baseline_drop(better, previous, basis=BASIS_LIFT, was_on=True).problem is False
     )
 
 
-def test_hysteresis() -> None:
-    previous = [row(0, 10, 300, 3.0), row(2, 10, 250, 3.0)]
-    current = [row(0, 10, 300, 2.64), row(2, 10, 250, 2.64)]  # 12 % drop
-    assert efficiency_drop(current, previous).problem is False
-    assert efficiency_drop(current, previous, was_on=True).problem is True
-    better = [row(0, 10, 300, 2.73), row(2, 10, 250, 2.73)]  # 9 % drop
-    assert efficiency_drop(better, previous, was_on=True).problem is False
-
-
-def test_only_common_classes_count() -> None:
-    previous = [row(-8, 12, 300, 2.6, upper=-4), row(0, 10, 300, 3.0)]
-    current = [row(-8, 12, 300, 2.0), row(0, 10, 300, 3.0)]  # bounds differ
-    result = efficiency_drop(current, previous)
-    assert result.problem is None and result.reason == TOO_FEW_CLASSES
-
-
-def test_merged_class_is_compared_with_the_summed_classes() -> None:
-    """A young season merges 6-12 °C into one class; the previous season
-    keeps three. Values of a real installation (October, 13 days)."""
-    previous = [
-        row(4, 28, 672.52, 3.4),
-        row(6, 39, 729.54, 3.39),
-        row(8, 34, 473.86, 3.5),
-        row(10, 33, 363.31, 3.62),
-    ]
-    current = [row(6, 13, 172.69, 4.91, upper=12)]
-    result = efficiency_drop(current, previous)
-    assert result.reason == TOO_FEW_DAYS  # 13 < 14, but the range counts
-    (compared,) = result.evidence["classes"]
-    assert (compared["lower"], compared["upper"]) == (6, 12)
-    assert compared["days_previous"] == 106
-    assert compared["ratio_previous"] == pytest.approx(3.47, abs=0.01)
-
-    current = [row(6, 14, 172.69, 4.91, upper=12)]
-    result = efficiency_drop(current, previous)
-    assert result.problem is False
-    assert result.evidence["drop_percent"] < 0  # better than last season
-
-
-def test_merged_previous_class_and_gaps() -> None:
-    previous = [row(-8, 12, 300, 2.5, upper=-4), row(0, 10, 300, 3.0)]
-    current = [row(-8, 8, 200, 1.8), row(-6, 8, 200, 1.8), row(0, 10, 300, 3.0)]
-    result = efficiency_drop(current, previous)
-    assert [(c["lower"], c["upper"]) for c in result.evidence["classes"]] == [
-        (-8, -4),
-        (0, 2),
-    ]
-    assert result.problem is True  # 1.8 against 2.5 in the cold range
-    # A gap in the current season: -8 to -4 cannot be covered.
-    result = efficiency_drop([current[0], current[2]], previous)
-    assert result.reason == TOO_FEW_CLASSES
-
-
-def test_minimum_data() -> None:
-    previous = [row(0, 10, 300, 3.0), row(2, 10, 250, 3.0)]
+def test_baseline_reasons() -> None:
+    previous = lifted(120, 24.0)
+    assert baseline_drop(lifted(20, 24.0), [], basis=BASIS_LIFT).reason == NO_PREVIOUS
     assert (
-        efficiency_drop([row(0, 6, 300, 3.0), row(2, 7, 250, 3.0)], previous).reason
+        baseline_drop(lifted(20, 24.0), lifted(20, 24.0), basis=BASIS_LIFT).reason
         == TOO_FEW_DAYS
     )
-    small = [row(0, 10, 15, 3.0), row(2, 10, 12, 3.0)]  # 9 kWh electricity
-    assert efficiency_drop(small, previous).reason == TOO_LITTLE_ELECTRICITY
-    assert efficiency_drop(small, []).reason == NO_PREVIOUS
-    sparse = [
-        row(0, 10, 300, 3.0),
-        {**row(2, 10, 250, 3.0), "sparse": True, "ratio": None},
+    flat = [BaselineDay(d.day, d.heat, d.electricity, 24.0, 5.0) for d in previous]
+    assert baseline_drop(lifted(20, 24.0), flat, basis=BASIS_LIFT).reason == (
+        TOO_FEW_CLASSES
+    )
+    assert baseline_drop(lifted(10, 24.0), previous, basis=BASIS_LIFT).reason == (
+        TOO_FEW_DAYS
+    )
+    # A lift far below what the previous season knew: no extrapolation.
+    far = baseline_drop(lifted(20, 12.0, start=200), previous, basis=BASIS_LIFT)
+    assert far.reason == OUTSIDE_RANGE
+    assert far.evidence["x_range"] == [22.0, 26.0]
+    tiny = [BaselineDay(d.day, 1.0, 0.25, d.x, 5.0) for d in lifted(20, 24.0)]
+    assert baseline_drop(tiny, previous, basis=BASIS_LIFT).reason == (
+        TOO_LITTLE_ELECTRICITY
+    )
+
+
+def test_outdoor_days_without_flow() -> None:
+    samples = [
+        day(0, 4.0, 40.0, 0.0),
+        day(1, 6.0, 0.0, 0.0),  # no heating heat: not a day of the comparison
     ]
-    assert efficiency_drop(sparse, previous).reason == TOO_FEW_CLASSES
+    found = outdoor_days(samples)
+    assert [(d.x, d.heat) for d in found] == [(4.0, 40.0)]
 
 
 def day(offset: int, mean: float, heat: float, aux: float) -> DaySample:

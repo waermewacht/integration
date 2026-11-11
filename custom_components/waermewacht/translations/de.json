@@ -831,9 +831,6 @@
       "issue_report": {
         "name": "Bericht für Fehlermeldung"
       },
-      "restart_comparison": {
-        "name": "Effizienzvergleich neu starten"
-      },
       "rebuild_history": {
         "name": "Rückblick neu berechnen"
       }
@@ -1094,7 +1091,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
@@ -1111,7 +1108,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
@@ -1128,7 +1125,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
@@ -1145,7 +1142,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
@@ -1162,7 +1159,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }
@@ -1179,7 +1176,7 @@
           "too_few_days": "Zu wenige Tage",
           "too_little_electricity": "Zu wenig Strom",
           "too_few_charges": "Zu wenige Ladungen",
-          "comparison_restarted": "Vergleich neu gestartet",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
           "no_aux_counter": "Kein Heizstab-Zähler",
           "no_outdoor_temp": "Keine Außentemperatur"
         }

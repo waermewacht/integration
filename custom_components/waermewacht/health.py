@@ -5,12 +5,13 @@ Design, thresholds and sources: docs/GESUNDHEITSCHECK.md. A finding is
 decision. Thresholds marked "own assumption" there are options or constants
 here, never hidden.
 
-- Efficiency drop (4.1): heating ratio of the current season against the
-  previous one at the same outdoor temperature, class by class of the
-  performance curve; the previous season is weighted with the current heat
-  per class. Where one season merged classes the other keeps apart (a young
-  season has few days per class), the classes of the other are summed over
-  the same range. On from a drop of 15 %, off below 10 % (hysteresis).
+- Efficiency drop (4.1, 4.1a): a baseline model of the previous season,
+  1/ratio = a + b * x, fitted per day with the heat as weight, x the lift
+  (sink minus outdoor while heating) or, without a flow temperature, the
+  outdoor day mean. The current season's days within the previous range
+  give the expected electricity; the drop is the electricity used above it.
+  The heating curve and the weather fall out, no restart is needed after a
+  deliberate change. On from a drop of 15 %, off below 10 % (hysteresis).
 - Backup heater on mild days (4.2): heater energy for heating on days with a
   mean of at least 5 °C in the last 7 full days; on from 2 kWh. The rolling
   window is the hysteresis. Hot water does not count (disinfection may use
@@ -36,8 +37,9 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from .carnot import FactorDay
 from .charges import MIN_CHARGE_ELECTRICITY_KWH, DisinfectionSplit
-from .curve import OUTDOOR_MAX, OUTDOOR_MIN, DaySample
+from .curve import CLASS_WIDTH, OUTDOOR_MAX, OUTDOOR_MIN, DaySample, class_lower
 from .energy import Kind, ratio
 from .model import Mode
 
@@ -45,9 +47,15 @@ from .model import Mode
 # about 0.14 at 7 days (3 % at a ratio of 4), so 15 % is well above noise.
 DROP_PERCENT = 15.0
 DROP_RELEASE_POINTS = 5.0  # off below threshold minus this
-MIN_COMMON_SPAN = 4.0  # K of compared outdoor range, two classes
-MIN_COMMON_DAYS = 14
+# 4.1a, own assumptions checked on one heat pump (two seasons, 31 windows of
+# 28 days against the rest of the season: scatter about 2 %).
+MIN_PREVIOUS_DAYS = 30  # days of the previous season for the model
+MIN_SPAN_K = 4.0  # spread of x in the previous season, else b is guesswork
+MIN_COMPARED_DAYS = 14  # current days within the previous range
 MIN_COMPARED_KWH = 10.0
+RANGE_MARGIN_K = 1.0  # x beyond the previous range still predicted
+BASIS_LIFT = "lift"
+BASIS_OUTDOOR = "outdoor"
 # 4.2, own assumptions.
 MILD_FROM = 5.0  # °C day mean
 AUX_KWH = 2.0  # in the window
@@ -71,7 +79,7 @@ TOO_FEW_DAYS = "too_few_days"
 TOO_LITTLE_ELECTRICITY = "too_little_electricity"
 TOO_FEW_CHARGES = "too_few_charges"
 NOT_ANALYSED = "not_analysed_yet"
-RESTARTED = "comparison_restarted"
+OUTSIDE_RANGE = "outside_previous_range"
 
 
 @dataclass
@@ -99,7 +107,7 @@ STATUS_REASONS = (
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
     TOO_FEW_CHARGES,
-    RESTARTED,
+    OUTSIDE_RANGE,
     NO_AUX,
     NO_OUTDOOR,
 )
@@ -115,117 +123,151 @@ def status(problem: bool | None, reason: str | None) -> str | None:
     return STATUS_PROBLEM if problem else STATUS_OK
 
 
-def _usable(rows: Sequence[Mapping[str, Any]]) -> bool:
-    return all(not r.get("sparse") and r.get("ratio") for r in rows)
+@dataclass(frozen=True)
+class BaselineDay:
+    """One day of the efficiency comparison: heating heat, its electricity
+    (running and backup heater, no standby), the model's x (lift or outdoor
+    temperature) and the outdoor day mean for the table by class."""
+
+    day: date
+    heat: float
+    electricity: float
+    x: float
+    outdoor: float
 
 
-def _sum(rows: Sequence[Mapping[str, Any]], key: str) -> float:
-    return sum(r[key] for r in rows)
+def fit_baseline(days: Sequence[BaselineDay]) -> tuple[float, float] | None:
+    """a, b of 1/ratio = a + b * x by least squares, each day weighted with
+    its heat; None without spread in x."""
+    w = sum(d.heat for d in days)
+    if w <= 0:
+        return None
+    mx = sum(d.heat * d.x for d in days) / w
+    my = sum(d.electricity for d in days) / w  # heat-weighted mean of 1/ratio
+    sxx = sum(d.heat * (d.x - mx) ** 2 for d in days)
+    if sxx <= 0:
+        return None
+    sxy = sum(d.heat * (d.x - mx) * (d.electricity / d.heat - my) for d in days)
+    b = sxy / sxx
+    return my - b * mx, b
 
 
-def common_ranges(
-    current: Sequence[Mapping[str, Any]], previous: Sequence[Mapping[str, Any]]
-) -> list[tuple[list[Mapping[str, Any]], list[Mapping[str, Any]]]]:
-    """Smallest outdoor ranges bounded by class limits of both curves.
-
-    Each pair holds the adjacent classes of either season that cover the
-    same range. A range with a gap, a sparse class or a class without a
-    ratio is left out.
-    """
-    cur = sorted(current, key=lambda r: r["lower"])
-    prev = sorted(previous, key=lambda r: r["lower"])
-    ranges = []
-    i = j = 0
-    while i < len(cur) and j < len(prev):
-        if cur[i]["lower"] != prev[j]["lower"]:
-            if cur[i]["lower"] < prev[j]["lower"]:
-                i += 1
-            else:
-                j += 1
-            continue
-        a, b = [cur[i]], [prev[j]]
-        i, j = i + 1, j + 1
-        while a[-1]["upper"] != b[-1]["upper"]:
-            if a[-1]["upper"] < b[-1]["upper"]:
-                if i == len(cur) or cur[i]["lower"] != a[-1]["upper"]:
-                    break
-                a.append(cur[i])
-                i += 1
-            else:
-                if j == len(prev) or prev[j]["lower"] != b[-1]["upper"]:
-                    break
-                b.append(prev[j])
-                j += 1
-        else:
-            if _usable(a) and _usable(b):
-                ranges.append((a, b))
-    return ranges
-
-
-def efficiency_drop(
-    current: Sequence[Mapping[str, Any]],
-    previous: Sequence[Mapping[str, Any]],
+def baseline_drop(
+    current: Sequence[BaselineDay],
+    previous: Sequence[BaselineDay],
     *,
+    basis: str,
     threshold: float = DROP_PERCENT,
     was_on: bool = False,
 ) -> Finding:
-    """Compare two performance curves (rows as from curve.curve_as_dicts).
-
-    Only ranges covered by usable classes of both seasons take part
-    (common_ranges). Reference ratio: the previous season with the current
-    heat distribution, Σ heat_cur / Σ (heat_cur / ratio_prev); current
-    ratio: Σ heat_cur / Σ electricity_cur over the same ranges.
-    """
+    """Electricity of the current days against what the previous season's
+    model expects for them (docs/GESUNDHEITSCHECK.md 4.1a)."""
+    previous = [d for d in previous if d.heat > 0 and d.electricity > 0]
+    current = [d for d in current if d.heat > 0 and d.electricity > 0]
+    evidence: dict[str, Any] = {
+        "basis": basis,
+        "threshold_percent": threshold,
+        "days_current": len(current),
+        "days_previous": len(previous),
+    }
     if not previous:
-        return Finding(None, NO_PREVIOUS)
-    common = [
-        (
-            {
-                "lower": a[0]["lower"],
-                "upper": a[-1]["upper"],
-                "days": _sum(a, "days"),
-                "heat_kwh": _sum(a, "heat_kwh"),
-                "electricity_kwh": _sum(a, "electricity_kwh"),
-                "ratio": _sum(a, "heat_kwh") / _sum(a, "electricity_kwh"),
-            },
-            {
-                "days": _sum(b, "days"),
-                "ratio": _sum(b, "heat_kwh") / _sum(b, "electricity_kwh"),
-            },
-        )
-        for a, b in common_ranges(current, previous)
-    ]
-    classes = [
-        {
-            "lower": cur["lower"],
-            "upper": cur["upper"],
-            "days_current": cur["days"],
-            "days_previous": prev["days"],
-            "ratio_current": round(cur["ratio"], 2),
-            "ratio_previous": round(prev["ratio"], 2),
-        }
-        for cur, prev in common
-    ]
-    evidence: dict[str, Any] = {"threshold_percent": threshold, "classes": classes}
-    if sum(cur["upper"] - cur["lower"] for cur, _ in common) < MIN_COMMON_SPAN:
-        return Finding(None, TOO_FEW_CLASSES, evidence)
-    if sum(cur["days"] for cur, _ in common) < MIN_COMMON_DAYS:
+        return Finding(None, NO_PREVIOUS, evidence)
+    if len(previous) < MIN_PREVIOUS_DAYS:
         return Finding(None, TOO_FEW_DAYS, evidence)
-    heat = sum(cur["heat_kwh"] for cur, _ in common)
-    electricity = sum(cur["electricity_kwh"] for cur, _ in common)
+    low, high = min(d.x for d in previous), max(d.x for d in previous)
+    evidence["x_range"] = [round(low, 1), round(high, 1)]
+    model = fit_baseline(previous)
+    if high - low < MIN_SPAN_K or model is None:
+        return Finding(None, TOO_FEW_CLASSES, evidence)
+    a, b = model
+    evidence["model"] = {"a": round(a, 4), "b": round(b, 5)}
+    compared = [
+        (d, expected)
+        for d in current
+        if low - RANGE_MARGIN_K <= d.x <= high + RANGE_MARGIN_K
+        and (expected := a + b * d.x) > 0
+    ]
+    evidence["days_compared"] = len(compared)
+    if len(current) < MIN_COMPARED_DAYS:
+        return Finding(None, TOO_FEW_DAYS, evidence)
+    if len(compared) < MIN_COMPARED_DAYS:
+        return Finding(None, OUTSIDE_RANGE, evidence)
+    heat = sum(d.heat for d, _ in compared)
+    electricity = sum(d.electricity for d, _ in compared)
     if electricity < MIN_COMPARED_KWH:
         return Finding(None, TOO_LITTLE_ELECTRICITY, evidence)
-    reference_electricity = sum(cur["heat_kwh"] / prev["ratio"] for cur, prev in common)
-    ratio = heat / electricity
-    reference = heat / reference_electricity
-    drop = (1 - ratio / reference) * 100
+    expected = sum(d.heat * e for d, e in compared)
+    drop = (1 - expected / electricity) * 100
     on = drop >= (threshold - DROP_RELEASE_POINTS if was_on else threshold)
+    by_class: dict[float, list[float]] = {}
+    for d, e in compared:
+        row = by_class.setdefault(class_lower(d.outdoor), [0, 0.0, 0.0, 0.0])
+        row[0] += 1
+        row[1] += d.heat
+        row[2] += d.electricity
+        row[3] += d.heat * e
     evidence.update(
-        ratio_current=round(ratio, 2),
-        ratio_previous_same_weather=round(reference, 2),
+        ratio_current=round(heat / electricity, 2),
+        ratio_expected=round(heat / expected, 2),
         drop_percent=round(drop, 1),
+        by_outdoor=[
+            {
+                "lower": lower,
+                "upper": lower + CLASS_WIDTH,
+                "days": int(n),
+                "ratio_current": round(h / e, 2),
+                "ratio_expected": round(h / x, 2),
+            }
+            for lower, (n, h, e, x) in sorted(by_class.items())
+        ],
     )
     return Finding(on, None, evidence)
+
+
+def lift_days(
+    days: Mapping[date, FactorDay | str], samples: Iterable[DaySample] = ()
+) -> list[tuple[BaselineDay, float]]:
+    """Days of the comparison with a flow temperature (carnot.statistics_days
+    with the backup heater): x is the lift, each with its share of heat
+    counted without a return. The outdoor day mean (for the table) from
+    `samples` where there, else the outdoor while heating."""
+    means = {s.day: s.mean_outdoor for s in samples}
+    return [
+        (
+            BaselineDay(
+                day,
+                found.heat,
+                found.electricity,
+                found.sink - found.source,
+                means.get(day, found.source),
+            ),
+            found.flow_only_share,
+        )
+        for day, found in sorted(days.items())
+        if isinstance(found, FactorDay)
+    ]
+
+
+def flow_only_share(days: Sequence[tuple[BaselineDay, float]]) -> float:
+    """Share of the heat counted without a return temperature."""
+    heat = sum(d.heat for d, _ in days)
+    return sum(d.heat * share for d, share in days) / heat if heat > 0 else 0.0
+
+
+def outdoor_days(samples: Iterable[DaySample]) -> list[BaselineDay]:
+    """Days of the comparison without a flow temperature: x is the outdoor
+    day mean (curve.daily_samples), energy of heating without standby."""
+    return [
+        BaselineDay(
+            s.day,
+            s.totals.heat(Mode.HEATING),
+            s.totals.electricity(Mode.HEATING),
+            s.mean_outdoor,
+            s.mean_outdoor,
+        )
+        for s in samples
+        if s.totals.heat(Mode.HEATING) > 0
+    ]
 
 
 def aux_mild_weather(

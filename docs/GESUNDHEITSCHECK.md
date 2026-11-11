@@ -94,7 +94,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Anzeige.** Binärsensor „Effizienz gesunken“. Attribute: `ratio_current`, `ratio_previous_same_weather`, `drop_percent`, `classes` (je gemeinsamem Bereich `lower`, `upper`, `days_current`, `days_previous`, `ratio_current`, `ratio_previous`; nicht aufgezeichnet), `threshold_percent`, `reason`. Die im Entwurf vorgesehenen `aux_share_current` und `aux_share_previous` gibt es nicht.
 
-#### 4.1a Umbau: Basismodell aus Wetter und Vorlauf, ohne Schaltfläche (Entwurf 2026-11-11)
+#### 4.1a Umbau: Basismodell aus Wetter und Vorlauf, ohne Schaltfläche (Entwurf und Umsetzung 2026-11-11, `health.baseline_drop`)
 
 **Anlass.** Die Schaltfläche „Effizienzvergleich neu starten“ wird als „aktualisieren“ verstanden. Im Forum wurde sie zusammen mit „Rückblick neu berechnen“ gedrückt, ohne dass sich an der Anlage etwas geändert hatte. Danach war die Prüfung 28 Tage lang blind. Wie lange, zeigte nirgends ein Datum, und rückgängig machen ließ es sich nicht. Außerdem muss der Nutzer selbst wissen, dass eine gewollte Änderung der Heizkurve den Vergleich verfälscht. Das widerspricht „erst Erkennung, dann Feld“.
 
@@ -120,7 +120,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 - **Vorhersage:** nur für Tage der laufenden Saison, deren Hub im Bereich der Vorsaison liegt (± 1 K). Keine Hochrechnung über den Bereich hinaus. Erwarteter Strom = Σ Wärme_d · (a + b · Hub_d). `Rückgang = 1 − erwarteter Strom / gemessener Strom`. Anschaulich: so viel mehr Strom braucht die Anlage, als sie bei diesem Wetter und diesem Vorlauf früher gebraucht hätte.
 - **Schwellen** 15 % an, 10 % aus unverändert. Bei einer Streuung von rund 2 % ließe sich die Schwelle später senken; erst nach dem Winter an weiteren Anlagen entscheiden.
 - **Mindestdaten:** Vorsaison ≥ 30 Tage und Hub-Spanne ≥ 4 K (sonst ist die Steigung kaum bestimmt). Laufende Saison ≥ 14 Tage im Bereich und ≥ 10 kWh Strom.
-- **Neuer Grund `different_flow`** (unbekannt): Die laufende Saison hat genug Tage, aber zu wenige davon im Hub-Bereich der Vorsaison. Typisch nach einer deutlich geänderten Heizkurve oder in einem viel kälteren Winter. Der Text sagt sinngemäß: „Vorlauf oder Wetter außerhalb dessen, was die Vorsaison kennt; Vergleich, sobald es genug vergleichbare Tage gibt“.
+- **Neuer Grund `outside_previous_range`** (unbekannt, „Vorlauf oder Wetter anders als Vorsaison“): Die laufende Saison hat genug Tage, aber zu wenige davon im Hub-Bereich der Vorsaison. Typisch nach einer deutlich geänderten Heizkurve oder in einem viel kälteren Winter. Der Text sagt sinngemäß: „Vorlauf oder Wetter außerhalb dessen, was die Vorsaison kennt; Vergleich, sobald es genug vergleichbare Tage gibt“.
 - **Ohne Vorlauf-Sensor** (oder ohne Vorlauf-Statistik und ohne Tagebuch-Tage): dasselbe Modell mit der Außentemperatur statt des Hubs (`1/AZ = a + b · T_außen`). Eine geänderte Heizkurve bleibt dann unsichtbar, der Text nennt sie als erste mögliche Ursache. Keine Schaltfläche, kein neues Feld (Einfache Einrichtung). Die bisherige Klassenrechnung (`common_ranges`) entfällt damit ganz, wenn die Probe ohne Senke nicht schlechter ist als heute (bei der Umsetzung prüfen).
 - **Später, offen:** Statt „Saison bis gestern“ die letzten 28 Heiztage gegen die 12 Monate davor. Das ist unabhängig vom Saisonbeginn und reagiert schneller auf einen plötzlichen Defekt mitten im Winter; die Probe oben ist genau dieser Fall. Nach dem Umbau entscheiden.
 
@@ -128,13 +128,13 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 - `button.py`: `RestartComparison` weg. Beim Laden die Entität `restart_comparison` aus der Entitäten-Registry entfernen, sonst bleibt sie als „nicht mehr bereitgestellt“ stehen.
 - `comparison_reset_at`: beim Laden ignorieren und beim nächsten Speichern weglassen. Ein laufender Neustart endet damit sofort.
-- `RESTARTED` aus `STATUS_REASONS`, Übersetzungen und Karte entfernen, `different_flow` ergänzen. Dazu `tests/test_manifest.py`, `tests/ha/test_health.py`, README („Effizienzvergleich neu starten“), Demo.
+- `RESTARTED` aus `STATUS_REASONS`, Übersetzungen und Karte entfernen, `outside_previous_range` ergänzen. Dazu `tests/test_manifest.py`, `tests/ha/test_health.py`, README („Effizienzvergleich neu starten“), Demo.
 
 **Anzeige.**
 
-- Attribute `basis` (`lift` oder `outdoor`), `ratio_current`, `ratio_expected` (AZ, die das Modell für dieselben Tage erwartet; ersetzt `ratio_previous_same_weather`), `drop_percent`, `threshold_percent`, `days_compared`, `days_current`, `lift_range` (Hub-Bereich der Vorsaison) und `model` (`a`, `b`, Gewichtssumme).
+- Attribute `basis` (`lift` oder `outdoor`), `ratio_current`, `ratio_expected` (AZ, die das Modell für dieselben Tage erwartet; ersetzt `ratio_previous_same_weather`), `drop_percent`, `threshold_percent`, `days_compared`, `days_current`, `days_previous`, `x_range` (Hub bzw. Außentemperatur der Vorsaison) und `model` (`a`, `b`).
 - `classes` entfällt. Ersatz zum Nachvollziehen: `by_outdoor` mit gemessener und erwarteter AZ je 2-K-Klasse der laufenden Saison (nicht aufgezeichnet).
-- Karte, Zeile „Effizienz“: wie bisher („In Ordnung“, „−18 % gegenüber Vorsaison“). Bei `different_flow`: „Vorlauf oder Wetter anders als Vorsaison“.
+- Karte, Zeile „Effizienz“: wie bisher („In Ordnung“, „−18 % gegenüber Vorsaison“). Bei `outside_previous_range`: „Vorlauf oder Wetter anders als Vorsaison“.
 
 **Last.** Keine neue Abfrage: Vorlauf, Rücklauf, außen und die Stunden liegen im täglichen Lauf schon vor (Kennlinie gegen 3 Uhr). Rechenaufwand: zwei Schleifen über die Tage zweier Saisons. Kein neues Speichern; mit `comparison_reset_at` fällt sogar ein Feld weg.
 
@@ -147,8 +147,17 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
    - zu kleine Hub-Spanne, eine Seite ohne Rücklauf, Heizstab-Tag, Hysterese
 2. `carnot.py`: Tage auch mit Heizstab liefern (heute fallen sie mit `SKIP_AUX` vorher heraus), Variante „nur Vorlauf“.
 3. `runtime.py`: Modell statt `common_ranges`. Schaltfläche und `comparison_reset_at` entfernen, Registry aufräumen, HA-Test für das Entfernen der Entität.
-4. Karte, `strings.json`/Übersetzungen, README, Demo (`tools/make_demo.py`), Quelle in `ENTWICKLUNG.md`, CHANGELOG unter „Geändert“: „Effizienz gesunken rechnet Wetter und Vorlauf heraus; die Schaltfläche ‚Effizienzvergleich neu starten‘ entfällt“.
+4. Karte, `strings.json`/Übersetzungen (`tools/make_strings.py`), README, Demo (`tools/make_demo.py`, `docs/demo/index.html`), Quelle in `ENTWICKLUNG.md` (noch offen), CHANGELOG unter „Geändert“: „Effizienz gesunken rechnet Wetter und Vorlauf heraus; die Schaltfläche ‚Effizienzvergleich neu starten‘ entfällt“.
 5. Vor dem Release mit dem Code noch einmal gegen die Statistik der Anlage des Inhabers rechnen (Skript aus Schritt 0) und die Probe ohne Senke wiederholen.
+
+**Umgesetzt (2026-11-11).** Wie oben, mit drei Abweichungen:
+- Tagebuch-Tage gehen nicht ein, nur Statistik-Tage. Ohne Vorlauf-Statistik gilt deshalb die Außentemperatur-Basis, auch wenn das Tagebuch einen Vorlauf kennt.
+- Der Grund heißt `outside_previous_range` statt `different_flow`, weil er auch bei der Außentemperatur-Basis gilt.
+- Die Hub-Basis gilt, sobald die Vorsaison 30 Hub-Tage hat oder auch die Außentemperatur-Basis keine 30 Tage hätte.
+
+**Probe mit dem Code der Integration** an der Anlage des Inhabers, dieselben 31 Fenster:
+- Hub-Basis: Streuung etwa 2 %, kein Fenster über einem Viertel der Schwelle, kein Fehlalarm.
+- Außentemperatur-Basis: Streuung knapp 5 % wie bisher, das Fenster mit der hohen Heizkurve bei gut neun Zehnteln der Schwelle, kein Fehlalarm. Sie ist so blind für die Heizkurve wie die bisherige Klassenrechnung. Die Klassenrechnung (`common_ranges`) ist entfernt.
 
 ### 4.2 Heizstab im Heizbetrieb bei milder Witterung
 
@@ -503,7 +512,7 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 - Schwellen 15 % (4.1) und 5 °C/2 kWh (4.2) nach dem ersten Winter an der Anlage des Inhabers prüfen.
 - ~~Problem-Sensoren mit `entity_category: diagnostic` oder ohne?~~ Entschieden 2026-10-27: ohne, wie „Auffälliges Takten“ (`ENTWICKLUNG.md` §6).
 - Soll 4.1 auch Heizen + Warmwasser vergleichen? Warmwasser schwankt mit Kaltwassertemperatur und Verbrauch; deshalb vorerst nur Heizen.
-- ~~Braucht 4.1 eine Möglichkeit, den Vergleich nach einer gewollten Änderung der Heizkurve zurückzusetzen?~~ Umgesetzt in 0.1.0b7: Schaltfläche „Effizienzvergleich neu starten“ (die nächsten 28 Tage werden die Vergleichsbasis). Soll nach 4.1a wieder entfallen.
+- ~~Braucht 4.1 eine Möglichkeit, den Vergleich nach einer gewollten Änderung der Heizkurve zurückzusetzen?~~ Umgesetzt in 0.1.0b7: Schaltfläche „Effizienzvergleich neu starten“ (die nächsten 28 Tage werden die Vergleichsbasis). Entfällt mit 4.1a (2026-11-11).
 - 4.1a: Braucht es für Anlagen ohne Vorlauf-Sensor ein eingeklapptes Feld „Vergleich ab“ (Datum der Heizkurvenänderung)? Vorschlag: nein, solange sich niemand meldet. Der Text nennt die Heizkurve als erste Ursache.
 - WPsmart im Bestand: Bericht-URL und genaue Definition der „maximalen Vorlauftemperatur bei −3 °C“ nachtragen (in `ENTWICKLUNG.md` §3).
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.

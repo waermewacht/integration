@@ -831,9 +831,6 @@
       "issue_report": {
         "name": "Report for a bug report"
       },
-      "restart_comparison": {
-        "name": "Restart efficiency comparison"
-      },
       "rebuild_history": {
         "name": "Recalculate look-back"
       }
@@ -1094,7 +1091,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
@@ -1111,7 +1108,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
@@ -1128,7 +1125,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
@@ -1145,7 +1142,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
@@ -1162,7 +1159,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
@@ -1179,7 +1176,7 @@
           "too_few_days": "Too few days",
           "too_little_electricity": "Too little electricity",
           "too_few_charges": "Too few charges",
-          "comparison_restarted": "Comparison restarted",
+          "outside_previous_range": "Flow or weather unlike the previous season",
           "no_aux_counter": "No backup heater meter",
           "no_outdoor_temp": "No outdoor temperature"
         }
