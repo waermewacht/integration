@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Außentemperatur in der Karte „Wärme und Strom je Monat“.** Das Monatsmittel der Außentemperatur erscheint als Linie mit eigener Achse in °C, Minimum bis Maximum als blasses Band dahinter; die Werte stehen im Tooltip. Das braucht eine Langzeitstatistik des Außenfühlers (`state_class: measurement`), sonst bleibt die Karte wie bisher. (danke an suedschwede, simon42-Forum)
+
 ## 0.7.3 – 2026-11-12
 
 ### Geändert

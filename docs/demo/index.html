@@ -871,6 +871,16 @@
       function monthRows(ids, entities) {
         const result = {};
         for (const id of ids) {
+          if (id === sourceIds.outdoor_temp) {
+            // The outdoor temperature (mean, min, max per month).
+            result[id] = data.months
+              .filter((m) => m.outdoor_mean !== undefined)
+              .map((m) => ({
+                start: new Date(`${m.month}-01T00:00:00${offset(m.month)}`).getTime(),
+                mean: m.outdoor_mean, min: m.outdoor_min, max: m.outdoor_max,
+              }));
+            continue;
+          }
           const key = entities[id]?.translation_key;
           result[id] = data.months
             .filter((m) => m[key] !== undefined)

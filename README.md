@@ -736,7 +736,7 @@ Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS. Die Dashb
 | Wärmewacht Kosten (`…-costs-card`) | Strom Monat und Saison (mit Netzbezug-Zähler auch der Anteil eigener Strom je Betriebsart), Kosten je kWh Wärme, Ersparnis gegenüber Gas |
 | Wärmewacht Hybridanlage (`…-hybrid-card`) | Anteil der Wärmepumpe, Wärme des Kessels |
 | Wärmewacht Kennlinie und Heizlast (`…-analysis-card`) | AZ-Kennlinie und Energiesignatur als Diagramm, Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf bei 0 °C; fehlt die Heizlast noch, was den Daten fehlt (etwa „2 von 8 Wochen“) |
-| Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl; Monate der laufenden Saison in voller Farbe, die davor blasser, eine Linie markiert den Saisonbeginn |
+| Wärmewacht Wärme und Strom je Monat (`…-months-card`) | Säulen der letzten zwölf Monate aus der Langzeitstatistik, mit Arbeitszahl; Monate der laufenden Saison in voller Farbe, die davor blasser, eine Linie markiert den Saisonbeginn; dazu die Außentemperatur je Monat (Mittel als Linie, Min bis Max als Band, eigene Achse in °C), wenn der Außenfühler eine Langzeitstatistik hat (`state_class: measurement`) |
 | Wärmewacht Gas- und Ölheizung (`…-boiler-card`) | Energiesignatur als Diagramm (auch die vorläufige Gerade), Heizlast, Heizgrenze, Wärme je Gradtag, Vorlauf, Warmwasseranteil, Verbrauch und Kosten der letzten 365 Tage; fehlt ein Wert, steht der Grund dabei, bei der Heizlast auch, was den Daten noch fehlt (etwa „2 von 8 Wochen“) |
 
 ```yaml

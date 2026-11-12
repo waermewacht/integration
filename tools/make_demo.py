@@ -1514,9 +1514,31 @@ def months(sim: Sim) -> list[dict[str, Any]]:
                         "standby",
                     )
                 },
+                # Outdoor temperature of the month (the card's second axis):
+                # mean, min and max of the hourly values, as the recorder's
+                # monthly statistics of a sensor with state class measurement.
+                **outdoor_month(sim, month, first.astimezone(UTC), end),
             }
         )
     return rows
+
+
+def outdoor_month(
+    sim: Sim, month: str, start: datetime, end: datetime
+) -> dict[str, float]:
+    """Mean, min and max of the hourly outdoor temperature in a local month."""
+    values = [
+        v
+        for h, v in sim.outdoor_hours(start, end).items()
+        if h.astimezone(TZ).strftime("%Y-%m") == month
+    ]
+    if not values:
+        return {}
+    return {
+        "outdoor_mean": round(sum(values) / len(values), 1),
+        "outdoor_min": round(min(values), 1),
+        "outdoor_max": round(max(values), 1),
+    }
 
 
 def report(sim: Sim) -> dict[str, Any]:

@@ -58,7 +58,7 @@ const TEXT = {
       costs: "Stromkosten, Wärmekosten und Ersparnis gegenüber Gas.",
       hybrid: "Anteil der Wärmepumpe und Wärme des Kessels (Hybridanlage).",
       analysis: "AZ-Kennlinie, Energiesignatur und Heizlast.",
-      months: "Wärme und Strom je Monat mit Arbeitszahl, aus der Langzeitstatistik.",
+      months: "Wärme und Strom je Monat mit Arbeitszahl und Außentemperatur, aus der Langzeitstatistik.",
       boiler: "Heizlast, Heizgrenze, Energiesignatur und Kosten einer Gas- oder Ölheizung vor dem Umstieg.",
       all: "Alle Themen in einer Karte.",
     },
@@ -175,6 +175,7 @@ const TEXT = {
     ratio: "AZ",
     noStatistics: "Noch keine Langzeitstatistik.",
     lastMonths: "letzte 12 Monate",
+    outdoorMonth: "Außentemperatur (Ø, Min–Max)",
     season: "Saison",
     detail: {
       efficiency_drop: (a, n) => `AZ Heizen ${n(a.ratio_current, 2)}, erwartet ${n(a.ratio_expected, 2)}`,
@@ -251,7 +252,7 @@ const TEXT = {
       costs: "Electricity cost, heat cost and savings against gas.",
       hybrid: "Heat pump share and boiler heat (hybrid system).",
       analysis: "Performance curve, energy signature and heat load.",
-      months: "Heat and electricity per month with performance factor, from the long-term statistics.",
+      months: "Heat and electricity per month with performance factor and outdoor temperature, from the long-term statistics.",
       boiler: "Heat load, heating limit, energy signature and costs of a gas or oil boiler before the switch.",
       all: "All topics in one card.",
     },
@@ -365,6 +366,7 @@ const TEXT = {
     ratio: "COP",
     noStatistics: "No long-term statistics yet.",
     lastMonths: "last 12 months",
+    outdoorMonth: "Outdoor temperature (mean, min–max)",
     season: "Season",
     detail: {
       efficiency_drop: (a, n) => `COP heating ${n(a.ratio_current, 2)}, expected ${n(a.ratio_expected, 2)}`,
@@ -443,6 +445,7 @@ const COLORS = {
   elec: "#2F6FB0",
   elecDhw: "#8DB3DD",
   standby: "#9AA0A6",
+  outdoor: "#D9A400",
 };
 // Own energy sensors for the months (translation keys).
 const MONTH_KEYS = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
@@ -489,6 +492,7 @@ const STYLE = `
   svg .axis { stroke: var(--divider-color); stroke-width: 1; }
   svg .season { stroke: var(--secondary-text-color); stroke-width: 1; }
   svg rect.before { opacity: 0.4; }
+  svg .temp-band { fill: var(--c); opacity: 0.15; }
   svg .hit { fill: transparent; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--secondary-text-color); margin-top: 4px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
@@ -1201,8 +1205,12 @@ class WaermewachtCard extends HTMLElement {
   _months(t, deviceId) {
     const ids = MONTH_KEYS.map((k) => this._entities[k]).filter(Boolean);
     if (!ids.length) return "";
+    // The outdoor temperature of the source (mean, min, max per month), in
+    // the same request; read again once the sources are known.
+    const outdoor = sources(this._hass, deviceId)?.outdoor_temp;
     const cache = this._monthCache;
-    const stale = !cache || cache.deviceId !== deviceId || Date.now() - cache.at > 3600 * 1000;
+    const stale = !cache || cache.deviceId !== deviceId || cache.outdoor !== outdoor
+      || Date.now() - cache.at > 3600 * 1000;
     if (stale && !this._monthLoading) {
       this._monthLoading = true;
       // 13 months back; the recorder cuts months in the server's time zone,
@@ -1211,14 +1219,14 @@ class WaermewachtCard extends HTMLElement {
       this._hass.callWS({
         type: "recorder/statistics_during_period",
         start_time: start.toISOString(),
-        statistic_ids: ids,
+        statistic_ids: outdoor ? [...ids, outdoor] : ids,
         period: "month",
-        types: ["change"],
-        units: { energy: "kWh" },
+        types: ["change", "mean", "min", "max"],
+        units: { energy: "kWh", temperature: "°C" },
       }).then((rows) => {
-        this._monthCache = { deviceId, at: Date.now(), rows };
+        this._monthCache = { deviceId, outdoor, at: Date.now(), rows };
       }).catch(() => {
-        this._monthCache = { deviceId, at: Date.now(), rows: {} };
+        this._monthCache = { deviceId, outdoor, at: Date.now(), rows: {} };
       }).finally(() => {
         this._monthLoading = false;
         this._states = null;
@@ -1241,7 +1249,13 @@ class WaermewachtCard extends HTMLElement {
     // every hour - and the eleven before, gaps included.
     const byKey = new Map([...months.entries()].map(([start, m]) => [this._monthKey(start), m]));
     const keys = this._monthsUpTo([...byKey.keys()].sort().at(-1), 12);
-    return this._monthChart(t, keys.map((k) => [k, byKey.get(k) || {}]), this._seasonKey());
+    // Without long-term statistics (no state class) the sensor has no mean.
+    const temps = new Map();
+    for (const row of (this._monthCache.outdoor && rows[this._monthCache.outdoor]) || []) {
+      if (row.mean === null || row.mean === undefined) continue;
+      temps.set(this._monthKey(row.start), { mean: row.mean, min: row.min ?? row.mean, max: row.max ?? row.mean });
+    }
+    return this._monthChart(t, keys.map((k) => [k, byKey.get(k) || {}]), this._seasonKey(), temps);
   }
 
   /** "2026-07" of a time, in the server's time zone. */
@@ -1314,8 +1328,10 @@ class WaermewachtCard extends HTMLElement {
   /** Two stacked bars per month: heat (heating, hot water) and electricity
    * (heating, hot water, standby), the performance factor above. Months of
    * the current season (as the figures above) in full colour, those before
-   * paler, a thin line where the season begins. */
-  _monthChart(t, months, seasonKey) {
+   * paler, a thin line where the season begins. With `temps` (month key ->
+   * mean, min, max in °C) the outdoor temperature on a second axis: the
+   * mean as a line, min to max as a pale band behind the bars. */
+  _monthChart(t, months, seasonKey, temps) {
     const W = this._chartWidth();
     this._drawnWidth = W;
     const H = 200;
@@ -1329,14 +1345,21 @@ class WaermewachtCard extends HTMLElement {
     const step = niceStep(high / 4);
     const y1 = Math.ceil(high / step) * step;
     const y = (v) => T + (1 - v / y1) * (H - B - T);
-    const slot = (W - L - 6) / months.length;
+    const temp = months.map(([key]) => temps?.get(key));
+    const hasTemp = temp.some(Boolean);
+    const R = hasTemp ? 30 : 6;
+    const slot = (W - L - R) / months.length;
     const bar = Math.max(3, slot * 0.34);
     const lang = this._hass.locale?.language || "en";
     let grid = "";
     for (let v = 0; v <= y1 + step / 2; v += step) {
-      grid += `<line class="axis" x1="${L}" x2="${W - 6}" y1="${y(v)}" y2="${y(v)}" stroke-dasharray="2 3"/>`
+      grid += `<line class="axis" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke-dasharray="2 3"/>`
         + `<text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${this._num(v, stepDigits(step))}</text>`;
     }
+    const { band, line } = hasTemp
+      ? this._monthTemps(t, months, temp, { W, H, T, B, L, R, slot, lang })
+      : { band: "", line: "" };
+    grid += band;
     const colors = {
       heat_heating: COLORS.heat, heat_dhw: COLORS.heatDhw,
       electricity_heating: COLORS.elec, electricity_dhw: COLORS.elecDhw, standby: COLORS.standby,
@@ -1380,11 +1403,60 @@ class WaermewachtCard extends HTMLElement {
       }
       bars += `<text x="${(L + i * slot + slot / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${escapeHtml(label)}</text>`;
     });
-    const legend = Object.keys(colors).map((k) => `<span style="--c:${colors[k]}">${escapeHtml(names[k])}</span>`).join("");
+    const legend = Object.keys(colors).map((k) => `<span style="--c:${colors[k]}">${escapeHtml(names[k])}</span>`).join("")
+      + (hasTemp ? `<span style="--c:${COLORS.outdoor}">${escapeHtml(t.outdoorMonth)}</span>` : "");
     const target = this._entities.heat_heating || this._entities.electricity_heating;
-    return `<div class="chart months" data-entity="${escapeHtml(target)}"><div class="caption">kWh · ${escapeHtml(t.ratio)} (${escapeHtml(t.lastMonths)})</div>`
-      + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(t.topics.months)}">${grid}${bars}</svg>`
+    const units = `kWh · ${t.ratio}${hasTemp ? " · °C" : ""}`;
+    return `<div class="chart months" data-entity="${escapeHtml(target)}"><div class="caption">${escapeHtml(units)} (${escapeHtml(t.lastMonths)})</div>`
+      + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(t.topics.months)}">${grid}${bars}${line}</svg>`
       + `<div class="legend">${legend}</div></div>`;
+  }
+
+  /** Outdoor temperature per month on its own axis (right, °C): the band
+   * from min to max and the line of the means, broken where a month has
+   * no statistics. */
+  _monthTemps(t, months, temp, { W, H, T, B, L, R, slot, lang }) {
+    const known = temp.filter(Boolean);
+    const lo = Math.min(...known.map((v) => v.min));
+    const hi = Math.max(...known.map((v) => v.max));
+    const step = niceStep(Math.max(hi - lo, 1) / 4);
+    const t0 = Math.floor(lo / step) * step;
+    let t1 = Math.ceil(hi / step) * step;
+    if (t1 <= t0) t1 = t0 + step;
+    const ty = (v) => T + (1 - (v - t0) / (t1 - t0)) * (H - B - T);
+    const cx = (i) => L + i * slot + slot / 2;
+    let band = "";
+    for (let v = t0; v <= t1 + step / 2; v += step) {
+      band += `<text x="${W - R + 4}" y="${(ty(v) + 3).toFixed(1)}" text-anchor="start">${this._num(v, stepDigits(step))}</text>`;
+    }
+    // Runs of consecutive months with a temperature.
+    const runs = [];
+    temp.forEach((v, i) => {
+      if (!v) return;
+      const run = runs.at(-1);
+      if (run && run.at(-1) === i - 1) run.push(i);
+      else runs.push([i]);
+    });
+    let line = "";
+    for (const run of runs) {
+      if (run.length > 1) {
+        const top = run.map((i) => `${cx(i).toFixed(1)},${ty(temp[i].max).toFixed(1)}`);
+        const bottom = run.slice().reverse().map((i) => `${cx(i).toFixed(1)},${ty(temp[i].min).toFixed(1)}`);
+        band += `<polygon class="temp-band" style="--c:${COLORS.outdoor}" points="${[...top, ...bottom].join(" ")}"/>`;
+        line += `<polyline points="${run.map((i) => `${cx(i).toFixed(1)},${ty(temp[i].mean).toFixed(1)}`).join(" ")}" fill="none" stroke="${COLORS.outdoor}" stroke-width="2"/>`;
+      } else {
+        const x = cx(run[0]).toFixed(1);
+        band += `<line x1="${x}" x2="${x}" y1="${ty(temp[run[0]].max).toFixed(1)}" y2="${ty(temp[run[0]].min).toFixed(1)}" stroke="${COLORS.outdoor}" stroke-width="4" opacity="0.3"/>`;
+      }
+      for (const i of run) {
+        const [year, month] = months[i][0].split("-").map(Number);
+        const label = new Date(Date.UTC(year, month - 1, 15, 12)).toLocaleDateString(lang, { month: "short", timeZone: "UTC" });
+        const v = temp[i];
+        line += `<circle cx="${cx(i).toFixed(1)}" cy="${ty(v.mean).toFixed(1)}" r="2.5" fill="${COLORS.outdoor}">`
+          + `<title>${escapeHtml(label)} · ${escapeHtml(t.outdoorMonth)}: Ø ${this._num(v.mean, 1)} °C (${this._num(v.min, 1)} … ${this._num(v.max, 1)} °C)</title></circle>`;
+      }
+    }
+    return { band, line };
   }
 }
 

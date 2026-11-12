@@ -737,7 +737,7 @@ Wärmewacht ships its own cards, without any extra card from HACS. It adds the d
 | Wärmewacht Costs (`…-costs-card`) | electricity month and season (with a grid import meter also the share of own electricity per mode), cost per kWh of heat, savings against gas |
 | Wärmewacht Hybrid system (`…-hybrid-card`) | heat pump share, boiler heat |
 | Wärmewacht Performance curve and heat load (`…-analysis-card`) | performance curve and energy signature as charts, heat load, heating limit, heat per degree day, flow at 0 °C; while the heat load is still missing, what the data lack (for example "2 of 8 weeks") |
-| Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor; months of the current season in full colour, those before paler, a line marks the season start |
+| Wärmewacht Heat and electricity per month (`…-months-card`) | bars of the last twelve months from the long-term statistics, with the performance factor; months of the current season in full colour, those before paler, a line marks the season start; also the outdoor temperature per month (mean as a line, min to max as a band, own axis in °C) if the outdoor sensor has long-term statistics (`state_class: measurement`) |
 | Wärmewacht Gas and oil boiler (`…-boiler-card`) | energy signature as a chart (also the preliminary line), heat load, heating limit, heat per degree day, flow, hot water share, consumption and cost of the last 365 days; a missing value says why, the heat load also what the data still lack (e.g. "2 of 8 weeks") |
 
 ```yaml
