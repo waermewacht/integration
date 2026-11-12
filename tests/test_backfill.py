@@ -13,6 +13,7 @@ from custom_components.waermewacht.backfill import (
     coarse,
     common_hours,
     compare_on_source,
+    drop_together,
     energy_between,
     hour_totals,
 )
@@ -24,6 +25,7 @@ from custom_components.waermewacht.health import (
     outdoor_days,
 )
 from custom_components.waermewacht.model import Mode, Signal, has_elec
+from custom_components.waermewacht.plausible import plausible_hours
 
 H0 = datetime(2026, 7, 15, 0, tzinfo=UTC)
 
@@ -283,3 +285,47 @@ def test_look_back_per_mode_pair() -> None:
     assert balance_groups(
         {Signal.ELEC_TOTAL, Signal.HEAT_HEATING, Signal.HEAT_DHW}
     ) == [{Signal.ELEC_TOTAL, Signal.HEAT_HEATING, Signal.HEAT_DHW}]
+
+
+def test_heat_hour_left_out_takes_its_electricity_along() -> None:
+    """A glitch of the heat counter (jump, fall back) leaves out two hours;
+    their electricity is dropped too instead of becoming standby (simon42
+    PN, 2026-11-12: 32 kWh standby in a week at some 4 W live)."""
+    h = timedelta(hours=1)
+    heat_rows = [
+        (H0, 2.5, 100.0),
+        (H0 + h, 9000.0, 9102.5),
+        (H0 + 2 * h, -8997.5, 105.0),
+    ]
+    elec_rows = [(H0 + i * h, 0.9, 40.0 + 0.9 * i) for i in range(3)]
+    heat, left_out = plausible_hours(heat_rows, 30.0)
+    elec, _ = plausible_hours(elec_rows, 30.0)
+    hourly = {Signal.HEAT_HEATING: heat, Signal.ELEC_HEATING: elec}
+    # Before: the electricity of both hours was standby.
+    before = by_hour(hourly, (Mode.HEATING,))
+    assert sum(t.get(Kind.STANDBY, Mode.HEATING) for t in before.values()) == 1.8
+
+    kept = drop_together(hourly, {Signal.HEAT_HEATING: left_out}, set(hourly))
+    after = by_hour(kept, (Mode.HEATING,))
+    assert list(after) == [H0]
+    assert after[H0].get(Kind.HEAT, Mode.HEATING) == 2.5
+    assert after[H0].get(Kind.ELEC, Mode.HEATING) == 0.9
+    assert sum(t.get(Kind.STANDBY, Mode.HEATING) for t in after.values()) == 0
+
+
+def test_left_out_hours_stay_within_their_group() -> None:
+    """Hot water loses its hour, heating and the boiler keep theirs."""
+    hourly = {
+        Signal.HEAT_HEATING: {H0: 2.0},
+        Signal.ELEC_HEATING: {H0: 0.7},
+        Signal.ELEC_DHW: {H0: 0.5},
+        Signal.BOILER_HEAT_HEATING: {H0: 1.0},
+    }
+    left_out = {Signal.HEAT_DHW: [H0]}
+    kept = drop_together(hourly, left_out, {*hourly, Signal.HEAT_DHW})
+    assert Signal.ELEC_DHW not in kept
+    assert kept[Signal.HEAT_HEATING] == {H0: 2.0}
+    assert kept[Signal.ELEC_HEATING] == {H0: 0.7}
+    assert kept[Signal.BOILER_HEAT_HEATING] == {H0: 1.0}
+    # Nothing left out: unchanged.
+    assert drop_together(hourly, {}, set(hourly)) is hourly

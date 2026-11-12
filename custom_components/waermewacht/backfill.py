@@ -128,6 +128,40 @@ def common_hours(
     return result
 
 
+def drop_together(
+    hourly: HourlyChanges,
+    left_out: Mapping[Signal, Collection[datetime]],
+    configured: Collection[Signal],
+) -> HourlyChanges:
+    """`hourly` without the hours left out of a counter (plausible_hours) in
+    every counter of its balance group (`balance_groups`).
+
+    A heat hour left out reads as no heat (`by_hour`): the electricity of the
+    same hour became standby, a glitch of the heat counter (jump and fall
+    back) so two running hours of standby (simon42 PN, 2026-11-12: 32 kWh of
+    standby in a week before the setup at some 4 W measured live). Without
+    the heat that hour, its electricity is dropped as well. Other signals
+    keep their hours.
+    """
+    drop: dict[Signal, set[datetime]] = {}
+    for group in balance_groups(configured):
+        hours = {h for s in group for h in left_out.get(s, ())}
+        if hours:
+            for signal in group:
+                drop[signal] = hours
+    if not drop:
+        return hourly
+    result: dict[Signal, Mapping[datetime, float]] = {}
+    for signal, values in hourly.items():
+        hours = drop.get(signal)
+        kept = (
+            values if not hours else {h: v for h, v in values.items() if h not in hours}
+        )
+        if kept:
+            result[signal] = kept
+    return result
+
+
 def hour_totals(
     changes: Mapping[Signal, float],
     heat_modes: Collection[Mode] = tuple(Mode),

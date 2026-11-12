@@ -58,6 +58,7 @@ from .backfill import (
     by_hour,
     common_hours,
     compare_on_source,
+    drop_together,
     energy_between,
 )
 from .carnot import (
@@ -2176,6 +2177,7 @@ class HeatPumpRuntime:
             {i for group in ids.values() for i in group}, start, end
         )
         result: HourlyChanges = {}
+        missing: dict[Signal, set[datetime]] = {}
         for signal, (primary, *older) in ids.items():
             # A sum started anew (meter replaced; mypyllant after a week
             # without a fetch), more than a heat pump can do in an hour (a
@@ -2194,8 +2196,13 @@ class HeatPumpRuntime:
             if rejected:
                 self._count(f"hour_rejected:{signal}")
                 self._note_rejected(signal, rejected)
+                # An older id may fill in an hour the primary has no row for.
+                missing[signal] = {h for h in rejected if h not in merged}
             if merged:
                 result[signal] = merged
+        # Heat and electricity of one balance group lose such an hour together
+        # (a heat hour left out made its electricity standby).
+        result = dict(drop_together(result, missing, ids))
         if signals is None and common:
             return common_hours(result, ids)
         return result

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Bitte prüfen
+
+- **Zeigt „Strom Stillstand“ für die Zeit vor der Einrichtung viel mehr als „Stillstand-Leistung 7 Tage“ erwarten lässt? Dann einmal „Rückblick neu berechnen“ drücken.** Die Schaltfläche steht auf der Geräteseite der Wärmepumpe unter *Konfiguration*. Sie rechnet die Zeit vor der Einrichtung neu, ohne die Werte seit der Einrichtung zu ändern.
+
+### Behoben
+
+- **Zu viel Stillstand im Rückblick, wenn der Wärmezähler einmal gesprungen war.** Eine Stunde mit unplausiblem Wärmewert (Sprung, Rückfall danach) lässt Wärmewacht weg. Ihren Strom aber behielt es, und weil die Stunde dann keine Wärme hatte, zählte er als Stillstand. So wurden aus Laufstunden Stillstandsstunden: „Strom Stillstand“ war zu hoch, „AZ Heizen+WW“ zu niedrig, die AZ je Betriebsart stimmte. Jetzt fällt in einer solchen Stunde auch der Strom derselben Betriebsart weg. (danke an sjheinz, simon42-Forum)
+
 ## 0.7.1 – 2026-11-12
 
 ### Neu
