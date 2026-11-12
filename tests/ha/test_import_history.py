@@ -433,7 +433,9 @@ async def test_look_back_leaves_out_a_unit_glitch(
     states: list[float],
     kept: float,
 ) -> None:
-    """The jump and the hour falling back are left out of the history."""
+    """The jump and the hour falling back are left out of the history, for
+    the heat of the same mode too (backfill.drop_together): heat without its
+    electricity would make the ratio too good."""
     await hass.config.async_set_time_zone("Europe/Berlin")
     first = SETUP_HOUR - timedelta(hours=5)
     source_statistics(hass, HEAT_HEATING, [1.0, 3.0, 6.0, 9.0, 12.0], first)
@@ -451,4 +453,4 @@ async def test_look_back_leaves_out_a_unit_glitch(
     electricity = await sums(hass, entity_id(hass, entry, "electricity_heating"))
     assert electricity[-1] == pytest.approx(kept)
     heat = await sums(hass, entity_id(hass, entry, "heat_heating"))
-    assert heat[-1] == pytest.approx(12.0)
+    assert heat[-1] == pytest.approx(12.0 - 3.0 - 3.0)  # both hours of the glitch
