@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Kosten trotz fehlender alter Preise.** Beginnen die Preise des Strompreis-Sensors erst im Lauf des Monats oder der Saison (Sensor neu, oder bisher ohne `state_class`), blieben „Stromkosten“, „Wärmekosten je kWh“ und die Ersparnis bis zum Ende des Zeitraums unbekannt. Jetzt rechnen sie ab dem ersten Tag mit Preisen, das Attribut `priced_from` nennt ihn. Fehlen Preise mitten im Zeitraum, bleiben die Kosten wie bisher unbekannt. (danke an @kamaradclimber)
+
 ## 0.7.2 – 2026-11-12
 
 ### Bitte prüfen

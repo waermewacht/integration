@@ -131,8 +131,14 @@ def _price_sensor(hass: HomeAssistant, runtime: HeatPumpRuntime) -> str:
             if feed is None or start is None or totals is None
             else feed.period(start, totals, now)
         )
-        missing = "-" if priced is None else str(priced[0].missing_hours)
-        parts.append(f"hours without price {period.value} {missing}")
+        if priced is None:
+            parts.append(f"hours without price {period.value} -")
+            continue
+        missing = priced.electricity.missing_hours + priced.hours_before
+        part = f"hours without price {period.value} {missing}"
+        if priced.priced_from is not None:
+            part += f" (priced from {priced.priced_from.astimezone(runtime.tz).date().isoformat()})"
+        parts.append(part)
     return ", ".join(parts)
 
 

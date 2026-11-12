@@ -62,6 +62,7 @@ from .model import (
     has_heat,
 )
 from .periods import RATIO_PERIODS, Period
+from .price_feed import PeriodCost
 from .prices import FIXED, NO_PRICE, price_source
 from .runtime import HeatPumpRuntime
 
@@ -525,10 +526,14 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
     priced = runtime.prices.period(start, totals, now)
     if priced is None:  # prices not read yet (shortly after the start)
         return None
-    electricity, heat = priced
+    # Prices only from a later day on: the base prices count from there too.
+    data_from = max(
+        (d for d in (runtime.data_from, priced.priced_from) if d is not None),
+        default=None,
+    )
     return compare_costs(
-        electricity,
-        heat,
+        priced.electricity,
+        priced.heat_kwh,
         start,
         now,
         runtime.tz,
@@ -536,15 +541,26 @@ def _comparison(runtime: HeatPumpRuntime, period: Period) -> CostComparison | No
         gas_price=runtime.prices.gas_price(start, totals, runtime.gas_prices, now),
         gas_base_price_per_year=runtime.gas_base_prices,
         electricity_base_price_per_year=runtime.electricity_base_prices,
-        data_from=runtime.data_from,
+        data_from=data_from,
     )
 
 
+def _period_price(runtime: HeatPumpRuntime, period: Period) -> PeriodCost | None:
+    """The priced period of the price sensor (None without one, or before
+    the first reading of its prices)."""
+    totals = runtime.energy(period)
+    start = runtime.marks.starts.get(period)
+    if runtime.prices is None or totals is None or start is None:
+        return None
+    return runtime.prices.period(start, totals, dt_util.utcnow())
+
+
 def _price_attributes(
-    result: CostComparison | None, runtime: HeatPumpRuntime
+    result: CostComparison | None, runtime: HeatPumpRuntime, period: Period
 ) -> dict[str, Any]:
     """Where the prices came from: sensor, fixed or mixed (fixed price for
-    hours without one of the sensor), and the hours without any price."""
+    hours without one of the sensor), the hours without any price, and since
+    when the period is priced when the sensor's prices begin within it."""
     if runtime.prices is None:
         return {"price_source": FIXED}
     if result is None:
@@ -558,6 +574,10 @@ def _price_attributes(
         "hours_fixed_price": electricity.fallback_hours,
         "hours_without_price": electricity.missing_hours,
     }
+    if (priced := _period_price(runtime, period)) and priced.priced_from:
+        # The days before have no price: the cost counts from here on.
+        attributes["priced_from"] = priced.priced_from.isoformat()
+        attributes["hours_without_price"] += priced.hours_before
     if electricity.missing_hours:
         # Why the cost stays unknown: one hour with electricity but without a
         # price leaves the sum empty (costs.electricity_cost).
@@ -631,7 +651,7 @@ def _cost_attributes(period: Period) -> Callable[[HeatPumpRuntime], dict[str, An
     def attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         return {
             **_period_attributes(period)(runtime),
-            **_price_attributes(_comparison(runtime, period), runtime),
+            **_price_attributes(_comparison(runtime, period), runtime, period),
             **_allocation_attributes(runtime, period),
         }
 
@@ -644,7 +664,7 @@ def _savings_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         return {}
     return {
         **_period_attributes(Period.SEASON)(runtime),
-        **_price_attributes(result, runtime),
+        **_price_attributes(result, runtime, Period.SEASON),
         **_allocation_attributes(runtime, Period.SEASON),
         "heat_kwh": round(result.heat_kwh, 1),
         "heat_pump_cost_eur": _money(result.heat_pump_cost_eur),

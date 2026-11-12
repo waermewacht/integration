@@ -15,6 +15,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import date, datetime, timedelta, tzinfo
 from functools import partial
+from typing import NamedTuple
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
@@ -38,11 +39,13 @@ from .prices import (
     day_mean_prices,
     floor_hour,
     hourly_means,
+    hours_before,
     hours_between,
     period_allocation,
     period_cost,
     period_gas_price,
     price_days,
+    priced_from,
     to_eur_per_kwh,
 )
 from .solar import HourFlows, SolarSettings, detect_same_inverter
@@ -68,6 +71,18 @@ RECENT = timedelta(hours=48)
 # Minute of the hour to refresh at: the recorder writes the hour's
 # statistics a few seconds after it.
 REFRESH_MINUTE = 5
+
+
+class PeriodCost(NamedTuple):
+    """Electricity cost and heat (heating + hot water) of a period."""
+
+    electricity: ElectricityCost
+    heat_kwh: float
+    # Later than the period start when the prices begin only within it: the
+    # days before count neither electricity nor heat (prices.priced_from).
+    priced_from: datetime | None = None
+    hours_before: int = 0  # hours with electricity, without price, before it
+
 
 type HoursFunction = Callable[[datetime, datetime], Awaitable[dict[datetime, Totals]]]
 
@@ -342,18 +357,24 @@ class PriceFeed:
 
     def period(
         self, start: datetime, totals: Totals, now: datetime
-    ) -> tuple[ElectricityCost, float] | None:
+    ) -> PeriodCost | None:
         """Electricity cost and heat of the period from `start` with the
         energy `totals`; None until the first refresh."""
         if self.days is None or self.until is None:
             return None
-        return period_cost(
+        at = max(self.until, start, floor_hour(now))
+        begin = priced_from(self.days, start, self.tz, at)
+        electricity, heat = period_cost(
             self.days,
             start,
             totals,
             current=self.current(),
             fixed=self.fixed,
-            at=max(self.until, start, floor_hour(now)),
+            at=at,
+            priced_from=begin,
+        )
+        return PeriodCost(
+            electricity, heat, begin, hours_before(self.days, start, begin)
         )
 
 

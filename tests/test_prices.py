@@ -22,11 +22,13 @@ from custom_components.waermewacht.prices import (
     SENSOR,
     day_mean_prices,
     hourly_means,
+    hours_before,
     hours_between,
     period_cost,
     price_days,
     price_factor,
     price_source,
+    priced_from,
     to_eur_per_kwh,
 )
 
@@ -161,6 +163,67 @@ def test_period_cost_without_any_price_is_unknown() -> None:
     assert electricity.cost_eur is None
     assert electricity.missing_hours == 1
     assert electricity.missing_kwh == pytest.approx(1.0)
+
+
+def test_prices_starting_within_the_period_count_from_the_next_day() -> None:
+    # Day 1 without any price, day 2 priced from 12:00 on, day 3 priced: the
+    # sensor's prices begin on day 2 (no state class, states kept ~10 days).
+    hours = {
+        h(10): totals(elec_heating=1.0, heat_heating=3.0),
+        h(34): totals(elec_heating=1.0, heat_heating=3.0),  # day 2, 10:00
+        h(36): totals(elec_heating=2.0, heat_heating=7.0),  # day 2, 12:00
+        h(58): totals(elec_heating=2.0, heat_heating=8.0),  # day 3, 10:00
+    }
+    days = price_days(hours, {h(36): 0.3, h(58): 0.25}, None, BERLIN)
+    third = DAY + 48 * HOUR
+    assert priced_from(days, DAY, BERLIN, h(60)) == third
+    assert hours_before(days, DAY, third) == 2
+    period = sum(hours.values(), Totals())
+    electricity, heat = period_cost(
+        days, DAY, period, current=0.4, fixed=None, at=h(60), priced_from=third
+    )
+    assert electricity.cost_eur == pytest.approx(2 * 0.25)
+    assert electricity.electricity_kwh == pytest.approx(2.0)
+    assert electricity.missing_hours == 0
+    assert heat == pytest.approx(8.0)  # the heat of the priced days only
+    # Without it the cost stays unknown, as before.
+    unknown, _ = period_cost(days, DAY, period, current=0.4, fixed=None, at=h(60))
+    assert unknown.cost_eur is None
+
+
+def test_the_running_hour_counts_after_priced_from() -> None:
+    hours = {h(10): totals(elec_heating=1.0), h(34): totals(elec_heating=1.0)}
+    days = price_days(hours, {h(34): 0.3}, None, BERLIN)
+    second = DAY + 24 * HOUR
+    # Day 1 is the only day with a gap, day 2 fully priced.
+    begin = priced_from(days, DAY, BERLIN, h(40))
+    assert begin == second
+    period = sum(hours.values(), Totals()) + totals(elec_heating=0.5)
+    electricity, _ = period_cost(
+        days, DAY, period, current=0.4, fixed=None, at=h(40), priced_from=begin
+    )
+    # Day 2 at 0.30 plus the running hour at the current 0.40; day 1 left out.
+    assert electricity.cost_eur == pytest.approx(0.3 + 0.5 * 0.4)
+
+
+def test_a_gap_after_priced_days_keeps_the_cost_unknown() -> None:
+    # Day 1 priced, day 2 without a price (the sensor was down): no new start.
+    hours = {h(10): totals(elec_heating=1.0), h(34): totals(elec_heating=1.0)}
+    days = price_days(hours, {h(10): 0.3}, None, BERLIN)
+    assert priced_from(days, DAY, BERLIN, h(60)) is None
+
+
+def test_no_priced_from_while_today_has_no_price() -> None:
+    hours = {h(10): totals(elec_heating=1.0)}
+    days = price_days(hours, {}, None, BERLIN)
+    # The day after the gap has not begun yet.
+    assert priced_from(days, DAY, BERLIN, h(12)) is None
+    # All priced: nothing to leave out.
+    assert (
+        priced_from(price_days(hours, {h(10): 0.3}, None, BERLIN), DAY, BERLIN, h(12))
+        is None
+    )
+    assert hours_before(days, DAY, None) == 0
 
 
 def test_rest_without_current_price_uses_the_fixed_one() -> None:

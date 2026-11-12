@@ -17,6 +17,11 @@ Rules (docs/ENTWICKLUNG.md, "Strompreis aus einem Sensor"):
   local days from its start, plus what the statistics do not hold yet (the
   running hour, late counters) at the current price of the sensor, else the
   fixed price.
+- A sensor whose prices start only within the period (no state class: Home
+  Assistant keeps its states about 10 days) leaves the days before without a
+  price. The period is then priced from the first local midnight after the
+  last day without a price (`priced_from`), heat included, if no day before
+  that one had any price. A gap after priced days keeps the cost unknown.
 - With grid, PV and battery meters, own electricity of an hour is priced at
   the feed-in tariff instead (allocation.py): the day's saving is taken off
   its cost. The rest of a period counts as from the grid.
@@ -180,6 +185,39 @@ def period_allocation(
     return total
 
 
+def priced_from(
+    days: Mapping[datetime, PricedDay], start: datetime, tz: tzinfo, at: datetime
+) -> datetime | None:
+    """Start of the priced part of the period from `start`, when the prices
+    begin only within it: the local midnight after the last day with an hour
+    without a price, if no day before that one had any priced hour and it
+    lies not after `at`. None: nothing to leave out (all priced), or a gap
+    after priced days (the cost stays unknown)."""
+    gaps = [d for d, p in days.items() if d >= start and p.electricity.missing_hours]
+    if not gaps:
+        return None
+    last = max(gaps)
+    if any(
+        p.electricity.hourly_hours or p.electricity.fallback_hours
+        for d, p in days.items()
+        if start <= d < last
+    ):
+        return None
+    following = local_midnight(last.astimezone(tz).date() + timedelta(days=1), tz)
+    return following if following <= at else None
+
+
+def hours_before(
+    days: Mapping[datetime, PricedDay], start: datetime, until: datetime | None
+) -> int:
+    """Hours with electricity but without a price in [start, until)."""
+    if until is None:
+        return 0
+    return sum(
+        p.electricity.missing_hours for d, p in days.items() if start <= d < until
+    )
+
+
 def period_cost(
     days: Mapping[datetime, PricedDay],
     start: datetime,
@@ -188,6 +226,7 @@ def period_cost(
     current: float | None,
     fixed: Price,
     at: datetime,
+    priced_from: datetime | None = None,
 ) -> tuple[ElectricityCost, float]:
     """Electricity cost and heat (heating + hot water) of a period from
     `start` (a local midnight) whose energy so far is `totals`.
@@ -195,26 +234,35 @@ def period_cost(
     The priced days from `start` on, plus the rest of `totals` that they do
     not hold (the hour running, hours the statistics have not written yet)
     priced at `current`, else at `fixed`; booked as one hour at `at`.
+    With `priced_from` (a later local midnight, see priced_from) the days
+    before it count neither electricity nor heat.
     """
-    electricity = NO_ELECTRICITY
+    begin = start if priced_from is None else max(start, priced_from)
+    electricity = counted = NO_ELECTRICITY
+    heat_before = 0.0
     for day, priced in days.items():
-        if day >= start:
+        if day < start:
+            continue
+        counted = counted + priced.electricity
+        if day >= begin:
             electricity = electricity + priced.electricity
+        else:
+            heat_before += priced.heat_kwh
     heat_side = totals.electricity(*SEASONAL_MODES) + totals.standby()
     cooling = totals.electricity(Mode.COOLING)
     rest = Totals()
-    rest.add(Kind.ELEC, Mode.HEATING, heat_side - electricity.heat_electricity_kwh)
+    rest.add(Kind.ELEC, Mode.HEATING, heat_side - counted.heat_electricity_kwh)
     rest.add(
         Kind.ELEC,
         Mode.COOLING,
-        cooling - (electricity.electricity_kwh - electricity.heat_electricity_kwh),
+        cooling - (counted.electricity_kwh - counted.heat_electricity_kwh),
     )
     electricity = electricity + electricity_cost(
         {at: rest},
         price=fixed,
         hourly_prices={} if current is None else {at: current},
     )
-    if (allocation := period_allocation(days, start)) is not None:
+    if (allocation := period_allocation(days, begin)) is not None:
         # Own electricity at the feed-in tariff instead of the grid price.
         electricity = replace(
             electricity,
@@ -225,7 +273,7 @@ def period_cost(
             if electricity.heat_cost_eur is None
             else electricity.heat_cost_eur - allocation.heat_saving_eur,
         )
-    return electricity, totals.heat(*SEASONAL_MODES)
+    return electricity, totals.heat(*SEASONAL_MODES) - heat_before
 
 
 def period_gas_price(
