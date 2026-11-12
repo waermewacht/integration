@@ -25,7 +25,7 @@
     "made_up": "config entry id, every state value; subset of the entities."
   },
   "heishamon_wh_mdc07j3e5.json": {
-    "source": "Derived from the source code of kamaradclimber/heishamon-homeassistant 2.12.1 (domain aquarea, commit 086c1a9) and the HeishaMon MQTT topic list, read on 2026-10-27; not from a real installation (experimental).",
+    "source": "Derived from the source code of kamaradclimber/heishamon-homeassistant 2.12.1 (domain aquarea, commit 086c1a9) and the HeishaMon MQTT topic list, read on 2026-10-27. Confirmed on 2026-11-12 by the Wärmewacht report of a real installation (aquarea, Home Assistant 2026.11.1, issue #1): every signal of the template found, with the units, device and state classes of this file (energy counters kWh/energy/total, flow L/min, compressor Hz, starts without unit total_increasing, valve state an enum with 'Room').",
     "real": "unique id format and keys (platform aquarea), entity ids for the default MQTT prefix panasonic_heat_pump/, integration-sensor names, units, device and state classes, enum options, which entities aquarea disables by default.",
     "made_up": "the config entry id, the heat pump model and every state value."
   },

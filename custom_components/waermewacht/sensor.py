@@ -62,7 +62,7 @@ from .model import (
     has_heat,
 )
 from .periods import RATIO_PERIODS, Period
-from .prices import FIXED, price_source
+from .prices import FIXED, NO_PRICE, price_source
 from .runtime import HeatPumpRuntime
 
 type Value = Callable[[HeatPumpRuntime], StateType]
@@ -551,13 +551,18 @@ def _price_attributes(
         return {"price_source": None, "price_entity": runtime.price_entity}
     electricity = result.electricity
     average = electricity.average_price
-    return {
+    attributes: dict[str, Any] = {
         "price_source": price_source(electricity),
         "price_entity": runtime.price_entity,
         "average_price_eur_per_kwh": None if average is None else round(average, 4),
         "hours_fixed_price": electricity.fallback_hours,
         "hours_without_price": electricity.missing_hours,
     }
+    if electricity.missing_hours:
+        # Why the cost stays unknown: one hour with electricity but without a
+        # price leaves the sum empty (costs.electricity_cost).
+        attributes["reason"] = NO_PRICE
+    return attributes
 
 
 def _allocation_attributes(runtime: HeatPumpRuntime, period: Period) -> dict[str, Any]:

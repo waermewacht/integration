@@ -54,6 +54,8 @@ ACCEPTED_UNITS = "ct/kWh, €/kWh (EUR/kWh), €/MWh (EUR/MWh)"
 
 # Where the prices of a cost came from (attribute price_source).
 SENSOR, FIXED, MIXED = "sensor", "fixed", "mixed"
+# Reason of a cost left unknown: hours with electricity but without a price.
+NO_PRICE = "no_price"
 
 
 def price_factor(unit: str | None) -> float | None:

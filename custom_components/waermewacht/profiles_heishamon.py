@@ -3,8 +3,11 @@
 Pure Python, no Home Assistant imports. Derived from the source code of the
 HACS integration kamaradclimber/heishamon-homeassistant (domain `aquarea`,
 2.12.1, commit 086c1a9, 2026-10-26) and the MQTT topic list of the HeishaMon
-firmware (heishamon/HeishaMon); not yet checked against a real installation,
-so experimental.
+firmware (heishamon/HeishaMon). Checked on 2026-11-12 against a real
+installation (Wärmewacht report in issue #1, by the author of `aquarea`):
+every signal found, units, device and state classes as in
+tests/fixtures/heishamon_wh_mdc07j3e5.json. Not experimental since then
+(owner's decision 2026-11-12, as for Lambda and ViCare).
 
 Why this integration: the HeishaMon firmware publishes plain MQTT topics but
 no Home Assistant MQTT discovery. HeishaMon's own Home Assistant guide
@@ -32,7 +35,7 @@ from .profiles import Template
 _S = "sensor"
 
 HEISHAMON = Template(
-    experimental=True,
+    experimental=False,
     key="heishamon",
     label="HeishaMon (Panasonic Aquarea)",
     platform="aquarea",

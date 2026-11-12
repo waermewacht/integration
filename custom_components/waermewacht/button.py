@@ -4,16 +4,21 @@ entries."""
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from homeassistant.components.button import ButtonEntity
-from homeassistant.const import EntityCategory
+from homeassistant.components.sensor import ATTR_STATE_CLASS
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry, is_gas
 from .const import CONF_ENTITIES, CONF_MANUAL_UNIT, CONF_TEMPLATE, DOMAIN, VERSION
 from .entity import HeatPumpEntity
 from .gas_runtime import GasRuntime
 from .issue_report import build, show, text
+from .periods import Period
 from .runtime import HeatPumpRuntime
 
 NAME = "Wärmewacht"
@@ -64,7 +69,7 @@ class IssueReport(HeatPumpEntity, ButtonEntity):
             extra = _gas_lines(entry, runtime)
         else:
             mapping = {s.value: e for s, e in runtime.entities.items()}
-            extra = _heat_pump_lines(entry, runtime)
+            extra = _heat_pump_lines(self.hass, entry, runtime)
         report = build(
             self.hass, DOMAIN, NAME, VERSION, entry, mapping=mapping, extra=extra
         )
@@ -72,7 +77,7 @@ class IssueReport(HeatPumpEntity, ButtonEntity):
 
 
 def _heat_pump_lines(
-    entry: WaermewachtConfigEntry, runtime: HeatPumpRuntime
+    hass: HomeAssistant, entry: WaermewachtConfigEntry, runtime: HeatPumpRuntime
 ) -> list[tuple[str, str]]:
     template = runtime.template
     return [
@@ -87,7 +92,48 @@ def _heat_pump_lines(
             ", ".join(f"{k} {v}" for k, v in sorted(runtime.events.items())) or "none",
         ),
         ("jumps not booked", str(len(runtime.jumps))),
+        ("hours left out", _rejected_hours(runtime.rejected_hours)),
+        ("price sensor", _price_sensor(hass, runtime)),
     ]
+
+
+def _rejected_hours(found: dict[str, list[datetime]]) -> str:
+    """The latest hours left out per counter, in UTC."""
+    return (
+        "; ".join(
+            f"{signal} " + ", ".join(h.strftime("%Y-%m-%d %H:00Z") for h in hours)
+            for signal, hours in sorted(found.items())
+        )
+        or "none"
+    )
+
+
+def _price_sensor(hass: HomeAssistant, runtime: HeatPumpRuntime) -> str:
+    """Unit and state class of the price sensor (no state class: no
+    long-term statistics, prices only as far back as the recorder keeps
+    states) and the hours without a price per period."""
+    entity_id = runtime.price_entity
+    if entity_id is None:
+        return "none"
+    state = hass.states.get(entity_id)
+    if state is None:
+        return "not found"
+    unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) or "no unit"
+    state_class = state.attributes.get(ATTR_STATE_CLASS) or "no state class"
+    parts = [f"{unit}, {state_class}"]
+    feed = runtime.prices
+    now = dt_util.utcnow()
+    for period in (Period.MONTH, Period.SEASON):
+        start = runtime.marks.starts.get(period)
+        totals = runtime.energy(period)
+        priced = (
+            None
+            if feed is None or start is None or totals is None
+            else feed.period(start, totals, now)
+        )
+        missing = "-" if priced is None else str(priced[0].missing_hours)
+        parts.append(f"hours without price {period.value} {missing}")
+    return ", ".join(parts)
 
 
 def _gas_lines(

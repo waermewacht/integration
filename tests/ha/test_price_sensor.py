@@ -5,6 +5,7 @@ setup included; the running hour at the current price."""
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -16,6 +17,7 @@ from homeassistant.components.recorder.models import (
 )
 from homeassistant.components.recorder.statistics import async_import_statistics
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
@@ -117,6 +119,7 @@ async def test_costs_from_price_statistics(
     assert attributes["hours_fixed_price"] == 0
     assert attributes["hours_without_price"] == 0
     assert attributes["average_price_eur_per_kwh"] == pytest.approx(0.375)
+    assert "reason" not in attributes
 
 
 @pytest.mark.freeze_time(START)
@@ -148,6 +151,21 @@ async def test_without_any_price_the_cost_is_unknown(
     assert hass.states.get(entity_id(hass, entry, "cost_month")).state == "unknown"
     attributes = hass.states.get(entity_id(hass, entry, "cost_month")).attributes
     assert attributes["hours_without_price"] == 3
+    assert attributes["reason"] == "no_price"
+
+    # The report names the price sensor and the hours without a price.
+    button = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_issue_report"
+    )
+    with patch(
+        "custom_components.waermewacht.issue_report.persistent_notification.async_create"
+    ) as create:
+        await hass.services.async_call(
+            "button", "press", {"entity_id": button}, blocking=True
+        )
+    message = create.call_args.args[1]
+    assert "price sensor: ct/kWh, measurement, hours without price month 3" in message
+    assert "cost_month: unknown (no_price)" in message
 
 
 async def test_prices_from_recorded_states(

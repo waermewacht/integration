@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Kosten sagen, warum sie unbekannt sind.** Fehlt für eine Stunde mit Strom der Preis, bleiben „Stromkosten Monat“, „Stromkosten Saison“ und „Wärmekosten je kWh Saison“ wie bisher unbekannt, haben jetzt aber das Attribut `reason: no_price`. Meist hat der Preissensor keine `state_class`, dann behält Home Assistant seine Preise nur etwa 10 Tage. Ein zusätzlich eingetragener fester Strompreis füllt die Lücken, siehe README. (danke an @kamaradclimber)
+- **Bericht für Fehlermeldungen:** nennt jetzt je Zähler die zuletzt verworfenen Stunden (`hours left out`) und zum Preissensor Einheit, `state_class` und die Stunden ohne Preis je Monat und Saison.
+
+### Geändert
+
+- **HeishaMon (Panasonic Aquarea) nicht mehr Beta.** An einer echten Anlage geprüft: Alle Zuordnungen der Vorlage stimmen, Einheiten und Zustandsklassen auch. In der Einrichtung steht sie deshalb jetzt ohne „(beta)“. (danke an @kamaradclimber)
+
 ## 0.7.0 – 2026-11-11
 
 ### Bitte prüfen

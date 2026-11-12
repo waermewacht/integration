@@ -267,6 +267,8 @@ HOURLY_CATCH_UP = timedelta(days=10)
 HOURLY_STALE = timedelta(hours=30)
 # Statistic rows above MAX_POWER_KW times this in one hour are glitches.
 HOURLY_MARGIN = 1.5
+# Hours left out of the statistics kept per counter for the report.
+REJECTED_KEPT = 3
 DAY = timedelta(days=1)
 # Flow and return swapped (docs/GESUNDHEITSCHECK.md 4.10 d): the daily mean
 # spread while heating below this, after at least an hour of heating.
@@ -599,6 +601,10 @@ class HeatPumpRuntime:
         self._legacy_unshifted = False
         self._adjusting = False
         self.events: dict[str, int] = {}  # counter events, unknown units (diagnostics)
+        # Latest hours left out of the statistics per counter (report): the
+        # count in `events` grows with each read, not with each hour. Not
+        # stored; the next read of the statistics finds them again.
+        self.rejected_hours: dict[str, list[datetime]] = {}
         # Readings around the last jumps: show whether a source caught up or
         # glitched (diagnostics).
         self.jumps: list[dict[str, Any]] = []
@@ -2175,7 +2181,7 @@ class HeatPumpRuntime:
             # without a fetch), more than a heat pump can do in an hour (a
             # unit glitch of the source) or the fall back after such a jump.
             merged: dict[datetime, float] = {}
-            rejected = False
+            rejected: set[datetime] = set()
             for entity_id in (*older, primary):
                 kept, left_out = plausible_hours(
                     rows.get(entity_id, []), MAX_POWER_KW * HOURLY_MARGIN
@@ -2184,9 +2190,10 @@ class HeatPumpRuntime:
                 for hour in left_out:
                     if entity_id == primary:
                         merged.pop(hour, None)  # not filled in from an older id
-                rejected |= bool(left_out)
+                rejected.update(left_out)
             if rejected:
                 self._count(f"hour_rejected:{signal}")
+                self._note_rejected(signal, rejected)
             if merged:
                 result[signal] = merged
         if signals is None and common:
@@ -2786,6 +2793,11 @@ class HeatPumpRuntime:
 
     def _count(self, key: str) -> None:
         self.events[key] = self.events.get(key, 0) + 1
+
+    def _note_rejected(self, signal: Signal, hours: Collection[datetime]) -> None:
+        """Keep the latest REJECTED_KEPT hours left out for `signal`."""
+        found = {*self.rejected_hours.get(signal.value, []), *hours}
+        self.rejected_hours[signal.value] = sorted(found)[-REJECTED_KEPT:]
 
     # Minute tick: period boundaries, sensor updates, throttled saving.
 
