@@ -95,3 +95,21 @@ def test_pressure_days_need_enough_hours() -> None:
     hours = {start + timedelta(hours=h): 1.8 for h in range(MIN_PRESSURE_HOURS)}
     hours |= {start + timedelta(days=1, hours=h): 1.9 for h in range(3)}
     assert pressure_days(hours, BERLIN) == {date(2026, 11, 2): 1.8}
+
+
+def test_below_the_template_minimum() -> None:
+    """EMS-ESP: below 1.05 bar (pre-pressure 0.75 + 0.3) the check is on even
+    without a drop, and with too little history for the trend."""
+    found = pressure_drop(days(steady(1.0)), TODAY, min_bar=1.05)
+    assert found.problem is True
+    assert found.evidence["triggers"] == ["minimum"]
+    found = pressure_drop(days(steady(1.0, first=7)), TODAY, min_bar=1.05)
+    assert found.problem is True
+    assert found.reason is None
+    assert pressure_drop(days(steady(1.85)), TODAY, min_bar=1.05).problem is False
+
+
+def test_drop_and_minimum_together() -> None:
+    values = steady(1.4, first=97, last=8) | steady(1.0, first=7, last=1)
+    found = pressure_drop(days(values), TODAY, min_bar=1.05)
+    assert found.evidence["triggers"] == ["drop", "minimum"]

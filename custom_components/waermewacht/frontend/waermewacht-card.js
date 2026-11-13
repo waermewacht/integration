@@ -193,7 +193,9 @@ const TEXT = {
         ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 Tagen`
           + (a.entries_7d > a.most_frequent_count ? ` · Schutz/Störung zusammen ${n(a.entries_7d, 0)}×` : "")
         : "keine Schutz- oder Störmeldung in 7 Tagen"),
-      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 Tagen, höchster Wochenwert ${n(a.reference_bar, 2)} bar`,
+      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 Tagen`
+        + (a.reference_bar != null ? `, höchster Wochenwert ${n(a.reference_bar, 2)} bar` : "")
+        + ((a.triggers || []).includes("minimum") ? ` · unter ${n(a.min_bar, 2)} bar` : ""),
     },
     fine: "In Ordnung",
     problem: "Auffällig",
@@ -388,7 +390,9 @@ const TEXT = {
         ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 days`
           + (a.entries_7d > a.most_frequent_count ? ` · protection/fault ${n(a.entries_7d, 0)}× in all` : "")
         : "no protection or fault message in 7 days"),
-      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 days, highest week ${n(a.reference_bar, 2)} bar`,
+      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 days`
+        + (a.reference_bar != null ? `, highest week ${n(a.reference_bar, 2)} bar` : "")
+        + ((a.triggers || []).includes("minimum") ? ` · below ${n(a.min_bar, 2)} bar` : ""),
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),
     },

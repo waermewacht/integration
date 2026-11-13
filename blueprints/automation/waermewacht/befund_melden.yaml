@@ -189,6 +189,13 @@ variables:
     {%- elif a.most_frequent is defined -%}
       {%- set more = (a.entries_7d | int(0)) > (a.most_frequent_count | int(0)) -%}
       {{ (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 Tagen' ~ ((', Schutz- und Störmeldungen zusammen ' ~ a.entries_7d ~ '×') if more else '')) if de else (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 days' ~ ((', protection and fault messages ' ~ a.entries_7d ~ '× in all') if more else '')) }}
+    {%- elif a.current_bar is defined -%}
+      {%- set low = 'minimum' in (a.triggers or []) -%}
+      {%- if de -%}
+        Anlagendruck {{ n(a.current_bar, 2) }} bar in 7 Tagen{{ (', vorher bis ' ~ n(a.reference_bar, 2) ~ ' bar') if a.reference_bar is not none else '' }}{{ (', unter ' ~ n(a.min_bar, 2) ~ ' bar') if low else '' }}. Druck am Gerät ablesen und nachfüllen; sinkt er wieder, Fachbetrieb (Undichtigkeit, Ausdehnungsgefäß)
+      {%- else -%}
+        system pressure {{ n(a.current_bar, 2) }} bar in 7 days{{ (', before up to ' ~ n(a.reference_bar, 2) ~ ' bar') if a.reference_bar is not none else '' }}{{ (', below ' ~ n(a.min_bar, 2) ~ ' bar') if low else '' }}. Read the pressure at the unit and refill; if it drops again, call an installer (leak, expansion vessel)
+      {%- endif -%}
     {%- endif -%}
   title: "{{ head ~ (': auffällig' if lang == 'de' else ': conspicuous') }}"
   message: >-

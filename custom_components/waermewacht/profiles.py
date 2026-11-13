@@ -80,6 +80,11 @@ class Template:
     # Heat of a mode is electricity plus environmental yield (a calculated
     # value): an hour is standby when heat does not exceed electricity.
     heat_includes_electricity: bool = False
+    # Lowest system pressure in bar before the check "system pressure
+    # dropped" turns on regardless of the trend: the pre-pressure of the
+    # expansion vessel plus 0.3 bar (rule of thumb, GESUNDHEITSCHECK 4.16).
+    # None: the trend only.
+    min_system_pressure: float | None = None
 
     def statistic_id(self, unique_id: str) -> str | None:
         """Statistic id of the hourly energy of an entity, None if it has none."""
@@ -294,6 +299,9 @@ EMS_ESP = Template(
     key="ems_esp",
     label="EMS-ESP",
     platform="mqtt",
+    # Bosch Compress 5800i/6800i AW: expansion vessel pre-pressure 0.75 bar
+    # as delivered (installation manual 6721872430, 2023/06, 7.5), + 0.3 bar.
+    min_system_pressure=1.05,
     # "[<prefix>_]boiler_<key>"; the prefix is the MQTT base of the
     # "multiple instances" format. Keys are short names ("nrgheat"); the
     # format "single instance, long names (v3.4)" uses the English full name

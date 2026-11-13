@@ -1856,7 +1856,9 @@ class HeatPumpRuntime:
                 hour = dt_util.utc_from_timestamp(hour)
             hours[hour] = value
         self.findings["pressure_drop"] = pressure_drop(
-            pressure_days(hours, self.tz), now.astimezone(self.tz).date()
+            pressure_days(hours, self.tz),
+            now.astimezone(self.tz).date(),
+            min_bar=self.template.min_system_pressure,
         )
 
     def _energy_entities(self) -> dict[str, str]:

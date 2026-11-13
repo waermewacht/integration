@@ -144,9 +144,11 @@ def _variables(
     to: str,
     before: str | None,
     entities: dict[str, str | None] | None = None,
+    attributes: dict[str, Any] | None = None,
     **inputs: Any,
 ) -> dict[str, Any]:
     entities = TWO_PUMPS if entities is None else entities
+    attributes = DROP if attributes is None else attributes
     config = BlueprintInputs(
         _blueprint(),
         {
@@ -165,7 +167,7 @@ def _variables(
     env.filters["device_id"] = entities.get
     env.globals["device_name"] = DEVICE_OF.get
     env.globals["device_attr"] = lambda d, a: DEVICES.get(d, {}).get(a)
-    state = {"name": DROP["friendly_name"], "state": to, "attributes": DROP}
+    state = {"name": attributes["friendly_name"], "state": to, "attributes": attributes}
     values: dict[str, Any] = {
         "trigger": {
             "id": "problem" if to == "on" else "fine",
@@ -252,3 +254,37 @@ def test_phone_rules_unchanged(
         after_restart=after_restart,
     )
     assert values["to_phone"] is sent
+
+
+PRESSURE = {
+    "friendly_name": "Wärmepumpe Keller Anlagendruck gesunken",
+    "current_bar": 1.0,
+    "reference_bar": 1.4,
+    "min_bar": 1.05,
+    "triggers": ["drop", "minimum"],
+}
+
+
+def test_pressure_message_says_what_to_do() -> None:
+    values = _variables(
+        entity="binary_sensor.wp_effizienz_gesunken",
+        to="on",
+        before="off",
+        attributes=PRESSURE,
+        language="de",
+    )
+    assert values["detail"] == (
+        "Anlagendruck 1,00 bar in 7 Tagen, vorher bis 1,40 bar, unter 1,05 bar."
+        " Druck am Gerät ablesen und nachfüllen; sinkt er wieder, Fachbetrieb"
+        " (Undichtigkeit, Ausdehnungsgefäß)"
+    )
+    values = _variables(
+        entity="binary_sensor.wp_effizienz_gesunken",
+        to="on",
+        before="off",
+        attributes={**PRESSURE, "triggers": ["drop"], "current_bar": 1.5},
+        language="en",
+    )
+    assert values["detail"].startswith(
+        "system pressure 1.50 bar in 7 days, before up to 1.40 bar. Read"
+    )

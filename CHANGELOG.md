@@ -4,7 +4,7 @@
 
 ### Neu
 
-- **Neuer Befund „Anlagendruck gesunken“.** Sinkt der Druck des Heizungswassers in einer Woche um mindestens 0,3 bar unter den höchsten Wochenwert der drei Monate davor, meldet Wärmewacht das, etwa wegen einer Undichtigkeit oder eines Ausdehnungsgefäßes, das Luft verliert. Nach dem Nachfüllen ist der Befund wieder aus. Die EMS-ESP-Vorlage nimmt den Anlagendruck (`syspress`) von selbst, sonst unter Neu konfigurieren → Messwerte → Anlagendruck eintragen. (danke an die Antworten auf die Umfrage, simon42-Forum)
+- **Neuer Befund „Anlagendruck gesunken“.** Sinkt der Druck des Heizungswassers in einer Woche um mindestens 0,3 bar unter den höchsten Wochenwert der drei Monate davor, meldet Wärmewacht das, etwa wegen einer Undichtigkeit oder eines Ausdehnungsgefäßes, das Luft verliert. Mit EMS-ESP schlägt er auch an, sobald der Druck unter 1,05 bar liegt. Nach dem Nachfüllen ist der Befund wieder aus; Entlüften allein löst ihn normalerweise nicht aus. Die Benachrichtigung des Blueprints „Befund melden“ sagt, was zu tun ist. Die EMS-ESP-Vorlage nimmt den Anlagendruck (`syspress`) von selbst, sonst unter Neu konfigurieren → Messwerte → Anlagendruck eintragen. (danke an die Antworten auf die Umfrage, simon42-Forum)
 
 ## 0.9.0 – 2026-11-13
 

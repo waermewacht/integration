@@ -27,7 +27,8 @@ here, never hidden.
   hysteresis.
 - System pressure dropped (4.16): the median of the daily means of the last
   7 full days against the highest such 7-day median in the 90 days before;
-  on from a drop of 0.3 bar. Daily means of hourly means, never minima
+  on from a drop of 0.3 bar, or (with a template's lowest pressure) when
+  the 7-day median is below it. Daily means of hourly means, never minima
   (short outliers). Refilling raises the pressure again; the rolling window
   is the hysteresis.
 - Outdoor temperature unusable (4.10 c): an hourly minimum equal to the
@@ -469,9 +470,11 @@ def pressure_drop(
     today: date,
     *,
     threshold_bar: float = PRESSURE_DROP_BAR,
+    min_bar: float | None = None,
 ) -> Finding:
     """System pressure of the last 7 full days against the highest 7-day
-    median of the 90 days before (`days`: pressure_days)."""
+    median of the 90 days before (`days`: pressure_days), and against
+    `min_bar` if given. `triggers` says which rule turned it on."""
     first, _ = window_days(today, PRESSURE_DAYS)
     reference_from = first - timedelta(days=PRESSURE_REFERENCE_DAYS)
     current = _week_median(days, first)
@@ -488,14 +491,25 @@ def pressure_drop(
         "reference_week": None if best is None else best[1].isoformat(),
         "drop_bar": None,
         "threshold_bar": threshold_bar,
+        "min_bar": min_bar,
+        "triggers": [],
         "days": sum(1 for d in days if first <= d < today),
         "reference_days": reference_days,
     }
+    low = current is not None and min_bar is not None and current < min_bar
+    if low:
+        evidence["triggers"].append("minimum")
     if current is None or best is None or reference_days < MIN_PRESSURE_REFERENCE_DAYS:
-        return Finding(None, TOO_FEW_DAYS, evidence)
+        return (
+            Finding(True, None, evidence)
+            if low
+            else Finding(None, TOO_FEW_DAYS, evidence)
+        )
     drop = best[0] - current
     evidence["drop_bar"] = round(drop, 2)
-    return Finding(drop >= threshold_bar - 1e-9, None, evidence)
+    if drop >= threshold_bar - 1e-9:
+        evidence["triggers"].insert(0, "drop")
+    return Finding(bool(evidence["triggers"]), None, evidence)
 
 
 @dataclass(frozen=True)
