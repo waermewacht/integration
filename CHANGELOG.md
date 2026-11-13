@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.8.0 – 2026-11-13
 
 ### Bitte prüfen
 

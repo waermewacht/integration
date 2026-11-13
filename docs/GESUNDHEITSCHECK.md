@@ -180,7 +180,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Anzeige.** Binärsensor „Heizstab bei milder Witterung“. Attribute: `aux_kwh_7d` (ohne Abtauen), `aux_kwh_defrost_7d`, `mild_days_7d`, `days` (je Tag Datum, Mittel, Heizstab kWh, ggf. `aux_kwh_defrost`; nicht aufgezeichnet), `min_outdoor_temp`, `threshold_kwh`, `reason`.
 
-Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (umgesetzt in 0.7.5).
+Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (umgesetzt in 0.8.0).
 
 ### 4.3 Abtauungen auffällig
 
@@ -230,7 +230,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Bestand.** Binärsensor „Auffälliges Takten“: mehr als 3 Starts in einer Stunde oder ≥ 3 kritische Läufe (< 6 min) in 24 h. Quellen in `ENTWICKLUNG.md` §3 (Verdichterhersteller 6–12 Starts/h, zitiert in WP-QS S. 98; Fraunhofer: Zyklen unter ~10 min gesondert ausweisen; Dimplex ~6 min Mindestlaufzeit). Eine verifizierte Primärquelle für Grenzen am Gebäude gibt es nicht; die Vorgaben sind weiche Schwellen. Fraunhofer ISE (Pressemitteilung WP-QS 2025): Schalthäufigkeit „bei einigen sehr hoch“.
 
-**Ergänzung (umgesetzt in 0.4.6; seit 0.7.5 eigener Sensor „Starts pro Jahr“, gezählt über 12 Monate oder mit Heiztagen hochgerechnet, siehe ENTWICKLUNG.md).** Attribute an „Starts heute“ (nicht am Binärsensor, damit niemand sie für ein Kriterium hält): `starts_per_day_7d` und `starts_per_year_projected` (Starts der letzten 7 vollständigen Tage je beobachteter Stunde × 24 bzw. × 24 × 365; seit 0.4.7 ohne die Zeit ohne Kompressorstatus, vorher unbekannt ab 1 h Lücke), `starts_field_class` (`low_third` ≤ 2.000, `typical` ≤ 5.500, `top_10_percent` darüber), `starts_7d_days`, `starts_7d_observed_hours`, `starts_7d_reason` (`too_few_days`, `too_few_hours` unter 144 beobachteten Stunden). Orientierung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feld unter 5.500 Starts/Jahr (~15/Tag), ein Drittel ≤ 2.000 (`ENTWICKLUNG.md` §3). Kein neues Kriterium für „an“: eine Hochrechnung aus 7 Tagen im Herbst ist keine Jahreszahl. Die Karte „Takte“ zeigt sie als Kachel.
+**Ergänzung (umgesetzt in 0.4.6; seit 0.8.0 eigener Sensor „Starts pro Jahr“, gezählt über 12 Monate oder mit Heiztagen hochgerechnet, siehe ENTWICKLUNG.md).** Attribute an „Starts heute“ (nicht am Binärsensor, damit niemand sie für ein Kriterium hält): `starts_per_day_7d` und `starts_per_year_projected` (Starts der letzten 7 vollständigen Tage je beobachteter Stunde × 24 bzw. × 24 × 365; seit 0.4.7 ohne die Zeit ohne Kompressorstatus, vorher unbekannt ab 1 h Lücke), `starts_field_class` (`low_third` ≤ 2.000, `typical` ≤ 5.500, `top_10_percent` darüber), `starts_7d_days`, `starts_7d_observed_hours`, `starts_7d_reason` (`too_few_days`, `too_few_hours` unter 144 beobachteten Stunden). Orientierung: 90 % der Luft/Wasser-Anlagen im Fraunhofer-Feld unter 5.500 Starts/Jahr (~15/Tag), ein Drittel ≤ 2.000 (`ENTWICKLUNG.md` §3). Kein neues Kriterium für „an“: eine Hochrechnung aus 7 Tagen im Herbst ist keine Jahreszahl. Die Karte „Takte“ zeigt sie als Kachel.
 
 **Grenze je Tag (optional, seit 0.4.6).** Einstellung „Auffällig ab Starts pro Tag über“, Vorgabe aus: mehr Starts in den letzten 24 Stunden (dasselbe Fenster wie die übrigen Kriterien) schalten „Auffälliges Takten“ und „Befund Takten“ auf auffällig. Für Wärmepumpen, die nur ein- und ausschalten. **Keine Quelle**, der Nutzer wählt die Grenze; deshalb keine Vorgabe. Attribute `triggers`, `starts_24h`, `starts_per_day_limit`.
 
@@ -518,7 +518,7 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.
 - Abtauen (4.3): Quelle für übliche Häufigkeit und Dauer suchen; ohne Feuchte bleibt es Attribut.
 - 4.15: Rückblick über Laufzeit- und Startzähler – als Signal nur in den Vorlagen, mit Feld im eingeklappten Abschnitt „Sonderzähler“ oder gar nicht (nur ab dem Update)? Rückblick täglich aus der Statistik oder einmal ins Tagebuch übernehmen? Schwelle 90 % für „läuft durch“ an weiteren Anlagen prüfen.
-- 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später. Seit 0.7.5 „Warmwasser 2 K kälter“ (`carnot.colder_dhw`): je Ladung aus den Carnot-Leistungszahlen, der Gütegrad kürzt sich heraus, ein Warmwasser-Gütegrad ist dafür nicht nötig.
+- 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später. Seit 0.8.0 „Warmwasser 2 K kälter“ (`carnot.colder_dhw`): je Ladung aus den Carnot-Leistungszahlen, der Gütegrad kürzt sich heraus, ein Warmwasser-Gütegrad ist dafür nicht nötig.
 - ~~Tagesbuch (4.11) mit dem Inhaber abstimmen~~ Erlaubt 2026-10-27 (`ENTWICKLUNG.md` §6), umgesetzt in 0.1.0b7.
 
 ## Quellen

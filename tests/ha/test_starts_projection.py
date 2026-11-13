@@ -1,4 +1,4 @@
-"""Starts per year (own sensor since 0.7.5), against the Fraunhofer field
+"""Starts per year (own sensor since 0.8.0), against the Fraunhofer field
 test: never a reason for "cycling". The counts of the day have a state class.
 And the optional limit of starts per day, which is a reason."""
 
