@@ -740,7 +740,7 @@ A blueprint reports when a check turns conspicuous: in the Home Assistant bell a
 
 ## Cards
 
-Wärmewacht ships its own cards, without any extra card from HACS. It adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the cards directly instead): *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. A [gas or oil boiler](#gas-boiler-before-switching) has a card of its own, the other cards show heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
+Wärmewacht ships its own cards, without any extra card from the Marketplace. It adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the cards directly instead): *Edit dashboard → Add card* and search for "Wärmewacht". Each card shows one topic; you only pick a device when there are several heat pumps. A [gas or oil boiler](#gas-boiler-before-switching) has a card of its own, the other cards show heat pumps. The cards find their entities themselves (independent of language and entity ids), Home Assistant formats numbers and texts, a click opens the details.
 
 **The cards don't show up in the search, or only spin?** Home Assistant loads them with the integration, so only after the restart and with a Wärmewacht entry set up. Up to Wärmewacht 0.4.2, Home Assistant before 2026.11 could also say “Custom element not found” although the file was loaded (a frontend bug, fixed in HA 2026.11): update Home Assistant, or use Wärmewacht from the next version on. The dashboard picks them up when the page loads: reload it once (Ctrl+F5), and in the companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/waermewacht/waermewacht-card.js`.
 
@@ -771,7 +771,7 @@ The entity IDs depend on the name of the entry (here the default "Wärmepumpe") 
 
 ### Performance factors as a table
 
-All performance factors in one markdown card, without any extra card from HACS. Rows without sensors (cooling, for instance) drop out by themselves; a missing value shows "–". The column "Today" fills only once you enable the "COP … today" sensors, which are disabled by default. With another name of the entry, change the first line only.
+All performance factors in one markdown card, without any extra card from the Marketplace. Rows without sensors (cooling, for instance) drop out by themselves; a missing value shows "–". The column "Today" fills only once you enable the "COP … today" sensors, which are disabled by default. With another name of the entry, change the first line only.
 
 ```yaml
 type: markdown

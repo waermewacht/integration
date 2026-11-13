@@ -739,7 +739,7 @@ Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home
 
 ## Karten
 
-Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus HACS. Die Dashboard-Ressource trägt Wärmewacht selbst ein (*Einstellungen → Dashboards → ⋮ → Ressourcen*, beim Entfernen des letzten Eintrags wieder ausgetragen; bei Ressourcen im YAML-Modus lädt HA die Karten stattdessen direkt): *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Für eine [Gas- oder Ölheizung](#gasheizung-vor-dem-umstieg) gibt es eine eigene Karte, die übrigen Karten zeigen Wärmepumpen. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
+Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus dem Marketplace. Die Dashboard-Ressource trägt Wärmewacht selbst ein (*Einstellungen → Dashboards → ⋮ → Ressourcen*, beim Entfernen des letzten Eintrags wieder ausgetragen; bei Ressourcen im YAML-Modus lädt HA die Karten stattdessen direkt): *Dashboard bearbeiten → Karte hinzufügen* und nach „Wärmewacht“ suchen. Jede Karte zeigt ein Thema; ein Gerät wählst du nur, wenn es mehrere Wärmepumpen gibt. Für eine [Gas- oder Ölheizung](#gasheizung-vor-dem-umstieg) gibt es eine eigene Karte, die übrigen Karten zeigen Wärmepumpen. Die Karten finden ihre Entitäten selbst (unabhängig von Sprache und Entity-IDs), Zahlen und Texte formatiert Home Assistant, ein Klick öffnet die Details.
 
 **Die Karten tauchen in der Suche nicht auf oder drehen nur?** Home Assistant lädt sie mit der Integration, also erst nach dem Neustart und mit einem eingerichteten Wärmewacht-Eintrag. Bis Wärmewacht 0.4.2 konnte es vor Home Assistant 2026.11 außerdem „Custom element not found“ geben, obwohl die Datei geladen war (Fehler im Frontend, behoben in HA 2026.11): dann Home Assistant aktualisieren oder Wärmewacht ab der nächsten Version nutzen. Ins Dashboard kommen sie beim Laden der Seite: danach einmal neu laden (Strg+F5), in der Companion-App den Frontend-Cache zurücksetzen. Ob die Datei da ist, zeigt `http://<HA-Adresse>:8123/waermewacht/waermewacht-card.js`.
 
@@ -770,7 +770,7 @@ Die Entity-IDs hängen vom Namen des Eintrags ab (hier die Vorgabe „Wärmepump
 
 ### Arbeitszahlen als Tabelle
 
-Alle Arbeitszahlen in einer Markdown-Karte, ganz ohne Zusatzkarten aus HACS. Zeilen ohne Sensoren (etwa Kühlen) fallen von selbst weg; fehlt ein Wert, steht „–“. Die Spalte „Heute“ füllt sich erst, wenn du die standardmäßig deaktivierten Sensoren „AZ … heute“ aktivierst. Bei einem anderen Namen des Eintrags nur die erste Zeile anpassen.
+Alle Arbeitszahlen in einer Markdown-Karte, ganz ohne Zusatzkarten aus dem Marketplace. Zeilen ohne Sensoren (etwa Kühlen) fallen von selbst weg; fehlt ein Wert, steht „–“. Die Spalte „Heute“ füllt sich erst, wenn du die standardmäßig deaktivierten Sensoren „AZ … heute“ aktivierst. Bei einem anderen Namen des Eintrags nur die erste Zeile anpassen.
 
 ```yaml
 type: markdown
