@@ -241,6 +241,9 @@
       "ratio_dhw_charges_30d": {
         "default": "mdi:water-boiler"
       },
+      "dhw_colder_saving": {
+        "default": "mdi:thermometer-minus"
+      },
       "last_disinfection": {
         "default": "mdi:bacteria-outline"
       },

@@ -213,6 +213,11 @@ SENSORS = {
         "AZ Warmwasser-Ladungen 30 Tage",
         "mdi:water-boiler",
     ),
+    "dhw_colder_saving": (
+        "Hot water 2 K colder",
+        "Warmwasser 2 K kälter",
+        "mdi:thermometer-minus",
+    ),
     "last_disinfection": (
         "Last thermal disinfection",
         "Letzte thermische Desinfektion",

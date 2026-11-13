@@ -501,3 +501,105 @@ def _dates(first: date, last: date) -> Iterable[date]:
 
 def _round(value: float | None, digits: int) -> float | None:
     return None if value is None else round(value, digits)
+
+
+# Hot water colder (health check 4.14, DHW): what a hot water temperature
+# k kelvin lower would have saved, per normal charge from its Carnot COP. The
+# heat pump's own efficiency factor cancels out: same heat, same factor, so
+# the compressor electricity scales with the Carnot COPs. Sink: mean of the
+# storage temperature at the start and the highest during the charge (the
+# condenser runs a few kelvin above it: rather a little too much saving);
+# source: the outdoor hourly mean at the start. Own assumptions: at least
+# COLDER_DHW_MIN_CHARGES charges over COLDER_DHW_MIN_DAYS days.
+COLDER_DHW_KELVIN = 2  # the sensor "Hot water 2 K colder"
+COLDER_DHW_MIN_CHARGES = 10
+COLDER_DHW_MIN_DAYS = 7.0
+TOO_FEW_CHARGES = "too_few_charges"
+
+
+@dataclass(frozen=True)
+class DhwCharge:
+    """What one normal hot water charge adds (charges.Charge, reduced)."""
+
+    start: datetime
+    electricity_kwh: float  # compressor, without the backup heater
+    sink: float  # mean storage temperature during the charge, degC
+    source: float  # outdoor hourly mean at the start, degC
+
+
+@dataclass(frozen=True)
+class ColderDhw:
+    """Saving of a hot water temperature k kelvin lower over a window."""
+
+    charges: int
+    days: float  # length of the window the charges stand for
+    electricity_kwh: float
+    saved_kwh: dict[int, float] = field(default_factory=dict)
+    sink: float | None = None  # electricity-weighted means
+    source: float | None = None
+    reason: str | None = None
+
+    def per_year(self, kelvin: int) -> float | None:
+        if self.reason is not None or kelvin not in self.saved_kwh:
+            return None
+        return self.saved_kwh[kelvin] * 365 / self.days
+
+    def as_attributes(self, price_eur_per_kwh: float | None = None) -> dict[str, Any]:
+        per_year = {k: self.per_year(k) for k in LOWER_FLOW_KELVINS}
+        known = self.reason is None
+        main = per_year.get(COLDER_DHW_KELVIN)
+        return {
+            "kelvin": COLDER_DHW_KELVIN,
+            "kwh_per_year": {str(k): _round(v, 0) for k, v in per_year.items()}
+            if known
+            else None,
+            "percent": {
+                str(k): round(100 * v / self.electricity_kwh, 1)
+                for k, v in self.saved_kwh.items()
+            }
+            if known and self.electricity_kwh > 0
+            else None,
+            "eur_per_year": None
+            if main is None or price_eur_per_kwh is None
+            else round(main * price_eur_per_kwh, 2),
+            "charges": self.charges,
+            "days": round(self.days, 1),
+            "electricity_kwh": round(self.electricity_kwh, 2),
+            "sink_temp": _round(self.sink, 1),
+            "source_temp": _round(self.source, 1),
+            "reason": self.reason,
+        }
+
+
+def colder_dhw(
+    charges: Iterable[DhwCharge], start: datetime, end: datetime
+) -> ColderDhw:
+    """Saving of a hot water temperature 1, 2, 3 K lower over the charges
+    starting in [start, end), projected per year by the window they cover
+    (from the first charge on, at most end - start)."""
+    chosen = [c for c in charges if start <= c.start < end]
+    counted = [c for c in chosen if carnot_cop(c.sink, c.source) is not None]
+    days = (end - min((c.start for c in counted), default=end)).total_seconds()
+    days /= 86400
+    electricity = sum(c.electricity_kwh for c in counted)
+    if len(counted) < COLDER_DHW_MIN_CHARGES or days < COLDER_DHW_MIN_DAYS:
+        return ColderDhw(len(counted), days, electricity, reason=TOO_FEW_CHARGES)
+    saved: dict[int, float] = {}
+    for kelvin in LOWER_FLOW_KELVINS:
+        total = 0.0
+        for c in counted:
+            cop = carnot_cop(c.sink, c.source)
+            lower = carnot_cop(c.sink - kelvin, c.source)
+            if cop is None or lower is None:
+                continue
+            total += c.electricity_kwh * (1 - cop / lower)
+        saved[kelvin] = total
+    weight = electricity or 1.0
+    return ColderDhw(
+        charges=len(counted),
+        days=days,
+        electricity_kwh=electricity,
+        saved_kwh=saved,
+        sink=sum(c.sink * c.electricity_kwh for c in counted) / weight,
+        source=sum(c.source * c.electricity_kwh for c in counted) / weight,
+    )

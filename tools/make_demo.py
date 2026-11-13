@@ -47,8 +47,11 @@ from custom_components.waermewacht.activity import combine  # noqa: E402
 from custom_components.waermewacht.averages import Mean  # noqa: E402
 from custom_components.waermewacht.backfill import by_hour, energy_between  # noqa: E402
 from custom_components.waermewacht.carnot import (  # noqa: E402
+    COLDER_DHW_KELVIN,
+    DhwCharge,
     EfficiencyFactor,
     FactorDay,
+    colder_dhw,
     efficiency_factor,
     factor_attributes,
     factor_spans,
@@ -61,6 +64,7 @@ from custom_components.waermewacht.charges import (  # noqa: E402
     DisinfectionSplit,
     charge_ratio,
     disinfection_split,
+    is_disinfection,
 )
 from custom_components.waermewacht.charges import prune as prune_charges  # noqa: E402
 from custom_components.waermewacht.const import (  # noqa: E402
@@ -1470,6 +1474,32 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         mean_minutes=_r(normal.mean_minutes, 0),
         mean_heat_kwh=_r(normal.mean_heat_kwh),
         mean_lift=_r(normal.mean_lift, 1),
+    )
+    # runtime._colder_dhw: normal charges of 30 days with the outdoor hour.
+    charge_outdoor = sim.outdoor_hours(now - 30 * DAY, now)
+    samples = [
+        DhwCharge(
+            start=c.start,
+            electricity_kwh=c.electricity_kwh,
+            sink=(c.start_dhw_temp + c.max_dhw_temp) / 2,
+            source=charge_outdoor[hour],
+        )
+        for c in sim.charges
+        if c.end is not None
+        and not c.uncertain
+        and c.start_dhw_temp is not None
+        and c.max_dhw_temp is not None
+        and not is_disinfection(c)
+        and (hour := c.start.replace(minute=0, second=0, microsecond=0))
+        in charge_outdoor
+    ]
+    colder = colder_dhw(samples, now - 30 * DAY, now)
+    put(
+        "dhw_colder_saving",
+        _r(colder.per_year(COLDER_DHW_KELVIN), 0),
+        "kWh",
+        0,
+        **colder.as_attributes(ELECTRICITY_PRICE),
     )
 
     # Problem sensors.

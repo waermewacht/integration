@@ -34,7 +34,7 @@ from homeassistant.util import dt as dt_util
 from . import WaermewachtConfigEntry, is_gas
 from .allocation import NONE
 from .binary_sensor import health_checks
-from .carnot import factor_attributes, lower_flow_figure
+from .carnot import COLDER_DHW_KELVIN, factor_attributes, lower_flow_figure
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
@@ -363,6 +363,9 @@ def _aux_share_mode(period: Period, mode: Mode) -> Value:
     return value
 
 
+AUX_FIELD_MEAN_PERCENT = 1.3
+
+
 def _aux_share_attributes(
     period: Period,
 ) -> Callable[[HeatPumpRuntime], dict[str, Any]]:
@@ -378,6 +381,10 @@ def _aux_share_attributes(
                 else aux_share(totals, runtime.min_electricity, mode)
             )
             result[mode.value] = None if share is None else round(share, 2)
+        if period is Period.SEASON:
+            # Fraunhofer ISE WP-QS: backup heater share ~1.3 % on average
+            # (docs/ENTWICKLUNG.md, section 3), for comparison only.
+            result["field_mean_percent"] = AUX_FIELD_MEAN_PERCENT
         return result
 
     return attributes
@@ -1060,6 +1067,14 @@ def _charges_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
 
 
 HAS_CHARGES: Needs = lambda r: r.has_charges  # noqa: E731
+
+
+def _dhw_colder(runtime: HeatPumpRuntime) -> float | None:
+    figure = runtime.colder_dhw
+    value = None if figure is None else figure.per_year(COLDER_DHW_KELVIN)
+    return _round(value, 0)
+
+
 DHW = [
     HeatPumpSensorDescription(
         key="ratio_dhw_last_charge",
@@ -1076,6 +1091,25 @@ DHW = [
         value=lambda r: _round(r.charge_split(dt_util.utcnow()).normal.ratio),
         needs=HAS_CHARGES,
         attributes=_charges_attributes,
+    ),
+    HeatPumpSensorDescription(
+        # What hot water 2 K colder would save a year (carnot.colder_dhw),
+        # from the normal charges of 30 days and the daily analysis. No state
+        # class: one value a day needs no long-term statistics (SD cards).
+        key="dhw_colder_saving",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=0,
+        value=_dhw_colder,
+        needs=lambda r: (
+            r.has_charges
+            and Signal.DHW_TEMP in r.entities
+            and Signal.OUTDOOR_TEMP in r.entities
+        ),
+        attributes=lambda r: (
+            {}
+            if r.colder_dhw is None
+            else r.colder_dhw.as_attributes(r.electricity_price)
+        ),
     ),
     HeatPumpSensorDescription(
         key="last_disinfection",

@@ -154,6 +154,8 @@ const TEXT = {
     lowerFlow: "Heizkurve 2 K tiefer",
     lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
     lowerFlowEuro: (eur) => `≈ ${eur} € weniger`,
+    dhwColder: "Warmwasser 2 K kälter",
+    perYearFrom: (days) => `im Jahr, aus ${days} Tagen`,
     seasonSoFar: "Saison bisher",
     dutyChart: "Laufzeit Heizen je Außentemperatur",
     dutySeries: "Anteil der Zeit",
@@ -347,6 +349,8 @@ const TEXT = {
     lowerFlow: "Heating curve 2 K lower",
     lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
     lowerFlowEuro: (eur) => `≈ ${eur} € less`,
+    dhwColder: "Hot water 2 K colder",
+    perYearFrom: (days) => `a year, from ${days} days`,
     seasonSoFar: "season so far",
     dutyChart: "Heating run time per outdoor temperature",
     dutySeries: "Share of the time",
@@ -1019,7 +1023,22 @@ class WaermewachtCard extends HTMLElement {
         ? `${last.minutes} min · ${this._num(last.start_temp, 1)} → ${this._num(last.max_temp, 1)} °C` : ""),
       this._own("ratio_dhw_charges_30d", t.tiles.ratio_dhw_charges_30d, charges.charges !== undefined
         ? t.charges(charges.charges, this._num(charges.mean_minutes, 0)) : ""),
+      this._dhwColder(t),
     ]);
+  }
+
+  /** What hot water 2 K colder would save a year ("dhw_colder_saving",
+   * carnot.colder_dhw): from the charges of 30 days; euro with the fixed
+   * electricity price. Hidden until there are enough charges. */
+  _dhwColder(t) {
+    const state = this._state("dhw_colder_saving");
+    const kwh = Number(state?.state);
+    if (!state || state.state === "" || !Number.isFinite(kwh)) return "";
+    const a = state.attributes;
+    const parts = [];
+    if (a.eur_per_year !== null && a.eur_per_year !== undefined) parts.push(t.lowerFlowEuro(this._num(a.eur_per_year, 0)));
+    parts.push(t.perYearFrom(this._num(a.days, 0)));
+    return this._tile(this._entities.dhw_colder_saving, t.dhwColder, parts.join(" · "), t.lowerFlowValue(this._num(kwh, 0)));
   }
 
   _costs(t) {

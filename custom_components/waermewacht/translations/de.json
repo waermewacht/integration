@@ -1037,6 +1037,9 @@
       "ratio_dhw_charges_30d": {
         "name": "AZ Warmwasser-Ladungen 30 Tage"
       },
+      "dhw_colder_saving": {
+        "name": "Warmwasser 2 K kälter"
+      },
       "last_disinfection": {
         "name": "Letzte thermische Desinfektion"
       },

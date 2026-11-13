@@ -14,10 +14,13 @@ from custom_components.waermewacht.carnot import (
     SKIP_NO_ENERGY,
     SKIP_NO_OUTDOOR,
     SKIP_SMALL_LIFT,
+    TOO_FEW_CHARGES,
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
+    DhwCharge,
     FactorDay,
     carnot_cop,
+    colder_dhw,
     efficiency_factor,
     factor_attributes,
     factor_day,
@@ -441,3 +444,56 @@ def test_lower_flow_figure_prefers_the_previous_season() -> None:
     empty = efficiency_factor([entry()], DAY, DAY, min_days=7)
     assert lower_flow_figure({"season": empty}) is None
     assert lower_flow_figure({}) is None
+
+
+# Hot water colder.
+
+
+def dhw_charges(count: int, days: float, sink: float = 50.0, source: float = 10.0):
+    step = timedelta(days=days) / count
+    return [
+        DhwCharge(start=DAY + i * step, electricity_kwh=1.0, sink=sink, source=source)
+        for i in range(count)
+    ]
+
+
+def test_colder_dhw_follows_carnot() -> None:
+    """Sink 50 °C, source 10 °C: 2 K colder saves 1 - COP(50)/COP(48) of the
+    compressor electricity, whatever the heat pump's own factor."""
+    charges = dhw_charges(30, 30)
+    end = DAY + timedelta(days=30)
+    result = colder_dhw(charges, end - timedelta(days=30), end)
+    expected = 1 - carnot_cop(50.0, 10.0) / carnot_cop(48.0, 10.0)
+    assert result.reason is None
+    assert result.saved_kwh[2] == pytest.approx(30 * expected)
+    assert result.per_year(2) == pytest.approx(30 * expected * 365 / 30)
+    assert result.saved_kwh[1] < result.saved_kwh[2] < result.saved_kwh[3]
+    attributes = result.as_attributes(0.3)
+    assert attributes["percent"]["2"] == pytest.approx(100 * expected, abs=0.05)
+    assert attributes["eur_per_year"] == round(result.per_year(2) * 0.3, 2)
+    assert attributes["sink_temp"] == 50.0 and attributes["source_temp"] == 10.0
+    # Roughly 2 % per kelvin at this lift (docs: ~2.1 %/K at one plant).
+    assert 1.5 < attributes["percent"]["1"] < 3.0
+
+
+def test_colder_dhw_projects_from_the_days_covered() -> None:
+    """Charges over the last 10 days only (Wärmewacht newer than 30 days):
+    per year from those 10 days."""
+    end = DAY + timedelta(days=10)
+    result = colder_dhw(dhw_charges(20, 10), end - timedelta(days=30), end)
+    assert result.days == pytest.approx(10)
+    assert result.per_year(2) == pytest.approx(result.saved_kwh[2] * 36.5)
+
+
+def test_colder_dhw_needs_enough_charges() -> None:
+    end = DAY + timedelta(days=30)
+    few = colder_dhw(dhw_charges(5, 30), end - timedelta(days=30), end)
+    assert few.reason == TOO_FEW_CHARGES and few.per_year(2) is None
+    assert few.as_attributes()["kwh_per_year"] is None
+    short = colder_dhw(dhw_charges(20, 3), DAY, DAY + timedelta(days=3))
+    assert short.reason == TOO_FEW_CHARGES
+    # A lift below the smallest one does not count as a charge.
+    flat = colder_dhw(
+        dhw_charges(30, 30, sink=20.0, source=15.0), DAY, DAY + timedelta(days=30)
+    )
+    assert flat.charges == 0 and flat.reason == TOO_FEW_CHARGES

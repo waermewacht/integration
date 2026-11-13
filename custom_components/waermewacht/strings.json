@@ -1037,6 +1037,9 @@
       "ratio_dhw_charges_30d": {
         "name": "COP hot water charges 30 days"
       },
+      "dhw_colder_saving": {
+        "name": "Hot water 2 K colder"
+      },
       "last_disinfection": {
         "name": "Last thermal disinfection"
       },

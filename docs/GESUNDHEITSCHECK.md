@@ -180,7 +180,7 @@ Folge: Prüfungen auf Stunden- und Kennlinienbasis gehen sofort. Für Spreizung,
 
 **Anzeige.** Binärsensor „Heizstab bei milder Witterung“. Attribute: `aux_kwh_7d` (ohne Abtauen), `aux_kwh_defrost_7d`, `mild_days_7d`, `days` (je Tag Datum, Mittel, Heizstab kWh, ggf. `aux_kwh_defrost`; nicht aufgezeichnet), `min_outdoor_temp`, `threshold_kwh`, `reason`.
 
-Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (noch nicht umgesetzt).
+Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor „Heizstab-Anteil Saison“ zur Einordnung (umgesetzt in 0.7.5).
 
 ### 4.3 Abtauungen auffällig
 
@@ -518,7 +518,7 @@ Nicht einstellbar: Mindestdaten, Zählergrenzen in 4.10 (Eigenschaften der Daten
 - EN 14511 (W30/35) belegen, bevor 4.4 einen Text bekommt.
 - Abtauen (4.3): Quelle für übliche Häufigkeit und Dauer suchen; ohne Feuchte bleibt es Attribut.
 - 4.15: Rückblick über Laufzeit- und Startzähler – als Signal nur in den Vorlagen, mit Feld im eingeklappten Abschnitt „Sonderzähler“ oder gar nicht (nur ab dem Update)? Rückblick täglich aus der Statistik oder einmal ins Tagebuch übernehmen? Schwelle 90 % für „läuft durch“ an weiteren Anlagen prüfen.
-- 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später.
+- 4.14: Gütegrad als Zahl (0,39 wie Fraunhofer) oder als Prozent (39 %, wie heatpumpmonitor, dort aber mit Aufschlägen)? Ohne Rücklauf rechnen (Senke = Vorlauf, Wert zu hoch) oder unbekannt? Warmwasser getrennt (eigener Gütegrad mit Speicher-Ist-Temperatur) erst später. Seit 0.7.5 „Warmwasser 2 K kälter“ (`carnot.colder_dhw`): je Ladung aus den Carnot-Leistungszahlen, der Gütegrad kürzt sich heraus, ein Warmwasser-Gütegrad ist dafür nicht nötig.
 - ~~Tagesbuch (4.11) mit dem Inhaber abstimmen~~ Erlaubt 2026-10-27 (`ENTWICKLUNG.md` §6), umgesetzt in 0.1.0b7.
 
 ## Quellen

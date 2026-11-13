@@ -63,8 +63,11 @@ from .backfill import (
 )
 from .carnot import (
     FLOW_ONLY_NOTE_SHARE,
+    ColderDhw,
+    DhwCharge,
     EfficiencyFactor,
     FactorDay,
+    colder_dhw,
     efficiency_factor,
     factor_spans,
     statistics_days,
@@ -77,6 +80,7 @@ from .charges import (
     ChargeTracker,
     DisinfectionSplit,
     disinfection_split,
+    is_disinfection,
 )
 from .charges import prune as prune_charges
 from .const import (
@@ -486,6 +490,8 @@ class HeatPumpRuntime:
         # Carnot efficiency factor while heating: season, month, previous
         # season (daily analysis, from the diary).
         self.efficiency_factors: dict[str, EfficiencyFactor] = {}
+        # Hot water k kelvin colder (carnot.colder_dhw), daily analysis.
+        self.colder_dhw: ColderDhw | None = None
         # Figures of the daily analysis (health_extra.py) and the data sheet.
         self.rated_power: float | None = options.get(CONF_RATED_POWER)
         self.min_power: float | None = options.get(CONF_MIN_POWER)
@@ -1513,6 +1519,7 @@ class HeatPumpRuntime:
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
             self.starts_year_ago = await self._async_starts_year_ago(now)
+            self.colder_dhw = self._colder_dhw(outdoor, now)
             self.heating_days_year = self._heating_days_year(outdoor, now)
             if (entity_id := self.entities.get(Signal.STARTS_TOTAL)) is not None:
                 seen = self._starts_seen
@@ -1699,6 +1706,40 @@ class HeatPumpRuntime:
         )
         rows = [r for r in found.get(entity_id, []) if r.get("state") is not None]
         return (int(rows[-1]["state"]), at) if rows else None
+
+    def _colder_dhw(
+        self, outdoor: Mapping[datetime, float], now: datetime
+    ) -> ColderDhw | None:
+        """Saving of colder hot water over the normal charges of the last
+        CHARGE_DAYS days (no disinfection, none with a gap), with the outdoor
+        hourly mean at their start from the analysis' statistics."""
+        if not self.has_charges or Signal.DHW_TEMP not in self.entities:
+            return None
+        samples = []
+        for charge in self.charges:
+            if (
+                charge.end is None
+                or charge.uncertain
+                or charge.start_dhw_temp is None
+                or charge.max_dhw_temp is None
+                or is_disinfection(charge, self.disinfection_temp)
+            ):
+                continue
+            hour = dt_util.as_utc(charge.start).replace(
+                minute=0, second=0, microsecond=0
+            )
+            source = outdoor.get(hour)
+            if source is None:
+                continue
+            samples.append(
+                DhwCharge(
+                    start=charge.start,
+                    electricity_kwh=charge.electricity_kwh,
+                    sink=(charge.start_dhw_temp + charge.max_dhw_temp) / 2,
+                    source=source,
+                )
+            )
+        return colder_dhw(samples, now - timedelta(days=CHARGE_DAYS), now)
 
     def _heating_days_year(
         self, outdoor: Mapping[datetime, float], now: datetime
