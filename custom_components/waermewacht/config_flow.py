@@ -1349,11 +1349,17 @@ class WaermewachtOptionsFlow(OptionsFlow):
         )
 
     def _no_statistics(self) -> set[Signal]:
-        """Mapped temperatures whose state has no state class: Home Assistant
-        keeps no long-term statistics of them (the look-back needs them)."""
+        """Mapped temperatures (and the system pressure) whose state has no
+        state class: Home Assistant keeps no long-term statistics of them (the
+        look-back and the pressure check need them)."""
         entities = self.config_entry.data.get(CONF_ENTITIES, {})
         result = set()
-        for signal in (Signal.OUTDOOR_TEMP, Signal.FLOW_TEMP, Signal.RETURN_TEMP):
+        for signal in (
+            Signal.OUTDOOR_TEMP,
+            Signal.FLOW_TEMP,
+            Signal.RETURN_TEMP,
+            Signal.SYSTEM_PRESSURE,
+        ):
             entity_id = entities.get(signal.value)
             state = self.hass.states.get(entity_id) if entity_id else None
             if state is not None and not state.attributes.get("state_class"):

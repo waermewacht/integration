@@ -242,3 +242,23 @@ def test_temperatures_without_statistics() -> None:
 )
 def test_number_keeps_whole_numbers(value: float, digits: int, expected: str) -> None:
     assert _num(value, 1, digits) == expected
+
+
+def test_system_pressure_named_only_when_mapped() -> None:
+    """Rare field: named in the overview only when mapped; without
+    statistics the hint says the pressure check is missing."""
+    from custom_components.waermewacht.model import Signal
+
+    with_pressure = {**EMS_ESP, "system_pressure": "sensor.boiler_syspress"}
+    options = {"electricity_price": 27.75, "design_outdoor_temp": -12.0}
+    text = heat_pump_summary(with_pressure, options, "EMS-ESP", "de")
+    assert "- **Messwerte:** außen ✓, Vorlauf ✓, Rücklauf ✓, Anlagendruck ✓\n" in text
+    assert "Anlagendruck" not in heat_pump_summary(EMS_ESP, options, "EMS-ESP", "de")
+    text = heat_pump_summary(
+        with_pressure,
+        options,
+        "EMS-ESP",
+        "de",
+        no_statistics={Signal.SYSTEM_PRESSURE},
+    )
+    assert "Anlagendruck ohne Langzeitstatistik" in text
