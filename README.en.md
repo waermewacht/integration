@@ -747,7 +747,7 @@ Wärmewacht ships its own cards, without any extra card from the Marketplace. It
 | Card | Shows |
 | --- | --- |
 | Wärmewacht Now (`custom:waermewacht-now-card`) | activity (since when), compressor, outdoor, flow, return and storage temperature of the source; heat and electric power if you pick them in the editor |
-| Wärmewacht Performance factors (`…-ratios-card`) | table heating, hot water, both, cooling × today, month, season, total |
+| Wärmewacht Performance factors (`…-ratios-card`) | table heating, hot water, both, cooling × today, month, season, total; the column "today" only once one of the sensors "COP … today" (disabled by default) is enabled |
 | Wärmewacht Health (`…-health-card`) | every check with a dot (green, red, grey), the finding in words and the figure that matters |
 | Wärmewacht Cycling (`…-cycling-card`) | starts, run times, shortest pause, short runs, defrosts, spread, standby, starts per year projected (with the Fraunhofer field test) |
 | Wärmewacht Hot water (`…-dhw-card`) | last charge (duration, temperature lift) and the charges of the last 30 days |

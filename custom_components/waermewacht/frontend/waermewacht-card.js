@@ -868,9 +868,14 @@ class WaermewachtCard extends HTMLElement {
   }
 
   _ratios(t) {
-    const rows = RATIO_SCOPES.filter((scope) => RATIO_PERIODS.some((p) => this._state(`ratio_${scope}_${p}`)))
+    // "Today" is disabled by default (it swings a lot): its column only
+    // shows once one of its sensors is enabled.
+    const periods = RATIO_PERIODS.filter(
+      (p) => p !== "today" || RATIO_SCOPES.some((scope) => this._state(`ratio_${scope}_${p}`)),
+    );
+    const rows = RATIO_SCOPES.filter((scope) => periods.some((p) => this._state(`ratio_${scope}_${p}`)))
       .map((scope) => {
-        const cells = RATIO_PERIODS.map((p) => {
+        const cells = periods.map((p) => {
           const id = this._entities[`ratio_${scope}_${p}`];
           const state = this._stateOf(id);
           if (!state) return "<td>–</td>";
@@ -880,7 +885,7 @@ class WaermewachtCard extends HTMLElement {
         return `<tr><td>${label}</td>${cells}</tr>`;
       });
     if (!rows.length) return "";
-    const head = `<tr><th></th>${RATIO_PERIODS.map((p) => `<th>${escapeHtml(t.periods[p])}</th>`).join("")}</tr>`;
+    const head = `<tr><th></th>${periods.map((p) => `<th>${escapeHtml(t.periods[p])}</th>`).join("")}</tr>`;
     return `<div class="wrap"><table>${head}${rows.join("")}</table></div>`;
   }
 

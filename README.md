@@ -746,7 +746,7 @@ Wärmewacht bringt eigene Karten mit, ganz ohne Zusatzkarten aus dem Marketplace
 | Karte | Zeigt |
 | --- | --- |
 | Wärmewacht Jetzt (`custom:waermewacht-now-card`) | Betriebsart (seit wann), Kompressor, Außen-, Vor-, Rücklauf- und Speichertemperatur der Quelle; Wärme- und Stromleistung, wenn du sie im Editor wählst |
-| Wärmewacht Arbeitszahlen (`…-ratios-card`) | Tabelle Heizen, Warmwasser, beides, Kühlen × heute, Monat, Saison, gesamt |
+| Wärmewacht Arbeitszahlen (`…-ratios-card`) | Tabelle Heizen, Warmwasser, beides, Kühlen × heute, Monat, Saison, gesamt; die Spalte „heute“ erst, wenn einer der standardmäßig deaktivierten Sensoren „AZ … heute“ aktiviert ist |
 | Wärmewacht Gesundheit (`…-health-card`) | jede Prüfung mit Punkt (grün, rot, grau), Befund in Worten und der entscheidenden Zahl |
 | Wärmewacht Takte (`…-cycling-card`) | Starts, Laufzeiten, kürzeste Pause, Kurzläufe, Abtauungen, Spreizung, Stillstand, Starts pro Jahr hochgerechnet (mit Fraunhofer-Feldtest) |
 | Wärmewacht Warmwasser (`…-dhw-card`) | letzte Ladung (Dauer, Temperaturhub) und die Ladungen der letzten 30 Tage |

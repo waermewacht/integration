@@ -2,6 +2,14 @@
 
 ## Unveröffentlicht
 
+### Behoben
+
+- **Kein Verbrauch mehr aus kurzen Aussetzern eines Zählers.** Fällt ein Zähler kurz ab (etwa eine Vorlage, die zwei Shelly-Phasen addiert und bei einer Neuverbindung erst auf 0 oder eine Phase fällt) und springt binnen Sekunden auf den alten Wert zurück, bucht Wärmewacht nichts. Bisher konnte beim zweiten Aussetzer der Wert einer Phase als Verbrauch gebucht werden (beobachtet: 40 kWh Heizstab auf einmal). Schon gebuchte Werte ändert das Update nicht. (danke an @Thomas-Dipling)
+
+### Geändert
+
+- **Karte Arbeitszahlen: Spalte „Heute“ nur, wenn eingeschaltet.** Die Sensoren „AZ … heute“ sind standardmäßig deaktiviert; die Spalte zeigte bis dahin nur „–“. Jetzt erscheint sie, sobald einer davon aktiviert ist. (danke an Joachim-xo, simon42-Forum)
+
 ### Neu
 
 - **Viessmann ViCare: Wärme und Arbeitszahl (experimentell).** Sobald Home Assistant für ViCare die Wärme je Betriebsart liefert (home-assistant/core#192458), erkennt die Vorlage „Heating heat production today“ und „DHW heat production today“ von selbst und rechnet die Arbeitszahl. Bis dahin ändert sich nichts. Aus dem Quellcode abgeleitet, noch an keiner echten Anlage bestätigt; nicht jedes Gerät meldet die Wärme. (danke an JosefinBerlin, simon42-Forum)

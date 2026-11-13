@@ -345,6 +345,81 @@ def test_pending_jump_survives_a_restart_and_expires() -> None:
     assert late.update(110.131, at(60 * 25)).event is CounterEvent.RESET
 
 
+def seconds(minutes: float, secs: float) -> datetime:
+    return at(minutes) + timedelta(seconds=secs)
+
+
+# Observed (waermewacht#6): a template adding two Shelly phases (53.48 and
+# 39.96 kWh) falls to 0 or to one phase when the Shelly reconnects and climbs
+# back in steps within half a second.
+DROPOUTS = {
+    "to zero": [0.0, 53.48, 93.44],
+    "to one phase, then zero": [39.96, 0.0, 53.48, 93.44],
+    "to one phase": [53.48, 93.44],
+}
+
+
+@pytest.mark.parametrize("steps", DROPOUTS.values(), ids=DROPOUTS.keys())
+def test_dropout_and_climb_back_books_nothing(steps: list[float]) -> None:
+    counter = Counter(max_kw=50.0)
+    counter.update(93.44, at(0))
+    booked = 0.0
+    for day in range(3):  # once a day, as observed
+        minutes = 60 * 12 * (day + 1)
+        for i, value in enumerate(steps):
+            booked += counter.update(value, seconds(minutes, 0.1 * i)).delta
+        assert counter.jump is None
+        assert counter.drop is None
+    assert booked == 0
+    assert counter.update(93.45, at(60 * 40)).delta == pytest.approx(0.01)
+
+
+def test_climb_back_books_the_increase_above_the_old_value() -> None:
+    """Energy that came in while the source was away is booked once."""
+    counter = Counter(max_kw=50.0)
+    counter.update(93.44, at(0))
+    assert counter.update(0.0, at(10)).event is CounterEvent.RESET
+    assert counter.update(53.48, seconds(10, 0.4)).event is CounterEvent.JUMP
+    update = counter.update(93.64, seconds(10, 0.5))
+    assert update.event is CounterEvent.RETURNED
+    assert update.delta == pytest.approx(0.2)
+    assert counter.update(93.70, at(12)).delta == pytest.approx(0.06)
+
+
+def test_climb_back_survives_a_restart() -> None:
+    counter = Counter(max_kw=50.0)
+    counter.update(93.44, at(0))
+    counter.update(0.0, at(10))
+    restored = Counter(max_kw=50.0)
+    restored.restore(counter.as_dict())
+    update = restored.update(93.44, at(11))
+    assert update.event is CounterEvent.RETURNED
+    assert update.delta == 0
+
+
+def test_new_meter_rises_from_zero_as_before() -> None:
+    """A real reset: rises from 0 are booked, also past the old value."""
+    counter = Counter(max_kw=20.0)
+    counter.update(30.0, at(0))
+    assert counter.update(0.0, at(1)).event is CounterEvent.RESET
+    assert counter.update(0.5, at(30)).delta == pytest.approx(0.5)
+    assert counter.update(10.0, at(60 * 12)).delta == pytest.approx(9.5)
+    update = counter.update(31.0, at(60 * 20))
+    assert update.event is None
+    assert update.delta == pytest.approx(21.0)
+    assert counter.drop is None
+
+
+def test_climb_back_too_fast_for_the_time_since_is_a_jump() -> None:
+    """Far above the old value in seconds: not booked, as any jump."""
+    counter = Counter(max_kw=20.0)
+    counter.update(93.44, at(0))
+    counter.update(0.0, at(1))
+    update = counter.update(150.0, seconds(1, 0.4))
+    assert update.event is CounterEvent.JUMP
+    assert update.delta == 0
+
+
 def test_whole_kwh_step_is_not_a_jump() -> None:
     counter = Counter(max_kw=20.0)
     counter.update(2104.0, at(0))
