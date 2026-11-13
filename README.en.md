@@ -719,15 +719,24 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 ## Notifications
 
-A blueprint reports when a check turns conspicuous: in the Home Assistant bell and, optionally, also on the phone (or through another notify service), with the finding in words, such as "Heat pump Efficiency dropped: COP heating 3.10 instead of 3.60 in the same weather last season" or "Heat pump Conspicuous cycling: 5 starts in 24 h (limit 4)".
+A blueprint reports when a check turns conspicuous: in the Home Assistant bell and, optionally, also on the phone, to Telegram or another service, with the heat pump's name in the title and the finding in words, such as "Wärmewacht · Heat pump: conspicuous" and "Heat pump Efficiency dropped: COP heating 3.10 instead of 3.60 in the same weather last season" or "Heat pump Conspicuous cycling: 5 starts in 24 h (limit 4)". The message comes in German or English.
 
 [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
 
 - **Checks:** the problem binary sensors of one or more Wärmewacht devices (efficiency dropped, conspicuous cycling, backup heater in mild weather, backup heater in hot water charges, hot water efficiency below last year, conspicuous status messages – there e.g. "Durchflussüberwachung 12× in 7 days"). Data errors such as stuck meters already come as repair issues.
-- **Also send to:** leave empty for the bell only, else a notify action such as `notify.mobile_app_my_phone` (*Developer tools → Actions*, search for "mobile_app").
+- **Phone:** a phone with the Home Assistant app; leave empty for the bell only.
 - **Also when fine again** (default on): otherwise the notification leaves the bell silently.
 - **After a restart** the checks are unknown at first and are judged again shortly after. A finding that persists is back in the bell; the phone only gets a change from fine to conspicuous (switch "Phone also after a restart" to change that).
 - **Language** of the message: German or English.
+- **More actions** (collapsed): run with the finished text, by the same rules as the phone; `{{ title }}` and `{{ message }}` are ready to use. For Telegram: *Add action*, search for "Telegram", pick "Send message", with the text `{{ title }}: {{ message }}`, in YAML:
+
+  ```yaml
+  - action: telegram_bot.send_message
+    data:
+      message: "{{ title }}: {{ message }}"
+  ```
+
+  The old field **Also send to** (an action such as `notify.mobile_app_my_phone`) is there too; existing automations keep it. The new parts (phone picker, more actions, name in the title) come after importing the blueprint again (*Settings → Automations & scenes → Blueprints*, menu ⋮ in its row).
 
 ## Cards
 

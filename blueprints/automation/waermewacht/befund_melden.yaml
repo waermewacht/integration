@@ -1,25 +1,28 @@
 # Copies: speicherwacht/blueprints/automation/speicherwacht/befund_melden.yaml (derived)
 
 blueprint:
-  name: Wärmewacht – Befund melden (Glocke, optional Handy)
+  name: Wärmewacht – Befund melden / Report a finding
   description: >-
     Meldet, wenn eine Prüfung von Wärmewacht auffällig wird (Effizienz
     gesunken, auffälliges Takten, Heizstab bei milder Witterung oder bei
     Warmwasser, Warmwasser-Effizienz unter Vorjahr, auffällige
-    Statusmeldungen): als Benachrichtigung in
-    der Glocke und auf Wunsch zusätzlich an einen Benachrichtigungsdienst, etwa
-    das Handy mit der Home-Assistant-App. Auf Wunsch auch, wenn alles wieder in
-    Ordnung ist. Aufs Handy geht nur ein Wechsel von „in Ordnung“ auf
-    „auffällig“, nicht jeder Neustart (die Glocke steht dann wieder da).
-    ---
+    Statusmeldungen): als Benachrichtigung in der Glocke und auf Wunsch
+    zusätzlich aufs Handy mit der Home-Assistant-App. Unter „Weitere Aktionen“
+    gehen auch Telegram und andere Dienste. Auf Wunsch auch, wenn alles wieder
+    in Ordnung ist. Aufs Handy geht nur ein Wechsel von „in Ordnung“ auf
+    „auffällig“, nicht jeder Neustart (die Glocke steht dann wieder da). Im
+    Titel steht der Name der Wärmepumpe, die Nachricht gibt es auf Deutsch oder
+    Englisch.
+
+
     Reports when a Wärmewacht check turns conspicuous (efficiency dropped,
     conspicuous cycling, backup heater in mild weather or for hot water, hot
     water efficiency below last year, conspicuous status messages): as a
-    notification in the bell and,
-    optionally, through a notify action such as the phone with the Home
-    Assistant app. Optionally also when it is fine again. The phone only gets a
-    change from fine to conspicuous, not every restart (the bell shows it
-    again).
+    notification in the bell and, optionally, also on the phone with the Home
+    Assistant app. Telegram and other services go under "More actions".
+    Optionally also when it is fine again. The phone only gets a change from
+    fine to conspicuous, not every restart (the bell shows it again). The
+    title names the heat pump, the message comes in German or English.
   domain: automation
   author: Wärmewacht
   homeassistant:
@@ -39,16 +42,26 @@ blueprint:
             integration: waermewacht
             domain: binary_sensor
             device_class: problem
-    notify_action:
-      name: Zusätzlich senden an / Also send to (optional)
+    notify_device:
+      name: Handy (optional) / Phone (optional)
       description: >-
-        Leer lassen für nur die Glocke. Sonst eine Benachrichtigungs-Aktion,
-        z. B. notify.mobile_app_mein_handy (Entwicklerwerkzeuge → Aktionen). /
-        Leave empty for the bell only, else a notify action such as
-        notify.mobile_app_my_phone.
+        Ein Handy mit der Home-Assistant-App. Leer lassen für nur die Glocke. /
+        A phone with the Home Assistant app. Leave empty for the bell only.
       default: ""
       selector:
-        text: {}
+        device:
+          filter:
+            integration: mobile_app
+    language:
+      name: Sprache der Nachricht / Language of the message
+      default: de
+      selector:
+        select:
+          options:
+            - label: Deutsch
+              value: de
+            - label: English
+              value: en
     notify_fine:
       name: Auch melden, wenn wieder in Ordnung / Also when fine again
       description: >-
@@ -61,23 +74,45 @@ blueprint:
       name: Handy auch nach einem Neustart / Phone also after a restart
       description: >-
         Nach einem Neustart oder der Einrichtung ist eine Prüfung erst
-        unbekannt. An: Auch „unbekannt → auffällig“ geht aufs Handy (dann nach
-        jedem Neustart erneut). / After a restart or the setup a check is
-        unknown at first. On: “unknown → conspicuous” also goes to the phone
-        (again after every restart).
+        unbekannt. An: Auch „unbekannt → auffällig“ geht aufs Handy und an die
+        weiteren Aktionen (dann nach jedem Neustart erneut). / After a restart
+        or the setup a check is unknown at first. On: “unknown → conspicuous”
+        also goes to the phone and the more actions (again after every
+        restart).
       default: false
       selector:
         boolean: {}
-    language:
-      name: Sprache der Meldung / Language of the message
-      default: de
-      selector:
-        select:
-          options:
-            - label: Deutsch
-              value: de
-            - label: English
-              value: en
+    more:
+      name: Weitere Aktionen (optional) / More actions (optional)
+      icon: mdi:send
+      description: >-
+        Für Telegram, Signal, Sprachausgabe und Ähnliches. / For Telegram,
+        Signal, speech output and the like.
+      collapsed: true
+      input:
+        extra_actions:
+          name: Weitere Aktionen / More actions
+          description: >-
+            Laufen mit dem fertigen Text, nach denselben Regeln wie das Handy.
+            Nutzbar sind {{ title }} und {{ message }}. Beispiel Telegram:
+            Aktion telegram_bot.send_message mit message: "{{ title }}: {{
+            message }}". / Run with the finished text, by the same rules as the
+            phone. You can use {{ title }} and {{ message }}. Example Telegram:
+            action telegram_bot.send_message with message: "{{ title }}: {{
+            message }}".
+          default: []
+          selector:
+            action: {}
+        notify_action:
+          name: Zusätzlich senden an / Also send to (optional)
+          description: >-
+            Leer lassen, wenn nicht gebraucht. Sonst eine
+            Benachrichtigungs-Aktion, z. B. notify.mobile_app_mein_handy
+            (Entwicklerwerkzeuge → Aktionen). / Leave empty if not needed, else
+            a notify action such as notify.mobile_app_my_phone.
+          default: ""
+          selector:
+            text: {}
 
 mode: queued
 max: 10
@@ -95,17 +130,25 @@ triggers:
 
 variables:
   notify_action: !input notify_action
+  notify_device: !input notify_device
   notify_fine: !input notify_fine
   after_restart: !input after_restart
   lang: !input language
   notification_id: "waermewacht_{{ trigger.entity_id }}"
   name: >-
     {{ trigger.to_state.name if trigger.to_state else trigger.entity_id }}
-  # Sent to the phone: a real change from fine, or (if wanted) from unknown.
+  # The phone's notify action: mobile_app names it after the registered device.
+  phone_action: >-
+    {%- set d = device_attr(notify_device, 'name') if notify_device else none -%}
+    {{ 'notify.mobile_app_' ~ (d | slugify) if d else '' }}
+  # Sent beyond the bell: a real change from fine, or (if wanted) from unknown.
   to_phone: >-
-    {{ notify_action | trim != '' and (trigger.id == 'fine'
+    {{ trigger.id == 'fine'
        or (trigger.from_state is not none and (trigger.from_state.state == 'off'
-           or (after_restart and trigger.from_state.state in ['unknown', 'unavailable'])))) }}
+           or (after_restart and trigger.from_state.state in ['unknown', 'unavailable']))) }}
+  # The heat pump of the check, for the title; without a device just Wärmewacht.
+  device: "{{ device_name(trigger.entity_id) or '' }}"
+  head: "{{ 'Wärmewacht' ~ (' · ' ~ device if device else '') }}"
   # The finding in words, from the attributes of the binary sensor.
   detail: >-
     {%- set a = trigger.to_state.attributes if trigger.to_state else {} -%}
@@ -140,10 +183,10 @@ variables:
       {%- set more = (a.entries_7d | int(0)) > (a.most_frequent_count | int(0)) -%}
       {{ (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 Tagen' ~ ((', Schutz- und Störmeldungen zusammen ' ~ a.entries_7d ~ '×') if more else '')) if de else (a.most_frequent ~ ' ' ~ a.most_frequent_count ~ '× in 7 days' ~ ((', protection and fault messages ' ~ a.entries_7d ~ '× in all') if more else '')) }}
     {%- endif -%}
-  title: "{{ 'Wärmewacht: auffällig' if lang == 'de' else 'Wärmewacht: conspicuous' }}"
+  title: "{{ head ~ (': auffällig' if lang == 'de' else ': conspicuous') }}"
   message: >-
     {{ name }}{{ ': ' ~ detail if detail else '' }}
-  fine_title: "{{ 'Wärmewacht: wieder in Ordnung' if lang == 'de' else 'Wärmewacht: fine again' }}"
+  fine_title: "{{ head ~ (': wieder in Ordnung' if lang == 'de' else ': fine again') }}"
   fine_message: >-
     {{ name }}{{ ': wieder in Ordnung' if lang == 'de' else ': fine again' }}
 
@@ -162,10 +205,23 @@ actions:
               - condition: template
                 value_template: "{{ to_phone }}"
             then:
-              - action: "{{ notify_action | trim }}"
-                data:
-                  title: "{{ title }}"
-                  message: "{{ message }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ notify_action | trim != '' }}"
+                then:
+                  - action: "{{ notify_action | trim }}"
+                    data:
+                      title: "{{ title }}"
+                      message: "{{ message }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ phone_action != '' }}"
+                then:
+                  - action: "{{ phone_action }}"
+                    data:
+                      title: "{{ title }}"
+                      message: "{{ message }}"
+              - sequence: !input extra_actions
       - conditions:
           - condition: trigger
             id: fine
@@ -174,19 +230,35 @@ actions:
               - condition: template
                 value_template: "{{ notify_fine }}"
             then:
+              - variables:
+                  title: "{{ fine_title }}"
+                  message: "{{ fine_message }}"
               - action: persistent_notification.create
                 data:
                   notification_id: "{{ notification_id }}"
-                  title: "{{ fine_title }}"
-                  message: "{{ fine_message }}"
+                  title: "{{ title }}"
+                  message: "{{ message }}"
               - if:
                   - condition: template
                     value_template: "{{ to_phone }}"
                 then:
-                  - action: "{{ notify_action | trim }}"
-                    data:
-                      title: "{{ fine_title }}"
-                      message: "{{ fine_message }}"
+                  - if:
+                      - condition: template
+                        value_template: "{{ notify_action | trim != '' }}"
+                    then:
+                      - action: "{{ notify_action | trim }}"
+                        data:
+                          title: "{{ title }}"
+                          message: "{{ message }}"
+                  - if:
+                      - condition: template
+                        value_template: "{{ phone_action != '' }}"
+                    then:
+                      - action: "{{ phone_action }}"
+                        data:
+                          title: "{{ title }}"
+                          message: "{{ message }}"
+                  - sequence: !input extra_actions
             else:
               - action: persistent_notification.dismiss
                 data:

@@ -718,15 +718,24 @@ AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeo
 
 ## Benachrichtigen
 
-Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home Assistant und auf Wunsch zusätzlich aufs Handy (oder an einen anderen Benachrichtigungsdienst), mit dem Befund in Worten, etwa „Wärmepumpe Effizienz gesunken: AZ Heizen 3,10 statt 3,60 bei gleichem Wetter in der Vorsaison“ oder „Wärmepumpe Auffälliges Takten: 5 Starts in 24 h (Grenze 4)“.
+Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home Assistant und auf Wunsch zusätzlich aufs Handy, an Telegram oder einen anderen Dienst, mit dem Namen der Wärmepumpe im Titel und dem Befund in Worten, etwa „Wärmewacht · Wärmepumpe: auffällig“ und „Wärmepumpe Effizienz gesunken: AZ Heizen 3,10 statt 3,60 bei gleichem Wetter in der Vorsaison“ oder „Wärmepumpe Auffälliges Takten: 5 Starts in 24 h (Grenze 4)“. Die Nachricht gibt es auf Deutsch oder Englisch.
 
 [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
 
 - **Prüfungen:** die Problem-Binärsensoren eines oder mehrerer Wärmewacht-Geräte (Effizienz gesunken, Auffälliges Takten, Heizstab bei milder Witterung, Heizstab bei Warmwasserladungen, Warmwasser-Effizienz unter Vorjahr, Auffällige Statusmeldungen – dort etwa „Durchflussüberwachung 12× in 7 Tagen“). Datenfehler wie stehende Zähler meldet Wärmewacht ohnehin als Reparaturhinweis.
-- **Zusätzlich senden an:** leer lassen für nur die Glocke, sonst eine Aktion wie `notify.mobile_app_mein_handy` (*Entwicklerwerkzeuge → Aktionen*, nach „mobile_app“ suchen).
+- **Handy:** ein Handy mit der Home-Assistant-App; leer lassen für nur die Glocke.
 - **Auch melden, wenn wieder in Ordnung** (Vorgabe an): sonst verschwindet die Meldung still aus der Glocke.
 - **Nach einem Neustart** sind die Prüfungen erst unbekannt und werden kurz darauf neu bewertet. Ein fortbestehender Befund steht dann wieder in der Glocke; aufs Handy geht nur ein Wechsel von „in Ordnung“ auf „auffällig“ (umstellbar mit „Handy auch nach einem Neustart“).
-- **Sprache** der Meldung: Deutsch oder Englisch.
+- **Sprache** der Nachricht: Deutsch oder Englisch.
+- **Weitere Aktionen** (eingeklappt): laufen mit dem fertigen Text nach denselben Regeln wie das Handy; `{{ title }}` und `{{ message }}` stehen bereit. Für Telegram: *Aktion hinzufügen*, nach „Telegram“ suchen, „Nachricht senden“ wählen, als Text `{{ title }}: {{ message }}`, in YAML:
+
+  ```yaml
+  - action: telegram_bot.send_message
+    data:
+      message: "{{ title }}: {{ message }}"
+  ```
+
+  Dort steht auch das alte Feld **Zusätzlich senden an** (eine Aktion wie `notify.mobile_app_mein_handy`); bestehende Automationen behalten es. Die Neuerungen (Handy-Auswahl, weitere Aktionen, Name im Titel) gibt es nach einem erneuten Import des Blueprints (*Einstellungen → Automationen & Szenen → Blueprints*, Menü ⋮ in seiner Zeile).
 
 ## Karten
 
