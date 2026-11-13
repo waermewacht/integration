@@ -28,6 +28,7 @@ from homeassistant.components.recorder.statistics import (
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     UnitOfEnergy,
+    UnitOfPressure,
     UnitOfTemperature,
 )
 from homeassistant.core import (
@@ -178,6 +179,8 @@ from .health import (
     lift_days,
     outdoor_days,
     outdoor_problem,
+    pressure_days,
+    pressure_drop,
     window_days,
 )
 from .health_extra import (
@@ -471,6 +474,7 @@ class HeatPumpRuntime:
             "aux_dhw_charges": Finding(None, NOT_ANALYSED),
             "dhw_efficiency_drop": Finding(None, NOT_ANALYSED),
             "status_messages": Finding(None, NOT_ANALYSED),
+            "pressure_drop": Finding(None, NOT_ANALYSED),
         }
         # Entries of status texts without a mode per day (status_messages.py),
         # in the live file.
@@ -1589,6 +1593,7 @@ class HeatPumpRuntime:
                 ),
             )
             await self._async_check_outdoor(now)
+            await self._async_check_pressure(now)
         except Exception:  # keep running; the sensors stay as they were
             _LOGGER.exception("Computing performance curve and heat load failed")
         finally:
@@ -1825,6 +1830,34 @@ class HeatPumpRuntime:
                 [entity_id] if found and found.kind == kind else [],
                 hours=str(found.hours) if found else "",
             )
+
+    async def _async_check_pressure(self, now: datetime) -> None:
+        """Check "system pressure dropped" from the hourly mean pressures of
+        the last 97 days (health.pressure_drop), once a day."""
+        entity_id = self.entities.get(Signal.SYSTEM_PRESSURE)
+        if entity_id is None:
+            return
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            self._local_day(now, -97),
+            now,
+            {entity_id},
+            "hour",
+            {"pressure": UnitOfPressure.BAR},
+            {"mean"},
+        )
+        hours: dict[datetime, float] = {}
+        for row in rows.get(entity_id, []):
+            if (value := row.get("mean")) is None:
+                continue
+            hour = row["start"]
+            if not isinstance(hour, datetime):
+                hour = dt_util.utc_from_timestamp(hour)
+            hours[hour] = value
+        self.findings["pressure_drop"] = pressure_drop(
+            pressure_days(hours, self.tz), now.astimezone(self.tz).date()
+        )
 
     def _energy_entities(self) -> dict[str, str]:
         return {s.value: self.entities[s] for s in self._energy}

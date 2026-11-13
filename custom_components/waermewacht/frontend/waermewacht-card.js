@@ -71,6 +71,7 @@ const TEXT = {
       dhw_efficiency_drop: "Warmwasser gegen Vorjahr",
       cycling_problem: "Takten",
       status_messages: "Statusmeldungen",
+      pressure_drop: "Anlagendruck",
     },
     tiles: {
       activity: "Betriebsart",
@@ -192,6 +193,7 @@ const TEXT = {
         ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 Tagen`
           + (a.entries_7d > a.most_frequent_count ? ` · Schutz/Störung zusammen ${n(a.entries_7d, 0)}×` : "")
         : "keine Schutz- oder Störmeldung in 7 Tagen"),
+      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 Tagen, höchster Wochenwert ${n(a.reference_bar, 2)} bar`,
     },
     fine: "In Ordnung",
     problem: "Auffällig",
@@ -269,6 +271,7 @@ const TEXT = {
       dhw_efficiency_drop: "Hot water against last year",
       cycling_problem: "Cycling",
       status_messages: "Status messages",
+      pressure_drop: "System pressure",
     },
     tiles: {
       activity: "Activity",
@@ -385,6 +388,7 @@ const TEXT = {
         ? `${a.most_frequent} ${n(a.most_frequent_count, 0)}× in 7 days`
           + (a.entries_7d > a.most_frequent_count ? ` · protection/fault ${n(a.entries_7d, 0)}× in all` : "")
         : "no protection or fault message in 7 days"),
+      pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 days, highest week ${n(a.reference_bar, 2)} bar`,
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),
     },
@@ -428,7 +432,7 @@ const TEXT = {
 };
 
 const CHECKS = ["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem",
-  "status_messages"];
+  "status_messages", "pressure_drop"];
 // Backup heater checks (binary_sensor.AUX_CHECKS).
 const AUX_CHECKS = new Set(["aux_mild_weather", "aux_dhw_charges"]);
 const RATIO_SCOPES = ["heating", "dhw", "combined", "cooling"];

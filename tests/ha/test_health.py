@@ -160,6 +160,28 @@ async def test_health_sensors_need_outdoor_and_backup_heater(
 
 
 @pytest.mark.freeze_time(START)
+async def test_pressure_check_only_with_system_pressure(hass: HomeAssistant) -> None:
+    """4.16: the check and its status sensor exist with a system pressure;
+    without a recorder there is no analysis yet."""
+    entry = await setup(hass)
+    assert entity_id(hass, entry, "binary_sensor", "pressure_drop") is None
+    assert entity_id(hass, entry, "sensor", "pressure_drop_status") is None
+
+    pressure = "sensor.boiler_syspress"
+    hass.states.async_set(
+        pressure,
+        "1.8",
+        {"unit_of_measurement": "bar", "device_class": "pressure"},
+    )
+    other = await setup(hass, system_pressure=pressure)
+    state = hass.states.get(entity_id(hass, other, "binary_sensor", "pressure_drop"))
+    assert state.state == "unknown"
+    assert state.attributes["reason"] == "not_analysed_yet"
+    status = entity_id(hass, other, "sensor", "pressure_drop_status")
+    assert hass.states.get(status).state == "not_analysed_yet"
+
+
+@pytest.mark.freeze_time(START)
 async def test_unknown_with_reason(hass: HomeAssistant) -> None:
     """Without a recorder there is no analysis: unknown, with the reason."""
     entry = await setup(hass, outdoor_temp=OUTDOOR, aux_heating=AUX)

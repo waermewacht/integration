@@ -131,6 +131,7 @@ from custom_components.waermewacht.health import (  # noqa: E402
     baseline_drop,
     dhw_efficiency_drop,
     lift_days,
+    pressure_drop,
     status,
     window_days,
 )
@@ -1128,6 +1129,20 @@ def _minutes(seconds: float | None) -> float | None:
     return None if seconds is None else round(seconds / 60, 1)
 
 
+def demo_pressure(now: datetime) -> dict[date, float]:
+    """Made-up system pressure: 1.8 bar with a slow swing of a few hundredths
+    over the weeks (health.pressure_drop reads 97 days of day values)."""
+    today = _local(now)
+    return {
+        today - timedelta(days=back): round(1.8 + 0.04 * math.sin(back / 9), 3)
+        for back in range(1, 98)
+    }
+
+
+def _local(now: datetime) -> date:
+    return now.astimezone(TZ).date()
+
+
 def _finding(found: Finding) -> dict[str, Any]:
     state = {True: "on", False: "off", None: "unknown"}[found.problem]
     return {"s": state, "a": found.as_attributes()}
@@ -1557,6 +1572,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
                 now.astimezone(TZ).date()
             )
         ),
+        "pressure_drop": _finding(pressure_drop(demo_pressure(now), _local(now))),
     }
     # binary_sensor.HealthProblem: whether the heater counted at all
     # (runtime.aux_used); the card leaves a hybrid's heater checks out without.

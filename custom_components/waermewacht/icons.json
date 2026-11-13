@@ -18,6 +18,9 @@
       },
       "status_messages": {
         "default": "mdi:message-alert-outline"
+      },
+      "pressure_drop": {
+        "default": "mdi:gauge-low"
       }
     },
     "button": {
@@ -309,6 +312,9 @@
       },
       "status_messages_status": {
         "default": "mdi:message-alert-outline"
+      },
+      "pressure_drop_status": {
+        "default": "mdi:gauge-low"
       },
       "oil_consumption_year": {
         "default": "mdi:oil"

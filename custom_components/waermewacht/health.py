@@ -25,6 +25,11 @@ here, never hidden.
   the diary (the cold water temperature follows the season); on from a drop
   of 15 % with at least 10 charges on each side. Rolling window, no
   hysteresis.
+- System pressure dropped (4.16): the median of the daily means of the last
+  7 full days against the highest such 7-day median in the 90 days before;
+  on from a drop of 0.3 bar. Daily means of hourly means, never minima
+  (short outliers). Refilling raises the pressure again; the rolling window
+  is the hysteresis.
 - Outdoor temperature unusable (4.10 c): an hourly minimum equal to the
   maximum for 48 hours in a row (the sensor stands still), or hourly means
   outside -35 … 45 °C in more than 3 hours of the previous day.
@@ -34,7 +39,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, tzinfo
+from statistics import median
 from typing import Any
 
 from .carnot import FactorDay
@@ -66,6 +72,15 @@ AUX_DHW_PERCENT = 10.0
 MIN_CHARGES = 10
 CHARGE_DAYS = 30
 DHW_DROP_PERCENT = 15.0
+# 4.16, own assumptions checked on one heat pump (EMS-ESP syspress, 0.1 bar
+# steps, 17 months): weekly means swing by up to 0.17 bar without a leak
+# (not explained by the water temperature), a refill adds about 0.1 bar.
+PRESSURE_DROP_BAR = 0.3
+PRESSURE_DAYS = 7
+PRESSURE_REFERENCE_DAYS = 90
+MIN_PRESSURE_HOURS = 12  # hourly means for a day value
+MIN_PRESSURE_WEEK_DAYS = 5  # day values for a 7-day median
+MIN_PRESSURE_REFERENCE_DAYS = 21
 # 4.10 c.
 STUCK_HOURS = 48
 MAX_IMPLAUSIBLE_HOURS = 3
@@ -425,6 +440,62 @@ def dhw_efficiency_drop(
 def window_days(today: date, length: int = WINDOW_DAYS) -> tuple[date, date]:
     """First and last day of the `length` full days before `today`."""
     return today - timedelta(days=length), today - timedelta(days=1)
+
+
+def pressure_days(hours: Mapping[datetime, float], tz: tzinfo) -> dict[date, float]:
+    """Daily means (local days) of hourly mean pressures, days with at
+    least MIN_PRESSURE_HOURS hours."""
+    by_day: dict[date, list[float]] = {}
+    for hour, value in hours.items():
+        by_day.setdefault(hour.astimezone(tz).date(), []).append(value)
+    return {
+        day: sum(values) / len(values)
+        for day, values in by_day.items()
+        if len(values) >= MIN_PRESSURE_HOURS
+    }
+
+
+def _week_median(days: Mapping[date, float], first: date) -> float | None:
+    values = [
+        v
+        for i in range(PRESSURE_DAYS)
+        if (v := days.get(first + timedelta(days=i))) is not None
+    ]
+    return median(values) if len(values) >= MIN_PRESSURE_WEEK_DAYS else None
+
+
+def pressure_drop(
+    days: Mapping[date, float],
+    today: date,
+    *,
+    threshold_bar: float = PRESSURE_DROP_BAR,
+) -> Finding:
+    """System pressure of the last 7 full days against the highest 7-day
+    median of the 90 days before (`days`: pressure_days)."""
+    first, _ = window_days(today, PRESSURE_DAYS)
+    reference_from = first - timedelta(days=PRESSURE_REFERENCE_DAYS)
+    current = _week_median(days, first)
+    reference_days = sum(1 for d in days if reference_from <= d < first)
+    best: tuple[float, date] | None = None
+    for offset in range(PRESSURE_REFERENCE_DAYS - PRESSURE_DAYS + 1):
+        start = reference_from + timedelta(days=offset)
+        value = _week_median(days, start)
+        if value is not None and (best is None or value > best[0]):
+            best = (value, start)
+    evidence: dict[str, Any] = {
+        "current_bar": None if current is None else round(current, 2),
+        "reference_bar": None if best is None else round(best[0], 2),
+        "reference_week": None if best is None else best[1].isoformat(),
+        "drop_bar": None,
+        "threshold_bar": threshold_bar,
+        "days": sum(1 for d in days if first <= d < today),
+        "reference_days": reference_days,
+    }
+    if current is None or best is None or reference_days < MIN_PRESSURE_REFERENCE_DAYS:
+        return Finding(None, TOO_FEW_DAYS, evidence)
+    drop = best[0] - current
+    evidence["drop_bar"] = round(drop, 2)
+    return Finding(drop >= threshold_bar - 1e-9, None, evidence)
 
 
 @dataclass(frozen=True)

@@ -51,6 +51,7 @@ def test_template_finds_every_signal() -> None:
         Signal.RETURN_TEMP: "sensor.boiler_hptc0",
         Signal.FLOW_RATE: "sensor.boiler_pc0flow",
         Signal.DHW_TEMP: "sensor.boiler_dhw_curtemp",
+        Signal.SYSTEM_PRESSURE: "sensor.boiler_syspress",
     }
     assert match.entities == expected
 

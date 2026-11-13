@@ -310,6 +310,11 @@ BINARY = {
         "Auffällige Statusmeldungen",
         "mdi:message-alert-outline",
     ),
+    "pressure_drop": (
+        "System pressure dropped",
+        "Anlagendruck gesunken",
+        "mdi:gauge-low",
+    ),
 }
 # Status sensors of the checks: (en, de, icon) and their states.
 STATUS = {
@@ -334,6 +339,11 @@ STATUS = {
         "Check status messages",
         "Befund Statusmeldungen",
         "mdi:message-alert-outline",
+    ),
+    "pressure_drop": (
+        "Check system pressure",
+        "Befund Anlagendruck",
+        "mdi:gauge-low",
     ),
 }
 STATUS_STATES = {
@@ -415,6 +425,7 @@ FIELDS = {
     "flow_temp": ("Flow temperature", "Vorlauftemperatur"),
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
+    "system_pressure": ("System pressure", "Anlagendruck"),
     "dhw_temp": (
         "Hot water temperature (actual, tank)",
         "Warmwasser-Temperatur (Ist, Speicher)",
@@ -508,6 +519,10 @@ FIELD_HELP = {
         "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
         "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
     ),
+    "system_pressure": (
+        'Pressure of the heating water in bar, e.g. EMS-ESP "syspress". Only for the check "System pressure dropped"; needs long-term statistics (state class measurement).',
+        "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“).",
+    ),
 }
 SECTIONS = {
     "heating": (
@@ -561,7 +576,7 @@ SECTIONS = {
     ),
     "measurements": (
         ("Measurements", "Messwerte"),
-        ("outdoor_temp", "flow_temp", "return_temp", "flow_rate"),
+        ("outdoor_temp", "flow_temp", "return_temp", "flow_rate", "system_pressure"),
         None,
     ),
     "activity_parts": (

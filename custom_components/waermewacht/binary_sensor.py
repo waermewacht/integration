@@ -54,6 +54,8 @@ def health_checks(runtime: HeatPumpRuntime) -> list[str]:
     # Texts of the activity entity (status_messages.py).
     if Signal.ACTIVITY in runtime.entities:
         checks.append("status_messages")
+    if Signal.SYSTEM_PRESSURE in runtime.entities:
+        checks.append("pressure_drop")
     return checks
 
 

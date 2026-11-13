@@ -390,6 +390,12 @@ EMS_ESP = Template(
             (_S, "pc0flow"),
             (_S, "flow_pc0"),
         ),
+        # System pressure in bar (pressure, measurement; Andy's registry and
+        # the long-name fixture, 2026-11-13).
+        Signal.SYSTEM_PRESSURE: (
+            (_S, "syspress"),
+            (_S, "system_pressure"),
+        ),
         # Storage temperature, 3.7+ name first.
         Signal.DHW_TEMP: (
             (_S, "dhw_curtemp"),

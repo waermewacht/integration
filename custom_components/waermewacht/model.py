@@ -87,6 +87,9 @@ class Signal(StrEnum):
     RETURN_TEMP = "return_temp"
     FLOW_RATE = "flow_rate"
     DHW_TEMP = "dhw_temp"  # hot water storage, for charges and disinfection
+    # Pressure of the heating water (bar): the check "system pressure
+    # dropped" (health.pressure_drop), from its hourly statistics only.
+    SYSTEM_PRESSURE = "system_pressure"
     # No longer mapped (never evaluated); kept so entries that stored them
     # before 0.1.1 still load.
     HEAT_POWER = "heat_power"

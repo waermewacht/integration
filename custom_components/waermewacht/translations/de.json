@@ -107,11 +107,13 @@
               "outdoor_temp": "Außentemperatur",
               "flow_temp": "Vorlauftemperatur",
               "return_temp": "Rücklauftemperatur",
-              "flow_rate": "Durchfluss"
+              "flow_rate": "Durchfluss",
+              "system_pressure": "Anlagendruck"
             },
             "data_description": {
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
-              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
+              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
+              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“)."
             }
           },
           "activity_parts": {
@@ -156,6 +158,7 @@
               "flow_temp": "Vorlauftemperatur",
               "return_temp": "Rücklauftemperatur",
               "flow_rate": "Durchfluss",
+              "system_pressure": "Anlagendruck",
               "defrost_flag": "Abtauen läuft (an/aus)",
               "dhw_flag": "Warmwasser läuft (an/aus)",
               "cooling_flag": "Kühlen läuft (an/aus)",
@@ -181,7 +184,8 @@
               "runtime_heating": "Zähler der Wärmepumpe für die Kompressor-Laufzeit im Heizbetrieb (Stunden oder Minuten), z. B. EMS-ESP „uptimecompheating“, P1P2MQTT „Hours_Compressor_Heating“. Nur für den Rückblick der Laufzeit je Außentemperatur; ohne ihn beginnt die Tabelle mit der Einrichtung.",
               "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick der Kurzläufe, zusammen mit der Laufzeit; kein Zähler aller Starts.",
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
-              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …)."
+              "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
+              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“)."
             }
           }
         }
@@ -825,6 +829,9 @@
       },
       "status_messages": {
         "name": "Auffällige Statusmeldungen"
+      },
+      "pressure_drop": {
+        "name": "Anlagendruck gesunken"
       }
     },
     "button": {
@@ -1175,6 +1182,23 @@
       },
       "status_messages_status": {
         "name": "Befund Statusmeldungen",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "pressure_drop_status": {
+        "name": "Befund Anlagendruck",
         "state": {
           "ok": "In Ordnung",
           "problem": "Auffällig",

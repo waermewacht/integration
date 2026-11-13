@@ -107,11 +107,13 @@
               "outdoor_temp": "Outdoor temperature",
               "flow_temp": "Flow temperature",
               "return_temp": "Return temperature",
-              "flow_rate": "Flow rate"
+              "flow_rate": "Flow rate",
+              "system_pressure": "System pressure"
             },
             "data_description": {
               "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
-              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...)."
+              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
+              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement)."
             }
           },
           "activity_parts": {
@@ -156,6 +158,7 @@
               "flow_temp": "Flow temperature",
               "return_temp": "Return temperature",
               "flow_rate": "Flow rate",
+              "system_pressure": "System pressure",
               "defrost_flag": "Defrost running (on/off)",
               "dhw_flag": "Hot water running (on/off)",
               "cooling_flag": "Cooling running (on/off)",
@@ -181,7 +184,8 @@
               "runtime_heating": "The heat pump's own counter of compressor hours (or minutes) in heating, e.g. EMS-ESP \"uptimecompheating\", P1P2MQTT \"Hours_Compressor_Heating\". Only for the look-back of run time per outdoor temperature; without it the table starts with the setup.",
               "starts_heating": "The heat pump's own counter of compressor starts in heating, e.g. EMS-ESP \"heatingstarts\". Only for the look-back of short runs, together with the run time; not a counter of all starts.",
               "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
-              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...)."
+              "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
+              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement)."
             }
           }
         }
@@ -825,6 +829,9 @@
       },
       "status_messages": {
         "name": "Conspicuous status messages"
+      },
+      "pressure_drop": {
+        "name": "System pressure dropped"
       }
     },
     "button": {
@@ -1175,6 +1182,23 @@
       },
       "status_messages_status": {
         "name": "Check status messages",
+        "state": {
+          "ok": "Fine",
+          "problem": "Conspicuous",
+          "not_analysed_yet": "Not analysed yet",
+          "no_previous_season": "No previous season yet",
+          "no_previous_year": "No previous year yet",
+          "too_few_classes": "Too little comparable weather",
+          "too_few_days": "Too few days",
+          "too_little_electricity": "Too little electricity",
+          "too_few_charges": "Too few charges",
+          "outside_previous_range": "Flow or weather unlike the previous season",
+          "no_aux_counter": "No backup heater meter",
+          "no_outdoor_temp": "No outdoor temperature"
+        }
+      },
+      "pressure_drop_status": {
+        "name": "Check system pressure",
         "state": {
           "ok": "Fine",
           "problem": "Conspicuous",

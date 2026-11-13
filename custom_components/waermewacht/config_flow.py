@@ -180,6 +180,7 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.FLOW_TEMP,
         Signal.RETURN_TEMP,
         Signal.FLOW_RATE,
+        Signal.SYSTEM_PRESSURE,
     ),
 }
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
@@ -241,6 +242,10 @@ def _selector(signal: Signal) -> selector.EntitySelector:
     ):
         filters = selector.EntityFilterSelectorConfig(
             domain="sensor", device_class="temperature"
+        )
+    elif signal is Signal.SYSTEM_PRESSURE:
+        filters = selector.EntityFilterSelectorConfig(
+            domain="sensor", device_class="pressure"
         )
     elif signal is Signal.FLOW_RATE:
         # Many integrations give a flow in L/min without a device class
