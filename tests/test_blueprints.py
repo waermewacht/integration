@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -119,6 +120,17 @@ DEVICES = {
     "phone1": {"name": "Pixel von Max"},
 }
 DEVICE_OF = {"binary_sensor.wp_effizienz_gesunken": "Wärmepumpe Keller"}
+# The entities of Wärmewacht and their devices: two heat pumps with checks,
+# and a gas boiler (no binary sensors), which does not count.
+TWO_PUMPS = {
+    "binary_sensor.wp_effizienz_gesunken": "dev_keller",
+    "binary_sensor.wp_auffalliges_takten": "dev_keller",
+    "sensor.wp_az_heizen": "dev_keller",
+    "binary_sensor.wp2_effizienz_gesunken": "dev_garage",
+    "sensor.gaskessel_verbrauch": "dev_gas",
+    "button.gaskessel_bericht": "dev_gas",
+}
+ONE_PUMP = {k: v for k, v in TWO_PUMPS.items() if v != "dev_garage"}
 DROP = {
     "friendly_name": "Wärmepumpe Keller Effizienz gesunken",
     "ratio_current": 3.1,
@@ -127,8 +139,14 @@ DROP = {
 
 
 def _variables(
-    *, entity: str, to: str, before: str | None, **inputs: Any
+    *,
+    entity: str,
+    to: str,
+    before: str | None,
+    entities: dict[str, str | None] | None = None,
+    **inputs: Any,
 ) -> dict[str, Any]:
+    entities = TWO_PUMPS if entities is None else entities
     config = BlueprintInputs(
         _blueprint(),
         {
@@ -140,6 +158,11 @@ def _variables(
     ).async_substitute()
     env = jinja2.Environment()
     env.filters["slugify"] = slugify
+    env.tests["match"] = lambda value, pattern: re.match(pattern, value) is not None
+    env.globals["integration_entities"] = lambda domain: (
+        list(entities) if domain == "waermewacht" else []
+    )
+    env.filters["device_id"] = entities.get
     env.globals["device_name"] = DEVICE_OF.get
     env.globals["device_attr"] = lambda d, a: DEVICES.get(d, {}).get(a)
     state = {"name": DROP["friendly_name"], "state": to, "attributes": DROP}
@@ -177,10 +200,26 @@ def test_device_name_in_the_title_in_both_languages() -> None:
     assert en["fine_title"] == "Wärmewacht · Wärmepumpe Keller: fine again"
 
 
+def test_one_heat_pump_the_title_names_waermewacht() -> None:
+    """The gas boiler of a hybrid is not a second heat pump."""
+    entity = "binary_sensor.wp_effizienz_gesunken"
+    values = _variables(entity=entity, to="on", before="off", entities=ONE_PUMP)
+    assert values["title"] == "Wärmewacht: auffällig"
+    assert values["fine_title"] == "Wärmewacht: wieder in Ordnung"
+    en = _variables(
+        entity=entity, to="on", before="off", entities=ONE_PUMP, language="en"
+    )
+    assert en["title"] == "Wärmewacht: conspicuous"
+
+
 def test_without_device_the_title_names_waermewacht() -> None:
     values = _variables(entity="binary_sensor.other", to="on", before="off")
     assert values["title"] == "Wärmewacht: auffällig"
     assert values["fine_title"] == "Wärmewacht: wieder in Ordnung"
+    # Entities without a device do not count either.
+    alone = {"binary_sensor.a": None, "binary_sensor.b": None}
+    values = _variables(entity="binary_sensor.a", to="on", before="off", entities=alone)
+    assert values["title"] == "Wärmewacht: auffällig"
 
 
 def test_phone_action_from_the_device() -> None:

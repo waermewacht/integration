@@ -719,7 +719,7 @@ Performance curve and heat load report an error when no outdoor temperature is m
 
 ## Notifications
 
-A blueprint reports when a check turns conspicuous: in the Home Assistant bell and, optionally, also on the phone, to Telegram or another service, with the heat pump's name in the title and the finding in words, such as "Wärmewacht · Heat pump: conspicuous" and "Heat pump Efficiency dropped: COP heating 3.10 instead of 3.60 in the same weather last season" or "Heat pump Conspicuous cycling: 5 starts in 24 h (limit 4)". The message comes in German or English.
+A blueprint reports when a check turns conspicuous: in the Home Assistant bell and, optionally, also on the phone, to Telegram or another service, with the finding in words, such as "Wärmewacht: conspicuous" and "Heat pump Efficiency dropped: COP heating 3.10 instead of 3.60 in the same weather last season" or "Heat pump Conspicuous cycling: 5 starts in 24 h (limit 4)". With more than one heat pump, the title names it, such as "Wärmewacht · Basement heat pump: conspicuous". The message comes in German or English.
 
 [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
 
@@ -736,7 +736,7 @@ A blueprint reports when a check turns conspicuous: in the Home Assistant bell a
       message: "{{ title }}: {{ message }}"
   ```
 
-  The old field **Also send to** (an action such as `notify.mobile_app_my_phone`) is there too; existing automations keep it. The new parts (phone picker, more actions, name in the title) come after importing the blueprint again (*Settings → Automations & scenes → Blueprints*, menu ⋮ in its row).
+  The old field **Also send to** (an action such as `notify.mobile_app_my_phone`) is there too; existing automations keep it. The new parts (phone picker, more actions, heat pump's name in the title) come after importing the blueprint again (*Settings → Automations & scenes → Blueprints*, menu ⋮ in its row).
 
 ## Cards
 

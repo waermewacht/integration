@@ -10,9 +10,9 @@ blueprint:
     zusätzlich aufs Handy mit der Home-Assistant-App. Unter „Weitere Aktionen“
     gehen auch Telegram und andere Dienste. Auf Wunsch auch, wenn alles wieder
     in Ordnung ist. Aufs Handy geht nur ein Wechsel von „in Ordnung“ auf
-    „auffällig“, nicht jeder Neustart (die Glocke steht dann wieder da). Im
-    Titel steht der Name der Wärmepumpe, die Nachricht gibt es auf Deutsch oder
-    Englisch.
+    „auffällig“, nicht jeder Neustart (die Glocke steht dann wieder da). Hast
+    du mehrere Wärmepumpen, steht ihr Name im Titel. Die Nachricht gibt es auf
+    Deutsch oder Englisch.
 
 
     Reports when a Wärmewacht check turns conspicuous (efficiency dropped,
@@ -21,8 +21,9 @@ blueprint:
     notification in the bell and, optionally, also on the phone with the Home
     Assistant app. Telegram and other services go under "More actions".
     Optionally also when it is fine again. The phone only gets a change from
-    fine to conspicuous, not every restart (the bell shows it again). The
-    title names the heat pump, the message comes in German or English.
+    fine to conspicuous, not every restart (the bell shows it again). With
+    more than one heat pump, the title names it. The message comes in German or
+    English.
   domain: automation
   author: Wärmewacht
   homeassistant:
@@ -146,8 +147,14 @@ variables:
     {{ trigger.id == 'fine'
        or (trigger.from_state is not none and (trigger.from_state.state == 'off'
            or (after_restart and trigger.from_state.state in ['unknown', 'unavailable']))) }}
-  # The heat pump of the check, for the title; without a device just Wärmewacht.
-  device: "{{ device_name(trigger.entity_id) or '' }}"
+  # The heat pump of the check, for the title, but only with more than one:
+  # counted are the devices with checks (binary sensors), one per heat pump
+  # entry; gas and oil entries have none. Without a device just Wärmewacht.
+  device: >-
+    {%- set pumps = integration_entities('waermewacht')
+          | select('match', 'binary_sensor[.]') | map('device_id')
+          | reject('none') | unique | list -%}
+    {{ (device_name(trigger.entity_id) or '') if pumps | count > 1 else '' }}
   head: "{{ 'Wärmewacht' ~ (' · ' ~ device if device else '') }}"
   # The finding in words, from the attributes of the binary sensor.
   detail: >-

@@ -15,7 +15,7 @@
 
 ### Geändert
 
-- **Blueprint „Befund melden“ zweisprachig, mit weiteren Aktionen (z. B. Telegram) und dem Namen der Wärmepumpe im Titel.** Das Handy wählst du jetzt direkt aus; unter „Weitere Aktionen“ (eingeklappt) gehen Telegram und andere Dienste mit `{{ title }}` und `{{ message }}`, dort steht auch das bisherige Feld „Zusätzlich senden an“. Bestehende Automationen laufen unverändert; die Neuerungen gibt es nach einem erneuten Import des Blueprints. Mehr im README unter [Benachrichtigen](README.md#benachrichtigen).
+- **Blueprint „Befund melden“ zweisprachig, mit weiteren Aktionen (z. B. Telegram) und dem Namen der Wärmepumpe im Titel, wenn du mehrere hast.** Das Handy wählst du jetzt direkt aus; unter „Weitere Aktionen“ (eingeklappt) gehen Telegram und andere Dienste mit `{{ title }}` und `{{ message }}`, dort steht auch das bisherige Feld „Zusätzlich senden an“. Bestehende Automationen laufen unverändert; die Neuerungen gibt es nach einem erneuten Import des Blueprints. Mehr im README unter [Benachrichtigen](README.md#benachrichtigen).
 - **„Starts heute“, „Starts gestern“, „Kurzläufe heute“ und „Abtauungen heute“ als Zahlen im Verlauf.** Ohne `state_class` zeigte Home Assistant sie als bunte Zeitleiste mit Texten; jetzt als Linie, und sie lassen sich in Statistik-Diagrammen verwenden. (danke an alteMade, simon42-Forum)
 
 ## 0.7.4 – 2026-11-12

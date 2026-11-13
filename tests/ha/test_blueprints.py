@@ -12,6 +12,7 @@ from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity import entity_sources
 from homeassistant.setup import async_setup_component
 from homeassistant.util.yaml import load_yaml
 from pytest_homeassistant_custom_component.common import (
@@ -192,11 +193,31 @@ def add_device(hass: HomeAssistant, domain: str, name: str, entity: str = "") ->
             device_id=device.id,
         )
         assert registered.entity_id == entity
+        # integration_entities() reads the loaded entities.
+        entity_sources(hass)[entity] = {
+            "domain": domain,
+            "config_entry": entry.entry_id,
+        }
     return device.id
+
+
+def second_heat_pump(hass: HomeAssistant) -> None:
+    """Another heat pump with a check, so the title names the device."""
+    add_device(hass, "waermewacht", "Wärmepumpe Garage", "binary_sensor.wp2_takten")
+
+
+async def test_one_heat_pump_no_name_in_the_title(hass: HomeAssistant) -> None:
+    """A gas boiler (no checks) is not a second heat pump."""
+    add_device(hass, "waermewacht", "Wärmepumpe Keller", EFFICIENCY)
+    add_device(hass, "waermewacht", "Gaskessel", "sensor.gaskessel_verbrauch")
+    created, _, _ = await setup(hass)
+    await change(hass, EFFICIENCY, "on", DROP)
+    assert created[0].data["title"] == "Wärmewacht: auffällig"
 
 
 async def test_device_name_in_the_title(hass: HomeAssistant) -> None:
     add_device(hass, "waermewacht", "Wärmepumpe Keller", EFFICIENCY)
+    second_heat_pump(hass)
     created, _, _ = await setup(hass)
     await change(hass, EFFICIENCY, "on", DROP)
     assert created[0].data["title"] == "Wärmewacht · Wärmepumpe Keller: auffällig"
@@ -208,6 +229,7 @@ async def test_device_name_in_the_title(hass: HomeAssistant) -> None:
 
 async def test_phone_device_and_more_actions(hass: HomeAssistant) -> None:
     add_device(hass, "waermewacht", "Wärmepumpe Keller", EFFICIENCY)
+    second_heat_pump(hass)
     phone_id = add_device(hass, "mobile_app", "Pixel von Max")
     app = async_mock_service(hass, "notify", "mobile_app_pixel_von_max")
     extra = async_mock_service(hass, "test", "extra")

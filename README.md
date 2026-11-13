@@ -718,7 +718,7 @@ AZ-Kennlinie und Heizlast melden einen Fehler, wenn keine Außentemperatur zugeo
 
 ## Benachrichtigen
 
-Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home Assistant und auf Wunsch zusätzlich aufs Handy, an Telegram oder einen anderen Dienst, mit dem Namen der Wärmepumpe im Titel und dem Befund in Worten, etwa „Wärmewacht · Wärmepumpe: auffällig“ und „Wärmepumpe Effizienz gesunken: AZ Heizen 3,10 statt 3,60 bei gleichem Wetter in der Vorsaison“ oder „Wärmepumpe Auffälliges Takten: 5 Starts in 24 h (Grenze 4)“. Die Nachricht gibt es auf Deutsch oder Englisch.
+Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home Assistant und auf Wunsch zusätzlich aufs Handy, an Telegram oder einen anderen Dienst, mit dem Befund in Worten, etwa „Wärmewacht: auffällig“ und „Wärmepumpe Effizienz gesunken: AZ Heizen 3,10 statt 3,60 bei gleichem Wetter in der Vorsaison“ oder „Wärmepumpe Auffälliges Takten: 5 Starts in 24 h (Grenze 4)“. Hast du mehrere Wärmepumpen, steht ihr Name im Titel, etwa „Wärmewacht · Wärmepumpe Keller: auffällig“. Die Nachricht gibt es auf Deutsch oder Englisch.
 
 [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fwaermewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fwaermewacht%2Fbefund_melden.yaml)
 
@@ -735,7 +735,7 @@ Ein Blueprint meldet, wenn eine Prüfung auffällig wird: in der Glocke von Home
       message: "{{ title }}: {{ message }}"
   ```
 
-  Dort steht auch das alte Feld **Zusätzlich senden an** (eine Aktion wie `notify.mobile_app_mein_handy`); bestehende Automationen behalten es. Die Neuerungen (Handy-Auswahl, weitere Aktionen, Name im Titel) gibt es nach einem erneuten Import des Blueprints (*Einstellungen → Automationen & Szenen → Blueprints*, Menü ⋮ in seiner Zeile).
+  Dort steht auch das alte Feld **Zusätzlich senden an** (eine Aktion wie `notify.mobile_app_mein_handy`); bestehende Automationen behalten es. Die Neuerungen (Handy-Auswahl, weitere Aktionen, Name der Wärmepumpe im Titel) gibt es nach einem erneuten Import des Blueprints (*Einstellungen → Automationen & Szenen → Blueprints*, Menü ⋮ in seiner Zeile).
 
 ## Karten
 
