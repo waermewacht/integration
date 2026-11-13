@@ -8,13 +8,19 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from custom_components.waermewacht.cycling import (
+    METHOD_7_DAYS,
+    METHOD_12_MONTHS,
+    METHOD_HEATING_DAYS,
     activity_seconds,
     cycle_stats,
     cycling_triggers,
+    diary_starts,
     field_class,
+    heating_days_per_year,
     max_starts_per_hour,
     prune,
     season_starts_baseline,
+    starts_per_year,
     starts_projection,
     unobserved_seconds,
 )
@@ -189,10 +195,10 @@ def test_projection_per_day_and_year() -> None:
     assert result.per_year == 4380
     assert result.field_class == "typical"
     assert result.reason is None
+    assert result.heating_by_day == (12,) * 7  # no activity: all heating
+    assert result.window_hours == pytest.approx(168)
     assert result.as_attributes() == {
         "starts_per_day_7d": 12.0,
-        "starts_per_year_projected": 4380,
-        "starts_field_class": "typical",
         "starts_7d_days": 7,
         "starts_7d_observed_hours": 168.0,
         "starts_7d_reason": None,
@@ -331,3 +337,142 @@ def test_cycling_triggers() -> None:
         "critical_runs",
         "starts_per_day",
     ]
+
+
+# Starts per year: counted over 12 months, with heating days, from 7 days.
+
+
+def dhw_run(start: float) -> Run:
+    return Run(start=at(start), end=at(start + 30), activity_seconds={"dhw": 1800.0})
+
+
+def heating_week() -> list[Run]:
+    """12 heating starts a day plus one hot water charge a day."""
+    return [*every(120), *(dhw_run(d * 1440 + 605) for d in range(7))]
+
+
+def test_heating_starts_per_day_of_the_week() -> None:
+    result = projection(heating_week())
+    assert result.starts == 7 * 13
+    assert result.heating_by_day == (12,) * 7
+
+
+def test_starts_per_year_counted_over_12_months() -> None:
+    since = DAY - timedelta(days=358)
+    result = starts_per_year(
+        projection(heating_week()), last_12_months=(1250, since), heating_days=200
+    )
+    assert result.value == 1250
+    assert result.method == METHOD_12_MONTHS
+    assert result.field_class == "low_third"
+    attributes = result.as_attributes()
+    assert attributes["since"] == since.isoformat()
+    assert attributes["method"] == METHOD_12_MONTHS
+    assert attributes["starts_per_day_7d"] == 13.0
+
+
+def test_starts_per_year_with_heating_days() -> None:
+    """Five heating days in the week: 84 heating starts / 5 heating days x
+    200 heating days + 1 other start a day x 365."""
+    result = starts_per_year(
+        projection(heating_week()),
+        heating_days=200,
+        heating_limit=15.0,
+        week_outdoor=[2.0, 4.0, 16.0, 6.0, 17.0, 8.0, 10.0],
+        split=True,
+    )
+    assert result.method == METHOD_HEATING_DAYS
+    assert result.heating_per_day == pytest.approx(84 / 5)
+    assert result.other_per_day == pytest.approx(1.0)
+    assert result.value == round(84 / 5 * 200 + 365)
+    assert result.week_heating_days == 5
+    assert result.as_attributes()["heating_days_per_year"] == 200
+
+
+def test_heating_days_scale_the_observed_hours() -> None:
+    """A gap of 10 hours: the starts seen count for the whole week."""
+    hour = timedelta(hours=1)
+    week = projection(every(120), gaps=[(DAY + 2 * hour, DAY + 12 * hour)])
+    result = starts_per_year(
+        week,
+        heating_days=100,
+        heating_limit=15.0,
+        week_outdoor=[0.0] * 7,
+        split=True,
+    )
+    assert week.starts is not None
+    assert result.heating_per_day == pytest.approx(week.starts * 168 / 158 / 7)
+    assert result.other_per_day == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "why"),
+    [
+        ({"split": False}, "runs without an activity"),
+        ({"heating_days": None}, "no year of outdoor temperatures"),
+        ({"heating_limit": None}, "no heat load"),
+        ({"week_outdoor": [2.0] * 6 + [None]}, "a day without outdoor mean"),
+        ({"week_outdoor": [2.0, 3.0] + [18.0] * 5}, "two heating days only"),
+    ],
+)
+def test_starts_per_year_falls_back_to_7_days(kwargs: dict, why: str) -> None:
+    args = {
+        "heating_days": 200,
+        "heating_limit": 15.0,
+        "week_outdoor": [2.0] * 7,
+        "split": True,
+        **kwargs,
+    }
+    week = projection(heating_week())
+    result = starts_per_year(week, **args)
+    assert result.method == METHOD_7_DAYS, why
+    assert result.value == week.per_year == 13 * 365
+
+
+def test_starts_per_year_unknown_without_a_week() -> None:
+    week = projection(every(60), observed_since=None)
+    result = starts_per_year(week, heating_days=200, split=True)
+    assert result.value is None and result.method is None
+    assert result.field_class is None
+    assert result.as_attributes()["starts_7d_reason"] == "too_few_days"
+
+
+def test_heating_days_per_year() -> None:
+    berlin = ZoneInfo("Europe/Berlin")
+    first = date(2025, 11, 1)
+    end = first + timedelta(days=365)
+    outdoor = {}
+    for k in range(365):
+        midnight = local_midnight(first + timedelta(days=k), berlin)
+        mean = 5.0 if k < 200 else 20.0
+        for h in range(24):
+            outdoor[midnight + timedelta(hours=h)] = mean
+    assert heating_days_per_year(outdoor, berlin, first, end, 15.0) == 200
+
+    # The first 20 days lose 5 hours each (too few): the rest scales to a year.
+    def kept(hour: datetime) -> bool:
+        local = hour.astimezone(berlin)
+        return local.hour >= 5 or local.date() >= first + timedelta(days=20)
+
+    thin = {h: v for h, v in outdoor.items() if kept(h)}
+    assert heating_days_per_year(thin, berlin, first, end, 15.0) == round(
+        180 * 365 / 345
+    )
+    # Too short a record: no heating days.
+    cut = local_midnight(first + timedelta(days=300), berlin)
+    short = {h: v for h, v in outdoor.items() if h < cut}
+    assert heating_days_per_year(short, berlin, first, end, 15.0) is None
+
+
+def test_diary_starts_over_a_year() -> None:
+    first = date(2025, 11, 13)
+    diary = [
+        {"day": (first + timedelta(days=k)).isoformat(), "starts": 3}
+        for k in range(365)
+    ]
+    last = first + timedelta(days=364)
+    assert diary_starts(diary, first, last) == 3 * 365
+    # A few days missing: scaled to the whole year.
+    assert diary_starts(diary[:300] + diary[335:], first, last) == 3 * 365
+    # Fewer than MIN_YEAR_DAYS: unknown.
+    assert diary_starts(diary[:300], first, last) is None

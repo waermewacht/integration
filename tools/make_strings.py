@@ -83,6 +83,7 @@ SENSORS = {
     ),
     "starts_today": ("Starts today", "Starts heute", "mdi:counter"),
     "starts_yesterday": ("Starts yesterday", "Starts gestern", "mdi:counter"),
+    "starts_per_year": ("Starts per year", "Starts pro Jahr", "mdi:counter"),
     "starts_total": ("Starts total", "Starts gesamt", "mdi:counter"),
     "starts_season": ("Starts season", "Starts Saison", "mdi:counter"),
     "runtime_today": ("Run time today", "Laufzeit heute", "mdi:timer-outline"),
@@ -176,6 +177,11 @@ SENSORS = {
         "Carnot efficiency heating season",
         "Gütegrad Heizen Saison",
         "mdi:speedometer",
+    ),
+    "lower_flow_saving": (
+        "Heating curve 2 K lower",
+        "Heizkurve 2 K tiefer",
+        "mdi:thermometer-minus",
     ),
     "oversize_factor": (
         "Power per heat load",

@@ -947,6 +947,9 @@
       "starts_yesterday": {
         "name": "Starts yesterday"
       },
+      "starts_per_year": {
+        "name": "Starts per year"
+      },
       "starts_total": {
         "name": "Starts total"
       },
@@ -1012,6 +1015,9 @@
       },
       "efficiency_factor": {
         "name": "Carnot efficiency heating season"
+      },
+      "lower_flow_saving": {
+        "name": "Heating curve 2 K lower"
       },
       "oversize_factor": {
         "name": "Power per heat load"

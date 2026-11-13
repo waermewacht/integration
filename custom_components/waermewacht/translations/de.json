@@ -947,6 +947,9 @@
       "starts_yesterday": {
         "name": "Starts gestern"
       },
+      "starts_per_year": {
+        "name": "Starts pro Jahr"
+      },
       "starts_total": {
         "name": "Starts gesamt"
       },
@@ -1012,6 +1015,9 @@
       },
       "efficiency_factor": {
         "name": "Gütegrad Heizen Saison"
+      },
+      "lower_flow_saving": {
+        "name": "Heizkurve 2 K tiefer"
       },
       "oversize_factor": {
         "name": "Leistung je Heizlast"

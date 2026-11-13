@@ -47,9 +47,13 @@ def test_card_knows_the_heat_load_seasons() -> None:
 
 
 def test_card_knows_the_starts_projection() -> None:
-    """The cycling card shows the projection of starts per year from the
-    attributes of "starts today", with a text for every field class."""
+    """The cycling card shows the sensor "starts per year" with a text for
+    every method (in both languages) and every field class."""
     assert f"const PROJECTION_DAYS = {cycling.PROJECTION_DAYS};" in CARD
+    assert f'a.method === "{cycling.METHOD_12_MONTHS}"' in CARD
+    assert f'a.method === "{cycling.METHOD_HEATING_DAYS}"' in CARD
+    for text in ("projected:", "projectedHeatingDays:", "lastTwelveMonths:"):
+        assert CARD.count(text) == 2, text
     texts = re.findall(r"fieldClasses: \{([^}]*)\}", CARD)
     assert len(texts) == 2, "one per language"
     for found in texts:

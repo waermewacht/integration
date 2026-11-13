@@ -34,7 +34,7 @@ from homeassistant.util import dt as dt_util
 from . import WaermewachtConfigEntry, is_gas
 from .allocation import NONE
 from .binary_sensor import health_checks
-from .carnot import factor_attributes
+from .carnot import factor_attributes, lower_flow_figure
 from .charges import Charge, charge_ratio, is_disinfection
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
@@ -242,17 +242,31 @@ def _starts_season_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
 CYCLING = [
     HeatPumpSensorDescription(
         key="starts_today",
+        # Counts of the day: the state class makes the frontend draw a line
+        # instead of a timeline of texts (no unit). Measurement, not total:
+        # a count that drops within the day is no meter reset.
+        state_class=SensorStateClass.MEASUREMENT,
         value=lambda r: r.cycles("today").starts,
         needs=HAS_COMPRESSOR,
-        # Starts per day of the last 7 complete days and the projection to a
-        # year against the Fraunhofer field test: an orientation only, the
-        # binary sensor "cycling" does not use it.
-        attributes=lambda r: r.starts_projection().as_attributes(),
     ),
     HeatPumpSensorDescription(
         key="starts_yesterday",
+        state_class=SensorStateClass.MEASUREMENT,
         value=lambda r: r.cycles("yesterday").starts,
         needs=HAS_COMPRESSOR,
+    ),
+    HeatPumpSensorDescription(
+        # Starts of the last 12 months, else projected (cycling.py), against
+        # the Fraunhofer field test: an orientation only, the binary sensor
+        # "cycling" does not use it.
+        key="starts_per_year",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value=lambda r: r.starts_per_year().value,
+        needs=lambda r: (
+            Signal.COMPRESSOR in r.entities or Signal.STARTS_TOTAL in r.entities
+        ),
+        attributes=lambda r: r.starts_per_year().as_attributes(),
     ),
     HeatPumpSensorDescription(
         key="starts_total",
@@ -295,6 +309,7 @@ CYCLING = [
     ),
     HeatPumpSensorDescription(
         key="short_runs_today",
+        state_class=SensorStateClass.MEASUREMENT,
         value=lambda r: r.cycles("today").short_runs,
         needs=HAS_COMPRESSOR,
         attributes=lambda r: {
@@ -313,6 +328,7 @@ CYCLING = [
     ),
     HeatPumpSensorDescription(
         key="defrosts_today",
+        state_class=SensorStateClass.MEASUREMENT,
         value=lambda r: r.cycles("today").defrosts,
         needs=lambda r: r.has_activity,
         attributes=lambda r: {
@@ -854,6 +870,16 @@ def _efficiency_factor_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
     return factor_attributes(runtime.efficiency_factors, runtime.electricity_price)
 
 
+def _lower_flow(runtime: HeatPumpRuntime) -> float | None:
+    figure = lower_flow_figure(runtime.efficiency_factors, runtime.electricity_price)
+    return None if figure is None else figure["kwh"]
+
+
+def _lower_flow_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    figure = lower_flow_figure(runtime.efficiency_factors, runtime.electricity_price)
+    return {} if figure is None else {k: v for k, v in figure.items() if k != "kwh"}
+
+
 def _oversize(runtime: HeatPumpRuntime) -> float | None:
     figure = runtime.oversize
     return None if figure is None else _round(figure.factor, 2)
@@ -914,6 +940,23 @@ ANALYSIS = [
             and not r.template.previous_day
         ),
         attributes=_efficiency_factor_attributes,
+    ),
+    HeatPumpSensorDescription(
+        # What a heating curve 2 K lower would have saved (carnot.py): its
+        # own sensor, so the card opens its history. No state class: one
+        # value a day needs no long-term statistics (SD cards).
+        key="lower_flow_saving",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=0,
+        value=_lower_flow,
+        needs=lambda r: (
+            HAS_OUTDOOR(r)
+            and r.has_activity
+            and Signal.FLOW_TEMP in r.entities
+            and not r.hourly
+            and not r.template.previous_day
+        ),
+        attributes=_lower_flow_attributes,
     ),
     HeatPumpSensorDescription(
         key="oversize_factor",

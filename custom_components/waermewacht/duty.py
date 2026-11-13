@@ -72,7 +72,7 @@ def _heating_share(run: Run) -> float:
     return max(0.0, 1.0 - other / total)
 
 
-def _heating_start(run: Run) -> bool:
+def heating_start(run: Run) -> bool:
     return run.counted and _heating_share(run) >= 0.5
 
 
@@ -106,7 +106,7 @@ def day_classes(
             _overlap(r.start, r.end or now, hour, end) * _heating_share(r)
             for r in every
         )
-        starts = sum(1 for r in every if hour <= r.start < end and _heating_start(r))
+        starts = sum(1 for r in every if hour <= r.start < end and heating_start(r))
         row = result.setdefault(_key(temperature), [0.0, 0.0, 0.0])
         row[0] += (end - hour).total_seconds() / 3600
         row[1] += seconds

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Collection, Coroutine, Iterable
+from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from datetime import date, datetime, time, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -127,12 +127,16 @@ from .cycling import (
     PROJECTION_DAYS,
     CycleStats,
     StartsProjection,
+    StartsYear,
     activity_seconds,
     cycle_stats,
     cycling_triggers,
+    diary_starts,
+    heating_days_per_year,
     max_starts_per_hour,
     prune,
     season_starts_baseline,
+    starts_per_year,
     starts_projection,
 )
 from .dated import Dated, Price, dated, value_at
@@ -529,6 +533,11 @@ class HeatPumpRuntime:
         # First counter value seen this season, for a counter without
         # statistics (no state class): entity id, value, time.
         self._starts_seen: tuple[str, int, datetime] | None = None
+        # For "Starts per year" (daily analysis, in memory only): the start
+        # counter 12 months ago from its statistics, and the heating days of
+        # the last 12 months with the heating limit they were counted at.
+        self.starts_year_ago: tuple[int, datetime] | None = None
+        self.heating_days_year: tuple[int, float] | None = None
         # Flow temperature over outdoor temperature (heating_curve.py), the
         # current and the previous season.
         self.flow_curves: dict[str, FlowCurve] = {}
@@ -1503,6 +1512,8 @@ class HeatPumpRuntime:
             self.data_from = min(hours) if hours else None
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
+            self.starts_year_ago = await self._async_starts_year_ago(now)
+            self.heating_days_year = self._heating_days_year(outdoor, now)
             if (entity_id := self.entities.get(Signal.STARTS_TOTAL)) is not None:
                 seen = self._starts_seen
                 kept = seen[1:] if seen and seen[0] == entity_id else None
@@ -1666,6 +1677,44 @@ class HeatPumpRuntime:
             threshold_kwh=AUX_KWH,
             defrost_aux=defrost_aux_by_day(defrosts, Mode.HEATING, self.tz),
         )
+
+    async def _async_starts_year_ago(
+        self, now: datetime
+    ) -> tuple[int, datetime] | None:
+        """Start counter 365 days ago from its statistics (the last hour
+        before; one small query a day), for the starts of the last 12 months."""
+        entity_id = self.entities.get(Signal.STARTS_TOTAL)
+        if entity_id is None:
+            return None
+        at = self._local_day(now) - timedelta(days=365)
+        found = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            at - timedelta(days=2),
+            at,
+            {entity_id},
+            "hour",
+            None,
+            {"state"},
+        )
+        rows = [r for r in found.get(entity_id, []) if r.get("state") is not None]
+        return (int(rows[-1]["state"]), at) if rows else None
+
+    def _heating_days_year(
+        self, outdoor: Mapping[datetime, float], now: datetime
+    ) -> tuple[int, float] | None:
+        """Heating days of the last 12 months (outdoor mean below the
+        heating limit of the heat load) and that limit."""
+        load = self.heat_load
+        if load is None or not (load.sufficient or load.preliminary):
+            return None
+        if (limit := load.heating_limit) is None:
+            return None
+        today = now.astimezone(self.tz).date()
+        days = heating_days_per_year(
+            outdoor, self.tz, today - timedelta(days=365), today, limit
+        )
+        return None if days is None else (days, limit)
 
     async def _async_starts_baseline(
         self, season: datetime, now: datetime
@@ -3111,6 +3160,41 @@ class HeatPumpRuntime:
             self._local_day(now),
             self.tracker.observed_since,
             gaps,
+        )
+
+    def starts_per_year(self, now: datetime | None = None) -> StartsYear:
+        """Starts of the last 12 months (counter statistics or diary), else
+        projected from the last 7 days (cycling.starts_per_year)."""
+        now = now or dt_util.utcnow()
+        week = self.starts_projection(now)
+        today = now.astimezone(self.tz).date()
+        counted: tuple[int, datetime] | None = None
+        if self.entities.get(Signal.STARTS_TOTAL):
+            current = self.starts_total()[0]
+            if self.starts_year_ago is not None and current is not None:
+                ago, since = self.starts_year_ago
+                if current >= ago:
+                    counted = (current - ago, since)
+        # Without counter statistics (none, or no state class): the starts
+        # Wärmewacht counted itself, once the diary holds a year.
+        if counted is None and Signal.COMPRESSOR in self.entities:
+            first = today - timedelta(days=365)
+            count = diary_starts(self.diary, first, today - timedelta(days=1))
+            if count is not None:
+                counted = (count, self._local_day(now) - timedelta(days=365))
+        days = {e.get("day"): e.get("outdoor") for e in self.diary[-PROJECTION_DAYS:]}
+        week_outdoor = [
+            days.get((today - timedelta(days=k)).isoformat())
+            for k in range(PROJECTION_DAYS, 0, -1)
+        ]
+        heating = self.heating_days_year
+        return starts_per_year(
+            week,
+            last_12_months=counted,
+            heating_days=None if heating is None else heating[0],
+            heating_limit=None if heating is None else heating[1],
+            week_outdoor=week_outdoor,
+            split=self.has_activity,
         )
 
     def starts_total(self) -> tuple[int | None, str]:

@@ -449,6 +449,37 @@ def factor_attributes(
     }
 
 
+LOWER_FLOW_KELVIN = 2  # the sensor "Heating curve 2 K lower"
+
+
+def lower_flow_figure(
+    factors: Mapping[str, EfficiencyFactor], price_eur_per_kwh: float | None = None
+) -> dict[str, Any] | None:
+    """Saving of a heating curve LOWER_FLOW_KELVIN lower: the previous
+    season when it has one (a whole season), else the current season so far;
+    euro with the fixed electricity price. None without either."""
+    for period in ("previous_season", "season"):
+        figure = factors.get(period)
+        if figure is None:
+            continue
+        attributes = figure.lower_flow_attributes()
+        kwh = (attributes["lower_flow_kwh"] or {}).get(str(LOWER_FLOW_KELVIN))
+        if not kwh:
+            continue
+        return {
+            "kwh": kwh,
+            "period": period,
+            "kelvin": LOWER_FLOW_KELVIN,
+            "percent": attributes["lower_flow_percent"][str(LOWER_FLOW_KELVIN)],
+            "eur": None
+            if price_eur_per_kwh is None
+            else round(kwh * price_eur_per_kwh, 2),
+            "lower_flow_kwh": attributes["lower_flow_kwh"],
+            "lower_flow_percent": attributes["lower_flow_percent"],
+        }
+    return None
+
+
 def field_reference() -> dict[str, Any]:
     """The field values to compare with (attribute)."""
     return {

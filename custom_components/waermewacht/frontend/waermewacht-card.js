@@ -134,7 +134,9 @@ const TEXT = {
     days: (n) => `erst ${n} Tage`,
     // Starts per year: a projection from 7 days, placed in the Fraunhofer
     // field test (WP-QS 2024) - an orientation, not a check.
-    projected: (days, cls) => `aus ${days} Tagen hochgerechnet${cls ? ` · Feldtest: ${cls}` : ""}`,
+    projected: (days, cls) => `aus ${days} Tagen × 365, grob${cls ? ` · Feldtest: ${cls}` : ""}`,
+    projectedHeatingDays: (days, cls) => `hochgerechnet mit ${days} Heiztagen${cls ? ` · Feldtest: ${cls}` : ""}`,
+    lastTwelveMonths: (cls) => `letzte 12 Monate${cls ? ` · Feldtest: ${cls}` : ""}`,
     projectionDays: (have, need) => `erst ${have} von ${need} Tagen`,
     fieldClasses: { low_third: "unteres Drittel", typical: "üblich", top_10_percent: "obere 10 %" },
     since: (v) => `seit ${v}`,
@@ -326,7 +328,9 @@ const TEXT = {
     preliminaryValue: (v) => `preliminary ${v}`,
     litres: (v) => `${v} litres`,
     days: (n) => `only ${n} days`,
-    projected: (days, cls) => `projected from ${days} days${cls ? ` · field test: ${cls}` : ""}`,
+    projected: (days, cls) => `${days} days × 365, rough${cls ? ` · field test: ${cls}` : ""}`,
+    projectedHeatingDays: (days, cls) => `projected with ${days} heating days${cls ? ` · field test: ${cls}` : ""}`,
+    lastTwelveMonths: (cls) => `last 12 months${cls ? ` · field test: ${cls}` : ""}`,
     projectionDays: (have, need) => `only ${have} of ${need} days`,
     fieldClasses: { low_third: "lowest third", typical: "typical", top_10_percent: "top 10 %" },
     since: (v) => `since ${v}`,
@@ -975,17 +979,28 @@ class WaermewachtCard extends HTMLElement {
     return `<div class="charts">${this._xyChart(t.dutyChart, "%", series, this._entities.continuous_below, 0, 0)}</div>`;
   }
 
-  /** Starts per year projected from the last 7 days (attributes of "starts
-   * today"), with its place in the Fraunhofer field test. */
+  /** Starts per year ("starts_per_year", cycling.py): counted over the last
+   * 12 months, else projected with the heating days or from the last 7 days;
+   * with its place in the Fraunhofer field test. */
   _startsPerYear(t) {
-    const a = this._state("starts_today")?.attributes || {};
-    if (!("starts_7d_days" in a)) return "";
-    const perYear = a.starts_per_year_projected;
-    if (perYear === null || perYear === undefined) {
+    const id = this._entities.starts_per_year;
+    const state = this._state("starts_per_year");
+    if (!state) return "";
+    const a = state.attributes;
+    const cls = t.fieldClasses[a.field_class] || "";
+    const perYear = Number(state.state);
+    if (!a.method || !Number.isFinite(perYear)) {
       const why = a.starts_7d_reason === "too_few_days"
         ? t.projectionDays(a.starts_7d_days ?? 0, PROJECTION_DAYS)
         : (t.reasons[a.starts_7d_reason] || t.unknown);
-      return this._tile(this._entities.starts_today, t.tiles.starts_per_year, why, "–");
+      return this._tile(id, t.tiles.starts_per_year, why, "–");
+    }
+    if (a.method === "last_12_months") {
+      return this._tile(id, t.tiles.starts_per_year, t.lastTwelveMonths(cls), this._num(perYear, 0));
+    }
+    if (a.method === "heating_days") {
+      return this._tile(id, t.tiles.starts_per_year,
+        t.projectedHeatingDays(this._num(a.heating_days_per_year, 0), cls), `≈ ${this._num(perYear, 0)}`);
     }
     // Projected from the hours with a known compressor state: "7" when the
     // week was complete (23 or 25 hours on a DST day), else "6,6".
@@ -993,8 +1008,7 @@ class WaermewachtCard extends HTMLElement {
     const full = PROJECTION_DAYS * 24;
     const days = hours === null || hours === undefined || Math.abs(hours - full) <= 1
       ? this._num(PROJECTION_DAYS, 0) : this._num(hours / 24, 1);
-    return this._tile(this._entities.starts_today, t.tiles.starts_per_year,
-      t.projected(days, t.fieldClasses[a.starts_field_class] || ""), `≈ ${this._num(perYear, 0)}`);
+    return this._tile(id, t.tiles.starts_per_year, t.projected(days, cls), `≈ ${this._num(perYear, 0)}`);
   }
 
   _dhw(t) {
@@ -1101,21 +1115,18 @@ class WaermewachtCard extends HTMLElement {
     return this._own("efficiency_factor", t.tiles.efficiency_factor, extra);
   }
 
-  /** What a heating curve 2 K lower would have saved (carnot.py): the
-   * previous season when it has a value (a whole season), else the current
-   * one so far; euro with the fixed electricity price. */
+  /** What a heating curve 2 K lower would have saved ("lower_flow_saving",
+   * carnot.py): the previous season when it has a value (a whole season),
+   * else the current one so far; euro with the fixed electricity price. */
   _lowerFlow(t) {
-    const state = this._state("efficiency_factor");
-    if (!state) return "";
+    const state = this._state("lower_flow_saving");
+    const kwh = Number(state?.state);
+    if (!state || state.state === "" || !Number.isFinite(kwh)) return "";
     const a = state.attributes;
-    const previous = a.previous_season?.lower_flow_kwh;
-    const saved = previous || a.lower_flow_kwh;
-    if (!saved || saved["2"] === undefined || saved["2"] === null) return "";
-    const kwh = saved["2"];
     const parts = [];
-    if (a.price_eur_per_kwh) parts.push(t.lowerFlowEuro(this._num(kwh * a.price_eur_per_kwh, 0)));
-    parts.push(previous ? t.previousSeason : t.seasonSoFar);
-    return this._tile(this._entities.efficiency_factor, t.lowerFlow, parts.join(" · "), t.lowerFlowValue(this._num(kwh, 0)));
+    if (a.eur !== null && a.eur !== undefined) parts.push(t.lowerFlowEuro(this._num(a.eur, 0)));
+    parts.push(a.period === "previous_season" ? t.previousSeason : t.seasonSoFar);
+    return this._tile(this._entities.lower_flow_saving, t.lowerFlow, parts.join(" · "), t.lowerFlowValue(this._num(kwh, 0)));
   }
 
   /** Energy signature of a heat load sensor (attributes of heat_load.py):

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Bitte prüfen
+
+- **Die Attribute der Hochrechnung hängen jetzt an „Starts pro Jahr“, nicht mehr an „Starts heute“.** `starts_per_year_projected` ist der Wert des neuen Sensors, `starts_field_class` heißt dort `field_class`; `starts_per_day_7d`, `starts_7d_days`, `starts_7d_observed_hours` und `starts_7d_reason` heißen gleich. Wer sie in eigenen Karten oder Automationen nutzt, stellt dort auf den neuen Sensor um. Die Karte „Takte“ macht das selbst.
+
+### Neu
+
+- **Neuer Sensor „Starts pro Jahr“, gezählt statt grob hochgerechnet.** Reicht die Langzeitstatistik des Startzählers 12 Monate zurück, zeigt er die Starts der letzten 12 Monate; ohne Startzähler die selbst gezählten, sobald Wärmewacht ein Jahr mitzählt. Sonst rechnet er Heizen und Warmwasser getrennt hoch: Heizstarts je Heiztag der letzten Woche mal Heiztage im Jahr (aus der Außentemperatur der letzten 12 Monate und der Heizgrenze), dazu die übrigen Starts mal 365. Bisher stand hier die letzte Woche mal 365, im Winter also deutlich zu hoch. Die Kachel sagt, wie der Wert zustande kam, ein Klick öffnet seinen Verlauf. (danke an MelleD und alteMade, simon42-Forum)
+- **Neuer Sensor „Heizkurve 2 K tiefer“** in kWh. Ein Klick auf die gleichnamige Kachel öffnete bisher den Gütegrad, weil der Wert nur dessen Attribut war; jetzt öffnet sie den eigenen Verlauf. (danke an alteMade, simon42-Forum)
+
+### Geändert
+
+- **„Starts heute“, „Starts gestern“, „Kurzläufe heute“ und „Abtauungen heute“ als Zahlen im Verlauf.** Ohne `state_class` zeigte Home Assistant sie als bunte Zeitleiste mit Texten; jetzt als Linie, und sie lassen sich in Statistik-Diagrammen verwenden. (danke an alteMade, simon42-Forum)
+
 ## 0.7.4 – 2026-11-12
 
 ### Neu

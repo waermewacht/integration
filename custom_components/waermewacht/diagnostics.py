@@ -235,7 +235,7 @@ async def async_get_config_entry_diagnostics(
         "observation_gaps": [
             [lo.isoformat(), hi.isoformat()] for lo, hi in runtime.gaps
         ],
-        "starts_projection": runtime.starts_projection(now).as_attributes(),
+        "starts_per_year": runtime.starts_per_year(now).as_attributes(),
         # Price sensor: hours read so far, priced days, hours from its states.
         "prices": None
         if runtime.prices is None

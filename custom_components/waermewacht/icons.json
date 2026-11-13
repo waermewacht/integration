@@ -151,6 +151,9 @@
       "starts_yesterday": {
         "default": "mdi:counter"
       },
+      "starts_per_year": {
+        "default": "mdi:counter"
+      },
       "starts_total": {
         "default": "mdi:counter"
       },
@@ -216,6 +219,9 @@
       },
       "efficiency_factor": {
         "default": "mdi:speedometer"
+      },
+      "lower_flow_saving": {
+        "default": "mdi:thermometer-minus"
       },
       "oversize_factor": {
         "default": "mdi:resize"

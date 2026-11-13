@@ -52,6 +52,7 @@ from custom_components.waermewacht.carnot import (  # noqa: E402
     efficiency_factor,
     factor_attributes,
     factor_spans,
+    lower_flow_figure,
     statistics_days,
 )
 from custom_components.waermewacht.charges import (  # noqa: E402
@@ -86,8 +87,11 @@ from custom_components.waermewacht.cycling import (  # noqa: E402
     activity_seconds,
     cycle_stats,
     cycling_triggers,
+    diary_starts,
+    heating_days_per_year,
     max_starts_per_hour,
     prune,
+    starts_per_year,
     starts_projection,
 )
 from custom_components.waermewacht.degree_days import (  # noqa: E402
@@ -1037,7 +1041,24 @@ class Sim:
             "starts_baseline": None
             if baseline is None
             else (self.starts_hours[baseline], current),
+            # runtime._async_starts_year_ago and _heating_days_year.
+            "starts_year_ago": self.starts_year_ago(now),
+            "heating_days_year": None
+            if load.heating_limit is None or not (load.sufficient or load.preliminary)
+            else (
+                heating_days_per_year(
+                    outdoor, TZ, today - 365 * DAY, today, load.heating_limit
+                ),
+                load.heating_limit,
+            ),
         }
+
+    def starts_year_ago(self, now: datetime) -> tuple[int, datetime] | None:
+        """Start counter 365 days ago from its statistics (the last hour
+        within the two days before)."""
+        at = local_midnight(now.astimezone(TZ).date(), TZ) - 365 * DAY
+        hours = [h for h in self.starts_hours if at - 2 * DAY <= h + HOUR <= at]
+        return (self.starts_hours[max(hours)], at) if hours else None
 
     # Run.
 
@@ -1219,8 +1240,31 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         sim.tracker.observed_since,
         sim.tracker.gaps,
     )
-    put("starts_today", today.starts, **projection.as_attributes())
+    put("starts_today", today.starts)
     put("starts_yesterday", yesterday.starts)
+    # runtime.starts_per_year: counter over 12 months, else the diary, else
+    # projected with the heating days or from the 7 days.
+    counted = None
+    if a["starts_year_ago"] is not None and sim.starts >= a["starts_year_ago"][0]:
+        counted = (sim.starts - a["starts_year_ago"][0], a["starts_year_ago"][1])
+    if counted is None:
+        count = diary_starts(sim.diary, local_today - 365 * DAY, local_today - DAY)
+        if count is not None:
+            counted = (count, local_midnight(local_today, TZ) - 365 * DAY)
+    outdoor_by_day = {e["day"]: e["outdoor"] for e in sim.diary[-PROJECTION_DAYS:]}
+    heating = a["heating_days_year"]
+    year = starts_per_year(
+        projection,
+        last_12_months=counted,
+        heating_days=None if heating is None else heating[0],
+        heating_limit=None if heating is None else heating[1],
+        week_outdoor=[
+            outdoor_by_day.get((local_today - k * DAY).isoformat())
+            for k in range(PROJECTION_DAYS, 0, -1)
+        ],
+        split=True,
+    )
+    put("starts_per_year", year.value, None, 0, **year.as_attributes())
     put("starts_total", sim.starts, source="heat_pump")
     baseline = a["starts_baseline"]
     if baseline is not None:
@@ -1348,6 +1392,14 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         None,
         2,
         **factor_attributes(factors, ELECTRICITY_PRICE),
+    )
+    lower = lower_flow_figure(factors, ELECTRICITY_PRICE)
+    put(
+        "lower_flow_saving",
+        None if lower is None else lower["kwh"],
+        "kWh",
+        0,
+        **({} if lower is None else {k: v for k, v in lower.items() if k != "kwh"}),
     )
     spread_7d = a["spread_7d"]
     put("spread_7d", _r(spread_7d.value, 1), "K", 1, **spread_7d.as_attributes())

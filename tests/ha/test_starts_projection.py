@@ -1,6 +1,6 @@
-"""Starts per year projected from 7 days, against the Fraunhofer field test:
-attributes of "Starts today", never a reason for "cycling". And the optional
-limit of starts per day, which is one."""
+"""Starts per year (own sensor since 0.7.5), against the Fraunhofer field
+test: never a reason for "cycling". The counts of the day have a state class.
+And the optional limit of starts per day, which is a reason."""
 
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ from .test_init import START, entity_id, set_counters, setup, state, tick
 
 
 def attributes(hass: HomeAssistant, entry) -> dict:
-    current = hass.states.get(entity_id(hass, entry, "starts_today"))
+    current = hass.states.get(entity_id(hass, entry, "starts_per_year"))
     assert current is not None
-    return dict(current.attributes)
+    return {"state": current.state, **current.attributes}
 
 
 def runs_per_day(first_day: datetime, days: int, per_day: int) -> list[dict]:
@@ -44,10 +44,16 @@ async def test_projection_needs_seven_days(
     entry = await setup(hass)
     await tick(hass, freezer, 1)
     found = attributes(hass, entry)
-    assert found["starts_per_year_projected"] is None
-    assert found["starts_field_class"] is None
+    assert found["state"] == "unknown"
+    assert found["method"] is None
+    assert found["field_class"] is None
     assert found["starts_7d_reason"] == "too_few_days"
     assert found["starts_7d_days"] == 0
+    # Counts of the day: numbers in the history, not a timeline of texts.
+    for key in ("starts_today", "starts_yesterday", "short_runs_today"):
+        current = hass.states.get(entity_id(hass, entry, key))
+        assert current is not None
+        assert current.attributes["state_class"] == "measurement", key
 
 
 @pytest.mark.freeze_time(START)
@@ -71,8 +77,10 @@ async def test_projection_from_stored_runs(
     await tick(hass, freezer, 1)
     found = attributes(hass, entry)
     assert found["starts_per_day_7d"] == 20.0
-    assert found["starts_per_year_projected"] == 7300
-    assert found["starts_field_class"] == "top_10_percent"
+    # No heat load and no year of data in the test: 7 days x 365.
+    assert found["method"] == "last_7_days"
+    assert found["state"] == "7300"
+    assert found["field_class"] == "top_10_percent"
     assert found["starts_7d_days"] == 7
     assert found["starts_7d_observed_hours"] == 168.0
     assert found["starts_7d_reason"] is None

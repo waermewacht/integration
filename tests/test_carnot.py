@@ -23,6 +23,7 @@ from custom_components.waermewacht.carnot import (
     factor_day,
     factor_spans,
     field_reference,
+    lower_flow_figure,
     statistics_days,
     winter_span,
     winter_year,
@@ -420,3 +421,23 @@ def test_factor_attributes_price() -> None:
     attributes = factor_attributes({"season": season, "previous_season": season}, 0.3)
     assert attributes["price_eur_per_kwh"] == 0.3
     assert attributes["previous_season"]["lower_flow_kwh"]["2"] > 0
+
+
+def test_lower_flow_figure_prefers_the_previous_season() -> None:
+    days = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    season = efficiency_factor(days, DAY, DAY + timedelta(days=13), min_days=14)
+    short = efficiency_factor(days[:7], DAY, DAY + timedelta(days=6), min_days=7)
+    figure = lower_flow_figure({"season": short, "previous_season": season}, 0.3)
+    assert figure is not None
+    assert figure["period"] == "previous_season"
+    assert figure["kwh"] == round(season.lower_flow_kwh[2], 1)
+    assert figure["eur"] == round(figure["kwh"] * 0.3, 2)
+    assert figure["kelvin"] == 2
+    # Without a previous season: the current one so far, no euro.
+    only = lower_flow_figure({"season": short})
+    assert only is not None and only["period"] == "season"
+    assert only["eur"] is None
+    # Without a value: nothing.
+    empty = efficiency_factor([entry()], DAY, DAY, min_days=7)
+    assert lower_flow_figure({"season": empty}) is None
+    assert lower_flow_figure({}) is None

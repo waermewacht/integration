@@ -4,21 +4,28 @@ Definitions (docs/ENTWICKLUNG.md, section 3):
 - A start is a counted run (its start was observed) beginning in the window.
 - Short and critical runs, run time per start and pauses only use finished
   runs without observation gaps; a run counts for the window it ended in.
-- Starts per year are projected from the last 7 complete local days, over
-  the hours the compressor state was known in them (starts per observed
-  hour x 24 x 365), and placed in the field test of Fraunhofer ISE (WP-QS,
-  measuring year 2024, 51 air/water heat pumps): a third at most 2,000
-  starts a year, 90 % below 5,500 (docs/ENTWICKLUNG.md, section 3). An
-  orientation, not a check: 7 days of autumn are no year.
+- Starts per year (`starts_per_year`): counted over the last 12 months
+  where the start counter's statistics or the diary reach back that far;
+  else projected from the last 7 complete local days, over the hours the
+  compressor state was known in them, with the heating days of the last
+  12 months when the week had heating days (heating starts per heating day
+  x heating days + other starts per day x 365), else starts per day x 365.
+  Placed in the field test of Fraunhofer ISE (WP-QS, measuring year 2024,
+  51 air/water heat pumps): a third at most 2,000 starts a year, 90 %
+  below 5,500 (docs/ENTWICKLUNG.md, section 3). An orientation, not a
+  check.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, tzinfo
 from itertools import pairwise
 
+from .degree_days import MIN_DAY_HOURS, valid_outdoor
+from .duty import heating_start
+from .periods import local_midnight
 from .runs import Defrost, Run
 
 
@@ -149,6 +156,15 @@ PROJECTION_DAYS = 7
 MIN_OBSERVED_HOURS = 144.0
 TOO_FEW_DAYS = "too_few_days"
 TOO_FEW_HOURS = "too_few_hours"
+# How the starts per year came about (attribute `method`).
+METHOD_12_MONTHS = "last_12_months"
+METHOD_HEATING_DAYS = "heating_days"
+METHOD_7_DAYS = "last_7_days"
+# Own assumptions: the days with an outdoor mean a year needs (most of it,
+# a few days without data are fine) and the heating days of the 7 a week
+# needs for heating starts per heating day.
+MIN_YEAR_DAYS = 330
+MIN_WEEK_HEATING_DAYS = 3
 
 
 @dataclass(frozen=True)
@@ -162,14 +178,14 @@ class StartsProjection:
     per_year: int | None = None
     field_class: str | None = None  # one of FIELD_CLASSES
     reason: str | None = None  # why there is no projection
+    window_hours: float = 0.0  # hours of the days (DST: 167 or 169)
+    heating_by_day: tuple[int, ...] = ()  # heating starts per day
 
     def as_attributes(self) -> dict[str, float | int | str | None]:
         return {
             "starts_per_day_7d": None
             if self.per_day is None
             else round(self.per_day, 1),
-            "starts_per_year_projected": self.per_year,
-            "starts_field_class": self.field_class,
             "starts_7d_days": self.days,
             "starts_7d_observed_hours": None
             if self.observed_hours is None
@@ -235,6 +251,11 @@ def starts_projection(
         )
     every = [*runs, *([open_run] if open_run else [])]
     starts = sum(1 for r in every if r.counted and start <= r.start < end)
+    bounds = [*day_starts, end]
+    heating_by_day = tuple(
+        sum(1 for r in every if lo <= r.start < hi and heating_start(r))
+        for lo, hi in pairwise(bounds)
+    )
     per_day = starts / observed * 24
     per_year = round(per_day * 365)
     return StartsProjection(
@@ -244,7 +265,135 @@ def starts_projection(
         per_day=per_day,
         per_year=per_year,
         field_class=field_class(per_year),
+        window_hours=(end - start).total_seconds() / 3600,
+        heating_by_day=heating_by_day,
     )
+
+
+@dataclass(frozen=True)
+class StartsYear:
+    """Starts per year: counted over the last 12 months where the counter or
+    the diary reaches back that far, else projected from the last 7 days
+    (with the heating days of a year when the week had heating days)."""
+
+    value: int | None
+    method: str | None  # one of the METHOD_* constants
+    week: StartsProjection
+    since: datetime | None = None  # METHOD_12_MONTHS: start of the count
+    heating_per_day: float | None = None  # METHOD_HEATING_DAYS
+    other_per_day: float | None = None
+    heating_days: int | None = None  # heating days in the last 12 months
+    week_heating_days: int | None = None  # of the 7 days
+
+    @property
+    def field_class(self) -> str | None:
+        return None if self.value is None else field_class(self.value)
+
+    def as_attributes(self) -> dict[str, float | int | str | None]:
+        def one(value: float | None) -> float | None:
+            return None if value is None else round(value, 1)
+
+        return {
+            "method": self.method,
+            "field_class": self.field_class,
+            "since": None if self.since is None else self.since.isoformat(),
+            "heating_starts_per_heating_day": one(self.heating_per_day),
+            "other_starts_per_day": one(self.other_per_day),
+            "heating_days_per_year": self.heating_days,
+            "heating_days_7d": self.week_heating_days,
+            **self.week.as_attributes(),
+        }
+
+
+def heating_days_per_year(
+    outdoor: Mapping[datetime, float],
+    tz: tzinfo,
+    first: date,
+    end: date,
+    limit: float,
+) -> int | None:
+    """Days of [first, end) whose outdoor mean lies below the heating limit,
+    scaled to 365 days; None with fewer than MIN_YEAR_DAYS days that have
+    MIN_DAY_HOURS valid hourly values (`outdoor` keyed by UTC hour starts)."""
+    temps: dict[date, list[float]] = {}
+    lo, hi = local_midnight(first, tz), local_midnight(end, tz)
+    for hour, value in outdoor.items():
+        if lo <= hour < hi and valid_outdoor(value):
+            temps.setdefault(hour.astimezone(tz).date(), []).append(value)
+    means = [sum(v) / len(v) for v in temps.values() if len(v) >= MIN_DAY_HOURS]
+    if len(means) < MIN_YEAR_DAYS:
+        return None
+    below = sum(1 for mean in means if mean < limit)
+    return round(below * 365 / len(means))
+
+
+def starts_per_year(
+    week: StartsProjection,
+    *,
+    last_12_months: Baseline | None = None,
+    heating_days: int | None = None,
+    week_outdoor: Sequence[float | None] = (),
+    heating_limit: float | None = None,
+    split: bool = False,
+) -> StartsYear:
+    """Starts per year, in this order:
+
+    1. `last_12_months` (starts, since): counted, no projection.
+    2. With the heating days of the last 12 months, the heating limit, the
+       outdoor mean of each of the 7 days and runs that know their activity
+       (`split`): heating starts per heating day of the week x heating days
+       + other starts (hot water, cooling) per day x 365. Needs
+       MIN_WEEK_HEATING_DAYS heating days in the week.
+    3. Starts per day of the last 7 days x 365 (too high in winter, too low
+       in summer).
+    """
+    if last_12_months is not None:
+        count, since = last_12_months
+        return StartsYear(count, METHOD_12_MONTHS, week, since=since)
+    if week.per_year is None or week.starts is None or not week.observed_hours:
+        return StartsYear(None, None, week)
+    known = [t for t in week_outdoor if t is not None]
+    if (
+        split
+        and heating_days is not None
+        and heating_limit is not None
+        and len(week.heating_by_day) == len(week_outdoor) == len(known)
+    ):
+        flags = [t < heating_limit for t in known]
+        count = sum(flags)
+        if count >= MIN_WEEK_HEATING_DAYS:
+            # Gaps: scale the observed starts up to the whole window.
+            factor = week.window_hours / week.observed_hours
+            heating = sum(week.heating_by_day)
+            per_heating_day = heating * factor / count
+            other = (week.starts - heating) * factor / len(flags)
+            return StartsYear(
+                round(per_heating_day * heating_days + other * 365),
+                METHOD_HEATING_DAYS,
+                week,
+                heating_per_day=per_heating_day,
+                other_per_day=other,
+                heating_days=heating_days,
+                week_heating_days=count,
+            )
+    return StartsYear(week.per_year, METHOD_7_DAYS, week)
+
+
+def diary_starts(
+    diary: Sequence[Mapping[str, object]], first: date, last: date
+) -> int | None:
+    """Starts of the diary days first … last (both included), when the diary
+    has at least MIN_YEAR_DAYS of them (Wärmewacht counted the starts)."""
+    lo, hi = first.isoformat(), last.isoformat()
+    counts = [
+        e["starts"]
+        for e in diary
+        if lo <= str(e.get("day")) <= hi and isinstance(e.get("starts"), int)
+    ]
+    if len(counts) < MIN_YEAR_DAYS:
+        return None
+    days = (last - first).days + 1
+    return round(sum(counts) * days / len(counts))
 
 
 # Why cycling counts as conspicuous (attribute triggers).
