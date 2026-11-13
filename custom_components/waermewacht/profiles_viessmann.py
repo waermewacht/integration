@@ -157,6 +157,11 @@ VICARE = ViCareTemplate(
     label="Viessmann ViCare",
     platform="vicare",
     signals={
+        # Heat produced today, from heating.heat.production.summary.* of the
+        # API (PyViCare 2.65.0). Derived from home-assistant/core#192458, not
+        # yet released in core: until then no entity, nothing found.
+        Signal.HEAT_HEATING: ((_S, "heat_production_heating_today"),),
+        Signal.HEAT_DHW: ((_S, "heat_production_dhw_today"),),
         # E3 only; today's sum of the cloud (0.1 kWh), enabled by default.
         Signal.ELEC_HEATING: ((_S, "energy_summary_consumption_heating_currentday"),),
         Signal.ELEC_DHW: ((_S, "energy_dhw_summary_consumption_heating_currentday"),),

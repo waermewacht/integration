@@ -50,7 +50,7 @@
     "made_up": "every number (counters, temperatures, pressures, settings, rates), replaced by a value of the same magnitude; 0 kept; the device block is reduced to manufacturer and model."
   },
   "vicare_vitocal250a.json": {
-    "source": "Derived from the source code of Home Assistant core vicare (dev 8f785c4, 2026-10-28; entity.py, sensor.py, binary_sensor.py, strings.json, tests/components/vicare/snapshots) and PyViCare 2.63.0 test data (tests/response/Vitocal250A.json); an E3 heat pump, not read from a real installation.",
+    "source": "Derived from the source code of Home Assistant core vicare (dev 8f785c4, 2026-10-28; entity.py, sensor.py, binary_sensor.py, strings.json, tests/components/vicare/snapshots) and PyViCare 2.63.0 test data (tests/response/Vitocal250A.json); an E3 heat pump, not read from a real installation. The two heat_production_*_today entities (2026-11-13) from home-assistant/core#192458 (sensor.py, strings.json, snapshot; not merged yet) with the values of the HA fixture Vitocal250A.json.",
     "real": "unique id format '<gateway>_<device>-<key>[-<component>]' (platform vicare), keys incl. those with spaces, entity domains, units, device and state classes, entities disabled by default, the compressor phase vocabulary of E3 controllers (setPhase enum, '-' replaced by '_').",
     "made_up": "gateway and device serials, the model name in the entity ids, every state value; subset of the entities."
   },

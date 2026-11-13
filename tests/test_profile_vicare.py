@@ -10,7 +10,6 @@ from custom_components.waermewacht.activity import combine
 from custom_components.waermewacht.counter import UNIT_FACTORS
 from custom_components.waermewacht.model import (
     ENERGY_SIGNALS,
-    HEAT_SIGNALS,
     Activity,
     Signal,
 )
@@ -29,6 +28,9 @@ E3 = "vicare_vitocal250a.json"
 REAL = "vicare_vitocal151a_real.json"
 LEGACY = "vicare_vitocal333g.json"
 SPLIT = "vicare_vitocal200a.json"
+# Heat produced comes with home-assistant/core#192458; fixtures recorded or
+# derived before it have no such entities.
+NO_HEAT = {Signal.HEAT_HEATING, Signal.HEAT_DHW}
 
 
 def entries(name: str, *, with_disabled: bool = True) -> list[RegistryEntry]:
@@ -51,11 +53,13 @@ def of_device(name: str, prefix: str) -> list[RegistryEntry]:
     return [e for e in entries(name) if e.unique_id.startswith(f"{prefix}-")]
 
 
-def test_e3_finds_cycling_and_electricity() -> None:
+def test_e3_finds_cycling_electricity_and_heat() -> None:
     (match,) = find(VICARE, entries(E3))
     s, b = "sensor.e3_vitocal_", "binary_sensor.e3_vitocal_"
     assert match.prefix == "0000111122223333_0000444455556666"
     assert match.entities == {
+        Signal.HEAT_HEATING: s + "heating_heat_production_today",
+        Signal.HEAT_DHW: s + "dhw_heat_production_today",
         Signal.ELEC_HEATING: s + "heating_electricity_consumption_today",
         Signal.ELEC_DHW: s + "dhw_electricity_consumption_today",
         Signal.COMPRESSOR: b + "compressor",
@@ -67,7 +71,6 @@ def test_e3_finds_cycling_and_electricity() -> None:
     }
     # E3: the phase carries no activity (ready / not_ready).
     assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
-    assert not any(s in match.entities for s in HEAT_SIGNALS.values())
 
 
 def test_real_vitocal_151a() -> None:
@@ -87,7 +90,12 @@ def test_real_vitocal_151a() -> None:
         Signal.DHW_TEMP: s + "temperature_du_ballon_d_eau_chaude_sanitaire",
     }
     # No cooling on this one; E3 has no hot water flag and no mode.
-    assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
+    assert set(match.missing) == {
+        Signal.ELEC_COOLING,
+        Signal.DHW_FLAG,
+        Signal.ACTIVITY,
+        *NO_HEAT,
+    }
     rows = {e["entity_id"]: e for e in load_fixture(REAL)["entities"]}
     for signal, entity_id in match.entities.items():
         if signal in ENERGY_SIGNALS:
@@ -101,6 +109,7 @@ def test_real_vitocal_151a() -> None:
 
 def test_e3_enabled_by_default_is_enough() -> None:
     (match,) = find(VICARE, entries(E3, with_disabled=False))
+    # The heat sensors of core#192458 are enabled by default, too.
     assert set(match.missing) == {Signal.ELEC_COOLING, Signal.DHW_FLAG, Signal.ACTIVITY}
 
 
@@ -137,6 +146,7 @@ def test_vitotronic_finds_cycling_and_defrost() -> None:
         Signal.ELEC_HEATING,
         Signal.ELEC_DHW,
         Signal.ELEC_COOLING,
+        *NO_HEAT,
     }
 
 
@@ -238,6 +248,7 @@ SPLIT_MISSING = {
     Signal.DHW_FLAG,
     Signal.OUTDOOR_TEMP,  # system.temperature.outside: no getter in PyViCare
     Signal.RETURN_TEMP,
+    *NO_HEAT,
 }
 
 
