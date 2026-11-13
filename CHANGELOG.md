@@ -1,6 +1,10 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.9.0 – 2026-11-13
+
+### Neu
+
+- **Viessmann ViCare: Wärme und Arbeitszahl (experimentell).** Sobald Home Assistant für ViCare die Wärme je Betriebsart liefert (home-assistant/core#192458), erkennt die Vorlage „Heating heat production today“ und „DHW heat production today“ von selbst und rechnet die Arbeitszahl. Bis dahin ändert sich nichts. Aus dem Quellcode abgeleitet, noch an keiner echten Anlage bestätigt; nicht jedes Gerät meldet die Wärme. (danke an JosefinBerlin, simon42-Forum)
 
 ### Behoben
 
@@ -9,10 +13,6 @@
 ### Geändert
 
 - **Karte Arbeitszahlen: Spalte „Heute“ nur, wenn eingeschaltet.** Die Sensoren „AZ … heute“ sind standardmäßig deaktiviert; die Spalte zeigte bis dahin nur „–“. Jetzt erscheint sie, sobald einer davon aktiviert ist. (danke an Joachim-xo, simon42-Forum)
-
-### Neu
-
-- **Viessmann ViCare: Wärme und Arbeitszahl (experimentell).** Sobald Home Assistant für ViCare die Wärme je Betriebsart liefert (home-assistant/core#192458), erkennt die Vorlage „Heating heat production today“ und „DHW heat production today“ von selbst und rechnet die Arbeitszahl. Bis dahin ändert sich nichts. Aus dem Quellcode abgeleitet, noch an keiner echten Anlage bestätigt; nicht jedes Gerät meldet die Wärme. (danke an JosefinBerlin, simon42-Forum)
 
 ## 0.8.0 – 2026-11-13
 
