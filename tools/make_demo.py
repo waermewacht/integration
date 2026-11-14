@@ -105,6 +105,7 @@ from custom_components.waermewacht.degree_days import (  # noqa: E402
     year_before,
 )
 from custom_components.waermewacht.duty import (  # noqa: E402
+    MIN_CLASS_HOURS,
     choose,
     day_classes,
     duty_attributes,
@@ -160,6 +161,15 @@ from custom_components.waermewacht.periods import (  # noqa: E402
     PeriodMarks,
     local_midnight,
     period_start,
+)
+from custom_components.waermewacht.power import (  # noqa: E402
+    day_full_hours,
+    day_hours,
+    full_hours,
+    oversize_attributes,
+    power_figures,
+    shares,
+    with_power,
 )
 from custom_components.waermewacht.report import (  # noqa: E402
     by_month,
@@ -810,6 +820,23 @@ class Sim:
                     {h: v for h, v in self.w.temps.items() if start <= h < end},
                     min(now, end),
                 ),
+                "full_hours": day_full_hours(
+                    self.runs,
+                    self.tracker.open_run,
+                    day_hours(date.fromisoformat(day), TZ),
+                    min(now, end),
+                    blocked=[
+                        (x.start, x.end)
+                        for x in (
+                            *self.defrosts,
+                            self.tracker.open_defrost,
+                            *self.charges,
+                            self.charge_tracker.open,
+                            self.charge_tracker.closing,
+                        )
+                        if x is not None
+                    ],
+                ),
                 "energy": None
                 if energy is None
                 else {k: round(v, 3) for k, v in energy.values.items() if v},
@@ -903,6 +930,50 @@ class Sim:
             "short_run_minutes": short,
         }
 
+    def power(
+        self,
+        duty: dict[str, Any],
+        hours: dict[datetime, Totals],
+        building: dict[datetime, Totals],
+        outdoor: dict[datetime, float],
+        now: datetime,
+        current: datetime,
+        previous: datetime,
+        load: Any,
+    ) -> None:
+        """runtime._power, rebuilt (diary only, no run time counter)."""
+        spans = {
+            "current": (current.astimezone(TZ).date(), now.astimezone(TZ).date() - DAY),
+            "previous": (
+                previous.astimezone(TZ).date(),
+                current.astimezone(TZ).date() - DAY,
+            ),
+        }
+        power: dict[str, Any] = {}
+        for name, (first, last) in spans.items():
+            found, days, from_statistics = full_hours(self.diary, None, first, last, TZ)
+            power[name] = power_figures(
+                hours,
+                building,
+                outdoor,
+                found,
+                first,
+                last,
+                TZ,
+                shares=shares(duty[name].classes, MIN_CLASS_HOURS),
+                days=days,
+                days_from_statistics=from_statistics,
+            )
+        duty["power"] = power
+        figures = power[duty["season"]]
+        duty["expected_continuous_below_measured"] = (
+            None
+            if not (load.sufficient or load.preliminary)
+            else expected_continuous_below(
+                load.heating_limit, load.slope_kw_per_k, figures.min_kw
+            )
+        )
+
     def efficiency_factors(
         self,
         now: datetime,
@@ -988,6 +1059,8 @@ class Sim:
         }
         lo, hi = window_days(today)
         mild_days = [d for d in daily_samples(hours, outdoor, TZ) if lo <= d.day <= hi]
+        duty = self.duty(now, current, previous, load)
+        self.power(duty, hours, building, outdoor, now, current, previous, load)
         # Start counter at the season start, from its statistics.
         baseline = max(
             (h for h in self.starts_hours if h + HOUR <= current), default=None
@@ -1018,7 +1091,7 @@ class Sim:
                 mild_days, mild_from=AUX_MILD_FROM, threshold_kwh=AUX_KWH
             ),
             "spread_7d": spread_figure(self.diary, today),
-            "duty": self.duty(now, current, previous, load),
+            "duty": duty,
             "efficiency_factors": self.efficiency_factors(
                 now,
                 current,
@@ -1403,7 +1476,12 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     put("heating_limit", _r(load.heating_limit, 1) if sufficient else None, "°C", 1)
     put("heat_load_design", _r(load.standard_kw, 2) if sufficient else None, "kW", 1)
     for key in ("continuous_below", "short_runs_from"):
-        put(key, duty_value(a["duty"], key), "°C", 0, **duty_attributes(a["duty"], key))
+        attributes = with_power(
+            duty_attributes(a["duty"], key),
+            a["duty"],
+            figures_too=key == "continuous_below",
+        )
+        put(key, duty_value(a["duty"], key), "°C", 0, **attributes)
     factors = a["efficiency_factors"]
     put(
         "efficiency_factor",
@@ -1423,7 +1501,14 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     spread_7d = a["spread_7d"]
     put("spread_7d", _r(spread_7d.value, 1), "K", 1, **spread_7d.as_attributes())
     oversize = a["oversize"]
-    put("oversize_factor", _r(oversize.factor, 2), None, 2, **oversize.as_attributes())
+    put(
+        "oversize_factor",
+        _r(oversize.factor, 2),
+        None,
+        2,
+        **oversize.as_attributes(),
+        **oversize_attributes(a["duty"], oversize.load_mild_kw),
+    )
     flow_now, flow_before = a["flow_curves"]["current"], a["flow_curves"]["previous"]
     flow_attributes = flow_curve_as_dict(flow_now)
     flow_attributes.pop("at_zero")

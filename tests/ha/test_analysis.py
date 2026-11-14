@@ -597,7 +597,8 @@ async def test_runs_continuously_from_a_runtime_counter_without_starts(
     )
     await async_wait_recording_done(hass)
     await hass.config.async_set_time_zone("Europe/Berlin")
-    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    # With decimals: the measured power needs a heat meter finer than 1 kWh.
+    hass.states.async_set(HEAT_HEATING, "72.5", ENERGY)
     hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
     hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
     hass.states.async_set(FLOW, "30.0", TEMPERATURE)
@@ -642,6 +643,15 @@ async def test_runs_continuously_from_a_runtime_counter_without_starts(
     assert row["share_percent"] == 100
     assert row["starts_per_day"] is None
     assert row["minutes_per_start"] is None
+    # Measured power (power.py): every hour with 60 minutes of run time is a
+    # full heating hour with 1 kWh; heating all the time, so no lower limit.
+    assert row["full_hours"] == 71
+    assert row["median_kw"] == 1.0
+    assert below.attributes["measured_max_kw"] == 1.0
+    assert below.attributes["measured_max_class"] == 0.0
+    assert below.attributes["measured_min_kw"] is None
+    assert below.attributes["measured_min_reason"] == "no_partial_load_hours"
+    assert below.attributes["power_days_from_statistics"] == 3
     short = hass.states.get(
         registry.async_get_entity_id(
             "sensor", DOMAIN, f"{entry.entry_id}_short_runs_from"

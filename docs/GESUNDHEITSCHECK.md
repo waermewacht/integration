@@ -248,7 +248,7 @@ Ergänzend, ohne Alarm: Attribut `field_mean_percent: 1.3` am bestehenden Sensor
 
 **Fehlalarme.** Nennleistung je Datenblatt bei anderen Bedingungen (A2/W35, A7/W35); Heizlast aus nur einer Saison; Warmwasserbedarf und Sperrzeiten rechtfertigen Reserve.
 
-**Anzeige.** Sensor „Leistung je Heizlast“ (Faktor), Attribute `rated_kw`, `heat_load_kw`, `field_mean: 1.5`. Als Hinweis-Attribut am Takt-Binärsensor (`oversized_factor`), wenn vorhanden (noch nicht umgesetzt).
+**Anzeige.** Sensor „Leistung je Heizlast“ (Faktor), Attribute `rated_kw`, `heat_load_kw`, `field_mean: 1.5`. Als Hinweis-Attribut am Takt-Binärsensor (`oversized_factor`), wenn vorhanden (noch nicht umgesetzt). Seit 4.17 daneben die gemessene kleinste und größte Leistung (`measured_min_kw`, `measured_max_kw`, `cycling_expected_measured`) als Gegenprobe zu den Datenblatt-Feldern.
 
 ### 4.8 Stillstand ungewöhnlich hoch
 
@@ -406,7 +406,7 @@ Nicht verwechseln: heatpumpmonitor.org rechnet „% of Carnot“ mit Aufschläge
 
 **Beispiel (Anlage des Inhabers, Vorsaison 2025/26 und Saison bis 9.11., Stundenwerte aus Laufzeit- und Startzählern von EMS-ESP):** Laufzeitanteil Heizen −10/−8 °C 92–93 %, −4/−2 °C ~70 %, +2/+4 °C ~50 %, +8/+10 °C 17–24 %, +14…+18 °C 3–9 %; Starts je Tag in allen Klassen ~3–5, Minuten je Start von über 1000 (unter −8 °C) bis 30–55 (+14…+18 °C). „Läuft durch unter“ läge bei etwa −6 °C (Schwelle 90 %). Gegenprobe mit Heizlast (~100 W/K, Heizgrenze ~15 °C) und kleinster Leistung (1,8 kW laut Datenblatt): Durchlauf erwartet unter 15 − 1800/100 = −3 °C; gemessen ~70 % bei −4/−2 °C (Warmwasser und Abtauen unterbrechen). Passt in der Richtung.
 
-**Grenze: keine Leistungsgrenze aus der Laufzeit.** Bei modulierenden Wärmepumpen heißt 100 % Laufzeit nur „taktet nicht“, nicht „volle Leistung“: Sie läuft durch und regelt herunter. Ein Bivalenzpunkt oder „zu klein“ lässt sich daraus nur bei Ein/Aus-Geräten ablesen. Dafür bräuchte es die Modulation (Verdichterdrehzahl, Leistung in %); nicht Teil dieses Entwurfs.
+**Grenze: keine Leistungsgrenze aus der Laufzeit.** Bei modulierenden Wärmepumpen heißt 100 % Laufzeit nur „taktet nicht“, nicht „volle Leistung“: Sie läuft durch und regelt herunter. Ein Bivalenzpunkt oder „zu klein“ lässt sich daraus nur bei Ein/Aus-Geräten ablesen. Dafür bräuchte es die Modulation (Verdichterdrehzahl, Leistung in %); nicht Teil dieses Entwurfs. Seit 4.17 zeigt die Wärme je voller Heizstunde die gemessene kleinste und größte Leistung je Klasse ohne Drehzahl.
 
 **Daten (Vorschlag).**
 
@@ -426,6 +426,38 @@ Nicht verwechseln: heatpumpmonitor.org rechnet „% of Carnot“ mit Aufschläge
 **Last.** Die Klassen entstehen beim Mitternachts-Eintrag aus Daten im Speicher; die tägliche Auswertung rechnet sie aus dem Tagebuch. Der Rückblick über Zähler liest zwei Reihen mehr in der täglichen Statistik-Abfrage (oder einmal beim Rückblick und dann im Tagebuch, siehe offene Fragen).
 
 **Später.** Mit Modulation (Verdichterdrehzahl in %) die Leistungsgrenze und den Bivalenzpunkt; „Heizkurve k K tiefer“ (4.14) könnte zeigen, ob eine tiefere Kurve das Takten verschiebt.
+
+### 4.17 Gemessene Heizleistung je Außentemperatur (umgesetzt 2026-11-14, `power.py`, Andys Ja; „Stufe A“ der Voruntersuchung zur Drehzahl)
+
+**Was und warum.** 4.15 sagt, ob die Wärmepumpe taktet, nicht wie viel sie liefert: Eine modulierende Wärmepumpe läuft bei 100 % Laufzeit oft mit einem Bruchteil ihrer Leistung. Die Wärme einer vollen Heizstunde ist ihre mittlere Heizleistung in kW. Je 2-K-Klasse des Stundenmittels draußen zeigt Wärmewacht deshalb die kleinste und größte gemessene Leistung und den Bedarf des Hauses. Wo der Bedarf unter die kleinste Leistung fällt, muss sie takten; das erklärt 4.15 sichtbar und prüft das Feld „Kleinste Heizleistung“ aus 4.7. Ohne Drehzahl, ohne neues Feld, herstellerneutral (Wärmezähler + Kompressorstatus oder Laufzeitzähler). Quellen in `ENTWICKLUNG.md` §6 („Gemessene Heizleistung“): Datenblattwerte sind nur bedingt vergleichbar (Fraunhofer ISE, WP-QS im Bestand), entscheidend für das Takten ist die Untergrenze gegen den Bedarf (OpenEnergyMonitor).
+
+**Volle Heizstunde** (eigene Annahmen aus der Probe an der Anlage des Inhabers): Kompressor mindestens 55 der 60 Minuten an, und zwar in **einem** Lauf (kein Stopp mit Neustart in der Stunde); in der Stunde keine Wärme Warmwasser oder Kühlen (Stundenstatistik); aus dem Tagebuch zusätzlich keine Abtauung und keine Warmwasser-Ladung und höchstens 10 min ohne bekannten Kompressorstatus (wie 4.15). Eine volle Stunde ohne Heizwärme (Zähler hängt) zählt nicht – nie 0 kW.
+
+**Daten, ohne zusätzliche Abfrage.**
+
+- **Tagebuch ab dem Update:** je Tag `full_hours`, eine Bitmaske über die Stunden des lokalen Tages (Bit i = Stunde ab lokaler Mitternacht + i h, 23 bzw. 25 Bits an Umstellungstagen), mit dem Mitternachts-Eintrag geschrieben, etwa 20 Bytes je Tag. Nur mit Kompressorstatus. Die Wärme der Stunde steht nicht im Tagebuch, sie kommt aus der Statistik.
+- **Rückblick** für Tage ohne Maske: der Zähler „Laufzeit Kompressor Heizen“ (`runtime_heating`, schon Teil der täglichen Abfrage für 4.15): Stunden mit 55–61 min (mehr ist ein Sprung des Zählers). Ohne Betriebsart pro Stunde: Warmwasser und Kühlen schließt die Stundenstatistik aus (keine Wärme dieser Modi in der Stunde), **Abtauungen sind dort nicht bekannt und bleiben drin**. Das senkt das 10-%-Quantil einer Klasse, kaum den Median (Probe).
+- **Wärme je Stunde** aus derselben Stundenstatistik, die die tägliche Analyse für Kennlinie und Heizlast ohnehin liest (`_async_hours`); der Bedarf aus den Stunden des Gebäudes (Hybridanlage: mit Kesselwärme, `async_building_hours`).
+- **Verspätete Wärmezähler** (`day_values`, etwa HomeCom: stündlich mit ~1 h Verzug): zusätzlich muss die Stunde davor voll sein und die Stunde danach ohne Warmwasser (eigene Annahme).
+
+**Kennwerte** (aus der Saison, die auch „Läuft durch unter“ zeigt, `duty.choose`; beide Saisons nie gemischt, der Zeitraum steht in `power_first_day`/`power_last_day`, die Tage in `power_days`, davon aus dem Laufzeitzähler `power_days_from_statistics`):
+
+- **Je Klasse** (ab 12 vollen Stunden, eigene Annahme): `min_kw` (10-%-Quantil), `median_kw`, `max_kw` (95-%-Quantil) der Wärme je voller Heizstunde, `full_hours`; `demand_kw` = Heizwärme aller Stunden der Klasse ÷ ihre Zahl (ab 24 Stunden wie 4.15). Quantile statt Minimum und Maximum, weil einzelne Stunden (Start, Abtauen im Rückblick, Nachholen nach Warmwasser) sonst den Wert bestimmen.
+- **Kleinste gemessene Leistung** `measured_min_kw` mit `measured_min_class`: der kleinste Median unter den Klassen, in denen sie weniger als die Hälfte der Zeit heizt – dort läuft sie meist an ihrer Untergrenze (eigene Annahme). Ohne solche Klasse mit genug vollen Stunden `measured_min_reason: no_partial_load_hours`; das ist typisch für eine Anlage, die in milder Witterung so stark taktet, dass dort keine Stunde voll wird (dann zeigt 4.15 das Takten).
+- **Größte gemessene Leistung** `measured_max_kw` mit `measured_max_class`: 95-%-Quantil der kältesten Klasse mit genug vollen Stunden, daneben ihr Bedarf `demand_at_max_class_kw`. Das ist die größte **gelieferte**, nicht die größte mögliche Leistung: Hat das Haus nie mehr verlangt, liegt sie darunter. Deshalb **kein Faktor** gegen die Heizlast (verworfen beim Bau: eine überdimensionierte Anlage sähe damit zu klein aus, in der Demo 0,85 statt ~2,6).
+- **Ableitungen:** `expected_continuous_below_measured` an „Läuft durch unter“ (Heizgrenze − kleinste gemessene Leistung ÷ Heizlast je Kelvin, wie `expected_continuous_below` mit dem Feld); `cycling_expected_measured` an „Leistung je Heizlast“ (Bedarf bei +7 °C unter der kleinsten gemessenen Leistung).
+
+**Keine Grenzwerte, kein Befund.** Keine Quelle sagt, ab wann eine kleine Reserve oder eine hohe Untergrenze auffällig ist; jede Schwelle wäre eigene Annahme.
+
+**Ohne Kennwerte** (`power_reason`): `no_hourly_heat` (nur Tageswerte vom Vortag, MELCloud), `no_run_time` (weder Kompressorstatus noch Laufzeitzähler Heizen), `no_dhw_split` (ein Wärmezähler für alle Betriebsarten ohne Betriebsart: Warmwasserstunden sähen aus wie Heizen), `coarse_heat` (Wärmezähler in ganzen kWh: Stundenwerte 0, 1, 2 kWh), `too_few_hours`.
+
+**Probe** (Anlage des Inhabers, Rückblick nur über den Laufzeitzähler, 14.11.2026; Werte nicht im Repo): Die Tabelle „ohne Drehzahl“ der Voruntersuchung kam je Klasse wieder heraus (gleiche Stundenzahl, Median, 95-%-Quantil und Bedarf); die kleinste gemessene Leistung lag 1 % über der Untergrenze, die die Drehzahl zeigt. In der laufenden Saison (bis Mitte November, kaum Frost) ist die kälteste Klasse mit genug Stunden −2…0 °C: die „größte gemessene Leistung“ ist dort der Bedarf eines milden Winteranfangs, nicht die Reserve.
+
+**Anzeige.** Attribute an „Läuft durch unter“ (`classes` um `full_hours`, `min_kw`, `median_kw`, `max_kw`, `demand_kw` erweitert, dazu die Kennwerte), an „Kurzläufe ab“ nur die Klassen, an „Leistung je Heizlast“ die Kennwerte als Gegenprobe zum Datenblatt (den Sensor gibt es nur mit dem Feld Heizleistung). Karte „Takte“: zweites Diagramm „Heizleistung je Außentemperatur“ mit den Linien Bedarf und kleinste Leistung, die größte gemessene Leistung als Punkt. Die Kachel „Läuft durch unter“ nennt ohne Feld „Kleinste Heizleistung“ die Erwartung aus der gemessenen.
+
+**Last.** Keine zusätzliche Statistik-Abfrage und keine zusätzliche Reihe: Die Rechnung läuft einmal am Tag in der Analyse auf Daten im Speicher (zwei Saisons ≈ 12.000 Stunden). Tagebuch etwa 20 Bytes je Tag, gespeichert mit dem Mitternachts-Speichern. Die neuen Attribute ändern sich höchstens einmal am Tag; `classes` wird nicht aufgezeichnet.
+
+**Später (Stufe B, offen).** Mit Verdichterdrehzahl in % (nur über Vorlagen): Anteil der Stunden an der Untergrenze und ≥ 90 %, Volllast nach Warmwasser, AZ je Drehzahl. Erst auf Nachfrage.
 
 ## 5. Rangfolge
 

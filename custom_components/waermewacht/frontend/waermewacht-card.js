@@ -162,6 +162,11 @@ const TEXT = {
     dutyChart: "Laufzeit Heizen je Außentemperatur",
     dutySeries: "Anteil der Zeit",
     dutyExpected: (v) => `erwartet unter ${v} °C`,
+    dutyExpectedMeasured: (v) => `erwartet unter ${v} °C (gemessen)`,
+    powerChart: "Heizleistung je Außentemperatur",
+    powerDemand: "Bedarf",
+    powerMin: "kleinste Leistung",
+    powerMax: "größte Leistung",
     dutyReasons: {
       never_continuous: "läuft nirgends durch",
       too_few_hours: "noch zu wenige Stunden",
@@ -362,6 +367,11 @@ const TEXT = {
     dutyChart: "Heating run time per outdoor temperature",
     dutySeries: "Share of the time",
     dutyExpected: (v) => `expected below ${v} °C`,
+    dutyExpectedMeasured: (v) => `expected below ${v} °C (measured)`,
+    powerChart: "Heating power per outdoor temperature",
+    powerDemand: "Demand",
+    powerMin: "Smallest power",
+    powerMax: "Largest power",
     dutyReasons: {
       never_continuous: "never runs continuously",
       too_few_hours: "too few hours yet",
@@ -975,6 +985,9 @@ class WaermewachtCard extends HTMLElement {
     }
     if (key === "continuous_below" && a.expected_continuous_below !== null && a.expected_continuous_below !== undefined) {
       parts.push(t.dutyExpected(this._num(a.expected_continuous_below, 0)));
+    } else if (key === "continuous_below" && a.expected_continuous_below_measured !== null && a.expected_continuous_below_measured !== undefined) {
+      // Without the data sheet's smallest power: from the measured one (power.py).
+      parts.push(t.dutyExpectedMeasured(this._num(a.expected_continuous_below_measured, 0)));
     }
     return this._own(key, t.tiles[key], parts.join(" · "));
   }
@@ -995,7 +1008,30 @@ class WaermewachtCard extends HTMLElement {
       line: true,
       points: rows.map((c) => [c.lower + 1, c.share_percent]),
     }];
-    return `<div class="charts">${this._xyChart(t.dutyChart, "%", series, this._entities.continuous_below, 0, 0)}</div>`;
+    return `<div class="charts">${this._xyChart(t.dutyChart, "%", series, this._entities.continuous_below, 0, 0)}`
+      + `${this._powerChart(t, state.attributes, rows)}</div>`;
+  }
+
+  /** Demand and smallest heat per full heating hour per outdoor class
+   * (power.py), the largest measured power as a dot in the coldest class:
+   * where the demand falls below the smallest power, the unit has to cycle. */
+  _powerChart(t, a, rows) {
+    const has = (v) => v !== null && v !== undefined;
+    const line = (key, color, label) => ({
+      color,
+      label,
+      line: true,
+      points: rows.filter((c) => has(c[key])).map((c) => [c.lower + 1, c[key]]),
+    });
+    const series = [
+      line("demand_kw", COLORS.previous, t.powerDemand),
+      line("min_kw", COLORS.current, t.powerMin),
+    ].filter((s) => s.points.length >= 2);
+    if (!series.length) return "";
+    if (has(a.measured_max_kw) && has(a.measured_max_class)) {
+      series.push({ color: COLORS.outdoor, label: t.powerMax, points: [[a.measured_max_class + 1, a.measured_max_kw]] });
+    }
+    return this._xyChart(t.powerChart, "kW", series, this._entities.continuous_below, 0, 1);
   }
 
   /** Starts per year ("starts_per_year", cycling.py): counted over the last

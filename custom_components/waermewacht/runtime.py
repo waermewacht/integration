@@ -150,6 +150,7 @@ from .dated import Dated, Price, dated, value_at
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
 from .duty import (
+    MIN_CLASS_HOURS,
     DutyFigures,
     choose,
     day_classes,
@@ -227,6 +228,17 @@ from .model import (
 )
 from .periods import Period, PeriodMarks, local_midnight, period_start
 from .plausible import plausible_hours
+from .power import (
+    COARSE_HEAT,
+    NO_DHW_SPLIT,
+    NO_HOURLY_HEAT,
+    NO_RUN_TIME,
+    day_full_hours,
+    day_hours,
+    full_hours,
+    power_figures,
+    shares,
+)
 from .price_feed import PriceFeed
 from .profiles import EMS_ESP, RegistryEntry, Template, find, parse_compressor
 from .report import (
@@ -1404,16 +1416,7 @@ class HeatPumpRuntime:
         statistics: dict[date, dict[str, list[float]]] = {}
         # A start counter is optional: without it the look-back gives the
         # share, not the starts (P1P2MQTT counts all modes' starts only).
-        if entity_id := self.entities.get(Signal.RUNTIME_HEATING):
-            state = self.hass.states.get(entity_id)
-            unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) if state else None
-            minutes = {
-                h: m
-                for h, change in temps.get(Signal.RUNTIME_HEATING, {}).items()
-                if (m := runtime_minutes(change, unit)) is not None
-            }
-            if not minutes and temps.get(Signal.RUNTIME_HEATING):
-                self._count("unit:runtime_heating")
+        if (minutes := self._runtime_minutes(temps)) is not None:
             statistics = statistics_classes(
                 minutes,
                 temps.get(Signal.STARTS_HEATING, {})
@@ -1452,6 +1455,100 @@ class HeatPumpRuntime:
             ),
             "short_run_minutes": short_minutes,
         }
+
+    def _runtime_minutes(
+        self, temps: dict[Signal, dict[datetime, float]]
+    ) -> dict[datetime, float] | None:
+        """Hourly run time of heating in minutes from the daily query; None
+        without a run time counter."""
+        if (entity_id := self.entities.get(Signal.RUNTIME_HEATING)) is None:
+            return None
+        state = self.hass.states.get(entity_id)
+        unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) if state else None
+        minutes = {
+            h: m
+            for h, change in temps.get(Signal.RUNTIME_HEATING, {}).items()
+            if (m := runtime_minutes(change, unit)) is not None
+        }
+        if not minutes and temps.get(Signal.RUNTIME_HEATING):
+            self._count("unit:runtime_heating")
+        return minutes
+
+    @property
+    def power_reason(self) -> str | None:
+        """Why there is no measured power per outdoor class (power.py), or
+        None when the signals allow it."""
+        if self.template.previous_day:
+            return NO_HOURLY_HEAT
+        if (
+            Signal.COMPRESSOR not in self.entities
+            and Signal.RUNTIME_HEATING not in self.entities
+        ):
+            return NO_RUN_TIME
+        if (
+            heat_signal(self.entities, Mode.HEATING) is Signal.HEAT_TOTAL
+            and not self.has_activity
+        ):
+            return NO_DHW_SPLIT  # hot water hours would count as heating
+        if self.heat_coarse(Mode.HEATING):
+            return COARSE_HEAT
+        return None
+
+    def _power(
+        self,
+        current: datetime,
+        previous: datetime,
+        yesterday: date,
+        hours: dict[datetime, Totals],
+        building: dict[datetime, Totals],
+        outdoor: dict[datetime, float],
+        temps: dict[Signal, dict[datetime, float]],
+    ) -> None:
+        """Measured heating power per outdoor class of both seasons
+        (power.py), into the duty figures: the same days, the same season
+        shown. Only data the analysis has read anyway."""
+        if (reason := self.power_reason) is not None:
+            self.duty["power"] = {"reason": reason}
+            return
+        minutes = self._runtime_minutes(temps)
+        local = lambda at: at.astimezone(self.tz).date()  # noqa: E731
+        spans = {
+            "current": (local(current), yesterday),
+            "previous": (local(previous), local(current) - timedelta(days=1)),
+        }
+        power: dict[str, Any] = {}
+        for name, (first, last) in spans.items():
+            found, days, from_statistics = full_hours(
+                self.diary, minutes, first, last, self.tz
+            )
+            duty = self.duty.get(name)
+            power[name] = power_figures(
+                hours,
+                building,
+                outdoor,
+                found,
+                first,
+                last,
+                self.tz,
+                shares=shares(duty.classes, MIN_CLASS_HOURS)
+                if isinstance(duty, DutyFigures)
+                else {},
+                lag=1 if self.template.day_values else 0,
+                days=days,
+                days_from_statistics=from_statistics,
+            )
+        self.duty["power"] = power
+        figures = power.get(self.duty.get("season", ""))
+        load = self.heat_load
+        self.duty["expected_continuous_below_measured"] = (
+            None
+            if figures is None
+            or load is None
+            or not (load.sufficient or load.preliminary)
+            else expected_continuous_below(
+                load.heating_limit, load.slope_kw_per_k, figures.min_kw
+            )
+        )
 
     def seasons(self, now: datetime) -> tuple[datetime, datetime]:
         """Starts of the current and the previous heating season."""
@@ -1592,6 +1689,18 @@ class HeatPumpRuntime:
                 ),
             )
             self.duty = self._duty(now, current, previous, temps, outdoor)
+            try:
+                self._power(
+                    current,
+                    previous,
+                    today - timedelta(days=1),
+                    hours,
+                    building,
+                    outdoor,
+                    temps,
+                )
+            except Exception:  # never block the rest of the analysis
+                _LOGGER.exception("Computing the measured power failed")
             self.oversize = oversizing(
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )
@@ -2134,6 +2243,18 @@ class HeatPumpRuntime:
                 )
                 if Signal.COMPRESSOR in self.entities
                 else None,
+                # Full heating hours as a bit mask over the day's hours
+                # (power.py): one number a day; only with a compressor state.
+                "full_hours": day_full_hours(
+                    self.runs,
+                    self.tracker.open_run,
+                    day_hours(date.fromisoformat(day), self.tz),
+                    min(now, end),
+                    blocked=self._full_hour_blocks(),
+                    gaps=self.gaps,
+                )
+                if Signal.COMPRESSOR in self.entities
+                else None,
                 # Late sources (hourly statistics, previous-day values)
                 # have not booked the day yet at midnight.
                 "energy": None
@@ -2151,6 +2272,12 @@ class HeatPumpRuntime:
             }
         )
         del self.diary[:-DIARY_DAYS]
+
+    def _full_hour_blocks(self) -> list[tuple[datetime, datetime | None]]:
+        """Defrosts and hot water charges: no full heating hour touches one."""
+        defrosts = [*self.defrosts, self.tracker.open_defrost]
+        charges = [*self.charges, self.charge_tracker.open, self.charge_tracker.closing]
+        return [(x.start, x.end) for x in (*defrosts, *charges) if x is not None]
 
     def _judge_spread(self) -> None:
         """At midnight: was yesterday's spread while heating negative?"""

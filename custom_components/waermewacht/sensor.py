@@ -62,6 +62,7 @@ from .model import (
     has_heat,
 )
 from .periods import RATIO_PERIODS, Period
+from .power import oversize_attributes, with_power
 from .price_feed import PeriodCost
 from .prices import FIXED, NO_PRICE, price_source
 from .runtime import HeatPumpRuntime
@@ -892,6 +893,17 @@ def _oversize(runtime: HeatPumpRuntime) -> float | None:
     return None if figure is None else _round(figure.factor, 2)
 
 
+def _oversize_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
+    """The data sheet's figures and the measured power beside them."""
+    figure = runtime.oversize
+    if figure is None:
+        return {}
+    return {
+        **figure.as_attributes(),
+        **oversize_attributes(runtime.duty, figure.load_mild_kw),
+    }
+
+
 HAS_OUTDOOR: Needs = lambda r: (  # noqa: E731
     Signal.OUTDOOR_TEMP in r.entities and _mode_complete(r, Mode.HEATING)
 )
@@ -926,7 +938,12 @@ ANALYSIS = [
             suggested_display_precision=0,
             value=lambda r, key=key: duty_value(r.duty, key),
             needs=lambda r: Signal.COMPRESSOR in r.entities and HAS_OUTDOOR(r),
-            attributes=lambda r, key=key: duty_attributes(r.duty, key),
+            # With the measured power per class (power.py).
+            attributes=lambda r, key=key: with_power(
+                duty_attributes(r.duty, key),
+                r.duty,
+                figures_too=key == "continuous_below",
+            ),
         )
         for key in ("continuous_below", "short_runs_from")
     ),
@@ -972,7 +989,7 @@ ANALYSIS = [
         suggested_display_precision=2,
         value=_oversize,
         needs=lambda r: HAS_OUTDOOR(r) and r.rated_power is not None,
-        attributes=lambda r: {} if r.oversize is None else r.oversize.as_attributes(),
+        attributes=_oversize_attributes,
     ),
     HeatPumpSensorDescription(
         key="flow_at_zero",

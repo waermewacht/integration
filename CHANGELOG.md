@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Gemessene Heizleistung je Außentemperatur.** Aus den Stunden, in denen die Wärmepumpe durchgehend heizt, zeigt „Läuft durch unter“ je 2-K-Klasse die kleinste und größte gemessene Leistung und den Wärmebedarf des Hauses; die Karte „Takte“ zeigt beides in einem zweiten Diagramm. Wo der Bedarf unter die kleinste Leistung fällt, muss sie takten. Kein neues Feld nötig, die Datenblattwerte unter „Leistung je Heizlast“ bleiben zur Gegenprobe.
+
 ## 0.11.0 – 2026-11-14
 
 ### Neu
