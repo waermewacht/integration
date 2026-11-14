@@ -1,0 +1,1931 @@
+{
+ "gateway": "101987654",
+ "entities": [
+  {
+   "entity_id": "binary_sensor.cloud_control_available",
+   "unique_id": "101987654:cloud_control",
+   "original_name": "Cloud control available",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Cloud control available"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "binary_sensor.holiday_mode_active",
+   "unique_id": "101987654:holiday_active",
+   "original_name": "Holiday mode active",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Holiday mode active"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "binary_sensor.system_fault",
+   "unique_id": "101987654:system_fault",
+   "original_name": "System fault",
+   "state": "off",
+   "attributes": {
+    "device_class": "problem",
+    "friendly_name": "System fault"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "calendar.holiday_periods",
+   "unique_id": "101987654:holiday_periods",
+   "original_name": "Holiday periods",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Holiday periods"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "climate.heating_circuit_1",
+   "unique_id": "101987654:heatingCircuits:hc1:climate",
+   "original_name": "Heating circuit 1",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heating circuit 1"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "event.system_notifications",
+   "unique_id": "101987654:system_notifications",
+   "original_name": "System notifications",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "System notifications"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.dhw_1_extra_hot_water_duration",
+   "unique_id": "101987654:dhwCircuits:dhw1:chargeDuration:control",
+   "original_name": "DHW 1: Extra hot water duration",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "min",
+    "friendly_name": "DHW 1: Extra hot water duration"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.dhw_1_extra_hot_water_target",
+   "unique_id": "101987654:dhwCircuits:dhw1:singleChargeSetpoint:control",
+   "original_name": "DHW 1: Extra hot water target",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "DHW 1: Extra hot water target"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.dhw_1_start_threshold_eco",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:eco:control",
+   "original_name": "DHW 1: Start threshold Eco+",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "DHW 1: Start threshold Eco+"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.dhw_1_start_threshold_comfort",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:high:control",
+   "original_name": "DHW 1: Start threshold Comfort",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "DHW 1: Start threshold Comfort"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.dhw_1_start_threshold_eco_2",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:low:control",
+   "original_name": "DHW 1: Start threshold Eco",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "DHW 1: Start threshold Eco"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.hc_1_manual_setpoint",
+   "unique_id": "101987654:heatingCircuits:hc1:manualRoomSetpoint:control",
+   "original_name": "HC 1: Manual setpoint",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "HC 1: Manual setpoint"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.hc_1_flow_temperature_limit",
+   "unique_id": "101987654:heatingCircuits:hc1:maxFlowTemp:control",
+   "original_name": "HC 1: Flow temperature limit",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "HC 1: Flow temperature limit"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "number.hc_1_heating_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:comfort2:control",
+   "original_name": "HC 1: Heating temperature",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "HC 1: Heating temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.hc_1_setback_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:eco:control",
+   "original_name": "HC 1: Setback temperature",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "friendly_name": "HC 1: Setback temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.dhw_1_operating_mode",
+   "unique_id": "101987654:dhwCircuits:dhw1:operationMode:control",
+   "original_name": "DHW 1: Operating mode",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "low",
+     "high",
+     "ownprogram",
+     "eco"
+    ],
+    "friendly_name": "DHW 1: Operating mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.heat_pump_auxiliary_heater",
+   "unique_id": "101987654:heatSources:additionalHeater:operationMode:control",
+   "original_name": "Heat pump: Auxiliary heater",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "Heat pump: Auxiliary heater"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.hc_1_operating_mode",
+   "unique_id": "101987654:heatingCircuits:hc1:operationMode:control",
+   "original_name": "HC 1: Operating mode",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "HC 1: Operating mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.system_season_switching",
+   "unique_id": "101987654:system:seasonOptimizer:mode:control",
+   "original_name": "System: Season switching",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "automatic",
+     "forced_heat"
+    ],
+    "friendly_name": "System: Season switching"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.system_silent_mode",
+   "unique_id": "101987654:system:silentMode:enabled:control",
+   "original_name": "System: Silent mode",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "auto",
+     "on"
+    ],
+    "friendly_name": "System: Silent mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.cloud_requests_last_hour",
+   "unique_id": "101987654:request_metrics:pointt_api_requests_last_hour",
+   "original_name": "Cloud requests – last hour",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "requests",
+    "state_class": "measurement",
+    "friendly_name": "Cloud requests – last hour"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.cloud_requests_total",
+   "unique_id": "101987654:request_metrics:pointt_api_requests_total",
+   "original_name": "Cloud requests total",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "requests",
+    "state_class": "total",
+    "friendly_name": "Cloud requests total"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.cloud_response_time_last_hour",
+   "unique_id": "101987654:request_metrics:pointt_api_response_time_last_hour",
+   "original_name": "Cloud response time – last hour",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "ms",
+    "device_class": "duration",
+    "state_class": "measurement",
+    "friendly_name": "Cloud response time – last hour"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.active_faults",
+   "unique_id": "101987654:active_faults",
+   "original_name": "Active faults",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Active faults"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.active_notifications",
+   "unique_id": "101987654:active_notifications",
+   "original_name": "Active notifications",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Active notifications"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_extra_hot_water",
+   "unique_id": "101987654:dhwCircuits:dhw1:charge",
+   "original_name": "Hot water 1 – Extra hot water",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Hot water 1 – Extra hot water"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_extra_hot_water_duration",
+   "unique_id": "101987654:dhwCircuits:dhw1:chargeDuration",
+   "original_name": "Hot water 1 – Extra hot water duration",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "min",
+    "device_class": "duration",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Extra hot water duration"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_extra_hot_water_remaining_time",
+   "unique_id": "101987654:dhwCircuits:dhw1:chargeRemainingTime",
+   "original_name": "Hot water 1 – Extra hot water remaining time",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "min",
+    "device_class": "duration",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Extra hot water remaining time"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_current_setpoint",
+   "unique_id": "101987654:dhwCircuits:dhw1:currentSetpoint",
+   "original_name": "Hot water 1 – Current setpoint",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Current setpoint"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_current_temperature_level",
+   "unique_id": "101987654:dhwCircuits:dhw1:currentTemperatureLevel",
+   "original_name": "Hot water 1 – Current temperature level",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "low",
+     "high",
+     "eco"
+    ],
+    "friendly_name": "Hot water 1 – Current temperature level"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_operation_mode",
+   "unique_id": "101987654:dhwCircuits:dhw1:operationMode",
+   "original_name": "Hot water 1 – Operation mode",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "low",
+     "high",
+     "ownprogram",
+     "eco",
+     "follow_heating_program"
+    ],
+    "friendly_name": "Hot water 1 – Operation mode"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_temperature_reduction_during_fault",
+   "unique_id": "101987654:dhwCircuits:dhw1:reduceTempOnAlarm",
+   "original_name": "Hot water 1 – Temperature reduction during fault",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Hot water 1 – Temperature reduction during fault"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_extra_hot_water_setpoint",
+   "unique_id": "101987654:dhwCircuits:dhw1:singleChargeSetpoint",
+   "original_name": "Hot water 1 – Extra hot water setpoint",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Extra hot water setpoint"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_time_program_a",
+   "unique_id": "101987654:dhwCircuits:dhw1:switchPrograms:A",
+   "original_name": "Hot water 1 – Time program A",
+   "state": "low",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "low",
+     "eco",
+     "high",
+     "off"
+    ],
+    "friendly_name": "Hot water 1 – Time program A"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_thermal_disinfection",
+   "unique_id": "101987654:dhwCircuits:dhw1:tdMode",
+   "original_name": "Hot water 1 – Thermal disinfection",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Hot water 1 – Thermal disinfection"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_start_threshold_eco",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:eco",
+   "original_name": "Hot water 1 – Start threshold Eco+",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Start threshold Eco+"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_start_threshold_comfort",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:high",
+   "original_name": "Hot water 1 – Start threshold Comfort",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Start threshold Comfort"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_start_threshold_eco_2",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:low",
+   "original_name": "Hot water 1 – Start threshold Eco",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Start threshold Eco"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.hot_water_1_setpoint_level_off",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:off",
+   "original_name": "Hot water 1 – Setpoint level off",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Setpoint level off"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_brand",
+   "unique_id": "101987654:gateway:brand",
+   "original_name": "Gateway – Brand",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Brand"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_data_processing_status",
+   "unique_id": "101987654:gateway:dataProcessing:status",
+   "original_name": "Gateway – Data processing status",
+   "state": "in_progress",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "in_progress",
+     "completed"
+    ],
+    "friendly_name": "Gateway – Data processing status"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_date_and_time",
+   "unique_id": "101987654:gateway:dateTime",
+   "original_name": "Gateway – Date and time",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Date and time"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_environmental_energy_calculated",
+   "unique_id": "101987654:gateway:environmental_energy",
+   "original_name": "Heat pump – Total – Environmental energy (calculated)",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total",
+    "friendly_name": "Heat pump – Total – Environmental energy (calculated)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heating_electricity_consumption",
+   "unique_id": "101987654:gateway:heating_electricity",
+   "original_name": "Heat pump – Heating – Electricity consumption",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Heating – Electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heating_heat_produced",
+   "unique_id": "101987654:gateway:heating_heat_produced",
+   "original_name": "Heat pump – Heating – Heat produced",
+   "state": "18734.6",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total",
+    "friendly_name": "Heat pump – Heating – Heat produced"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_operating_status",
+   "unique_id": "101987654:gateway:heating_status",
+   "original_name": "Heating circuit 1 – Operating status",
+   "state": "ch_enabled",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "ch_enabled",
+     "ch_disabled",
+     "emergency_mode",
+     "floor_drying",
+     "summer_idle",
+     "boost",
+     "away",
+     "holiday",
+     "cooling_manual_on",
+     "cooling_manual_off",
+     "heating_manual_on",
+     "heating_manual_off",
+     "heating_auto"
+    ],
+    "friendly_name": "Heating circuit 1 – Operating status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_hot_water_electricity_consumption",
+   "unique_id": "101987654:gateway:hot_water_electricity",
+   "original_name": "Heat pump – Hot water – Electricity consumption",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Hot water – Electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_hot_water_heat_produced",
+   "unique_id": "101987654:gateway:hot_water_heat_produced",
+   "original_name": "Heat pump – Hot water – Heat produced",
+   "state": "5421.3",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total",
+    "friendly_name": "Heat pump – Hot water – Heat produced"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_operating_status",
+   "unique_id": "101987654:gateway:hot_water_status",
+   "original_name": "Hot water 1 – Operating status",
+   "state": "dhw_enabled",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "dhw_enabled",
+     "dhw_disabled",
+     "auto",
+     "manual_off",
+     "manual_on_low",
+     "manual_on_eco",
+     "manual_on_high",
+     "extra",
+     "away",
+     "holiday",
+     "floor_drying",
+     "td"
+    ],
+    "friendly_name": "Hot water 1 – Operating status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.hot_water_1_hot_water_temperature",
+   "unique_id": "101987654:gateway:hot_water_temperature",
+   "original_name": "Hot water 1 – Hot water temperature",
+   "state": "48.6",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Hot water 1 – Hot water temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_current_modulation",
+   "unique_id": "101987654:gateway:modulation",
+   "original_name": "Heat pump – Current modulation",
+   "state": "34",
+   "attributes": {
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Current modulation"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.system_outdoor_temperature",
+   "unique_id": "101987654:gateway:outdoor_temperature",
+   "original_name": "System – Outdoor temperature",
+   "state": "4.5",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "System – Outdoor temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_return_to_the_heat_source",
+   "unique_id": "101987654:gateway:return_temperature",
+   "original_name": "Heat pump – Return to the heat source",
+   "state": "27.9",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Return to the heat source"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.gateway_serial_number",
+   "unique_id": "101987654:gateway:serialId",
+   "original_name": "Gateway – Serial number",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Serial number"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_system_supply_temperature",
+   "unique_id": "101987654:gateway:supply_temperature",
+   "original_name": "Heat pump – System supply temperature",
+   "state": "31.2",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – System supply temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.gateway_software_family",
+   "unique_id": "101987654:gateway:swPrefix",
+   "original_name": "Gateway – Software family",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Software family"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_system_pressure",
+   "unique_id": "101987654:gateway:system_pressure",
+   "original_name": "Heat pump – System pressure",
+   "state": "1.7",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – System pressure"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_electricity_consumption",
+   "unique_id": "101987654:gateway:total_electricity",
+   "original_name": "Heat pump – Total – Electricity consumption",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Total – Electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_heat_produced",
+   "unique_id": "101987654:gateway:total_heat_produced",
+   "original_name": "Heat pump – Total – Heat produced",
+   "state": "24155.9",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total",
+    "friendly_name": "Heat pump – Total – Heat produced"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.gateway_time_zone",
+   "unique_id": "101987654:gateway:tzInfo:timeZone",
+   "original_name": "Gateway – Time zone",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Time zone"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_software_update_current_progress",
+   "unique_id": "101987654:gateway:update:status:progress.cur_percent",
+   "original_name": "Gateway – Software update Current progress",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Software update Current progress"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_software_update_current_step",
+   "unique_id": "101987654:gateway:update:status:progress.cur_step",
+   "original_name": "Gateway – Software update Current step",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Software update Current step"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_software_update_total_steps",
+   "unique_id": "101987654:gateway:update:status:progress.nsteps",
+   "original_name": "Gateway – Software update Total steps",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Software update Total steps"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_software_update_progress",
+   "unique_id": "101987654:gateway:update:status:progress.percent",
+   "original_name": "Gateway – Software update Progress",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Software update Progress"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_software_update_status",
+   "unique_id": "101987654:gateway:update:status:status.value",
+   "original_name": "Gateway – Software update Status",
+   "state": "idle",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "idle",
+     "running",
+     "success",
+     "failed"
+    ],
+    "friendly_name": "Gateway – Software update Status"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_gateway_id",
+   "unique_id": "101987654:gateway:uuid",
+   "original_name": "Gateway – Gateway ID",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Gateway ID"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_firmware_version",
+   "unique_id": "101987654:gateway:versionFirmware",
+   "original_name": "Gateway – Firmware version",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Firmware version"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.gateway_hardware_version",
+   "unique_id": "101987654:gateway:versionHardware",
+   "original_name": "Gateway – Hardware version",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Gateway – Hardware version"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_auxiliary_heater_status",
+   "unique_id": "101987654:heatSources:Source:eHeater:status",
+   "original_name": "Heat pump – Auxiliary heater status",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "dhw",
+     "pool",
+     "pool_heat",
+     "defrost",
+     "alarm"
+    ],
+    "friendly_name": "Heat pump – Auxiliary heater status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_current_heat_demand",
+   "unique_id": "101987654:heatSources:actualHeatDemand:values",
+   "original_name": "Heat pump – Current heat demand",
+   "state": "none",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "none",
+     "ch",
+     "dhw",
+     "frost",
+     "ch_dhw",
+     "ch_frost",
+     "dhw_frost",
+     "ch_dhw_frost",
+     ""
+    ],
+    "friendly_name": "Heat pump – Current heat demand"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_auxiliary_heater_operation_mode",
+   "unique_id": "101987654:heatSources:additionalHeater:operationMode",
+   "original_name": "Heat pump – Auxiliary heater operation mode",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "Heat pump – Auxiliary heater operation mode"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_compressor_status",
+   "unique_id": "101987654:heatSources:compressor:status",
+   "original_name": "Heat pump – Compressor status",
+   "state": "heating",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "cooling",
+     "dhw",
+     "pool",
+     "pool_heat",
+     "defrost",
+     "alarm"
+    ],
+    "friendly_name": "Heat pump – Compressor status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_energy_management_status",
+   "unique_id": "101987654:heatSources:emStatus",
+   "original_name": "Heat pump – Energy management status",
+   "state": "not_connected",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "not_connected",
+     "inactive",
+     "active_ch",
+     "active_dhw",
+     "active_em",
+     "connected",
+     "active",
+     "error"
+    ],
+    "friendly_name": "Heat pump – Energy management status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heating_heat_pump_electricity_consumption",
+   "unique_id": "101987654:heatSources:emon:chConsumption:compressor",
+   "original_name": "Heat pump – Heating – Heat pump electricity consumption",
+   "state": "4980.2",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Heating – Heat pump electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heating_electric_auxiliary_heater_consumption",
+   "unique_id": "101987654:heatSources:emon:chConsumption:eheater",
+   "original_name": "Heat pump – Heating – Electric auxiliary heater consumption",
+   "state": "12.0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Heating – Electric auxiliary heater consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_cooling_heat_pump_electricity_consumption",
+   "unique_id": "101987654:heatSources:emon:coolingConsumption:compressor",
+   "original_name": "Heat pump – Cooling – Heat pump electricity consumption",
+   "state": "141.9",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Cooling – Heat pump electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_cooling_cooling_energy_produced",
+   "unique_id": "101987654:heatSources:emon:coolingConsumption:outputProduced",
+   "original_name": "Heat pump – Cooling – Cooling energy produced",
+   "state": "612.4",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total",
+    "friendly_name": "Heat pump – Cooling – Cooling energy produced"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_hot_water_heat_pump_electricity_consumption",
+   "unique_id": "101987654:heatSources:emon:dhwConsumption:compressor",
+   "original_name": "Heat pump – Hot water – Heat pump electricity consumption",
+   "state": "1903.7",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Hot water – Heat pump electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_hot_water_electric_auxiliary_heater_consumption",
+   "unique_id": "101987654:heatSources:emon:dhwConsumption:eheater",
+   "original_name": "Heat pump – Hot water – Electric auxiliary heater consumption",
+   "state": "38.0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Hot water – Electric auxiliary heater consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_heat_pump_electricity_consumption",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:compressor",
+   "original_name": "Heat pump – Total – Heat pump electricity consumption",
+   "state": "7025.8",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Total – Heat pump electricity consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_electric_auxiliary_heater_consumption",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:eheater",
+   "original_name": "Heat pump – Total – Electric auxiliary heater consumption",
+   "state": "50.0",
+   "attributes": {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Total – Electric auxiliary heater consumption"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heat_source_active",
+   "unique_id": "101987654:heatSources:flameStatus",
+   "original_name": "Heat pump – Heat source active",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Heat pump – Heat source active"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_heat_pump_type",
+   "unique_id": "101987654:heatSources:hs1:heatPumpType",
+   "original_name": "Heat pump – Heat pump type",
+   "state": "air_water",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "air_water",
+     "brine_water",
+     "exhaust_air"
+    ],
+    "friendly_name": "Heat pump – Heat pump type"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts_heating",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:ch",
+   "original_name": "Heat pump – Number of starts Heating",
+   "state": "1984",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts Heating"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts_cooling",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:cooling",
+   "original_name": "Heat pump – Number of starts Cooling",
+   "state": "0",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts Cooling"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts_hot_water",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:dhw",
+   "original_name": "Heat pump – Number of starts Hot water",
+   "state": "0",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts Hot water"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts_pool_heating",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:pool",
+   "original_name": "Heat pump – Number of starts Pool heating",
+   "state": "0",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts Pool heating"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts_total",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:total",
+   "original_name": "Heat pump – Number of starts Total",
+   "state": "3120",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts Total"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_condenser_outlet_temperature_tc3",
+   "unique_id": "101987654:heatSources:hs1:supplyFlowCondenserTemp",
+   "original_name": "Heat pump – Condenser outlet temperature (TC3)",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Condenser outlet temperature (TC3)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_heat_source_type",
+   "unique_id": "101987654:heatSources:hs1:type",
+   "original_name": "Heat pump – Heat source type",
+   "state": "no_appliance",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "no_appliance",
+     "heatpump",
+     "boiler",
+     "boiler_oil",
+     "boiler_gas",
+     "boiler_unknown",
+     "hybrid",
+     "eBoiler"
+    ],
+    "friendly_name": "Heat pump – Heat source type"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_operating_time_heating",
+   "unique_id": "101987654:heatSources:hs1:workingTime:ch",
+   "original_name": "Heat pump – Operating time Heating",
+   "state": "6105",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Operating time Heating"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_operating_time_cooling",
+   "unique_id": "101987654:heatSources:hs1:workingTime:cooling",
+   "original_name": "Heat pump – Operating time Cooling",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Operating time Cooling"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_operating_time_hot_water",
+   "unique_id": "101987654:heatSources:hs1:workingTime:dhw",
+   "original_name": "Heat pump – Operating time Hot water",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Operating time Hot water"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_operating_time_total",
+   "unique_id": "101987654:heatSources:hs1:workingTime:total",
+   "original_name": "Heat pump – Operating time Total",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Operating time Total"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heat_pump_number_of_starts",
+   "unique_id": "101987654:heatSources:numberOfStarts",
+   "original_name": "Heat pump – Number of starts",
+   "state": "0",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Number of starts"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_absolute_maximum_pressure",
+   "unique_id": "101987654:heatSources:systemPressureRange:absoluteHighPressure",
+   "original_name": "Heat pump – Permitted pressure range Absolute maximum pressure",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range Absolute maximum pressure"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_upper_pressure_limit",
+   "unique_id": "101987654:heatSources:systemPressureRange:highPressureThreshold",
+   "original_name": "Heat pump – Permitted pressure range Upper pressure limit",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range Upper pressure limit"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_high_system_pressure",
+   "unique_id": "101987654:heatSources:systemPressureRange:highSystemPressure",
+   "original_name": "Heat pump – Permitted pressure range High system pressure",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range High system pressure"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_lower_pressure_limit",
+   "unique_id": "101987654:heatSources:systemPressureRange:lowPressureThreshold",
+   "original_name": "Heat pump – Permitted pressure range Lower pressure limit",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range Lower pressure limit"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_low_system_pressure",
+   "unique_id": "101987654:heatSources:systemPressureRange:lowSystemPressure",
+   "original_name": "Heat pump – Permitted pressure range Low system pressure",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range Low system pressure"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_permitted_pressure_range_shutdown_pressure",
+   "unique_id": "101987654:heatSources:systemPressureRange:shutOfPressureThreshold",
+   "original_name": "Heat pump – Permitted pressure range Shutdown pressure",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "bar",
+    "device_class": "pressure",
+    "state_class": "measurement",
+    "friendly_name": "Heat pump – Permitted pressure range Shutdown pressure"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_total_system_runtime",
+   "unique_id": "101987654:heatSources:workingTime:totalSystem",
+   "original_name": "Heat pump – Total system runtime",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "total_increasing",
+    "friendly_name": "Heat pump – Total system runtime"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_generator",
+   "unique_id": "101987654:heat_generator",
+   "original_name": "Heat generator",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heat generator"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_active_schedule",
+   "unique_id": "101987654:heatingCircuits:hc1:activeSwitchProgram",
+   "original_name": "Heating circuit 1 – Active schedule",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heating circuit 1 – Active schedule"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_boost_duration",
+   "unique_id": "101987654:heatingCircuits:hc1:boostDuration",
+   "original_name": "Heating circuit 1 – Boost duration",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "h",
+    "device_class": "duration",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Boost duration"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_boost",
+   "unique_id": "101987654:heatingCircuits:hc1:boostMode",
+   "original_name": "Heating circuit 1 – Boost",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heating circuit 1 – Boost"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_control_type",
+   "unique_id": "101987654:heatingCircuits:hc1:controlType",
+   "original_name": "Heating circuit 1 – Control type",
+   "state": "room",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "room",
+     "outdoor",
+     "wdc",
+     "wdcoptimized",
+     "wdcsimplified",
+     "mpc",
+     "room_flow_temperature",
+     "room_power",
+     "constant",
+     "valve_feedback_control",
+     "isrc",
+     "vbh",
+     "external"
+    ],
+    "friendly_name": "Heating circuit 1 – Control type"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_target_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:currentRoomSetpoint",
+   "original_name": "Heating circuit 1 – Target temperature",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Target temperature"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_summer_winter_mode",
+   "unique_id": "101987654:heatingCircuits:hc1:currentSuWiMode",
+   "original_name": "Heating circuit 1 – Summer/winter mode",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "forced",
+     "cooling"
+    ],
+    "friendly_name": "Heating circuit 1 – Summer/winter mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_heating_cooling_mode",
+   "unique_id": "101987654:heatingCircuits:hc1:heatCoolMode",
+   "original_name": "Heating circuit 1 – Heating/cooling mode",
+   "state": "heat",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "heat",
+     "cool",
+     "heat_cool"
+    ],
+    "friendly_name": "Heating circuit 1 – Heating/cooling mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_heating_system",
+   "unique_id": "101987654:heatingCircuits:hc1:heatingType",
+   "original_name": "Heating circuit 1 – Heating system",
+   "state": "floor",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "floor",
+     "radiator",
+     "convector",
+     "airHeating"
+    ],
+    "friendly_name": "Heating circuit 1 – Heating system"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_manual_setpoint",
+   "unique_id": "101987654:heatingCircuits:hc1:manualRoomSetpoint",
+   "original_name": "Heating circuit 1 – Manual setpoint",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Manual setpoint"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_maximum_supply_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:maxFlowTemp",
+   "original_name": "Heating circuit 1 – Maximum supply temperature",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Maximum supply temperature"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_operation_mode",
+   "unique_id": "101987654:heatingCircuits:hc1:operationMode",
+   "original_name": "Heating circuit 1 – Operation mode",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "Heating circuit 1 – Operation mode"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_schedule_type",
+   "unique_id": "101987654:heatingCircuits:hc1:switchProgramMode",
+   "original_name": "Heating circuit 1 – Schedule type",
+   "state": "level",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "level",
+     "levels",
+     "absolute"
+    ],
+    "friendly_name": "Heating circuit 1 – Schedule type"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_time_program_a",
+   "unique_id": "101987654:heatingCircuits:hc1:switchPrograms:A",
+   "original_name": "Heating circuit 1 – Time program A",
+   "state": "comfort1",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "comfort1",
+     "comfort2",
+     "comfort3",
+     "eco",
+     "off"
+    ],
+    "friendly_name": "Heating circuit 1 – Time program A"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_schedule_a_name",
+   "unique_id": "101987654:heatingCircuits:hc1:switchPrograms:nameA",
+   "original_name": "Heating circuit 1 – Schedule A name",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heating circuit 1 – Schedule A name"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_heating_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:comfort2",
+   "original_name": "Heating circuit 1 – Heating temperature",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Heating temperature"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_circuit_1_setback_temperature",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:eco",
+   "original_name": "Heating circuit 1 – Setback temperature",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Heating circuit 1 – Setback temperature"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.next_holiday",
+   "unique_id": "101987654:next_holiday",
+   "original_name": "Next holiday",
+   "state": "unknown",
+   "attributes": {
+    "device_class": "timestamp",
+    "friendly_name": "Next holiday"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.system_away_mode",
+   "unique_id": "101987654:system:awayMode:enabled",
+   "original_name": "System – Away mode",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "System – Away mode"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_brand",
+   "unique_id": "101987654:system:brand",
+   "original_name": "System – Brand",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "System – Brand"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_system_bus",
+   "unique_id": "101987654:system:bus",
+   "original_name": "System – System bus",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "System – System bus"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_country",
+   "unique_id": "101987654:system:country",
+   "original_name": "System – Country",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "System – Country"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_current_heating_cooling_status",
+   "unique_id": "101987654:system:globalSeasonOptimizer:currentMode",
+   "original_name": "System – Current heating/cooling status",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "cooling",
+     "automatic",
+     "forced_heat",
+     "forced_cool"
+    ],
+    "friendly_name": "System – Current heating/cooling status"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_isrc_installation_status",
+   "unique_id": "101987654:system:iSRC:installationStatus",
+   "original_name": "System – iSRC installation status",
+   "state": "timeout",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "timeout",
+     "IN_PROGRESS",
+     "SUCCESS"
+    ],
+    "friendly_name": "System – iSRC installation status"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_isrc_support",
+   "unique_id": "101987654:system:iSRC:supportStatus",
+   "original_name": "System – iSRC support",
+   "state": "not_supported_incompatible_controller",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "not_supported_incompatible_controller",
+     "not_supported_pairing_enabled",
+     "supported",
+     "in_evaluation"
+    ],
+    "friendly_name": "System – iSRC support"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_system_information",
+   "unique_id": "101987654:system:info",
+   "original_name": "System – System information",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "System – System information"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_power_limitation_active",
+   "unique_id": "101987654:system:powerLimitation:active",
+   "original_name": "System – Power limitation active",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "System – Power limitation active"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.system_season_switching",
+   "unique_id": "101987654:system:seasonOptimizer:mode",
+   "original_name": "System – Season switching",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "cooling",
+     "automatic",
+     "forced_heat",
+     "forced_cool"
+    ],
+    "friendly_name": "System – Season switching"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_outdoor_temperature_source",
+   "unique_id": "101987654:system:sensors:temperatures:outdoorTemperatureSource",
+   "original_name": "System – Outdoor temperature source",
+   "state": "appliance",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "appliance",
+     "internet",
+     "roomcontroller",
+     "module",
+     "rf"
+    ],
+    "friendly_name": "System – Outdoor temperature source"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_silent_mode_enabled",
+   "unique_id": "101987654:system:silentMode:enabled",
+   "original_name": "System – Silent mode enabled",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start",
+     "auto"
+    ],
+    "friendly_name": "System – Silent mode enabled"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_system_type",
+   "unique_id": "101987654:system:type",
+   "original_name": "System – System type",
+   "state": "heatpump_single",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "heatpump_single",
+     "heatpump_cascade",
+     "boiler_single",
+     "hybrid",
+     "unknown"
+    ],
+    "friendly_name": "System – System type"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.system_variable_tariff_support",
+   "unique_id": "101987654:system:variableTariff:supportStatus:values",
+   "original_name": "System – Variable tariff – support",
+   "state": "not_supported",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "not_supported",
+     "supported",
+     "active",
+     "vta_gateway",
+     "in_evaluation",
+     "blocked"
+    ],
+    "friendly_name": "System – Variable tariff – support"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heat_pump_system_pressure_status_calculated",
+   "unique_id": "101987654:system_pressure_status",
+   "original_name": "Heat pump – System pressure status (calculated)",
+   "state": "normal",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "critical_low",
+     "low",
+     "normal",
+     "high",
+     "critical_high"
+    ],
+    "friendly_name": "Heat pump – System pressure status (calculated)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.dhw_1_extra_hot_water",
+   "unique_id": "101987654:dhwCircuits:dhw1:charge:control",
+   "original_name": "DHW 1: Extra hot water",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "DHW 1: Extra hot water"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.dhw_1_reduce_on_alarm",
+   "unique_id": "101987654:dhwCircuits:dhw1:reduceTempOnAlarm:control",
+   "original_name": "DHW 1: Reduce on alarm",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "DHW 1: Reduce on alarm"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.system_away_mode",
+   "unique_id": "101987654:system:awayMode:enabled:control",
+   "original_name": "System: Away mode",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "System: Away mode"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "water_heater.hot_water_1",
+   "unique_id": "101987654:dhwCircuits:dhw1:water_heater",
+   "original_name": "Hot water 1",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Hot water 1"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.compressor_running_display_signal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HMI.CompressorActive",
+   "original_name": "Compressor running (display signal)",
+   "state": "on",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Compressor running (display signal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.compressor_running_heat_pump_signal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CompressorStatus",
+   "original_name": "Compressor running (heat pump signal)",
+   "state": "on",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Compressor running (heat pump signal)"
+   },
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.primary_supply_temperature_tc1",
+   "unique_id": "101987654:local_only:heatSources:additionalHeater:flowTemp",
+   "original_name": "Primary supply temperature (TC1)",
+   "state": "32.4",
+   "attributes": {
+    "unit_of_measurement": "°C",
+    "device_class": "temperature",
+    "state_class": "measurement",
+    "friendly_name": "Primary supply temperature (TC1)"
+   },
+   "disabled_by_default": false
+  }
+ ]
+}

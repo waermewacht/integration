@@ -129,5 +129,10 @@
     "source": "MQTT payloads ems-esp/heatpump_data (complete) and ems-esp/boiler_data (part) of a hybrid system Buderus Logano GB125 + Hybrid Manager HM200.2 via EMS-ESP 3.8.6, posted by a user (simon42 95035 #40 and PN, 2026-11-06); entity and unique ids built by EMS-ESP's rule for the default format 'single instance, short names' (mqtt.cpp: '<device>_<tag>_<shortname>', no 3.6 names for the device heatpump).",
     "real": "which values the two devices deliver (keys), the split of the counters (heat pump on 'heatpump', boiler with gasmeter on 'boiler'), resolution 0.01 kWh of nrg/meter and 0.1 kWh of el*/fuel*, activity word 'Heizen' (EMS-ESP German), compressor only as speed in %.",
     "made_up": "every state value; attributes (unit, device and state class) follow EMS-ESP's discovery for kWh, °C, W and % and were not read from this installation's registry."
+  },
+  "bosch_buderus_heating_k40.json": {
+    "source": "Entity baseline of SoftwareSchmied/ha-bosch-buderus-heating v0.9.1 (MIT, tests/fixtures/w0-entity-baseline.json, plant 'k40', read on 2026-11-14) plus the three local-only entities of local_only.py (SRC.CUHP.HMI.CompressorActive, SRC.CUHP.HP1.CompressorStatus, /heatSources/additionalHeater/flowTemp); mapping proposed by the integration's author in waermewacht/integration#7. Not read from a real installation.",
+    "real": "unique id format '<gateway>:<key>' and every key of the k40 plant (platform bosch_buderus_heating), the local-only key format, units, device and state classes (heat 'total', electricity 'total_increasing'), enum options, entities disabled by default, original names.",
+    "made_up": "the gateway id (the baseline uses 'gateway-one'), entity ids (slugs of the original names), every state value."
   }
 }

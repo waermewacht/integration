@@ -34,6 +34,7 @@ FIXTURES = {
     "esphome_ecodan.json": "esphome_ecodan",
     "buderus_mx300.json": "buderus",
     "buderus_k40_real.json": "buderus",
+    "bosch_buderus_heating_k40.json": "bosch_buderus",
     "p1p2mqtt_altherma3.json": "p1p2mqtt",
     "p1p2mqtt_altherma3_real.json": "p1p2mqtt",
 }
