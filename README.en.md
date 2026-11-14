@@ -84,7 +84,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | [Mitsubishi Ecodan with ESPHome](https://github.com/gekkekoe/esphome-ecodan-hp) (`esphome`, esphome-ecodan-hp) | beta, from the source code; performance factors, cycling and defrosts |
 | [Waterkotte EcoTouch](https://github.com/marq24/ha-waterkotte) (`waterkotte_heatpump`) | beta, from the source code; compressor electricity as a total only |
 | [Buderus/Bosch via MX300, MX400, K30](https://github.com/BassXT/buderus) (`buderus_ha`) | beta, from the source code; performance factors, cycling and defrosts |
-| [Bosch/Buderus Home Comfort](https://github.com/SoftwareSchmied/ha-bosch-buderus-heating) (`bosch_buderus_heating`), cloud and local via K40/K40RF | beta, proposed by the integration's author and checked against the source code; performance factors, cycling, defrosts, system pressure |
+| [Bosch/Buderus Home Comfort](https://github.com/SoftwareSchmied/ha-bosch-buderus-heating) (`bosch_buderus_heating`), cloud and local via K40/K40RF | beta, proposed by the integration's author and confirmed on a real system (Buderus MX400/K40RF); performance factors, cycling, defrosts, cooling, flow rate, system pressure |
 | [Daikin Altherma via P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | template, tested on two Altherma 3; performance factors, cycling and defrosts, meters in whole kWh |
 | any heat and electricity meters | manual mapping |
 

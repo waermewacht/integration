@@ -84,7 +84,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | [Mitsubishi Ecodan mit ESPHome](https://github.com/gekkekoe/esphome-ecodan-hp) (`esphome`, esphome-ecodan-hp) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
 | [Waterkotte EcoTouch](https://github.com/marq24/ha-waterkotte) (`waterkotte_heatpump`) | Beta, aus dem Quellcode; Kompressorstrom nur gesamt |
 | [Buderus/Bosch über MX300, MX400, K30](https://github.com/BassXT/buderus) (`buderus_ha`) | Beta, aus dem Quellcode; Arbeitszahlen, Takte und Abtauen |
-| [Bosch/Buderus Home Comfort](https://github.com/SoftwareSchmied/ha-bosch-buderus-heating) (`bosch_buderus_heating`), Cloud und lokal über K40/K40RF | Beta, vom Autor der Integration vorgeschlagen und am Quellcode geprüft; Arbeitszahlen, Takte, Abtauen, Anlagendruck |
+| [Bosch/Buderus Home Comfort](https://github.com/SoftwareSchmied/ha-bosch-buderus-heating) (`bosch_buderus_heating`), Cloud und lokal über K40/K40RF | Beta, vom Autor der Integration vorgeschlagen und an einer echten Anlage bestätigt (Buderus MX400/K40RF); Arbeitszahlen, Takte, Abtauen, Kühlen, Durchfluss, Anlagendruck |
 | [Daikin Altherma über P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | Vorlage, erprobt an zwei Altherma 3; Arbeitszahlen, Takte und Abtauen, Zähler in ganzen kWh |
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
