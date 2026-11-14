@@ -4,7 +4,7 @@
 
 ### Neu
 
-- **Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Gütegrad mit der Quelltemperatur.** Unter Neu konfigurieren → Messwerte → Quelltemperatur (Sole) trägst du die Temperatur der Quelle am Eintritt in die Wärmepumpe ein (etwa den Sole- oder Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur, die im Winter einen zu hohen Gütegrad ergab; den Vergleich mit dem Feldtest für Luft/Wasser zeigt die Karte dann nicht. Bei Luft/Wasser bleibt das Feld leer. (danke an MartyBr, simon42-Forum)
+- **Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Gütegrad mit der Quelltemperatur.** Unter Neu konfigurieren → Messwerte → Quelltemperatur (Sole) trägst du die Temperatur der Quelle am Eintritt in die Wärmepumpe ein (etwa den Sole- oder Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur, die im Winter einen zu hohen Gütegrad ergab; die Karte vergleicht dann mit dem Fraunhofer-Feldtest für Sole/Wasser (0,44–0,52). Bei Luft/Wasser bleibt das Feld leer. (danke an MartyBr, simon42-Forum)
 
 ## 0.10.0 – 2026-11-14
 

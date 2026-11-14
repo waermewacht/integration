@@ -1131,7 +1131,7 @@ class WaermewachtCard extends HTMLElement {
    * Fraunhofer ISE beside it; without a return temperature a note instead
    * (the factor comes out too high); before 14 heating days the progress.
    * With the brine as the source (source_signal "source_temp") "source:
-   * brine" and no field range: those values are for air/water. */
+   * brine" in front; field_reference then holds the brine/water values. */
   _efficiencyFactor(t) {
     const state = this._state("efficiency_factor");
     if (!state) return "";
@@ -1142,14 +1142,15 @@ class WaermewachtCard extends HTMLElement {
       extra = t.factorDays(a.days ?? 0, 14);
     } else if (a.sink === "flow_only") {
       extra = brine ? `${t.factorBrine} · ${t.factorFlowOnly}` : t.factorFlowOnly;
-    } else if (brine) {
-      extra = t.factorBrine;
     } else if (a.field_reference) {
       // The field test covers November to March: the winter compares with it.
       const field = t.factorField(this._num(a.field_reference.min, 2), this._num(a.field_reference.max, 2));
       const winter = a.winter?.value;
       extra = winter !== null && winter !== undefined
         ? `${t.factorWinter} ${this._num(winter, 2)} · ${field}` : field;
+      if (brine) extra = `${t.factorBrine} · ${extra}`;
+    } else if (brine) {
+      extra = t.factorBrine;
     }
     return this._own("efficiency_factor", t.tiles.efficiency_factor, extra);
   }

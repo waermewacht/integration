@@ -566,8 +566,8 @@ def test_brine_look_back_from_the_source_hours() -> None:
     )
 
 
-def test_brine_without_field_comparison() -> None:
-    """Fraunhofer's field values are for air/water: left out with the brine."""
+def test_brine_compares_with_the_brine_field_values() -> None:
+    """Fraunhofer's field values for the kind of source (brine/water: 9 units)."""
     outdoor = [entry(DAY + timedelta(days=i)) for i in range(14)]
     season = efficiency_factor(outdoor, DAY, DAY + timedelta(days=13), min_days=14)
     attributes = factor_attributes({"season": season})
@@ -579,7 +579,10 @@ def test_brine_without_field_comparison() -> None:
     )
     attributes = factor_attributes({"season": season, "winter": season})
     assert attributes["source_signal"] == SOURCE_BRINE
-    assert attributes["field_reference"] is None
+    assert attributes["field_reference"] == field_reference(SOURCE_BRINE)
+    assert attributes["field_reference"]["mean"] == 0.46
+    assert attributes["field_reference"]["units"] == 9
+    assert "brine/water" in attributes["field_reference"]["source"]
     assert attributes["source_temp"] == 6.0
     assert season.value is not None
     assert attributes["winter"]["value"] == round(season.value, 2)

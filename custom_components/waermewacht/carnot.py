@@ -39,8 +39,9 @@ heating ("source_heating"); a day without it (before the field was set)
 comes from the look-back with the hourly means of that entity. Such an
 entry never falls back to the outdoor temperature (air and brine mixed
 would be wrong), and an entry without it never uses the brine. The
-field values above are for air/water only: with the brine the
-attributes leave them out (`field_reference: None`, `source_signal`).
+field values are Fraunhofer's for the kind of source: air/water above,
+brine/water 0.44-0.52, mean 0.46, 9 units, same study and period
+(Günther et al. 2026, GESUNDHEITSCHECK 4.14; a small sample).
 
 Lower heating curve (health check 4.14, second part): with the period's
 own factor g, the electricity at a sink k kelvin lower is
@@ -83,6 +84,10 @@ KELVIN = 273.15
 FIELD_FACTOR = 0.39
 FIELD_RANGE = (0.32, 0.44)
 FIELD_UNITS = 36
+# The same study, brine/water heat pumps (9 units).
+FIELD_FACTOR_BRINE = 0.46
+FIELD_RANGE_BRINE = (0.44, 0.52)
+FIELD_UNITS_BRINE = 9
 # A day counts with this much heating time (as the flow temperature of 4.5).
 MIN_HEATING_SECONDS = 2 * 3600.0
 # Own assumption: below this lift the Carnot COP grows so large that 0.5 K
@@ -487,10 +492,7 @@ def factor_attributes(
         # November to March, the period of the field test.
         "winter": short("winter"),
         "previous_winter": short("previous_winter"),
-        # Air/water field values: not for a brine source (none of our own).
-        "field_reference": field_reference()
-        if season.source_signal == SOURCE_OUTDOOR
-        else None,
+        "field_reference": field_reference(season.source_signal),
         # Fixed electricity price for the euro of the lower heating curve.
         "price_eur_per_kwh": price_eur_per_kwh,
     }
@@ -527,8 +529,17 @@ def lower_flow_figure(
     return None
 
 
-def field_reference() -> dict[str, Any]:
-    """The field values to compare with (attribute)."""
+def field_reference(source_signal: str = SOURCE_OUTDOOR) -> dict[str, Any]:
+    """The field values to compare with (attribute), for the kind of source."""
+    if source_signal == SOURCE_BRINE:
+        return {
+            "mean": FIELD_FACTOR_BRINE,
+            "min": FIELD_RANGE_BRINE[0],
+            "max": FIELD_RANGE_BRINE[1],
+            "units": FIELD_UNITS_BRINE,
+            "source": "Fraunhofer ISE WP-QS (brine/water, space heating)",
+            "period": "November to March",
+        }
     return {
         "mean": FIELD_FACTOR,
         "min": FIELD_RANGE[0],

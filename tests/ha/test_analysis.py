@@ -523,7 +523,7 @@ async def test_efficiency_factor_with_the_brine(
     assert factor.attributes["month"]["value"] == pytest.approx(0.32)
     assert factor.attributes["source_signal"] == "source_temp"
     assert factor.attributes["source_temp"] == 8.0
-    assert factor.attributes["field_reference"] is None
+    assert factor.attributes["field_reference"]["mean"] == 0.46
 
 
 @pytest.mark.freeze_time(NOW)
