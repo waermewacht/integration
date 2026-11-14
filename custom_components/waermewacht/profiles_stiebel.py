@@ -1,9 +1,21 @@
 """Source template: Stiebel Eltron / Tecalor heat pumps via the ISG.
 
 Integration stiebel_eltron_isg (HACS, pail23/stiebel_eltron_isg_component),
-read at tag 2026.10-beta4 (commit 15b8b30) with pystiebeleltron 0.8.0, the
-version its manifest pins. Derived from source code only, not from a real
-installation: experimental until a fixture of a real registry exists.
+first read at tag 2026.10-beta4 (commit 15b8b30, bundling pystiebeleltron
+0.10.0), checked again on 2026-11-14 at tag 2026.11 (commit fbc5ae4, requires
+pystiebeleltron >=0.10.1,<0.11.0 and Home Assistant 2026.11): every key below,
+the unique id format, the energy classes and the status bits are unchanged.
+Derived from source code only, not from a real installation: experimental
+until a fixture of a real registry exists.
+
+Use stiebel_eltron_isg 2026.11 or newer: before it (up to 2026.9; fixed in
+pystiebeleltron 0.10.0, ThyMYthOS/python-stiebel-eltron#108, issue
+pail23/stiebel_eltron_isg_component#738) a WPMsystem counted the previous day
+twice at midnight in the day-and-total counters used here. On the update the
+counters restart at total plus today and may fall once by up to a day; the
+counter keeps its old maximum as the baseline then (counter.py: a drop of at
+most RESET_FRACTION of the reading or RESET_MIN_KWH is no reset), so nothing
+is booked twice.
 
 Unique ids are "<config entry id>_<key>" since 2026.7 (entity.py,
 build_unique_id; older "stiebel_eltron_isg_<name>_<key>" ids are migrated in

@@ -16,7 +16,7 @@
     "made_up": "the serial in the prefix, the model and every state value."
   },
   "stiebel_isg_wpmsystem.json": {
-    "source": "Derived from the source of stiebel_eltron_isg 2026.10-beta4 (15b8b30) and pystiebeleltron 0.8.0, WPMsystem (WPM family), no real installation; read on 2026-10-27.",
+    "source": "Derived from the source of stiebel_eltron_isg 2026.10-beta4 (15b8b30, bundling pystiebeleltron 0.10.0), WPMsystem (WPM family), no real installation; read on 2026-10-27. Checked again on 2026-11-14 against tag 2026.11 (fbc5ae4, pystiebeleltron >=0.10.1): keys, unique id format, units, device and state classes of the entities used unchanged.",
     "real": "unique id format and keys (platform stiebel_eltron_isg), units, device and state classes, entities disabled by default; entity ids follow the German names via has_entity_name.",
     "made_up": "config entry id, every state value; subset of the entities."
   },

@@ -73,7 +73,7 @@ A gas boiler before switching needs only a gas counter and the outdoor temperatu
 | EMS-ESP with the device `heatpump`: Hybrid Manager HM200 (hybrid system with an oil or gas boiler), HP Module | beta, from the MQTT data of a hybrid system; heat pump and boiler apart, [hybrid system](#hybrid-system) |
 | [Bosch HomeCom](https://github.com/serbanb11/bosch-homecom-hass) (`bosch_homecom`, local and cloud) | template, new, compared with EMS-ESP on the same CS5800i/CS6800i |
 | [Luxtronik](https://github.com/BenPru/luxtronik) (`luxtronik2`; alpha innotec, Novelan) | beta, from the source code; electricity per mode only with newer firmware |
-| [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | beta, from the source code; meters in whole kWh; no cooling electricity, so no EER |
+| [Stiebel Eltron / Tecalor ISG](https://github.com/pail23/stiebel_eltron_isg_component) (`stiebel_eltron_isg`) | beta, from the source code; meters in whole kWh; no cooling electricity, so no EER; reliable from stiebel_eltron_isg 2026.11 on (older versions count the previous day twice at midnight on a WPMsystem, [#738](https://github.com/pail23/stiebel_eltron_isg_component/issues/738)) |
 | [Panasonic Aquarea via HeishaMon](https://github.com/kamaradclimber/heishamon-homeassistant) (`aquarea`) | template, tested on a real installation; energy summed up from the power values, no backup heater |
 | [Lambda](https://github.com/GuidoJeuken-6512/lambda_heat_pumps) (`lambda_heat_pumps`) | template, tested on an EU13L; own meters for defrost and standby |
 | [iDM Navigator 2.0](https://github.com/Xerolux/idm-heatpump-hass) (`idm_heatpump`, with web interface) | beta, from the source code |
