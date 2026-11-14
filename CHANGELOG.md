@@ -4,13 +4,13 @@
 
 ### Neu
 
-- **Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Gütegrad mit der Quelltemperatur.** Unter Neu konfigurieren → Messwerte → Quelltemperatur (Sole) trägst du die Temperatur der Quelle am Eintritt in die Wärmepumpe ein (etwa den Sole- oder Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur, die im Winter einen zu hohen Gütegrad ergab; die Karte vergleicht dann mit dem Fraunhofer-Feldtest für Sole/Wasser (0,44–0,52). Bei Luft/Wasser bleibt das Feld leer. (danke an MartyBr, simon42-Forum)
+- **Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Gütegrad mit der Quelltemperatur.** Unter Neu konfigurieren → Messwerte → Quelltemperatur (Sole) (bei einem Eintrag mit Vorlage unter „Weitere Felder“) trägst du die Temperatur der Quelle am Eintritt in die Wärmepumpe ein (etwa den Sole- oder Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur, die im Winter einen zu hohen Gütegrad ergab; die Karte vergleicht dann mit dem Fraunhofer-Feldtest für Sole/Wasser (0,44–0,52). Bei Luft/Wasser bleibt das Feld leer. (danke an MartyBr, simon42-Forum)
 
 ## 0.10.0 – 2026-11-14
 
 ### Neu
 
-- **Neuer Befund „Anlagendruck gesunken“.** Sinkt der Druck des Heizungswassers in einer Woche um mindestens 0,3 bar unter den höchsten Wochenwert der drei Monate davor, meldet Wärmewacht das, etwa wegen einer Undichtigkeit oder eines Ausdehnungsgefäßes, das Luft verliert. Mit EMS-ESP schlägt er auch an, sobald der Druck unter 1,05 bar liegt. Nach dem Nachfüllen ist der Befund wieder aus; Entlüften allein löst ihn normalerweise nicht aus. Die Benachrichtigung des Blueprints „Befund melden“ sagt, was zu tun ist. Die EMS-ESP-Vorlage nimmt den Anlagendruck (`syspress`) von selbst, sonst unter Neu konfigurieren → Messwerte → Anlagendruck eintragen. (danke an die Antworten auf die Umfrage, simon42-Forum)
+- **Neuer Befund „Anlagendruck gesunken“.** Sinkt der Druck des Heizungswassers in einer Woche um mindestens 0,3 bar unter den höchsten Wochenwert der drei Monate davor, meldet Wärmewacht das, etwa wegen einer Undichtigkeit oder eines Ausdehnungsgefäßes, das Luft verliert. Mit EMS-ESP schlägt er auch an, sobald der Druck unter 1,05 bar liegt. Nach dem Nachfüllen ist der Befund wieder aus; Entlüften allein löst ihn normalerweise nicht aus. Die Benachrichtigung des Blueprints „Befund melden“ sagt, was zu tun ist. Die EMS-ESP-Vorlage nimmt den Anlagendruck (`syspress`) von selbst, sonst unter Neu konfigurieren → Messwerte → Anlagendruck (bei einem Eintrag mit Vorlage unter „Weitere Felder“) eintragen. (danke an die Antworten auf die Umfrage, simon42-Forum)
 - **Neue Vorlage (beta): Bosch/Buderus Home Comfort** ([`bosch_buderus_heating`](https://github.com/SoftwareSchmied/ha-bosch-buderus-heating), Bosch-Cloud und lokal über K40/K40RF): Arbeitszahlen je Betriebsart aus Lebenszeit-Zählern, Takte, Abtauungen und Anlagendruck. Wärmewacht findet die Wärmepumpe beim Einrichten von selbst. (danke an @SoftwareSchmied)
 
 ## 0.9.0 – 2026-11-13
