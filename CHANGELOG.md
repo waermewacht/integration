@@ -1,10 +1,14 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.12.0 – 2026-11-14
 
 ### Neu
 
 - **Gemessene Heizleistung je Außentemperatur.** Aus den Stunden, in denen die Wärmepumpe durchgehend heizt, zeigt „Läuft durch unter“ je 2-K-Klasse die kleinste und größte gemessene Leistung und den Wärmebedarf des Hauses; die Karte „Takte“ zeigt beides in einem zweiten Diagramm. Wo der Bedarf unter die kleinste Leistung fällt, muss sie takten. Kein neues Feld nötig, die Datenblattwerte unter „Leistung je Heizlast“ bleiben zur Gegenprobe.
+
+### Behoben
+
+- **Englische README: Beispiel-Vorlage „Effizienz gesunken“ zeigte seit 0.7.0 keinen Vergleichswert.** Sie las noch das alte Attribut `ratio_previous_same_weather`; jetzt `ratio_expected` wie in der deutschen README. Wer die englische Vorlage kopiert hat, tauscht die eine Zeile aus.
 
 ## 0.11.0 – 2026-11-14
 

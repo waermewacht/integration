@@ -351,7 +351,7 @@
             `Letzte 24 Stunden: höchstens ${a.max_starts_per_hour} Starts in einer Stunde (Grenze: mehr als ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} Läufe unter 6 Minuten (Grenze: 3), ${a.short_runs_24h} unter 10 Minuten.`,
           dropAttrs: (a) =>
-            `AZ Heizen ${a.ratio_current} gegen ${a.ratio_previous_same_weather} der Vorsaison bei gleichem Wetter (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
+            `AZ Heizen ${a.ratio_current}, erwartet ${a.ratio_expected} aus der Vorsaison bei gleichem Temperaturhub (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
           dhwDropAttrs: (a) =>
             `AZ normaler Ladungen ${a.ratio} (${a.charges}) gegen ${a.previous_ratio} (${a.previous_charges}) in denselben 30 Tagen des Vorjahres: ${a.change} % (Grenze −${a.threshold_percent} %).`,
           dhw: "Warmwasser",
@@ -499,7 +499,7 @@
             `Last 24 hours: at most ${a.max_starts_per_hour} ${a.max_starts_per_hour === 1 ? "start" : "starts"} within one hour (limit: more than ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} runs under 6 minutes (limit: 3), ${a.short_runs_24h} under 10 minutes.`,
           dropAttrs: (a) =>
-            `COP heating ${a.ratio_current} against ${a.ratio_previous_same_weather} last season in the same weather (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
+            `COP heating ${a.ratio_current}, expected ${a.ratio_expected} from last season at the same temperature lift (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
           dhwDropAttrs: (a) =>
             `COP of normal charges ${a.ratio} (${a.charges}) against ${a.previous_ratio} (${a.previous_charges}) in the same 30 days last year: ${a.change} % (limit −${a.threshold_percent} %).`,
           dhw: "Hot water",
@@ -966,7 +966,7 @@
         notes.push(`<li><b>${escapeHtml(name("cycling_problem"))}:</b> ${escapeHtml(tx.cyclingAttrs(b.cycling_problem.a))}</li>`);
         if (b.efficiency_drop.a.drop_percent !== undefined) {
           const a = b.efficiency_drop.a;
-          const shown = { ...a, ratio_current: num(a.ratio_current, 2), ratio_previous_same_weather: num(a.ratio_previous_same_weather, 2) };
+          const shown = { ...a, ratio_current: num(a.ratio_current, 2), ratio_expected: num(a.ratio_expected, 2) };
           notes.push(`<li><b>${escapeHtml(name("efficiency_drop"))}:</b> ${escapeHtml(tx.dropAttrs(shown))}</li>`);
         }
         const w = b.dhw_efficiency_drop.a;
