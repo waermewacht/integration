@@ -108,12 +108,14 @@
               "flow_temp": "Flow temperature",
               "return_temp": "Return temperature",
               "flow_rate": "Flow rate",
-              "system_pressure": "System pressure"
+              "system_pressure": "System pressure",
+              "source_temp": "Source temperature (brine)"
             },
             "data_description": {
               "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
               "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
-              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement)."
+              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement).",
+              "source_temp": "Only for brine/water and water/water heat pumps: temperature of the source entering the heat pump (e.g. brine supply, primary circuit supply). The Carnot efficiency, \"Heating curve 2 K lower\" and \"Hot water 2 K colder\" then use it instead of the outdoor temperature; for the look-back with long-term statistics (state class measurement). Air/water: leave empty."
             }
           },
           "activity_parts": {
@@ -159,6 +161,7 @@
               "return_temp": "Return temperature",
               "flow_rate": "Flow rate",
               "system_pressure": "System pressure",
+              "source_temp": "Source temperature (brine)",
               "defrost_flag": "Defrost running (on/off)",
               "dhw_flag": "Hot water running (on/off)",
               "cooling_flag": "Cooling running (on/off)",
@@ -185,7 +188,8 @@
               "starts_heating": "The heat pump's own counter of compressor starts in heating, e.g. EMS-ESP \"heatingstarts\". Only for the look-back of short runs, together with the run time; not a counter of all starts.",
               "outdoor_temp": "Preferably the heat pump's own outdoor sensor; if it is in the sun, a nearby weather station.",
               "flow_rate": "Flow in the heating circuit (l/h, L/min, m³/h, ...).",
-              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement)."
+              "system_pressure": "Pressure of the heating water in bar, e.g. EMS-ESP \"syspress\". Only for the check \"System pressure dropped\"; needs long-term statistics (state class measurement).",
+              "source_temp": "Only for brine/water and water/water heat pumps: temperature of the source entering the heat pump (e.g. brine supply, primary circuit supply). The Carnot efficiency, \"Heating curve 2 K lower\" and \"Hot water 2 K colder\" then use it instead of the outdoor temperature; for the look-back with long-term statistics (state class measurement). Air/water: leave empty."
             }
           }
         }

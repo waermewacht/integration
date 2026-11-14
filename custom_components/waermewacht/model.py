@@ -90,6 +90,14 @@ class Signal(StrEnum):
     # Pressure of the heating water (bar): the check "system pressure
     # dropped" (health.pressure_drop), from its hourly statistics only.
     SYSTEM_PRESSURE = "system_pressure"
+    # Temperature of the heat source entering the heat pump (degC), for
+    # brine/water and water/water heat pumps: brine supply, primary circuit
+    # flow. Replaces the outdoor temperature as the Carnot source only
+    # (efficiency factor, lower heating curve, hot water colder; carnot.py);
+    # heat load, degree days, the performance curve, the heating curve over
+    # the outdoor temperature and every other figure stay on the outdoor
+    # temperature. A manual field, no template maps it.
+    SOURCE_TEMP = "source_temp"
     # No longer mapped (never evaluated); kept so entries that stored them
     # before 0.1.1 still load.
     HEAT_POWER = "heat_power"

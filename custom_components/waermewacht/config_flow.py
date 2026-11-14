@@ -181,6 +181,8 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
         Signal.RETURN_TEMP,
         Signal.FLOW_RATE,
         Signal.SYSTEM_PRESSURE,
+        # Brine/water and water/water only (carnot.py).
+        Signal.SOURCE_TEMP,
     ),
 }
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
@@ -239,6 +241,7 @@ def _selector(signal: Signal) -> selector.EntitySelector:
         Signal.FLOW_TEMP,
         Signal.RETURN_TEMP,
         Signal.DHW_TEMP,
+        Signal.SOURCE_TEMP,
     ):
         filters = selector.EntityFilterSelectorConfig(
             domain="sensor", device_class="temperature"
@@ -1351,7 +1354,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
     def _no_statistics(self) -> set[Signal]:
         """Mapped temperatures (and the system pressure) whose state has no
         state class: Home Assistant keeps no long-term statistics of them (the
-        look-back and the pressure check need them)."""
+        look-back, the pressure check and, for the brine, hot water colder
+        need them)."""
         entities = self.config_entry.data.get(CONF_ENTITIES, {})
         result = set()
         for signal in (
@@ -1359,6 +1363,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
             Signal.FLOW_TEMP,
             Signal.RETURN_TEMP,
             Signal.SYSTEM_PRESSURE,
+            Signal.SOURCE_TEMP,
         ):
             entity_id = entities.get(signal.value)
             state = self.hass.states.get(entity_id) if entity_id else None

@@ -64,6 +64,8 @@ from .backfill import (
 )
 from .carnot import (
     FLOW_ONLY_NOTE_SHARE,
+    SOURCE_BRINE,
+    SOURCE_OUTDOOR,
     ColderDhw,
     DhwCharge,
     EfficiencyFactor,
@@ -487,6 +489,9 @@ class HeatPumpRuntime:
         # Outdoor temperature while the compressor heats, today (sink and
         # source of the Carnot efficiency factor, carnot.py).
         self.outdoor_heating = Mean()
+        # The brine while the compressor heats, today (Signal.SOURCE_TEMP:
+        # the Carnot source instead of the outdoor temperature).
+        self.source_heating = Mean()
         # Outdoor mean per UTC hour of today and yesterday (classes of the
         # diary, duty.py); the run time per class of the analysis.
         self.outdoor_hourly: dict[datetime, Mean] = {}
@@ -1354,6 +1359,11 @@ class HeatPumpRuntime:
             start, end
         )
 
+    @property
+    def carnot_source(self) -> str:
+        """Source of the Carnot figures (carnot.py): the brine when mapped."""
+        return SOURCE_BRINE if Signal.SOURCE_TEMP in self.entities else SOURCE_OUTDOOR
+
     def _efficiency_factors(
         self,
         now: datetime,
@@ -1376,6 +1386,7 @@ class HeatPumpRuntime:
                 min_days=min_days,
                 min_electricity=self.min_electricity,
                 statistics=statistics,
+                source_signal=self.carnot_source,
             )
             for name, (first, last, min_days) in spans.items()
         }
@@ -1523,7 +1534,6 @@ class HeatPumpRuntime:
             self.analysed_at = now
             self.starts_baseline = await self._async_starts_baseline(current, now)
             self.starts_year_ago = await self._async_starts_year_ago(now)
-            self.colder_dhw = self._colder_dhw(outdoor, now)
             self.heating_days_year = self._heating_days_year(outdoor, now)
             if (entity_id := self.entities.get(Signal.STARTS_TOTAL)) is not None:
                 seen = self._starts_seen
@@ -1532,14 +1542,23 @@ class HeatPumpRuntime:
                     self.starts_baseline, kept, self.starts_total()[0], current, now
                 )
                 self._starts_seen = (entity_id, *kept) if kept else None
-            # Flow and return in one query: the return only adds a series
-            # for the look-back of the Carnot efficiency factor.
+            # Flow and return in one query: the return (and the brine of a
+            # brine/water heat pump) only adds a series for the look-back of
+            # the Carnot efficiency factor.
             temps = await self._async_means(
-                (Signal.FLOW_TEMP, Signal.RETURN_TEMP),
+                (Signal.FLOW_TEMP, Signal.RETURN_TEMP, Signal.SOURCE_TEMP),
                 previous,
                 now,
                 changes=(Signal.RUNTIME_HEATING, Signal.STARTS_HEATING),
             )
+            # The Carnot source: the brine when mapped, never mixed with the
+            # outdoor temperature (carnot.py).
+            carnot_hours = (
+                temps.get(Signal.SOURCE_TEMP, {})
+                if self.carnot_source == SOURCE_BRINE
+                else outdoor
+            )
+            self.colder_dhw = self._colder_dhw(carnot_hours, now)
             flow = temps.get(Signal.FLOW_TEMP, {})
             if flow:
                 self.flow_curves = {
@@ -1568,7 +1587,7 @@ class HeatPumpRuntime:
                     hours,
                     flow,
                     temps.get(Signal.RETURN_TEMP, {}),
-                    outdoor,
+                    carnot_hours,
                     self.tz,
                 ),
             )
@@ -1713,11 +1732,12 @@ class HeatPumpRuntime:
         return (int(rows[-1]["state"]), at) if rows else None
 
     def _colder_dhw(
-        self, outdoor: Mapping[datetime, float], now: datetime
+        self, sources: Mapping[datetime, float], now: datetime
     ) -> ColderDhw | None:
         """Saving of colder hot water over the normal charges of the last
-        CHARGE_DAYS days (no disinfection, none with a gap), with the outdoor
-        hourly mean at their start from the analysis' statistics."""
+        CHARGE_DAYS days (no disinfection, none with a gap), with the hourly
+        mean of the Carnot source (outdoor, or the brine) at their start
+        from the analysis' statistics."""
         if not self.has_charges or Signal.DHW_TEMP not in self.entities:
             return None
         samples = []
@@ -1733,7 +1753,7 @@ class HeatPumpRuntime:
             hour = dt_util.as_utc(charge.start).replace(
                 minute=0, second=0, microsecond=0
             )
-            source = outdoor.get(hour)
+            source = sources.get(hour)
             if source is None:
                 continue
             samples.append(
@@ -1744,7 +1764,12 @@ class HeatPumpRuntime:
                     source=source,
                 )
             )
-        return colder_dhw(samples, now - timedelta(days=CHARGE_DAYS), now)
+        return colder_dhw(
+            samples,
+            now - timedelta(days=CHARGE_DAYS),
+            now,
+            self.carnot_source,
+        )
 
     def _heating_days_year(
         self, outdoor: Mapping[datetime, float], now: datetime
@@ -2088,6 +2113,12 @@ class HeatPumpRuntime:
                 "flow": self.flow.as_dict(),
                 "flow_rate": self.flow_rate.as_dict(),
                 "outdoor_heating": self.outdoor_heating.as_dict(),
+                # The brine while heating (carnot.py), only when mapped.
+                **(
+                    {"source_heating": self.source_heating.as_dict()}
+                    if Signal.SOURCE_TEMP in self.entities
+                    else {}
+                ),
                 # Hours, heating seconds and heating starts per outdoor
                 # class (duty.py); only with a compressor state.
                 "classes": day_classes(
@@ -2979,6 +3010,12 @@ class HeatPumpRuntime:
             if self._sampling:
                 self.outdoor_heating.add(value, 60)
         if (
+            self._sampling
+            and (entity_id := self.entities.get(Signal.SOURCE_TEMP))
+            and (value := _float(self.hass.states.get(entity_id))) is not None
+        ):
+            self.source_heating.add(value, 60)
+        if (
             self.hourly
             and now.minute % 10 == 2
             and not self._booking
@@ -3022,6 +3059,7 @@ class HeatPumpRuntime:
                 self._update_status_finding(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
             self.outdoor_heating = Mean()
+            self.source_heating = Mean()
             self.outdoor_hourly = {
                 h: m
                 for h, m in self.outdoor_hourly.items()
@@ -3371,6 +3409,7 @@ class HeatPumpRuntime:
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
             "outdoor": self.outdoor.as_dict(),
             "outdoor_heating": self.outdoor_heating.as_dict(),
+            "source_heating": self.source_heating.as_dict(),
             "outdoor_hourly": {
                 h.isoformat(): m.as_dict() for h, m in self.outdoor_hourly.items()
             },
@@ -3442,6 +3481,7 @@ class HeatPumpRuntime:
         }
         self.outdoor = Mean.from_dict(data.get("outdoor"))
         self.outdoor_heating = Mean.from_dict(data.get("outdoor_heating"))
+        self.source_heating = Mean.from_dict(data.get("source_heating"))
         self.outdoor_hourly = {
             datetime.fromisoformat(h): Mean.from_dict(m)
             for h, m in (data.get("outdoor_hourly") or {}).items()

@@ -151,6 +151,7 @@ const TEXT = {
     previous: "Vorsaison",
     factorField: (lo, hi) => `Feldtest Nov–März ${lo}–${hi}`,
     factorFlowOnly: "ohne Rücklauf, eher zu hoch",
+    factorBrine: "Quelle: Sole",
     factorWinter: "Winter",
     lowerFlow: "Heizkurve 2 K tiefer",
     lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
@@ -350,6 +351,7 @@ const TEXT = {
     previous: "previous season",
     factorField: (lo, hi) => `field test Nov–Mar ${lo}–${hi}`,
     factorFlowOnly: "without return, rather too high",
+    factorBrine: "source: brine",
     factorWinter: "winter",
     lowerFlow: "Heating curve 2 K lower",
     lowerFlowValue: (kwh) => `≈ −${kwh} kWh`,
@@ -1127,16 +1129,21 @@ class WaermewachtCard extends HTMLElement {
 
   /** Carnot efficiency factor while heating (carnot.py): the field range of
    * Fraunhofer ISE beside it; without a return temperature a note instead
-   * (the factor comes out too high); before 14 heating days the progress. */
+   * (the factor comes out too high); before 14 heating days the progress.
+   * With the brine as the source (source_signal "source_temp") "source:
+   * brine" and no field range: those values are for air/water. */
   _efficiencyFactor(t) {
     const state = this._state("efficiency_factor");
     if (!state) return "";
     const a = state.attributes;
+    const brine = a.source_signal === "source_temp";
     let extra = "";
     if (a.reason === "too_few_days") {
       extra = t.factorDays(a.days ?? 0, 14);
     } else if (a.sink === "flow_only") {
-      extra = t.factorFlowOnly;
+      extra = brine ? `${t.factorBrine} · ${t.factorFlowOnly}` : t.factorFlowOnly;
+    } else if (brine) {
+      extra = t.factorBrine;
     } else if (a.field_reference) {
       // The field test covers November to March: the winter compares with it.
       const field = t.factorField(this._num(a.field_reference.min, 2), this._num(a.field_reference.max, 2));

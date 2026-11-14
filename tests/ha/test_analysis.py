@@ -453,6 +453,80 @@ async def test_spread_standby_and_oversize_from_the_diary(
 
 
 @pytest.mark.freeze_time(NOW)
+async def test_efficiency_factor_with_the_brine(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A brine/water heat pump (source temperature mapped): the Carnot
+    source is the brine while heating from the diary, not the outdoor
+    temperature, and the air/water field values are left out."""
+    import_series(hass, HEAT_HEATING, mean=False)
+    import_series(hass, ELEC_HEATING, mean=False)
+    import_series(hass, OUTDOOR, mean=True)
+    await async_wait_recording_done(hass)
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    brine = "sensor.vitocal_primary_supply_temperature"
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    hass.states.async_set(OUTDOOR, "1.0", TEMPERATURE)
+    hass.states.async_set(brine, "8.0", TEMPERATURE)
+    hass.states.async_set(FLOW, "30.0", TEMPERATURE)
+    hass.states.async_set("sensor.boiler_hptc0", "25.0", TEMPERATURE)
+    hass.states.async_set("sensor.boiler_hpactivity", "aus")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={
+                "heat_heating": HEAT_HEATING,
+                "elec_heating": ELEC_HEATING,
+                "outdoor_temp": OUTDOOR,
+                "flow_temp": FLOW,
+                "return_temp": "sensor.boiler_hptc0",
+                "activity": "sensor.boiler_hpactivity",
+                "source_temp": brine,
+            }
+        ),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # 7 heating days: flow 35 °C, spread 5 K (sink 32.5 °C), 0 °C outside
+    # and 8 °C brine while heating, COP 4.
+    today = NOW.astimezone(dt_util.get_default_time_zone()).date()
+    seconds = 12 * 3600
+    entry.runtime_data.diary = [
+        {
+            "day": (today - timedelta(days=n)).isoformat(),
+            "outdoor": 1.0,
+            "run_seconds": seconds,
+            "spread": {"weighted": 5.0 * seconds, "seconds": seconds},
+            "energy": {"heat_heating": 40.0, "elec_heating": 10.0},
+            "flow": {"weighted": 35.0 * seconds, "seconds": seconds},
+            "outdoor_heating": {"weighted": 0.0, "seconds": seconds},
+            "source_heating": {"weighted": 8.0 * seconds, "seconds": seconds},
+        }
+        for n in range(7, 0, -1)
+    ]
+    freezer.tick(timedelta(minutes=3))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    await async_wait_recording_done(hass)
+    await hass.async_block_till_done()
+
+    found = er.async_get(hass).async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_efficiency_factor"
+    )
+    assert found
+    factor = hass.states.get(found)
+    # Carnot COP 305.65 / 24.5 = 12.48 with the brine (9.405 with the air).
+    assert factor.attributes["month"]["value"] == pytest.approx(0.32)
+    assert factor.attributes["source_signal"] == "source_temp"
+    assert factor.attributes["source_temp"] == 8.0
+    assert factor.attributes["field_reference"] is None
+
+
+@pytest.mark.freeze_time(NOW)
 async def test_look_back_again_for_new_meters(hass: HomeAssistant) -> None:
     """A meter added since the look-back (Reconfigure, a template's preferred
     counter): the next start looks back again by itself, as the button does;

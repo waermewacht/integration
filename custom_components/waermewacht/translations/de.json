@@ -108,12 +108,14 @@
               "flow_temp": "Vorlauftemperatur",
               "return_temp": "Rücklauftemperatur",
               "flow_rate": "Durchfluss",
-              "system_pressure": "Anlagendruck"
+              "system_pressure": "Anlagendruck",
+              "source_temp": "Quelltemperatur (Sole)"
             },
             "data_description": {
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
               "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
-              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“)."
+              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“).",
+              "source_temp": "Nur für Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Temperatur der Quelle am Eintritt in die Wärmepumpe (z. B. Sole-Vorlauf, Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur; für den Rückblick mit Langzeitstatistik (Zustandsklasse „measurement“). Luft/Wasser: leer lassen."
             }
           },
           "activity_parts": {
@@ -159,6 +161,7 @@
               "return_temp": "Rücklauftemperatur",
               "flow_rate": "Durchfluss",
               "system_pressure": "Anlagendruck",
+              "source_temp": "Quelltemperatur (Sole)",
               "defrost_flag": "Abtauen läuft (an/aus)",
               "dhw_flag": "Warmwasser läuft (an/aus)",
               "cooling_flag": "Kühlen läuft (an/aus)",
@@ -185,7 +188,8 @@
               "starts_heating": "Zähler der Wärmepumpe für die Kompressorstarts im Heizbetrieb, z. B. EMS-ESP „heatingstarts“. Nur für den Rückblick der Kurzläufe, zusammen mit der Laufzeit; kein Zähler aller Starts.",
               "outdoor_temp": "Am besten der Außenfühler der Wärmepumpe; liegt er in der Sonne, eine nahe Wetterstation.",
               "flow_rate": "Durchfluss im Heizkreis (l/h, L/min, m³/h …).",
-              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“)."
+              "system_pressure": "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“).",
+              "source_temp": "Nur für Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Temperatur der Quelle am Eintritt in die Wärmepumpe (z. B. Sole-Vorlauf, Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur; für den Rückblick mit Langzeitstatistik (Zustandsklasse „measurement“). Luft/Wasser: leer lassen."
             }
           }
         }

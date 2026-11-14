@@ -262,3 +262,21 @@ def test_system_pressure_named_only_when_mapped() -> None:
         no_statistics={Signal.SYSTEM_PRESSURE},
     )
     assert "Anlagendruck ohne Langzeitstatistik" in text
+
+
+def test_source_temperature_named_only_when_mapped() -> None:
+    """Brine/water only: named in the overview when mapped; without
+    statistics the hint says what is missing."""
+    from custom_components.waermewacht.model import Signal
+
+    brine = {**EMS_ESP, "source_temp": "sensor.vitocal_primary_supply_temperature"}
+    options = {"electricity_price": 27.75, "design_outdoor_temp": -12.0}
+    text = heat_pump_summary(brine, options, None, "de")
+    assert "- **Messwerte:** außen ✓, Vorlauf ✓, Rücklauf ✓, Quelle (Sole) ✓\n" in text
+    assert "Sole" not in heat_pump_summary(EMS_ESP, options, "EMS-ESP", "de")
+    english = heat_pump_summary(brine, options, None, "en")
+    assert "source (brine) ✓" in english
+    text = heat_pump_summary(
+        brine, options, None, "de", no_statistics={Signal.SOURCE_TEMP}
+    )
+    assert "Quelltemperatur ohne Langzeitstatistik" in text

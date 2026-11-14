@@ -32,6 +32,16 @@ COP differed by -0.4 to +1.4 %, mean +0.5 %. Stricter filters (neighbour
 hours heating too, near-full hours only) left too few hours and did worse.
 Not yet checked on a heat pump that cycles a lot (spring).
 
+Brine/water and water/water heat pumps (Signal.SOURCE_TEMP mapped, the
+source SOURCE_BRINE): the source is the temperature of the brine entering
+the heat pump, not the outdoor air. A diary day takes its mean while
+heating ("source_heating"); a day without it (before the field was set)
+comes from the look-back with the hourly means of that entity. Such an
+entry never falls back to the outdoor temperature (air and brine mixed
+would be wrong), and an entry without it never uses the brine. The
+field values above are for air/water only: with the brine the
+attributes leave them out (`field_reference: None`, `source_signal`).
+
 Lower heating curve (health check 4.14, second part): with the period's
 own factor g, the electricity at a sink k kelvin lower is
 sum(heat / (g * COP_Carnot(sink - k, source))); the saving is the
@@ -105,6 +115,14 @@ SKIP_LITTLE_HEATING = "little_heating"
 SKIP_AUX = "aux"
 SKIP_NO_OUTDOOR = "no_outdoor"
 SKIP_SMALL_LIFT = "small_lift"
+# Brine as the source, but the diary day has no brine mean while heating
+# (the look-back fills it in when the statistics have it).
+SKIP_NO_SOURCE = "no_source"
+
+# What the Carnot source is (attribute `source_signal`): the outdoor air,
+# or the brine of Signal.SOURCE_TEMP (same value).
+SOURCE_OUTDOOR = "outdoor"
+SOURCE_BRINE = "source_temp"
 
 
 def carnot_cop(sink: float, source: float) -> float | None:
@@ -137,8 +155,12 @@ class FactorDay:
         return self.flow_only_share > 0
 
 
-def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
-    """The day's contribution, or the reason it does not count."""
+def factor_day(
+    entry: Mapping[str, Any], source_signal: str = SOURCE_OUTDOOR
+) -> FactorDay | str:
+    """The day's contribution, or the reason it does not count. With
+    `source_signal` SOURCE_BRINE the brine mean while heating, never the
+    outdoor temperature."""
     energy = entry.get("energy") or {}
     heat = float(energy.get(f"{Kind.HEAT.value}_{Mode.HEATING.value}", 0.0))
     electricity = float(energy.get(f"{Kind.ELEC.value}_{Mode.HEATING.value}", 0.0))
@@ -154,16 +176,22 @@ def factor_day(entry: Mapping[str, Any]) -> FactorDay | str:
     # A negative spread means swapped sensors (repair issue of its own).
     flow_only = spread.value is None or spread.seconds <= 0 or spread.value < 0
     sink = flow.value if flow_only else flow.value - spread.value / 2
-    outdoor = Mean.from_dict(entry.get("outdoor_heating"))
-    day_mean = outdoor.value is None
-    source = entry.get("outdoor") if day_mean else outdoor.value
-    if source is None:
-        return SKIP_NO_OUTDOOR
-    cop = carnot_cop(sink, float(source))
+    if source_signal == SOURCE_BRINE:
+        brine = Mean.from_dict(entry.get("source_heating")).value
+        if brine is None:
+            return SKIP_NO_SOURCE
+        day_mean, value = False, brine
+    else:
+        outdoor = Mean.from_dict(entry.get("outdoor_heating"))
+        day_mean = outdoor.value is None
+        value = entry.get("outdoor") if day_mean else outdoor.value
+        if value is None:
+            return SKIP_NO_OUTDOOR
+    cop = carnot_cop(sink, float(value))
     if cop is None:
         return SKIP_SMALL_LIFT
     return FactorDay(
-        heat, electricity, sink, float(source), cop, float(flow_only), day_mean
+        heat, electricity, sink, float(value), cop, float(flow_only), day_mean
     )
 
 
@@ -171,7 +199,7 @@ def statistics_days(
     hours: Mapping[datetime, Totals],
     flow: Mapping[datetime, float],
     ret: Mapping[datetime, float],
-    outdoor: Mapping[datetime, float],
+    sources: Mapping[datetime, float],
     tz: tzinfo,
     *,
     with_aux: bool = False,
@@ -179,7 +207,8 @@ def statistics_days(
 ) -> dict[date, FactorDay | str]:
     """Days from the hourly statistics (look-back, see the module): the
     day's energy from all its hours, sink and source from its heating-only
-    hours, weighted with their heat.
+    hours, weighted with their heat. `sources`: hourly means of the Carnot
+    source, the outdoor temperature or, with SOURCE_BRINE, the brine.
 
     For the efficiency comparison (health.baseline_drop): `with_aux` keeps
     the days with backup heater electricity and adds it to the electricity
@@ -195,7 +224,7 @@ def statistics_days(
     # heat of the hours without a return temperature.
     sums: dict[date, list[float]] = {}
     for hour, heat in heating_weights(hours).items():
-        value, source = flow.get(hour), outdoor.get(hour)
+        value, source = flow.get(hour), sources.get(hour)
         if value is None or source is None or not FLOW_MIN <= value <= FLOW_MAX:
             continue
         back = ret.get(hour)
@@ -254,6 +283,8 @@ class EfficiencyFactor:
     flow_only_kwh: float = 0.0
     # kWh a heating curve k kelvin lower would have saved (with a value).
     lower_flow_kwh: dict[int, float] = field(default_factory=dict)
+    # SOURCE_OUTDOOR or SOURCE_BRINE (the module).
+    source_signal: str = SOURCE_OUTDOOR
 
     @property
     def flow_only_share(self) -> float:
@@ -275,6 +306,8 @@ class EfficiencyFactor:
             "flow_only_days": self.flow_only_days,
             "flow_only_percent": round(100 * self.flow_only_share, 1),
             "source": "day_mean" if self.day_mean_days else "while_heating",
+            # "outdoor" or "source_temp" (brine/water, water/water).
+            "source_signal": self.source_signal,
             # Days from the hourly statistics (look-back) among `days`.
             "days_from_statistics": self.statistics_days,
             "skipped_days": dict(sorted(self.skipped.items())),
@@ -305,10 +338,14 @@ def efficiency_factor(
     min_days: int,
     min_electricity: float = 0.0,
     statistics: Mapping[date, FactorDay | str] | None = None,
+    source_signal: str = SOURCE_OUTDOOR,
 ) -> EfficiencyFactor:
     """Factor over the days first … last (both included): a diary day that
     knows the outdoor temperature while heating, else the statistics day
-    (`statistics_days`), else the diary day with the day mean."""
+    (`statistics_days`), else the diary day with the day mean. With
+    `source_signal` SOURCE_BRINE: a diary day with the brine while heating, else
+    the statistics day (built from the brine's hourly means by the
+    caller); no day mean."""
     diary = {
         day: entry
         for entry in entries
@@ -321,11 +358,17 @@ def efficiency_factor(
     skipped: dict[str, int] = {}
     for day in _dates(first, last):
         entry = diary.get(day)
-        found: FactorDay | str | None = None if entry is None else factor_day(entry)
-        if found is None or (isinstance(found, FactorDay) and found.day_mean_source):
-            better = statistics.get(day)
-            if isinstance(better, FactorDay) or found is None:
-                found = better
+        found: FactorDay | str | None = (
+            None if entry is None else factor_day(entry, source_signal)
+        )
+        if found is None or found == SKIP_NO_SOURCE:
+            found = statistics.get(day, found)
+        elif (
+            isinstance(found, FactorDay)
+            and found.day_mean_source
+            and isinstance(better := statistics.get(day), FactorDay)
+        ):
+            found = better
         if found is None:
             continue
         if isinstance(found, str):
@@ -363,6 +406,7 @@ def efficiency_factor(
         reason=reason,
         flow_only_kwh=flow_only_kwh,
         lower_flow_kwh={} if value is None else lower_flow_savings(counted, value),
+        source_signal=source_signal,
     )
 
 
@@ -443,7 +487,10 @@ def factor_attributes(
         # November to March, the period of the field test.
         "winter": short("winter"),
         "previous_winter": short("previous_winter"),
-        "field_reference": field_reference(),
+        # Air/water field values: not for a brine source (none of our own).
+        "field_reference": field_reference()
+        if season.source_signal == SOURCE_OUTDOOR
+        else None,
         # Fixed electricity price for the euro of the lower heating curve.
         "price_eur_per_kwh": price_eur_per_kwh,
     }
@@ -509,7 +556,8 @@ def _round(value: float | None, digits: int) -> float | None:
 # the compressor electricity scales with the Carnot COPs. Sink: mean of the
 # storage temperature at the start and the highest during the charge (the
 # condenser runs a few kelvin above it: rather a little too much saving);
-# source: the outdoor hourly mean at the start. Own assumptions: at least
+# source: the outdoor hourly mean at the start (the brine's with
+# SOURCE_BRINE, never the outdoor one then). Own assumptions: at least
 # COLDER_DHW_MIN_CHARGES charges over COLDER_DHW_MIN_DAYS days.
 COLDER_DHW_KELVIN = 2  # the sensor "Hot water 2 K colder"
 COLDER_DHW_MIN_CHARGES = 10
@@ -524,7 +572,7 @@ class DhwCharge:
     start: datetime
     electricity_kwh: float  # compressor, without the backup heater
     sink: float  # mean storage temperature during the charge, degC
-    source: float  # outdoor hourly mean at the start, degC
+    source: float  # outdoor (or brine) hourly mean at the start, degC
 
 
 @dataclass(frozen=True)
@@ -538,6 +586,7 @@ class ColderDhw:
     sink: float | None = None  # electricity-weighted means
     source: float | None = None
     reason: str | None = None
+    source_signal: str = SOURCE_OUTDOOR
 
     def per_year(self, kelvin: int) -> float | None:
         if self.reason is not None or kelvin not in self.saved_kwh:
@@ -567,23 +616,34 @@ class ColderDhw:
             "electricity_kwh": round(self.electricity_kwh, 2),
             "sink_temp": _round(self.sink, 1),
             "source_temp": _round(self.source, 1),
+            "source_signal": self.source_signal,
             "reason": self.reason,
         }
 
 
 def colder_dhw(
-    charges: Iterable[DhwCharge], start: datetime, end: datetime
+    charges: Iterable[DhwCharge],
+    start: datetime,
+    end: datetime,
+    source_signal: str = SOURCE_OUTDOOR,
 ) -> ColderDhw:
     """Saving of a hot water temperature 1, 2, 3 K lower over the charges
     starting in [start, end), projected per year by the window they cover
-    (from the first charge on, at most end - start)."""
+    (from the first charge on, at most end - start). `source_signal`
+    names the source of the charges (attribute only)."""
     chosen = [c for c in charges if start <= c.start < end]
     counted = [c for c in chosen if carnot_cop(c.sink, c.source) is not None]
     days = (end - min((c.start for c in counted), default=end)).total_seconds()
     days /= 86400
     electricity = sum(c.electricity_kwh for c in counted)
     if len(counted) < COLDER_DHW_MIN_CHARGES or days < COLDER_DHW_MIN_DAYS:
-        return ColderDhw(len(counted), days, electricity, reason=TOO_FEW_CHARGES)
+        return ColderDhw(
+            len(counted),
+            days,
+            electricity,
+            reason=TOO_FEW_CHARGES,
+            source_signal=source_signal,
+        )
     saved: dict[int, float] = {}
     for kelvin in LOWER_FLOW_KELVINS:
         total = 0.0
@@ -602,4 +662,5 @@ def colder_dhw(
         saved_kwh=saved,
         sink=sum(c.sink * c.electricity_kwh for c in counted) / weight,
         source=sum(c.source * c.electricity_kwh for c in counted) / weight,
+        source_signal=source_signal,
     )

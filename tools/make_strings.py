@@ -426,6 +426,7 @@ FIELDS = {
     "return_temp": ("Return temperature", "Rücklauftemperatur"),
     "flow_rate": ("Flow rate", "Durchfluss"),
     "system_pressure": ("System pressure", "Anlagendruck"),
+    "source_temp": ("Source temperature (brine)", "Quelltemperatur (Sole)"),
     "dhw_temp": (
         "Hot water temperature (actual, tank)",
         "Warmwasser-Temperatur (Ist, Speicher)",
@@ -523,6 +524,10 @@ FIELD_HELP = {
         'Pressure of the heating water in bar, e.g. EMS-ESP "syspress". Only for the check "System pressure dropped"; needs long-term statistics (state class measurement).',
         "Druck des Heizungswassers in bar, z. B. EMS-ESP „syspress“. Nur für den Befund „Anlagendruck gesunken“; braucht Langzeitstatistik (Zustandsklasse „measurement“).",
     ),
+    "source_temp": (
+        'Only for brine/water and water/water heat pumps: temperature of the source entering the heat pump (e.g. brine supply, primary circuit supply). The Carnot efficiency, "Heating curve 2 K lower" and "Hot water 2 K colder" then use it instead of the outdoor temperature; for the look-back with long-term statistics (state class measurement). Air/water: leave empty.',
+        "Nur für Sole/Wasser- und Wasser/Wasser-Wärmepumpen: Temperatur der Quelle am Eintritt in die Wärmepumpe (z. B. Sole-Vorlauf, Primärkreis-Vorlauf). Gütegrad, „Heizkurve 2 K tiefer“ und „Warmwasser 2 K kälter“ rechnen dann damit statt mit der Außentemperatur; für den Rückblick mit Langzeitstatistik (Zustandsklasse „measurement“). Luft/Wasser: leer lassen.",
+    ),
 }
 SECTIONS = {
     "heating": (
@@ -576,7 +581,14 @@ SECTIONS = {
     ),
     "measurements": (
         ("Measurements", "Messwerte"),
-        ("outdoor_temp", "flow_temp", "return_temp", "flow_rate", "system_pressure"),
+        (
+            "outdoor_temp",
+            "flow_temp",
+            "return_temp",
+            "flow_rate",
+            "system_pressure",
+            "source_temp",
+        ),
         None,
     ),
     "activity_parts": (

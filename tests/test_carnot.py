@@ -13,7 +13,10 @@ from custom_components.waermewacht.carnot import (
     SKIP_LITTLE_HEATING,
     SKIP_NO_ENERGY,
     SKIP_NO_OUTDOOR,
+    SKIP_NO_SOURCE,
     SKIP_SMALL_LIFT,
+    SOURCE_BRINE,
+    SOURCE_OUTDOOR,
     TOO_FEW_CHARGES,
     TOO_FEW_DAYS,
     TOO_LITTLE_ELECTRICITY,
@@ -52,11 +55,12 @@ def entry(
     outdoor_heating: float | None = 0.0,
     outdoor: float | None = 2.0,
     hours: float = 12.0,
+    source_heating: float | None = None,
 ) -> dict[str, Any]:
     energy = {"heat_heating": heat, "elec_heating": elec}
     if aux:
         energy["aux_heating"] = aux
-    return {
+    found = {
         "day": day.isoformat(),
         "outdoor": outdoor,
         "energy": energy,
@@ -66,6 +70,9 @@ def entry(
         if outdoor_heating is not None
         else {},
     }
+    if source_heating is not None:  # the brine (Signal.SOURCE_TEMP)
+        found["source_heating"] = mean(source_heating, hours)
+    return found
 
 
 def test_carnot_cop() -> None:
@@ -497,3 +504,99 @@ def test_colder_dhw_needs_enough_charges() -> None:
         dhw_charges(30, 30, sink=20.0, source=15.0), DAY, DAY + timedelta(days=30)
     )
     assert flat.charges == 0 and flat.reason == TOO_FEW_CHARGES
+
+
+# Brine/water and water/water: the brine as the Carnot source.
+
+
+def test_brine_day_uses_the_brine_while_heating() -> None:
+    day = factor_day(entry(source_heating=8.0), SOURCE_BRINE)
+    assert isinstance(day, FactorDay)
+    assert day.source == 8.0 and not day.day_mean_source
+    assert day.cop == pytest.approx(carnot_cop(32.5, 8.0))
+    # The same entry without the brine field: outdoor as before.
+    outdoor = factor_day(entry(source_heating=8.0))
+    assert isinstance(outdoor, FactorDay) and outdoor.source == 0.0
+
+
+def test_brine_never_falls_back_to_the_outdoor_temperature() -> None:
+    # Diary days from before the field was set: outdoor known, no brine.
+    assert factor_day(entry(), SOURCE_BRINE) == SKIP_NO_SOURCE
+    old = entry(outdoor_heating=None, outdoor=8.0)
+    assert factor_day(old, SOURCE_BRINE) == SKIP_NO_SOURCE
+    days = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    result = efficiency_factor(
+        days, DAY, DAY + timedelta(days=13), min_days=14, source_signal=SOURCE_BRINE
+    )
+    assert result.value is None and result.days == 0
+    assert result.skipped == {SKIP_NO_SOURCE: 14}
+    assert result.source_signal == SOURCE_BRINE
+
+
+def test_brine_look_back_from_the_source_hours() -> None:
+    """Days 1-7 only in the statistics, built from the brine's hourly means
+    (5 degC, the caller passes them instead of the outdoor ones); days 8-14
+    in the diary with the brine while heating; 4 diary days before the
+    field was set (no brine) take the statistics too."""
+    totals, flows, rets, brine = {}, {}, {}, {}
+    for n in range(14):
+        parts = hourly(DAY + timedelta(days=n), 10, outdoor=5.0)
+        for target, part in zip((totals, flows, rets, brine), parts, strict=True):
+            target.update(part)
+    statistics = statistics_days(totals, flows, rets, brine, BERLIN)
+    diary = [entry(DAY + timedelta(days=n)) for n in range(3, 7)]
+    diary += [entry(DAY + timedelta(days=n), source_heating=5.0) for n in range(7, 14)]
+    result = efficiency_factor(
+        diary,
+        DAY,
+        DAY + timedelta(days=13),
+        min_days=14,
+        statistics=statistics,
+        source_signal=SOURCE_BRINE,
+    )
+    assert result.days == 14 and result.statistics_days == 7
+    assert result.source == pytest.approx(5.0)
+    assert result.value == pytest.approx(4.0 / carnot_cop(32.5, 5.0), abs=1e-3)
+    attributes = result.as_attributes()
+    assert attributes["source_signal"] == SOURCE_BRINE == "source_temp"
+    assert attributes["source"] == "while_heating"
+    # The lower heating curve with the brine's (smaller) lift.
+    assert result.lower_flow_kwh[1] / result.electricity_kwh == pytest.approx(
+        1 - carnot_cop(32.5, 5.0) / carnot_cop(31.5, 5.0), abs=1e-6
+    )
+
+
+def test_brine_without_field_comparison() -> None:
+    """Fraunhofer's field values are for air/water: left out with the brine."""
+    outdoor = [entry(DAY + timedelta(days=i)) for i in range(14)]
+    season = efficiency_factor(outdoor, DAY, DAY + timedelta(days=13), min_days=14)
+    attributes = factor_attributes({"season": season})
+    assert attributes["source_signal"] == SOURCE_OUTDOOR
+    assert attributes["field_reference"] == field_reference()
+    brine = [entry(DAY + timedelta(days=i), source_heating=6.0) for i in range(14)]
+    season = efficiency_factor(
+        brine, DAY, DAY + timedelta(days=13), min_days=14, source_signal=SOURCE_BRINE
+    )
+    attributes = factor_attributes({"season": season, "winter": season})
+    assert attributes["source_signal"] == SOURCE_BRINE
+    assert attributes["field_reference"] is None
+    assert attributes["source_temp"] == 6.0
+    assert season.value is not None
+    assert attributes["winter"]["value"] == round(season.value, 2)
+
+
+def test_colder_dhw_with_the_brine() -> None:
+    """The brine's hourly mean at the start is the source (10 degC here);
+    the attribute names it."""
+    end = DAY + timedelta(days=30)
+    result = colder_dhw(
+        dhw_charges(30, 30, source=10.0), end - timedelta(days=30), end, SOURCE_BRINE
+    )
+    expected = 1 - carnot_cop(50.0, 10.0) / carnot_cop(48.0, 10.0)
+    assert result.saved_kwh[2] == pytest.approx(30 * expected)
+    attributes = result.as_attributes()
+    assert attributes["source_signal"] == SOURCE_BRINE
+    assert attributes["source_temp"] == 10.0
+    few = colder_dhw(dhw_charges(5, 30), end - timedelta(days=30), end, SOURCE_BRINE)
+    assert few.as_attributes()["source_signal"] == SOURCE_BRINE
+    assert colder_dhw([], DAY, end).as_attributes()["source_signal"] == SOURCE_OUTDOOR

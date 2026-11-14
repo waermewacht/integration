@@ -87,6 +87,7 @@ T = {
     "flow": ("flow", "Vorlauf"),
     "return": ("return", "Rücklauf"),
     "pressure": ("system pressure", "Anlagendruck"),
+    "source_brine": ("source (brine)", "Quelle (Sole)"),
     "boiler": ("boiler", "Kessel"),
     "price": ("Electricity price", "Strompreis"),
     "price_changes": ("Price changes", "Preisänderungen"),
@@ -172,6 +173,10 @@ HINTS = {
     "pressure_statistics": (
         "System pressure without long-term statistics (no state class): no check of the system pressure.",
         "Anlagendruck ohne Langzeitstatistik (keine state_class): kein Befund Anlagendruck.",
+    ),
+    "source_statistics": (
+        "Source temperature without long-term statistics (no state class): the efficiency factor only from the setup, no “Hot water 2 K colder”.",
+        "Quelltemperatur ohne Langzeitstatistik (keine state_class): Gütegrad erst ab der Einrichtung, kein „Warmwasser 2 K kälter“.",
     ),
     "design": (
         "No design outdoor temperature: heat load per kelvin only.",
@@ -323,6 +328,9 @@ def heat_pump_summary(
     # Rare: only named when mapped (check "system pressure dropped").
     if Signal.SYSTEM_PRESSURE in mapped:
         measured.append(f"{t('pressure')} ✓")
+    # Rare: brine/water and water/water only (Carnot source).
+    if Signal.SOURCE_TEMP in mapped:
+        measured.append(f"{t('source_brine')} ✓")
     if has_boiler(mapped):
         measured.append(f"{t('boiler')} ✓")
     lines.append(f"**{t('measurements')}:** {', '.join(measured)}")
@@ -389,6 +397,8 @@ def heat_pump_summary(
         hints.append(h("return_statistics"))
     if Signal.SYSTEM_PRESSURE in missing:
         hints.append(h("pressure_statistics"))
+    if Signal.SOURCE_TEMP in missing:
+        hints.append(h("source_statistics"))
     if fixed is None and not options.get(CONF_ELECTRICITY_PRICE_ENTITY):
         hints.append(h("price"))
     if options.get(CONF_GRID_IMPORT_ENTITY) and not (
