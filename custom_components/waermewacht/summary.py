@@ -32,10 +32,12 @@ from .const import (
     CONF_OIL_PRICE,
     CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
+    CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     DEFAULT_CRITICAL_RUN_MINUTES,
+    DEFAULT_SEASON_START_MONTH,
     DEFAULT_SHORT_RUN_MINUTES,
     DEFAULT_STARTS_PER_HOUR,
     GAS_DHW,
@@ -110,6 +112,7 @@ T = {
     "per_day": ("starts/day", "Starts/Tag"),
     "short": ("short run", "Kurzlauf"),
     "critical": ("critical", "kritisch"),
+    "season_from": ("season from", "Saison ab"),
     "configured": ("Set up", "Eingerichtet"),
     "missing": ("Missing", "Was fehlt"),
     "kind_gas": ("Gas boiler", "Gasheizung"),
@@ -203,6 +206,23 @@ HINTS = {
         "Kein Ölpreis: keine Kosten.",
     ),
 }
+
+
+# Month names for the season start ([en, de]), as the form's select.
+MONTHS = (
+    ("January", "Januar"),
+    ("February", "Februar"),
+    ("March", "März"),
+    ("April", "April"),
+    ("May", "Mai"),
+    ("June", "Juni"),
+    ("July", "Juli"),
+    ("August", "August"),
+    ("September", "September"),
+    ("October", "Oktober"),
+    ("November", "November"),
+    ("December", "Dezember"),
+)
 
 
 def _lang(language: str | None) -> int:
@@ -366,6 +386,10 @@ def heat_pump_summary(
         f"{t('short')} {_num(options.get(CONF_SHORT_RUN, DEFAULT_SHORT_RUN_MINUTES), lang)} min",
         f"{t('critical')} {_num(options.get(CONF_CRITICAL_RUN, DEFAULT_CRITICAL_RUN_MINUTES), lang)} min",
     ]
+    # Season start only when moved from July: every season value hangs on it.
+    month = int(options.get(CONF_SEASON_START) or DEFAULT_SEASON_START_MONTH)
+    if month != DEFAULT_SEASON_START_MONTH:
+        limits.append(f"{t('season_from')} {MONTHS[month - 1][lang]}")
     lines.append(f"**{t('limits')}:** {', '.join(limits)}")
 
     hints = []

@@ -5,6 +5,7 @@
 ### Geändert
 
 - **Karte „Takte“: Die Diagramme nennen die Saison.** „Laufzeit Heizen je Außentemperatur“ und „Heizleistung je Außentemperatur“ zeigen im Titel, ob die Werte aus der Vorsaison oder der laufenden Saison kommen – im Herbst ist es meist noch die Vorsaison, wie bei „Läuft durch unter“.
+- **Übersicht im Zahnrad nennt einen verstellten Saisonbeginn.** Beginnt die Saison nicht am 1. Juli, steht unter „Grenzen“ z. B. „Saison ab Oktober“: Alle Saisonwerte hängen daran, und das Feld steht im eingeklappten Abschnitt „Grenzen und Auswertung“.
 
 ## 0.12.0 – 2026-11-14
 

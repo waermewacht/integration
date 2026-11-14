@@ -53,6 +53,33 @@ def test_template_entry_with_everything() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("month", "language", "shown"),
+    [
+        ("7", "de", None),
+        (None, "de", None),
+        ("10", "de", "Saison ab Oktober"),
+        ("3", "en", "season from March"),
+    ],
+)
+def test_season_start_only_when_moved(
+    month: str | None, language: str, shown: str | None
+) -> None:
+    """The season start shows under the limits only when it is not July."""
+    options = {"electricity_price": 27.75}
+    if month is not None:
+        options["season_start_month"] = month
+    text = heat_pump_summary(EMS_ESP, options, "EMS-ESP", language)
+    limits = next(
+        line for line in text.splitlines() if "Starts/h" in line or "starts/h" in line
+    )
+    if shown is None:
+        assert "Saison" not in limits
+        assert "season" not in limits
+    else:
+        assert limits.endswith(f", {shown}")
+
+
 def test_own_mapping_without_feed_in_meter() -> None:
     """Own mapping, one meter for all, grid import without feed-in and PV:
     the hints say what that costs."""
