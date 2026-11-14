@@ -1008,7 +1008,8 @@ class WaermewachtCard extends HTMLElement {
       line: true,
       points: rows.map((c) => [c.lower + 1, c.share_percent]),
     }];
-    return `<div class="charts">${this._xyChart(t.dutyChart, "%", series, this._entities.continuous_below, 0, 0)}`
+    const title = (name) => this._seasonTitle(t, name, state.attributes.season);
+    return `<div class="charts">${this._xyChart(title(t.dutyChart), "%", series, this._entities.continuous_below, 0, 0)}`
       + `${this._powerChart(t, state.attributes, rows)}</div>`;
   }
 
@@ -1031,7 +1032,14 @@ class WaermewachtCard extends HTMLElement {
     if (has(a.measured_max_kw) && has(a.measured_max_class)) {
       series.push({ color: COLORS.outdoor, label: t.powerMax, points: [[a.measured_max_class + 1, a.measured_max_kw]] });
     }
-    return this._xyChart(t.powerChart, "kW", series, this._entities.continuous_below, 0, 1);
+    return this._xyChart(this._seasonTitle(t, t.powerChart, a.season), "kW", series, this._entities.continuous_below, 0, 1);
+  }
+
+  /** Chart title with the season its classes come from (duty.py "season"):
+   * the previous one in autumn, before the current one has enough hours. */
+  _seasonTitle(t, name, season) {
+    const label = { current: t.current, previous: t.previousSeason }[season];
+    return label ? `${name} · ${label}` : name;
   }
 
   /** Starts per year ("starts_per_year", cycling.py): counted over the last

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Karte „Takte“: Die Diagramme nennen die Saison.** „Laufzeit Heizen je Außentemperatur“ und „Heizleistung je Außentemperatur“ zeigen im Titel, ob die Werte aus der Vorsaison oder der laufenden Saison kommen – im Herbst ist es meist noch die Vorsaison, wie bei „Läuft durch unter“.
+
 ## 0.12.0 – 2026-11-14
 
 ### Neu
