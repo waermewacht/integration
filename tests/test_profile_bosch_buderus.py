@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from custom_components.waermewacht.activity import combine
 from custom_components.waermewacht.counter import UNIT_FACTORS
 from custom_components.waermewacht.model import ENERGY_SIGNALS, Activity, Signal
 from custom_components.waermewacht.profiles import (
@@ -55,6 +56,8 @@ def enabled(key: str) -> list[RegistryEntry]:
 HP1 = "local_only:signals:SRC.CUHP.HP1.CompressorStatus"
 HMI = "local_only:signals:SRC.CUHP.HMI.CompressorActive"
 TC1 = "local_only:heatSources:additionalHeater:flowTemp"
+COOLING = "local_only:signals:SRC.CUHP.Cooling.Active"
+PC1 = "local_only:signals:SRC.HC1.FlowCtrl.PumpVolumeFlow"
 
 EXPECTED = {
     Signal.HEAT_HEATING: S + "heating_heat_produced",
@@ -68,12 +71,16 @@ EXPECTED = {
     # HP1 is disabled by default: the enabled display signal.
     Signal.COMPRESSOR: "sensor.compressor_running_display_signal",
     Signal.ACTIVITY: S + "compressor_status",
+    # An enum sensor on/off, not a binary sensor (issue #7).
+    Signal.COOLING_FLAG: "sensor.cooling_active",
+    Signal.COOLING_MODE: "sensor.heating_circuit_1_heating_cooling_mode",
     Signal.STARTS_TOTAL: S + "number_of_starts_total",
     Signal.RUNTIME_HEATING: S + "operating_time_heating",
     Signal.STARTS_HEATING: S + "number_of_starts_heating",
     Signal.OUTDOOR_TEMP: "sensor.system_outdoor_temperature",
     Signal.FLOW_TEMP: "sensor.primary_supply_temperature_tc1",
     Signal.RETURN_TEMP: S + "return_to_the_heat_source",
+    Signal.FLOW_RATE: "sensor.flow_rate_hc1_pc1",
     Signal.DHW_TEMP: "sensor.hot_water_1_hot_water_temperature",
     Signal.SYSTEM_PRESSURE: S + "system_pressure",
 }
@@ -98,11 +105,13 @@ def test_compressor_prefers_the_heat_pump_signal() -> None:
 
 
 def test_cloud_only() -> None:
-    """Without the local access: modulation and the system supply."""
-    (match,) = find(BOSCH_BUDERUS, without(HP1, HMI, TC1))
+    """Without the local access: modulation and the system supply; no
+    cooling flag (the set mode stands in) and no flow."""
+    (match,) = find(BOSCH_BUDERUS, without(HP1, HMI, TC1, COOLING, PC1))
     assert match.entities[Signal.COMPRESSOR] == S + "current_modulation"
     assert match.entities[Signal.FLOW_TEMP] == S + "system_supply_temperature"
-    assert match.missing == []
+    assert Signal.COOLING_MODE in match.entities
+    assert sorted(match.missing) == sorted([Signal.COOLING_FLAG, Signal.FLOW_RATE])
 
 
 @pytest.mark.parametrize(
@@ -205,3 +214,15 @@ def test_one_match_per_gateway() -> None:
 
 def test_foreign_platform_does_not_count() -> None:
     assert find(BOSCH_BUDERUS, entries("bosch_homecom")) == []
+
+
+def test_cooling_signal_is_an_enum_sensor_on_off() -> None:
+    """The local cooling signal says "on"/"off" like a binary sensor; it
+    beats the heating the activity entity reports."""
+    configured = {Signal.ACTIVITY, Signal.COOLING_FLAG, Signal.COOLING_MODE}
+    states = {Signal.COOLING_FLAG: "on", Signal.COOLING_MODE: "heat"}
+    assert combine(Activity.HEATING, states, configured) is Activity.COOLING
+    states[Signal.COOLING_FLAG] = "off"
+    assert combine(Activity.HEATING, states, configured) is Activity.HEATING
+    states[Signal.COOLING_FLAG] = "unavailable"  # cloud only, local gone
+    assert combine(Activity.HEATING, states, configured) is Activity.HEATING

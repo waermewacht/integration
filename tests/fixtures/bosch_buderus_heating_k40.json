@@ -1926,6 +1926,34 @@
     "friendly_name": "Primary supply temperature (TC1)"
    },
    "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.cooling_active",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.Cooling.Active",
+   "original_name": "Cooling active",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Cooling active"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.flow_rate_hc1_pc1",
+   "unique_id": "101987654:local_only:signals:SRC.HC1.FlowCtrl.PumpVolumeFlow",
+   "original_name": "Flow rate HC1 (PC1)",
+   "state": "980",
+   "attributes": {
+    "unit_of_measurement": "L/h",
+    "device_class": "volume_flow_rate",
+    "state_class": "measurement",
+    "friendly_name": "Flow rate HC1 (PC1)"
+   },
+   "disabled_by_default": false
   }
  ]
 }

@@ -207,8 +207,19 @@ def _selector(signal: Signal) -> selector.EntitySelector:
         Signal.COOLING_FLAG,
         Signal.HEATING_FLAG,
     ):
-        filters = selector.EntityFilterSelectorConfig(
-            domain=["binary_sensor", "switch"]
+        # Also an enum sensor with the states on/off (Bosch/Buderus Home
+        # Comfort's local signals, issue #7); activity.ON/OFF read both.
+        return selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                filter=[
+                    selector.EntityFilterSelectorConfig(
+                        domain=["binary_sensor", "switch"]
+                    ),
+                    selector.EntityFilterSelectorConfig(
+                        domain="sensor", device_class="enum"
+                    ),
+                ]
+            )
         )
     elif signal is Signal.COOLING_MODE:
         filters = selector.EntityFilterSelectorConfig(domain=["select", "sensor"])

@@ -2,7 +2,13 @@
 
 ## Unveröffentlicht
 
+### Neu
+
+- **Bosch/Buderus Home Comfort: Kühlen, eingestellte Betriebsart und Durchfluss.** Die Vorlage trägt mit dem lokalen Zugang „Kühlen läuft“ und den Durchfluss im Heizkreis 1 (PC1) ein, dazu die eingestellte Betriebsart von Heizkreis 1. Bestehende Einträge: unter *Neu konfigurieren* von Hand nachtragen. (danke an @SoftwareSchmied)
+
 ### Geändert
+
+- **Merker (an/aus) dürfen auch Sensoren sein.** „Abtauen läuft“, „Warmwasser läuft“, „Kühlen läuft“ und „Heizen läuft“ bieten jetzt auch Sensoren mit den Zuständen `on`/`off` (Geräteklasse `enum`) an, etwa die lokalen Signale von Bosch/Buderus Home Comfort. (danke an @SoftwareSchmied)
 
 - **Sole/Wasser-Wärmepumpen ohne „Abtauungen heute“.** Ist die Quelltemperatur (Sole) eingetragen, legt Wärmewacht den Sensor nicht mehr an und räumt einen schon vorhandenen weg; die Karte „Takte“ zeigt die Kachel dann nicht. Sole- und Wasser-Wärmepumpen tauen nicht ab. (danke an MartyBr, simon42-Forum)
 - **Karte „Takte“: Die Diagramme nennen die Saison.** „Laufzeit Heizen je Außentemperatur“ und „Heizleistung je Außentemperatur“ zeigen im Titel, ob die Werte aus der Vorsaison oder der laufenden Saison kommen – im Herbst ist es meist noch die Vorsaison, wie bei „Läuft durch unter“.
