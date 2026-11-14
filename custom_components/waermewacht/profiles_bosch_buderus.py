@@ -36,8 +36,13 @@ supply (behind a buffer). System pressure "gateway:system_pressure" (bar).
 Cooling (issue #7, checked against the author's diagnostics 2026-11-14):
 the local signal SRC.CUHP.Cooling.Active, an enum sensor "on"/"off" (not a
 binary sensor), and the set heating/cooling mode of circuit 1
-(heatingCircuits/hc1/heatCoolMode: heat, cool, heat_cool). Flow: the local
-flow of heating circuit 1 (PC1, L/h); no value at a very small flow.
+(heatingCircuits/hc1/heatCoolMode: heat, cool, heat_cool). Flow rate: the
+primary circuit at the heat pump (PC0, /heatSources/hs1/pumpVolumeFlow, then
+its second source SRC.SystemPumpVolumeFlow, disabled by default), which
+matches the spread TC1/TC0 the flow check compares it with; else heating
+circuit 1 (PC1). All L/h. PC0 reports "below measuring range" for about a
+fifth of the run time (the author's plant, 14.11.), shown as unknown:
+Wärmewacht skips such values (no zero flow, no repair issue).
 """
 
 from __future__ import annotations
@@ -84,7 +89,11 @@ BOSCH_BUDERUS = Template(
             (_S, "gateway:supply_temperature"),
         ),
         Signal.RETURN_TEMP: ((_S, "gateway:return_temperature"),),
-        Signal.FLOW_RATE: ((_S, _LOCAL + "signals:SRC.HC1.FlowCtrl.PumpVolumeFlow"),),
+        Signal.FLOW_RATE: (
+            (_S, _LOCAL + "heatSources:hs1:pumpVolumeFlow"),
+            (_S, _LOCAL + "signals:SRC.SystemPumpVolumeFlow"),
+            (_S, _LOCAL + "signals:SRC.HC1.FlowCtrl.PumpVolumeFlow"),
+        ),
         Signal.DHW_TEMP: ((_S, "gateway:hot_water_temperature"),),
         Signal.SYSTEM_PRESSURE: ((_S, "gateway:system_pressure"),),
     },

@@ -1954,6 +1954,32 @@
     "friendly_name": "Flow rate HC1 (PC1)"
    },
    "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.primary_flow_rate",
+   "unique_id": "101987654:local_only:heatSources:hs1:pumpVolumeFlow",
+   "original_name": "Primary flow rate",
+   "state": "1450",
+   "attributes": {
+    "unit_of_measurement": "L/h",
+    "device_class": "volume_flow_rate",
+    "state_class": "measurement",
+    "friendly_name": "Primary flow rate"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.primary_flow_rate_pc0_signal",
+   "unique_id": "101987654:local_only:signals:SRC.SystemPumpVolumeFlow",
+   "original_name": "Primary flow rate (PC0, signal)",
+   "state": "unknown",
+   "attributes": {
+    "unit_of_measurement": "L/h",
+    "device_class": "volume_flow_rate",
+    "state_class": "measurement",
+    "friendly_name": "Primary flow rate (PC0, signal)"
+   },
+   "disabled_by_default": true
   }
  ]
 }

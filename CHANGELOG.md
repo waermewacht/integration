@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Bosch/Buderus Home Comfort: Durchfluss aus dem Primärkreis.** Die Vorlage nimmt jetzt zuerst den Durchfluss an der Wärmepumpe (PC0), weil Wärmewacht ihn mit der Spreizung an der Wärmepumpe vergleicht; der Heizkreis 1 (PC1) bleibt Rückfall. Meldet PC0 „unter dem Messbereich“, überspringt Wärmewacht den Wert. Bestehende Einträge behalten ihre Zuordnung; wer umstellen will, wählt unter *Neu konfigurieren* „Volumenstrom primär“. (danke an @SoftwareSchmied)
+
 ## 0.13.0 – 2026-11-14
 
 ### Neu

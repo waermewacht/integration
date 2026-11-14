@@ -58,6 +58,8 @@ HMI = "local_only:signals:SRC.CUHP.HMI.CompressorActive"
 TC1 = "local_only:heatSources:additionalHeater:flowTemp"
 COOLING = "local_only:signals:SRC.CUHP.Cooling.Active"
 PC1 = "local_only:signals:SRC.HC1.FlowCtrl.PumpVolumeFlow"
+PC0 = "local_only:heatSources:hs1:pumpVolumeFlow"
+PC0_SIGNAL = "local_only:signals:SRC.SystemPumpVolumeFlow"
 
 EXPECTED = {
     Signal.HEAT_HEATING: S + "heating_heat_produced",
@@ -80,7 +82,8 @@ EXPECTED = {
     Signal.OUTDOOR_TEMP: "sensor.system_outdoor_temperature",
     Signal.FLOW_TEMP: "sensor.primary_supply_temperature_tc1",
     Signal.RETURN_TEMP: S + "return_to_the_heat_source",
-    Signal.FLOW_RATE: "sensor.flow_rate_hc1_pc1",
+    # The primary circuit at the heat pump, as the spread TC1/TC0 (issue #7).
+    Signal.FLOW_RATE: "sensor.primary_flow_rate",
     Signal.DHW_TEMP: "sensor.hot_water_1_hot_water_temperature",
     Signal.SYSTEM_PRESSURE: S + "system_pressure",
 }
@@ -107,7 +110,9 @@ def test_compressor_prefers_the_heat_pump_signal() -> None:
 def test_cloud_only() -> None:
     """Without the local access: modulation and the system supply; no
     cooling flag (the set mode stands in) and no flow."""
-    (match,) = find(BOSCH_BUDERUS, without(HP1, HMI, TC1, COOLING, PC1))
+    (match,) = find(
+        BOSCH_BUDERUS, without(HP1, HMI, TC1, COOLING, PC0, PC0_SIGNAL, PC1)
+    )
     assert match.entities[Signal.COMPRESSOR] == S + "current_modulation"
     assert match.entities[Signal.FLOW_TEMP] == S + "system_supply_temperature"
     assert Signal.COOLING_MODE in match.entities
@@ -226,3 +231,15 @@ def test_cooling_signal_is_an_enum_sensor_on_off() -> None:
     assert combine(Activity.HEATING, states, configured) is Activity.HEATING
     states[Signal.COOLING_FLAG] = "unavailable"  # cloud only, local gone
     assert combine(Activity.HEATING, states, configured) is Activity.HEATING
+
+
+def test_flow_rate_falls_back_from_the_primary_circuit() -> None:
+    """PC0 first, then its second source (disabled by default), then PC1."""
+    (match,) = find(BOSCH_BUDERUS, without(PC0))
+    assert match.entities[Signal.FLOW_RATE] == "sensor.flow_rate_hc1_pc1"
+    signal = [
+        e._replace(usable=True) if e.unique_id == f"{GATEWAY}:{PC0_SIGNAL}" else e
+        for e in without(PC0)
+    ]
+    (match,) = find(BOSCH_BUDERUS, signal)
+    assert match.entities[Signal.FLOW_RATE] == "sensor.primary_flow_rate_pc0_signal"
