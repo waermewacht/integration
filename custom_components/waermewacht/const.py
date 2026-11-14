@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "waermewacht"
-VERSION: Final = "0.12.0"
+VERSION: Final = "0.13.0"
 
 # Config entry (one per heat pump).
 CONF_NAME: Final = "name"
