@@ -27,6 +27,7 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
@@ -36,6 +37,7 @@ from .allocation import NONE
 from .binary_sensor import health_checks
 from .carnot import COLDER_DHW_KELVIN, factor_attributes, lower_flow_figure
 from .charges import Charge, charge_ratio, is_disinfection
+from .const import DOMAIN
 from .costs import CostComparison, compare_costs, compare_with_gas
 from .degree_days import change_percent
 from .duty import duty_attributes, duty_value
@@ -82,6 +84,11 @@ class HeatPumpSensorDescription(SensorEntityDescription):
 
 def _has(*signals: Signal) -> Needs:
     return lambda runtime: all(s in runtime.entities for s in signals)
+
+
+def _is_brine(runtime: HeatPumpRuntime) -> bool:
+    """Brine/water or water/water: the source temperature is mapped."""
+    return Signal.SOURCE_TEMP in runtime.entities
 
 
 def _mode_complete(runtime: HeatPumpRuntime, mode: Mode) -> bool:
@@ -331,7 +338,8 @@ CYCLING = [
         key="defrosts_today",
         state_class=SensorStateClass.MEASUREMENT,
         value=lambda r: r.cycles("today").defrosts,
-        needs=lambda r: r.has_activity,
+        # A brine/water heat pump (source temperature mapped) never defrosts.
+        needs=lambda r: r.has_activity and not _is_brine(r),
         attributes=lambda r: {
             "minutes": _minutes(r.cycles("today").defrost_seconds),
             "yesterday": r.cycles("yesterday").defrosts,
@@ -1157,6 +1165,14 @@ async def async_setup_entry(
         async_add_entities(gas_sensors(entry))  # type: ignore[arg-type]
         return
     runtime = entry.runtime_data
+    if _is_brine(runtime):
+        # Created before the source temperature was entered: would stay
+        # behind as "no longer provided".
+        registry = er.async_get(hass)
+        if entity_id := registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_defrosts_today"
+        ):
+            registry.async_remove(entity_id)
     async_add_entities(
         HeatPumpSensor(entry, d) for d in DESCRIPTIONS if d.needs(runtime)
     )

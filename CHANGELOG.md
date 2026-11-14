@@ -4,6 +4,7 @@
 
 ### Geändert
 
+- **Sole/Wasser-Wärmepumpen ohne „Abtauungen heute“.** Ist die Quelltemperatur (Sole) eingetragen, legt Wärmewacht den Sensor nicht mehr an und räumt einen schon vorhandenen weg; die Karte „Takte“ zeigt die Kachel dann nicht. Sole- und Wasser-Wärmepumpen tauen nicht ab. (danke an MartyBr, simon42-Forum)
 - **Karte „Takte“: Die Diagramme nennen die Saison.** „Laufzeit Heizen je Außentemperatur“ und „Heizleistung je Außentemperatur“ zeigen im Titel, ob die Werte aus der Vorsaison oder der laufenden Saison kommen – im Herbst ist es meist noch die Vorsaison, wie bei „Läuft durch unter“.
 - **Übersicht im Zahnrad nennt einen verstellten Saisonbeginn.** Beginnt die Saison nicht am 1. Juli, steht unter „Grenzen“ z. B. „Saison ab Oktober“: Alle Saisonwerte hängen daran, und das Feld steht im eingeklappten Abschnitt „Grenzen und Auswertung“.
 

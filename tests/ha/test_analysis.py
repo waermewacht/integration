@@ -488,8 +488,19 @@ async def test_efficiency_factor_with_the_brine(
         ),
     )
     entry.add_to_hass(hass)
+    # Left from before the source temperature was entered.
+    er.async_get(hass).async_get_or_create(
+        "sensor", DOMAIN, f"{entry.entry_id}_defrosts_today", config_entry=entry
+    )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    # A brine heat pump never defrosts: no sensor, the old one is removed.
+    assert (
+        er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_defrosts_today"
+        )
+        is None
+    )
 
     # 7 heating days: flow 35 °C, spread 5 K (sink 32.5 °C), 0 °C outside
     # and 8 °C brine while heating, COP 4.
