@@ -533,6 +533,7 @@ async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
         "costs": True,
         "pv": True,
         "heat_load": True,
+        "rooms": True,
         "limits": True,
         "price_change": True,
     }
@@ -777,6 +778,7 @@ async def test_options_suggest_meters_and_price_from_tarifwacht(
         "costs": False,
         "pv": False,
         "heat_load": True,
+        "rooms": True,
         "limits": True,
         "price_change": True,
     }
