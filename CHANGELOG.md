@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Bitte prüfen
+
+- **„Starts heute“, „Kurzläufe heute“ und „Abtauungen heute“ zählen jetzt als Tageszähler.** Sie beginnen um Mitternacht neu und haben die Zustandsklasse `total`. Damit zeigt das Statistik-Diagramm mit Zeitraum „Tag“ und Statistiktyp „Änderung“ die Anzahl je Tag; „Max“ nahm bisher den Endstand vom Vortag mit. Home Assistant stellt die Statistik dieser drei Sensoren nach dem Update von selbst um, ab dann gibt es für sie kein Minimum, Maximum und Mittel mehr. Wer sie in einem Statistik-Diagramm zeigt: auf „Änderung“ umstellen. (danke an alteMade, simon42-Forum)
+
 ## 0.13.1 – 2026-11-14
 
 ### Geändert

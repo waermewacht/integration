@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -80,6 +80,9 @@ class HeatPumpSensorDescription(SensorEntityDescription):
     value: Value
     needs: Needs = lambda runtime: True
     attributes: Callable[[HeatPumpRuntime], dict[str, Any]] | None = None
+    # A count of a runtime window ("today") with the state class total: the
+    # window start is the last reset.
+    reset_window: str | None = None
 
 
 def _has(*signals: Signal) -> Needs:
@@ -250,10 +253,16 @@ def _starts_season_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
 CYCLING = [
     HeatPumpSensorDescription(
         key="starts_today",
-        # Counts of the day: the state class makes the frontend draw a line
-        # instead of a timeline of texts (no unit). Measurement, not total:
-        # a count that drops within the day is no meter reset.
-        state_class=SensorStateClass.MEASUREMENT,
+        # Counts of the day: a state class makes the frontend draw a line
+        # instead of a timeline of texts (no unit). Total with the local
+        # midnight as last reset (0.14.0, simon42 95035 #219): the statistics
+        # card shows the starts of each day as "change". Measurement before
+        # put the count of the evening before into the first hour of the day
+        # (the recorder includes the state at the period start), so the daily
+        # "max" was wrong. A count that drops within the day stays a negative
+        # change (total, not total_increasing).
+        state_class=SensorStateClass.TOTAL,
+        reset_window="today",
         value=lambda r: r.cycles("today").starts,
         needs=HAS_COMPRESSOR,
     ),
@@ -317,7 +326,8 @@ CYCLING = [
     ),
     HeatPumpSensorDescription(
         key="short_runs_today",
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
+        reset_window="today",
         value=lambda r: r.cycles("today").short_runs,
         needs=HAS_COMPRESSOR,
         attributes=lambda r: {
@@ -336,7 +346,8 @@ CYCLING = [
     ),
     HeatPumpSensorDescription(
         key="defrosts_today",
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
+        reset_window="today",
         value=lambda r: r.cycles("today").defrosts,
         # A brine/water heat pump (source temperature mapped) never defrosts.
         needs=lambda r: r.has_activity and not _is_brine(r),
@@ -1232,6 +1243,14 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
     @property
     def native_value(self) -> StateType:
         return self.entity_description.value(self.runtime)
+
+    @property
+    def last_reset(self) -> datetime | None:
+        """Start of the window the count belongs to, from the same clock as
+        the value (both computed when the state is written)."""
+        if (window := self.entity_description.reset_window) is None:
+            return None
+        return self.runtime.window(window, dt_util.utcnow())[0]
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

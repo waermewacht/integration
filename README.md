@@ -395,6 +395,8 @@ Alle mit Langzeitstatistik (`total_increasing`). Jeder Sensor entsteht nur, wenn
 
 Die meisten Takt-Sensoren brauchen „Kompressor läuft“. Abtauungen brauchen nur die Betriebsart. „Starts gesamt“ gibt es auch, wenn nur der Startzähler der Wärmepumpe zugeordnet ist.
 
+**Anzahl je Tag im Statistik-Diagramm:** „Starts heute“, „Kurzläufe heute“ und „Abtauungen heute“ beginnen um Mitternacht neu (Zustandsklasse `total`, Attribut `last_reset`). Im Statistik-Diagramm mit Zeitraum „Tag“ und Statistiktyp „Änderung“ zeigt jeder Balken die Anzahl dieses Tages, auch über die 10 Tage des Verlaufs hinaus. „Max“ ist dafür nicht geeignet: Home Assistant nimmt den Stand vom Beginn der Stunde mit, um Mitternacht also noch den Endstand vom Vortag.
+
 | Entität | Einheit | Bedeutung |
 | --- | --- | --- |
 | Starts heute, Starts gestern | – | beobachtete Kompressorstarts |

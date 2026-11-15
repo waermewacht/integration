@@ -395,6 +395,8 @@ All with long-term statistics (`total_increasing`). Each sensor is only created 
 
 Most cycling sensors need "Compressor running". Defrosts only need the activity. "Starts total" also exists when only the heat pump's starts counter is mapped.
 
+**Count per day in the statistics graph:** "Starts today", "Short runs today" and "Defrosts today" start again at midnight (state class `total`, attribute `last_reset`). In the statistics graph card with period "Day" and stat type "Change", each bar shows the count of that day, also beyond the 10 days of history. "Max" does not work for this: Home Assistant includes the state at the start of the hour, so at midnight still the final count of the day before.
+
 | Entity | Unit | Meaning |
 | --- | --- | --- |
 | Starts today, Starts yesterday | – | observed compressor starts |

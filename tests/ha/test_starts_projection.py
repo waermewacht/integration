@@ -50,10 +50,45 @@ async def test_projection_needs_seven_days(
     assert found["starts_7d_reason"] == "too_few_days"
     assert found["starts_7d_days"] == 0
     # Counts of the day: numbers in the history, not a timeline of texts.
-    for key in ("starts_today", "starts_yesterday", "short_runs_today"):
+    # Today's counts are totals reset at local midnight (0.14.0), so the
+    # statistics card shows each day's count as "change".
+    midnight = dt_util.start_of_local_day(dt_util.as_local(START))
+    for key in ("starts_today", "short_runs_today", "defrosts_today"):
         current = hass.states.get(entity_id(hass, entry, key))
         assert current is not None
-        assert current.attributes["state_class"] == "measurement", key
+        assert current.attributes["state_class"] == "total", key
+        reset = dt_util.parse_datetime(current.attributes["last_reset"])
+        assert reset == midnight, key
+    current = hass.states.get(entity_id(hass, entry, "starts_yesterday"))
+    assert current is not None
+    assert current.attributes["state_class"] == "measurement"
+    assert "last_reset" not in current.attributes
+
+
+@pytest.mark.freeze_time(START)
+async def test_counts_of_the_day_reset_at_local_midnight(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """After midnight the count starts at 0 again, with the new day as last
+    reset: the recorder starts a new cycle instead of booking a drop."""
+    entry = await setup(hass)
+    hass.states.async_set(COMPRESSOR, "on")
+    await tick(hass, freezer, 30)
+    hass.states.async_set(COMPRESSOR, "off")
+    await tick(hass, freezer, 1)
+    first = hass.states.get(entity_id(hass, entry, "starts_today"))
+    assert first is not None
+    assert first.state == "1"
+    # 07:31 local on 15 Jan; 17 hours later it is the next day.
+    await tick(hass, freezer, 17 * 60)
+    after = hass.states.get(entity_id(hass, entry, "starts_today"))
+    assert after is not None
+    assert after.state == "0"
+    old = dt_util.parse_datetime(first.attributes["last_reset"])
+    new = dt_util.parse_datetime(after.attributes["last_reset"])
+    assert old is not None and new is not None
+    assert new - old == timedelta(days=1)
+    assert dt_util.as_local(new).hour == 0
 
 
 @pytest.mark.freeze_time(START)
