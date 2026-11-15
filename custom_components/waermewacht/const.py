@@ -66,6 +66,11 @@ CONF_DISINFECTION_TEMP: Final = "disinfection_temp"  # °C storage, DVGW W 551
 # Data sheet values for "power per heat load" (health check 4.7), optional.
 CONF_RATED_POWER: Final = "rated_power_kw"
 CONF_MIN_POWER: Final = "min_power_kw"
+# Heating curve check (rooms.py, room_sources.py): thermostats/thermometers,
+# a wish temperature instead of the thermostats' targets, valve sensors.
+CONF_ROOM_ENTITIES: Final = "room_entities"
+CONF_ROOM_TARGET: Final = "room_target"
+CONF_VALVE_ENTITIES: Final = "valve_entities"
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
 # A price sensor (dynamic tariff): ct/kWh, €/kWh or €/MWh (prices.py); hours

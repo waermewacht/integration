@@ -296,6 +296,7 @@
     "error": {
       "battery_both": "Batterie: bitte Lade- und Entladezähler wählen oder keinen.",
       "meter_unit": "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
+      "valve_unit": "Ventilöffnungen müssen in % sein: {entity} hat die Einheit {unit}.",
       "price_unit": "{entity} meldet seinen Preis in „{unit}“. Möglich sind {units}.",
       "change_from_required": "Preisänderung: Bitte „Gültig ab“ angeben.",
       "change_empty": "Preisänderung: Mindestens einen neuen Preis eintragen.",
@@ -380,6 +381,20 @@
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
               "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
+          },
+          "rooms": {
+            "name": "Heizkurve prüfen (optional)",
+            "data": {
+              "room_entities": "Räume (Thermostate oder Thermometer)",
+              "room_target": "Wunschtemperatur",
+              "valve_entities": "Ventilöffnungen (optional)"
+            },
+            "data_description": {
+              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+            },
+            "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },
           "limits": {
             "name": "Grenzen und Auswertung",
@@ -507,6 +522,20 @@
               "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
+          "rooms": {
+            "name": "Heizkurve prüfen (optional)",
+            "data": {
+              "room_entities": "Räume (Thermostate oder Thermometer)",
+              "room_target": "Wunschtemperatur",
+              "valve_entities": "Ventilöffnungen (optional)"
+            },
+            "data_description": {
+              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+            },
+            "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
+          },
           "limits": {
             "name": "Grenzen und Auswertung",
             "data": {
@@ -613,6 +642,20 @@
               "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
           },
+          "rooms": {
+            "name": "Heizkurve prüfen (optional)",
+            "data": {
+              "room_entities": "Räume (Thermostate oder Thermometer)",
+              "room_target": "Wunschtemperatur",
+              "valve_entities": "Ventilöffnungen (optional)"
+            },
+            "data_description": {
+              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+            },
+            "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
+          },
           "limits": {
             "name": "Grenzen und Auswertung",
             "data": {
@@ -718,6 +761,20 @@
               "rated_power_kw": "Aus dem Datenblatt; ergibt die Leistung je Heizlast.",
               "min_power_kw": "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist."
             }
+          },
+          "rooms": {
+            "name": "Heizkurve prüfen (optional)",
+            "data": {
+              "room_entities": "Räume (Thermostate oder Thermometer)",
+              "room_target": "Wunschtemperatur",
+              "valve_entities": "Ventilöffnungen (optional)"
+            },
+            "data_description": {
+              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+            },
+            "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },
           "limits": {
             "name": "Grenzen und Auswertung",
@@ -836,6 +893,9 @@
       },
       "pressure_drop": {
         "name": "Anlagendruck gesunken"
+      },
+      "heating_curve_high": {
+        "name": "Heizkurve höher als nötig"
       }
     },
     "button": {
@@ -1203,6 +1263,23 @@
       },
       "pressure_drop_status": {
         "name": "Befund Anlagendruck",
+        "state": {
+          "ok": "In Ordnung",
+          "problem": "Auffällig",
+          "not_analysed_yet": "Noch nicht ausgewertet",
+          "no_previous_season": "Noch keine Vorsaison",
+          "no_previous_year": "Noch kein Vorjahr",
+          "too_few_classes": "Zu wenig vergleichbares Wetter",
+          "too_few_days": "Zu wenige Tage",
+          "too_little_electricity": "Zu wenig Strom",
+          "too_few_charges": "Zu wenige Ladungen",
+          "outside_previous_range": "Vorlauf oder Wetter anders als Vorsaison",
+          "no_aux_counter": "Kein Heizstab-Zähler",
+          "no_outdoor_temp": "Keine Außentemperatur"
+        }
+      },
+      "heating_curve_high_status": {
+        "name": "Befund Heizkurve",
         "state": {
           "ok": "In Ordnung",
           "problem": "Auffällig",

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Heizkurve prüfen.** Im neuen eingeklappten Abschnitt „Heizkurve prüfen (optional)“ wählst du deine Raumthermostate oder Raumthermometer, die Räume nimmt Wärmewacht aus den Bereichen von Home Assistant. Der neue Befund „Heizkurve höher als nötig“ meldet, wenn alle Räume ihr Soll halten und selbst das am weitesten offene Ventil höchstens halb offen steht, getrennt nach Außentemperatur. Die Ventilöffnung von Homematic-IP-Thermostaten liest Wärmewacht von selbst, andere Ventile kannst du als Sensor in % dazunehmen. Mit eigenem Text in der Karte „Gesundheit“ und im Blueprint „Befund melden“. ([mehr](README.md#heizkurve-höher-als-nötig)) (danke an suedschwede, MartyBr, octek0815, Joachim-xo, the_MiCrO und alteMade, simon42-Forum)
+
 ## 0.14.1 – 2026-11-15
 
 ### Geändert

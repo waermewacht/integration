@@ -315,6 +315,11 @@ BINARY = {
         "Anlagendruck gesunken",
         "mdi:gauge-low",
     ),
+    "heating_curve_high": (
+        "Heating curve higher than needed",
+        "Heizkurve höher als nötig",
+        "mdi:chart-bell-curve",
+    ),
 }
 # Status sensors of the checks: (en, de, icon) and their states.
 STATUS = {
@@ -344,6 +349,11 @@ STATUS = {
         "Check system pressure",
         "Befund Anlagendruck",
         "mdi:gauge-low",
+    ),
+    "heating_curve_high": (
+        "Check heating curve",
+        "Befund Heizkurve",
+        "mdi:chart-bell-curve",
     ),
 }
 STATUS_STATES = {
@@ -691,6 +701,12 @@ OPTION_LABELS = {
     "design_outdoor_temp": ("Design outdoor temperature", "Normaußentemperatur"),
     "rated_power_kw": ("Rated heating power at A-7/W35", "Heizleistung bei A−7/W35"),
     "min_power_kw": ("Smallest heating power", "Kleinste Heizleistung"),
+    "room_entities": (
+        "Rooms (thermostats or thermometers)",
+        "Räume (Thermostate oder Thermometer)",
+    ),
+    "room_target": ("Wish temperature", "Wunschtemperatur"),
+    "valve_entities": ("Valve openings (optional)", "Ventilöffnungen (optional)"),
 }
 OPTION_HELP = {
     "change_electricity_price": (
@@ -792,6 +808,28 @@ OPTION_HELP = {
         "Wärmeleistung in kW aus dem Datenblatt (z. B. „Min. Heizleistung A15W35“), "
         "nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist.",
     ),
+    "room_entities": (
+        "Thermostats (climate) and/or room thermometers, one or more per room. "
+        "Thermostats like Homematic IP also report their valve opening. Assign each "
+        "entity (or its device) to the room's area.",
+        "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. "
+        "Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität "
+        "(oder ihr Gerät) dem Bereich des Raums zuordnen.",
+    ),
+    "room_target": (
+        "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on "
+        "purpose to keep its valve open, or for rooms with thermometers only.",
+        "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich "
+        "hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+    ),
+    "valve_entities": (
+        "Sensors with the valve opening in %, if your thermostats do not report it "
+        "themselves (e.g. channels of a floor heating actuator). They count for the "
+        "room of their area.",
+        "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst "
+        "melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum "
+        "ihres Bereichs.",
+    ),
 }
 
 # The options form (config_flow.OPTION_TOP, OPTION_SECTIONS): what nearly
@@ -857,6 +895,20 @@ OPTION_SECTIONS = {
         ),
         None,
         ("rated_power_kw", "min_power_kw"),
+    ),
+    "rooms": (
+        ("Check the heating curve (optional)", "Heizkurve prüfen (optional)"),
+        (
+            "Rooms tell whether the heating curve could be lower: a room whose valve "
+            "throttles holds its setpoint anyway, the room with the valve open the widest "
+            "decides. Rooms are grouped by their Home Assistant area; the summary above "
+            "shows which room got what.",
+            "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, "
+            "hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. "
+            "Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben "
+            "zeigt, welcher Raum was bekommen hat.",
+        ),
+        ("room_entities", "room_target", "valve_entities"),
     ),
     "limits": (
         ("Limits and evaluation", "Grenzen und Auswertung"),
@@ -1060,6 +1112,12 @@ def _build(lang: int) -> dict:
                     (
                         "{entity} is no energy meter in Wh, kWh or MWh.",
                         "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
+                    )
+                ),
+                "valve_unit": t(
+                    (
+                        "Valve openings must be in %: {entity} has the unit {unit}.",
+                        "Ventilöffnungen müssen in % sein: {entity} hat die Einheit {unit}.",
                     )
                 ),
                 "price_unit": t(

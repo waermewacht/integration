@@ -73,6 +73,7 @@ def test_every_sensor_translated_and_has_an_icon() -> None:
         "dhw_efficiency_drop",
         "status_messages",
         "pressure_drop",
+        "heating_curve_high",
     }
     # Each check also has a status sensor (sensor.HealthStatus).
     keys |= {f"{check}_status" for check in checks}

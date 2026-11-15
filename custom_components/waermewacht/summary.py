@@ -10,6 +10,7 @@ here (`de` for a German Home Assistant, English otherwise).
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping
+from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
@@ -62,6 +63,16 @@ from .oil import efficiency as boiler_type_efficiency
 
 # (English, German).
 T = {
+    "rooms": ("Heating curve check", "Heizkurve prüfen"),
+    "thermostat": ("thermostat", "Thermostat"),
+    "thermometer": ("thermometer", "Thermometer"),
+    "valves": ("valves", "Ventile"),
+    "valve_reported": ("valve reported", "Ventil gemeldet"),
+    "no_area": ("without an area, not counted", "ohne Bereich, zählt nicht"),
+    "no_room": (
+        "valve without a room in its area",
+        "Ventil ohne Raum in seinem Bereich",
+    ),
     "template": ("Template", "Vorlage"),
     "own": ("own mapping", "eigene Zuordnung"),
     "source": ("Source", "Quelle"),
@@ -300,6 +311,48 @@ def _mode(entities: set[Signal], mode: Mode, lang: int) -> str | None:
     return f"{t(mode.value)}: {', '.join(parts)}"
 
 
+@dataclass(frozen=True)
+class RoomLine:
+    """One room of the heating curve check: what its area holds."""
+
+    name: str
+    thermostats: int = 0
+    thermometers: int = 0
+    valves: int = 0  # valve sensors
+    valve_reported: bool = False  # a thermostat reports its opening
+
+
+@dataclass(frozen=True)
+class RoomSummary:
+    rooms: tuple[RoomLine, ...] = ()
+    no_area: tuple[str, ...] = ()
+    no_room: tuple[str, ...] = ()
+
+
+def rooms_text(rooms: RoomSummary, lang: int) -> str:
+    """ "Living room (thermostat, valve reported), Stairs (thermometer, 2
+    valves) · without an area, not counted: sensor.x"."""
+    t = lambda key: T[key][lang]  # noqa: E731
+    parts = []
+    for room in rooms.rooms:
+        what = []
+        if room.thermostats:
+            what.append(t("thermostat"))
+        if room.thermometers:
+            what.append(t("thermometer"))
+        if room.valves:
+            what.append(f"{room.valves} {t('valves')}")
+        elif room.valve_reported:
+            what.append(t("valve_reported"))
+        parts.append(f"{room.name} ({', '.join(what)})")
+    text = ", ".join(parts) or "–"
+    if rooms.no_area:
+        text += f" · {t('no_area')}: {', '.join(rooms.no_area)}"
+    if rooms.no_room:
+        text += f" · {t('no_room')}: {', '.join(rooms.no_room)}"
+    return text
+
+
 def heat_pump_summary(
     entities: Mapping[str, Any],
     options: Mapping[str, Any],
@@ -307,6 +360,7 @@ def heat_pump_summary(
     language: str | None,
     coarse_heat: bool = False,
     no_statistics: Collection[Signal] = (),
+    rooms: RoomSummary | None = None,
 ) -> str:
     """The summary of a heat pump entry (entities: signal -> entity id).
 
@@ -378,6 +432,9 @@ def heat_pump_summary(
     else:
         pv = t("off")
     lines.append(f"**{t('pv')}:** {pv}")
+    # Only when rooms are set (the section is optional and rare).
+    if rooms is not None:
+        lines.append(f"**{t('rooms')}:** {rooms_text(rooms, lang)}")
     # Starts per day only when set: empty means no such limit.
     per_day = options.get(CONF_STARTS_PER_DAY)
     limits = [

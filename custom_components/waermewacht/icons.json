@@ -21,6 +21,9 @@
       },
       "pressure_drop": {
         "default": "mdi:gauge-low"
+      },
+      "heating_curve_high": {
+        "default": "mdi:chart-bell-curve"
       }
     },
     "button": {
@@ -315,6 +318,9 @@
       },
       "pressure_drop_status": {
         "default": "mdi:gauge-low"
+      },
+      "heating_curve_high_status": {
+        "default": "mdi:chart-bell-curve"
       },
       "oil_consumption_year": {
         "default": "mdi:oil"

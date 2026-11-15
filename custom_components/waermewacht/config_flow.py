@@ -15,7 +15,7 @@ level, the efficiency by boiler type and a price per 100 l.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -30,6 +30,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
+    PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
@@ -74,6 +75,8 @@ from .const import (
     CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
     CONF_RATED_POWER,
+    CONF_ROOM_ENTITIES,
+    CONF_ROOM_TARGET,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_SOURCE,
@@ -82,6 +85,7 @@ from .const import (
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
+    CONF_VALVE_ENTITIES,
     CONF_Z_NUMBER,
     DEFAULT_CRITICAL_RUN_MINUTES,
     DEFAULT_MIN_ELECTRICITY_KWH,
@@ -135,8 +139,9 @@ from .profiles import (
     find,
     parse_compressor,
 )
+from .room_sources import VALVE_ATTRIBUTE, resolve_rooms
 from .sisters import suggestions
-from .summary import boiler_summary, heat_pump_summary
+from .summary import RoomLine, RoomSummary, boiler_summary, heat_pump_summary
 from .templates import TEMPLATES
 
 # Form sections and the signals in them.
@@ -1023,6 +1028,8 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
         CONF_FEED_IN_TARIFF,
     ),
     "heat_load": (CONF_RATED_POWER, CONF_MIN_POWER),
+    # Heating curve check (rooms.py): rooms by area, optional valves.
+    "rooms": (CONF_ROOM_ENTITIES, CONF_ROOM_TARGET, CONF_VALVE_ENTITIES),
     "limits": (
         CONF_MIN_ELECTRICITY,
         CONF_SHORT_RUN,
@@ -1052,6 +1059,7 @@ ERROR_SECTIONS = {
     "price_unit": "costs",
     "battery_both": "pv",
     "meter_unit": "pv",
+    "valve_unit": "rooms",
     "change_from_required": "price_change",
     "change_empty": "price_change",
     "change_exists": "price_change",
@@ -1189,6 +1197,19 @@ class WaermewachtOptionsFlow(OptionsFlow):
             ):
                 errors["base"] = "meter_unit"
                 placeholders = {"entity": wrong}
+            elif valve := next(
+                (
+                    v
+                    for v in data.get(CONF_VALVE_ENTITIES) or []
+                    if _unit_of(self.hass, v) != PERCENTAGE
+                ),
+                None,
+            ):
+                errors["base"] = "valve_unit"
+                placeholders = {
+                    "entity": valve,
+                    "unit": _unit_of(self.hass, valve) or "–",
+                }
             elif not errors:
                 return self.async_create_entry(data=data)
             options = data
@@ -1249,6 +1270,27 @@ class WaermewachtOptionsFlow(OptionsFlow):
             CONF_FEED_IN_TARIFF: number(0, 100, 0.001, "ct/kWh"),
             CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
             CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
+            CONF_ROOM_ENTITIES: selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=[
+                        selector.EntityFilterSelectorConfig(domain="climate"),
+                        selector.EntityFilterSelectorConfig(
+                            domain="sensor", device_class="temperature"
+                        ),
+                    ],
+                )
+            ),
+            CONF_ROOM_TARGET: number(10, 30, 0.5, "°C"),
+            CONF_VALVE_ENTITIES: selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=[
+                        selector.EntityFilterSelectorConfig(domain="sensor"),
+                        selector.EntityFilterSelectorConfig(domain="number"),
+                    ],
+                )
+            ),
             CONF_MIN_ELECTRICITY: number(0, 10, 0.1, "kWh"),
             CONF_SHORT_RUN: number(1, 60, 1, "min"),
             CONF_CRITICAL_RUN: number(1, 60, 1, "min"),
@@ -1354,6 +1396,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
             self.hass.config.language,
             coarse_heat=bool(coarse_heat_modes and coarse_heat_modes()),
             no_statistics=self._no_statistics(),
+            rooms=self._room_summary(options),
         )
         return self.async_show_form(
             step_id=step_id,
@@ -1361,6 +1404,33 @@ class WaermewachtOptionsFlow(OptionsFlow):
             errors=errors,
             description_placeholders=placeholders,
         )
+
+    def _room_summary(self, options: Mapping[str, Any]) -> RoomSummary | None:
+        """What each room (area) of the heating curve check holds."""
+        room_entities = list(options.get(CONF_ROOM_ENTITIES) or [])
+        if not room_entities:
+            return None
+        found = resolve_rooms(
+            self.hass, room_entities, list(options.get(CONF_VALVE_ENTITIES) or [])
+        )
+
+        def reports_valve(entity_id: str) -> bool:
+            state = self.hass.states.get(entity_id)
+            return state is not None and VALVE_ATTRIBUTE in state.attributes
+
+        lines = tuple(
+            RoomLine(
+                found.names.get(area, area),
+                thermostats=len(sources.climates),
+                thermometers=len(sources.thermometers),
+                valves=len(sources.valves),
+                valve_reported=any(reports_valve(c) for c in sources.climates),
+            )
+            for area, sources in sorted(
+                found.rooms.items(), key=lambda item: found.names.get(item[0], "")
+            )
+        )
+        return RoomSummary(lines, tuple(found.no_area), tuple(found.no_room))
 
     def _no_statistics(self) -> set[Signal]:
         """Mapped temperatures (and the system pressure) whose state has no

@@ -56,6 +56,9 @@ def health_checks(runtime: HeatPumpRuntime) -> list[str]:
         checks.append("status_messages")
     if Signal.SYSTEM_PRESSURE in runtime.entities:
         checks.append("pressure_drop")
+    # Rooms named in the settings (rooms.py).
+    if runtime.room_entities:
+        checks.append("heating_curve_high")
     return checks
 
 

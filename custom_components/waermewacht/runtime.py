@@ -110,12 +110,15 @@ from .const import (
     CONF_PRICE_CHANGES,
     CONF_PV_ENTITY,
     CONF_RATED_POWER,
+    CONF_ROOM_ENTITIES,
+    CONF_ROOM_TARGET,
     CONF_SEASON_START,
     CONF_SHORT_RUN,
     CONF_STARTS_OFFSET,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
     CONF_TEMPLATE,
+    CONF_VALVE_ENTITIES,
     DEFAULT_CRITICAL_RUN_MINUTES,
     DEFAULT_MIN_ELECTRICITY_KWH,
     DEFAULT_SEASON_START_MONTH,
@@ -253,6 +256,9 @@ from .report import (
     own_totals,
     statistics_rows,
 )
+from .room_sources import RoomMap, resolve_rooms, sample_room
+from .rooms import RoomLog
+from .rooms import check as rooms_check
 from .runs import (
     ACTIVITY,
     COMPRESSOR,
@@ -489,7 +495,15 @@ class HeatPumpRuntime:
             "dhw_efficiency_drop": Finding(None, NOT_ANALYSED),
             "status_messages": Finding(None, NOT_ANALYSED),
             "pressure_drop": Finding(None, NOT_ANALYSED),
+            "heating_curve_high": Finding(None, NOT_ANALYSED),
         }
+        # Heating curve check (rooms.py): rooms resolved from their areas at
+        # the start, today's means in the live file, days in the diary.
+        self.room_entities: list[str] = list(options.get(CONF_ROOM_ENTITIES) or [])
+        self.valve_entities: list[str] = list(options.get(CONF_VALVE_ENTITIES) or [])
+        self.room_target: float | None = options.get(CONF_ROOM_TARGET)
+        self.room_map = RoomMap()
+        self.room_log = RoomLog()
         # Entries of status texts without a mode per day (status_messages.py),
         # in the live file.
         self.status = StatusCounter()
@@ -714,6 +728,11 @@ class HeatPumpRuntime:
                 self._restore_history(data)
             self._history_dirty = True
         self.marks.rollover(now, self.totals)
+        if self.room_entities:
+            self.room_map = resolve_rooms(
+                self.hass, self.room_entities, self.valve_entities
+            )
+            self._judge_rooms()
         if self.hourly:
             self._mapping_ok = self._mapping_still_fits()
         if self.has_charges:
@@ -2222,6 +2241,12 @@ class HeatPumpRuntime:
                 "flow": self.flow.as_dict(),
                 "flow_rate": self.flow_rate.as_dict(),
                 "outdoor_heating": self.outdoor_heating.as_dict(),
+                # Rooms of the heating curve check (rooms.py), only when set.
+                **(
+                    {"rooms": self.room_log.diary_entry()}
+                    if self.room_map.rooms
+                    else {}
+                ),
                 # The brine while heating (carnot.py), only when mapped.
                 **(
                     {"source_heating": self.source_heating.as_dict()}
@@ -2278,6 +2303,21 @@ class HeatPumpRuntime:
         defrosts = [*self.defrosts, self.tracker.open_defrost]
         charges = [*self.charges, self.charge_tracker.open, self.charge_tracker.closing]
         return [(x.start, x.end) for x in (*defrosts, *charges) if x is not None]
+
+    def _judge_rooms(self) -> None:
+        """Heating curve check from the rooms in the diary (rooms.py)."""
+        if not self.room_entities:
+            return
+        result = rooms_check(self.diary, self.room_map.rooms)
+        evidence = result.as_attributes(self.room_map.names)
+        evidence["rooms_set"] = [
+            self.room_map.names.get(a, a) for a in sorted(self.room_map.rooms)
+        ]
+        evidence["without_area"] = list(self.room_map.no_area)
+        evidence["valves_without_room"] = list(self.room_map.no_room)
+        self.findings["heating_curve_high"] = Finding(
+            result.problem, result.reason, evidence
+        )
 
     def _judge_spread(self) -> None:
         """At midnight: was yesterday's spread while heating negative?"""
@@ -3136,6 +3176,10 @@ class HeatPumpRuntime:
             self.outdoor_hourly.setdefault(hour, Mean()).add(value, 60)
             if self._sampling:
                 self.outdoor_heating.add(value, 60)
+        for area, sources in self.room_map.rooms.items():
+            delta, valve = sample_room(self.hass.states.get, sources, self.room_target)
+            if delta is not None or valve is not None:
+                self.room_log.add(area, delta, valve, 60)
         if (
             self._sampling
             and (entity_id := self.entities.get(Signal.SOURCE_TEMP))
@@ -3183,8 +3227,10 @@ class HeatPumpRuntime:
                 self._write_diary(now)
                 self._judge_spread()
                 self._judge_flow()
+                self._judge_rooms()
                 self._update_status_finding(now)
             self.spread, self.flow, self.outdoor = Mean(), Mean(), Mean()
+            self.room_log = RoomLog()
             self.outdoor_heating = Mean()
             self.source_heating = Mean()
             self.outdoor_hourly = {
@@ -3521,6 +3567,7 @@ class HeatPumpRuntime:
             "own_starts": self.own_starts,
             "spread": self.spread.as_dict(),
             "flow": self.flow.as_dict(),
+            "rooms": self.room_log.as_dict(),
             "events": dict(self.events),
             "jumps": list(self.jumps),
             "decimal": sorted(s.value for s in self.decimal),
@@ -3589,6 +3636,7 @@ class HeatPumpRuntime:
         self.own_starts = data.get("own_starts", 0)
         self.spread = Mean.from_dict(data.get("spread"))
         self.flow = Mean.from_dict(data.get("flow"))
+        self.room_log = RoomLog.from_dict(data.get("rooms"))
         self.events = dict(data.get("events", {}))
         self.jumps = list(data.get("jumps", []))
         self.decimal = {Signal(s) for s in data.get("decimal", [])}

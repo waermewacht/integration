@@ -72,6 +72,7 @@ const TEXT = {
       cycling_problem: "Takten",
       status_messages: "Statusmeldungen",
       pressure_drop: "Anlagendruck",
+      heating_curve_high: "Heizkurve",
     },
     tiles: {
       activity: "Betriebsart",
@@ -202,6 +203,16 @@ const TEXT = {
       pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 Tagen`
         + (a.reference_bar != null ? `, höchster Wochenwert ${n(a.reference_bar, 2)} bar` : "")
         + ((a.triggers || []).includes("minimum") ? ` · unter ${n(a.min_bar, 2)} bar` : ""),
+      // The band that decided: tiefer möglich / zu tief, with the widest valve.
+      heating_curve_high: (a, n) => {
+        const bands = a.bands || [];
+        const b = bands.find((x) => x.verdict === "too_low") || bands.find((x) => x.verdict === "lower_possible");
+        if (!b) return bands.length ? "Räume halten ihr Soll, Kurve passt" : "";
+        const where = `bei ${n(b.outdoor, 0)} °C`;
+        if (b.verdict === "too_low") return `${where} bleibt ein Raum unter Soll – Kurve eher zu tief`;
+        if (b.estimate_kelvin != null) return `${where} ca. ${n(b.estimate_kelvin, 1)} K tiefer möglich`;
+        return `${where} weitestes Ventil ${b.lead_room} Ø ${n(b.lead_valve, 0)} % – tiefer möglich`;
+      },
     },
     fine: "In Ordnung",
     problem: "Auffällig",
@@ -280,6 +291,7 @@ const TEXT = {
       cycling_problem: "Cycling",
       status_messages: "Status messages",
       pressure_drop: "System pressure",
+      heating_curve_high: "Heating curve",
     },
     tiles: {
       activity: "Activity",
@@ -405,6 +417,15 @@ const TEXT = {
       pressure_drop: (a, n) => `${n(a.current_bar, 2)} bar in 7 days`
         + (a.reference_bar != null ? `, highest week ${n(a.reference_bar, 2)} bar` : "")
         + ((a.triggers || []).includes("minimum") ? ` · below ${n(a.min_bar, 2)} bar` : ""),
+      heating_curve_high: (a, n) => {
+        const bands = a.bands || [];
+        const b = bands.find((x) => x.verdict === "too_low") || bands.find((x) => x.verdict === "lower_possible");
+        if (!b) return bands.length ? "Rooms hold their setpoint, curve fits" : "";
+        const where = `at ${n(b.outdoor, 0)} °C`;
+        if (b.verdict === "too_low") return `${where} a room stays below setpoint – curve rather too low`;
+        if (b.estimate_kelvin != null) return `${where} about ${n(b.estimate_kelvin, 1)} K lower possible`;
+        return `${where} widest valve ${b.lead_room} avg ${n(b.lead_valve, 0)} % – lower possible`;
+      },
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),
     },
@@ -448,7 +469,7 @@ const TEXT = {
 };
 
 const CHECKS = ["efficiency_drop", "aux_mild_weather", "aux_dhw_charges", "dhw_efficiency_drop", "cycling_problem",
-  "status_messages", "pressure_drop"];
+  "status_messages", "pressure_drop", "heating_curve_high"];
 // Backup heater checks (binary_sensor.AUX_CHECKS).
 const AUX_CHECKS = new Set(["aux_mild_weather", "aux_dhw_charges"]);
 const RATIO_SCOPES = ["heating", "dhw", "combined", "cooling"];

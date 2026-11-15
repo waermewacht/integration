@@ -459,6 +459,33 @@ Nicht verwechseln: heatpumpmonitor.org rechnet „% of Carnot“ mit Aufschläge
 
 **Später (Stufe B, offen).** Mit Verdichterdrehzahl in % (nur über Vorlagen): Anteil der Stunden an der Untergrenze und ≥ 90 %, Volllast nach Warmwasser, AZ je Drehzahl. Erst auf Nachfrage.
 
+### 4.18 Heizkurve höher als nötig (umgesetzt 2026-11-16, `rooms.py`, `room_sources.py`, Andys Ja; Anlass simon42 95035 #220 ff., sechs Interessenten)
+
+**Was und warum.** „Vorlauf bei 0 °C“ und „Heizkurve 2 K tiefer“ (4.5, 4.14) sagen, was die Wärmepumpe liefert und was weniger Vorlauf spart, aber nicht, ob die Räume dann noch warm genug wären. Das zeigen nur die Räume selbst: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin und zeigt nur, dass die Kurve hoch genug ist. Maßgeblich ist der Raum mit dem am weitesten offenen Ventil. So geht auch der Heizungsbauer vor (Kurve schrittweise senken, bis der erste Raum zu kühl wird; Faustregel: bei mildem Wetter zu warm → Fußpunkt, bei Kälte zu warm → Endpunkt; BC400-HP-Anleitung 6721850791 S. 10 zu Fuß-/Endpunkt).
+
+**Einstellungen** (Zahnrad, eingeklappter Abschnitt „Heizkurve prüfen (optional)“, kein Pflichtfeld):
+
+- **Räume:** Thermostate (`climate`) und/oder Raumthermometer (Sensor, Geräteklasse Temperatur), Mehrfachauswahl. Raum = **HA-Bereich** der Entität (sonst ihres Geräts); mehrere Thermometer oder Ventile eines Bereichs werden gemittelt. Thermometer im Bereich gehen vor der Temperatur des Thermostats.
+- **Wunschtemperatur:** ersetzt die Sollwerte der Thermostate (für einen Thermostat, der absichtlich hoch steht, damit sein Ventil offen bleibt, simon42 95035 #238; und für Räume nur mit Thermometer).
+- **Ventilöffnungen (optional):** Sensoren in % (z. B. Kanäle eines Fußbodenheizungs-Aktors, the_MiCrO #235), dem Raum ihres Bereichs zugeordnet. Die Öffnung am Thermostat selbst (`valve_position`, Homematic IP) liest Wärmewacht ohne Feld.
+- Die Übersicht oben im Zahnrad nennt je Raum, was er bekommen hat, und Entitäten ohne Bereich bzw. Ventile ohne Raum.
+- Verworfen: ein Formular je Raum (keine Untereinträge; HA-Formulare kennen keine Wiederholgruppen) und die Voreinstellungen der Ventile (the_MiCrO #239: beschreiben den Abgleich, nicht das Drosseln; Idee notiert). Reglerwerte (Fußpunkt, Endpunkt) liest Wärmewacht bewusst nicht.
+
+**Daten.** Je Minute je Raum Temperatur − Soll und Ventilöffnung (Thermostat aus: der Raum zählt in der Minute nicht), als Zeitmittel des Tages im Speicher (`RoomLog`, Live-Datei) und um Mitternacht als `rooms` ins Tagebuch (`delta`, `valve`, `valve_max`, `hours` je Bereich, etwa 60 Bytes je Raum und Tag). Keine Statistik-Abfrage, kein zusätzliches Speichern. Erst ab der Einrichtung des Abschnitts (Attribute wie `valve_position` haben keine Langzeitstatistik).
+
+**Urteil** (einmal am Tag nach dem Tagebuch und beim Start): Heiztage (Kompressor mindestens 1 h im Heizbetrieb) der letzten 21 Tage, getrennt nach Band des Tagesmittels draußen (unter 0, 0–5, 5–10, 10–20 °C), je Band mindestens 3 Tage. Je Raum Mittel der Tage (nach Stunden gewichtet):
+
+- **zu tief:** ein Raum mindestens 0,5 K unter Soll **und** sein Ventil im Mittel bei mindestens 90 % der höchsten je für ihn gesehenen Öffnung (eine eingestellte maximale Ventilstellung zählt so als „ganz offen“); ohne Ventilangabe genügt die Temperatur (Leiträume).
+- **höher als nötig:** alle Räume höchstens 0,2 K unter Soll **und** das am weitesten offene Ventil im Mittel bei höchstens 50 %; ohne Ventilangaben alle Räume mindestens 0,5 K über Soll.
+- sonst **passt**. Thermostate regeln proportional (Hinweis des Inhabers, 15.11.): knapp unter Soll mit halb offenem Ventil ist der Regler bei der Arbeit, kein Befund.
+- Gesamt: „zu tief“ vor „höher als nötig“ vor „passt“. **Problem = höher als nötig.** Ohne Räume mit Bereich bzw. ohne 3 Heiztage in einem Band: unbekannt (`no_rooms`, `too_few_days`).
+- **Schätzung in Kelvin** nur ohne Ventilangaben: ΔVorlauf ≈ ΔRaum × (1 + (Vorlauf − Raum) ÷ (Raum − außen)), aus der Wärmebilanz von Haus und Heizflächen (linear, ohne Heizkörperexponent; Raum mit 21 °C angesetzt, Vorlauf = Mittel des Bands aus dem Tagebuch). Mit Ventilen keine Zahl: in Schritten von 1–2 K senken und das weiteste Ventil beobachten.
+- Alle Schwellen sind **eigene Annahmen**, an den Daten der Interessenten zu prüfen.
+
+**Geprüft** an der Anlage des Inhabers (8 Räume Homematic IP mit `valve_position`, 5.–15.11.2026, Daten nicht im Repo): „höher als nötig“ in den Bändern 0–5 und 5–10 °C, weitestes Ventil Treppe Ø 15–17 % (nie über 49 %), alle Räume auf oder über Soll. Danach senkte der Inhaber die gewählte Raumtemperatur am Bosch-Regler (Raumeinfluss 0) von 22,5 auf 21,5 °C: berechneter Vorlauf 26 → 24 °C bei 6,8 °C außen.
+
+**Anzeige.** Binärsensor „Heizkurve höher als nötig“ (`heating_curve_high`) und „Befund Heizkurve“; Attribute `verdict`, `bands` (je Band `verdict`, `days`, `outdoor`, `lead_room`, `lead_valve`, `estimate_kelvin`, `rooms` mit `delta`, `valve`, `valve_max`), `rooms_set`, `without_area`, `valves_without_room`. Karte „Gesundheit“: eine Zeile mit dem entscheidenden Band; Blueprint „Befund melden“ mit eigenem Text.
+
 ## 5. Rangfolge
 
 Bewertet nach Nutzen (Geld, Schaden, Häufigkeit) und Robustheit (Fehlalarme, Quellen, Datenbedarf). Bewertung vor der Umsetzung; was inzwischen umgesetzt ist, steht oben unter „Stand“.

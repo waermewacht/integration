@@ -196,6 +196,13 @@ variables:
       {%- else -%}
         system pressure {{ n(a.current_bar, 2) }} bar in 7 days{{ (', before up to ' ~ n(a.reference_bar, 2) ~ ' bar') if a.reference_bar is not none else '' }}{{ (', below ' ~ n(a.min_bar, 2) ~ ' bar') if low else '' }}. Read the pressure at the unit and refill; if it drops again, call an installer (leak, expansion vessel)
       {%- endif -%}
+    {%- elif a.bands is defined -%}
+      {%- set b = a.bands | selectattr('verdict', 'eq', 'lower_possible') | list | first | default({}) -%}
+      {%- if b.estimate_kelvin is defined and b.estimate_kelvin is not none -%}
+        {{ ('Bei ' ~ n(b.outdoor, 0) ~ ' °C sind die Räume wärmer als gewünscht: Vorlauf etwa ' ~ n(b.estimate_kelvin, 1) ~ ' K tiefer möglich. Heizkurve in kleinen Schritten senken und die Räume beobachten') if de else ('At ' ~ n(b.outdoor, 0) ~ ' °C the rooms are warmer than wished: flow about ' ~ n(b.estimate_kelvin, 1) ~ ' K lower possible. Lower the heating curve in small steps and watch the rooms') }}
+      {%- elif b.lead_room is defined -%}
+        {{ ('Bei ' ~ n(b.outdoor, 0) ~ ' °C halten alle Räume ihr Soll, das am weitesten offene Ventil (' ~ b.lead_room ~ ') steht im Schnitt bei ' ~ n(b.lead_valve, 0) ~ ' %. Heizkurve in Schritten von 1–2 K senken und dieses Ventil beobachten') if de else ('At ' ~ n(b.outdoor, 0) ~ ' °C all rooms hold their setpoint, the widest valve (' ~ b.lead_room ~ ') averages ' ~ n(b.lead_valve, 0) ~ ' %. Lower the heating curve in steps of 1–2 K and watch that valve') }}
+      {%- endif -%}
     {%- endif -%}
   title: "{{ head ~ (': auffällig' if lang == 'de' else ': conspicuous') }}"
   message: >-
