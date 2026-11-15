@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Karte „Jetzt“ zeigt, wenn der Kompressor läuft.** Das Symbol der Überschrift und die Werte von „Betriebsart“ und „Kompressor“ erscheinen dann in der Akzentfarbe deines Designs. (danke an MelleD, simon42-Forum)
+
 ## 0.14.0 – 2026-11-15
 
 ### Bitte prüfen

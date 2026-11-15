@@ -487,6 +487,7 @@ const STYLE = `
   .head { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 16px; font-weight: 500;
     color: var(--primary-text-color); }
   .head ha-icon { --mdc-icon-size: 20px; color: var(--secondary-text-color); }
+  .head ha-icon.on, .tile.on .value { color: var(--primary-color); }
   .head .device { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--secondary-text-color); }
   section + section { margin-top: 16px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
@@ -836,13 +837,25 @@ class WaermewachtCard extends HTMLElement {
       const entry = this._hass.devices?.[this._deviceId()];
       device = `<span class="device">${escapeHtml(entry?.name_by_user || entry?.name || "")}</span>`;
     }
-    return `<div class="head"><ha-icon icon="${ICONS[topic]}"></ha-icon>${escapeHtml(text)}${device}</div>`;
+    // "Now" in the accent colour while the compressor runs (simon42 95035 #229).
+    const on = topic === "now" && this._running(sources(this._hass, this._deviceId())) ? ' class="on"' : "";
+    return `<div class="head"><ha-icon icon="${ICONS[topic]}"${on}></ha-icon>${escapeHtml(text)}${device}</div>`;
   }
 
-  _tile(entityId, label, extra = "", value = undefined) {
+  /** Compressor running: "on", or a number above 0 (speed, frequency,
+   * modulation), as the integration reads it. */
+  _running(src) {
+    const state = this._stateOf(src?.compressor);
+    if (!state) return false;
+    if (state.state === "on") return true;
+    const value = Number(state.state);
+    return Number.isFinite(value) && value > 0;
+  }
+
+  _tile(entityId, label, extra = "", value = undefined, on = false) {
     const state = this._stateOf(entityId);
     if (!state) return "";
-    return `<div class="tile" data-entity="${escapeHtml(entityId)}"><div class="label">${escapeHtml(label)}</div>`
+    return `<div class="tile${on ? " on" : ""}" data-entity="${escapeHtml(entityId)}"><div class="label">${escapeHtml(label)}</div>`
       + `<div class="value">${escapeHtml(value ?? this._format(state))}</div>`
       + `${extra ? `<div class="extra">${escapeHtml(extra)}</div>` : ""}</div>`;
   }
@@ -875,9 +888,10 @@ class WaermewachtCard extends HTMLElement {
     if (!src) return `<div class="empty">…</div>`;
     const activity = this._stateOf(src.activity);
     const since = activity?.last_changed ? t.since(this._when(activity.last_changed)) : "";
+    const running = this._running(src);
     return this._grid([
-      this._tile(src.activity, t.tiles.activity, since),
-      this._tile(src.compressor, t.tiles.compressor),
+      this._tile(src.activity, t.tiles.activity, since, undefined, running),
+      this._tile(src.compressor, t.tiles.compressor, "", undefined, running),
       this._tile(this._config.heat_power, t.tiles.heat_power),
       this._tile(this._config.electric_power, t.tiles.electric_power),
       this._tile(src.outdoor_temp, t.tiles.outdoor_temp),
