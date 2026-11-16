@@ -140,7 +140,13 @@ from .profiles import (
     find,
     parse_compressor,
 )
-from .room_sources import VALVE_ATTRIBUTE, area_of, read_room, resolve_rooms
+from .room_sources import (
+    VALVE_ATTRIBUTES,
+    area_of,
+    read_room,
+    resolve_rooms,
+    valve_candidates,
+)
 from .sisters import suggestions
 from .summary import (
     RoomCheck,
@@ -1221,7 +1227,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 (
                     v
                     for v in data.get(CONF_VALVE_ENTITIES) or []
-                    if _unit_of(self.hass, v) != PERCENTAGE
+                    if not v.startswith("valve.")
+                    and _unit_of(self.hass, v) != PERCENTAGE
                 ),
                 None,
             ):
@@ -1317,6 +1324,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     filter=[
                         selector.EntityFilterSelectorConfig(domain="sensor"),
                         selector.EntityFilterSelectorConfig(domain="number"),
+                        # Bosch Smart Home: a valve with its position.
+                        selector.EntityFilterSelectorConfig(domain="valve"),
                     ],
                 )
             ),
@@ -1476,6 +1485,16 @@ class WaermewachtOptionsFlow(OptionsFlow):
             reading = read_room(
                 self.hass.states.get, sources, None if wish is None else float(wish)
             )
+            # A room without a valve: entities of its area that look like one.
+            found_valves = (
+                ()
+                if reading.valve is not None
+                else tuple(
+                    valve_candidates(
+                        self.hass, area, options.get(CONF_VALVE_ENTITIES) or []
+                    )
+                )
+            )
             lines.append(
                 RoomCheckLine(
                     found.names.get(area, area),
@@ -1486,6 +1505,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     valve=reading.valve,
                     valve_from=tuple(reading.valve_from),
                     off=reading.off,
+                    found=found_valves,
                 )
             )
         areas = ar.async_get(self.hass)
@@ -1512,7 +1532,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
 
         def reports_valve(entity_id: str) -> bool:
             state = self.hass.states.get(entity_id)
-            return state is not None and VALVE_ATTRIBUTE in state.attributes
+            return state is not None and any(
+                key in state.attributes for key in VALVE_ATTRIBUTES
+            )
 
         lines = tuple(
             RoomLine(

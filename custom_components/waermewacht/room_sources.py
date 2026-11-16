@@ -5,20 +5,25 @@ optionally valve sensors; the area of each entity (its own, else its
 device's) groups them into rooms, so several valves of one room (e.g. the
 channels of a floor heating actuator) need no form of their own. A climate
 entity gives the room temperature (`current_temperature`), the target
-(`temperature`) and, where the integration reports it, the valve opening
-(`valve_position`, %; a Homematic IP heating group reports the widest
-channel of its floor heating controllers or radiator thermostats). Valve
-sensors need an area of their own where their device sits elsewhere (the
-channels of a floor heating controller in the utility room). Thermometers in an area take precedence
-over the thermostats' own temperature. A fixed wish temperature replaces the
+(`temperature`) and, where the integration reports it, the valve opening in
+% (VALVE_ATTRIBUTES: `valve_position` of a Homematic IP heating group via
+hcu_integration, the widest channel of its floor heating controllers or
+radiator thermostats; `heating_power_request` of a Netatmo valve room, 0-100;
+`pulse_width_modulation` of an Uponor room, the actuators' PWM share in %;
+research 16.11.). Valve entities are sensors or numbers in % or entities of
+the valve domain (`current_position`, 0-100; Bosch Smart Home). They need an
+area of their own where their device sits elsewhere (the channels of a floor
+heating controller in the utility room). Thermometers in an area take
+precedence over the thermostats' own temperature. A fixed wish temperature replaces the
 thermostats' targets (a thermostat set high on purpose to keep its valve
 open, simon42 95035 #238).
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from homeassistant.const import STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
@@ -26,7 +31,54 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-VALVE_ATTRIBUTE = "valve_position"
+# Climate attributes with the valve opening (or the heating demand) in %.
+VALVE_ATTRIBUTES = ("valve_position", "heating_power_request", "pulse_width_modulation")
+# The position of an entity of the valve domain (0-100).
+VALVE_POSITION = "current_position"
+# Entities in a room's area that look like a valve opening (check step).
+VALVE_WORDS = ("valve", "ventil", "heating_demand", "stellantrieb")
+
+
+def climate_valve(attributes: Mapping[str, Any]) -> float | None:
+    """The valve opening a climate entity reports, if any."""
+    for key in VALVE_ATTRIBUTES:
+        if (value := _number(attributes.get(key))) is not None:
+            return value
+    return None
+
+
+def valve_value(state: State) -> float | None:
+    """Opening of a valve entity: the state of a sensor or number in %, the
+    position of a valve."""
+    if state.domain == "valve":
+        return _number(state.attributes.get(VALVE_POSITION))
+    return _number(state.state)
+
+
+def valve_candidates(
+    hass: HomeAssistant, area: str, chosen: Iterable[str]
+) -> list[tuple[str, bool]]:
+    """Entities in the area (their own or their device's) that look like a
+    valve opening and are not chosen: (entity_id, disabled). For the check
+    step: some integrations create them disabled or as diagnostics
+    (Homematic IP Local, ViCare, Zigbee `pi_heating_demand`)."""
+    skip = set(chosen)
+    found = []
+    for entry in er.async_get(hass).entities.values():
+        if entry.entity_id in skip or entry.domain not in ("sensor", "number", "valve"):
+            continue
+        if entry.domain != "valve" and entry.unit_of_measurement != "%":
+            continue
+        words = " ".join(
+            str(x or "")
+            for x in (entry.entity_id, entry.translation_key, entry.original_name)
+        ).lower()
+        if not any(word in words for word in VALVE_WORDS):
+            continue
+        if area_of(hass, entry.entity_id) != area:
+            continue
+        found.append((entry.entity_id, entry.disabled_by is not None))
+    return sorted(found)
 
 
 @dataclass
@@ -143,7 +195,7 @@ def read_room(
         if (value := _number(attributes.get("temperature"))) is not None:
             targets.append(value)
             reading.target_from.append(entity_id)
-        if (value := _number(attributes.get(VALVE_ATTRIBUTE))) is not None:
+        if (value := climate_valve(attributes)) is not None:
             valves.append(value)
             reading.valve_from.append(entity_id)
     for entity_id in sources.thermometers:
@@ -153,7 +205,7 @@ def read_room(
             reading.temp_from.append(entity_id)
     for entity_id in sources.valves:
         state = get(entity_id)
-        if state is not None and (value := _number(state.state)) is not None:
+        if state is not None and (value := valve_value(state)) is not None:
             valves.append(value)
             reading.valve_from.append(entity_id)
     if temps:

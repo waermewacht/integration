@@ -172,3 +172,27 @@ def test_check_text_names_values_and_sources() -> None:
         "- **Ventil ohne Raum:** sensor.kanal_1 – Bereich Abstellraum, dort ist"
         " kein Raum gewählt: dem Sensor selbst den Bereich seines Raums geben",
     ]
+
+
+def test_check_text_names_found_valves() -> None:
+    check = RoomCheck(
+        (
+            RoomCheckLine(
+                "Bad",
+                temp=22.0,
+                temp_from=("climate.bad",),
+                target=22.0,
+                target_from=("climate.bad",),
+                found=(("sensor.bad_ventil", True), ("sensor.bad_demand", False)),
+            ),
+        )
+    )
+    lines = rooms_check_text(check, 1).splitlines()
+    assert lines[0].endswith(
+        "kein Ventil bekannt: zählt als ganz offen (Leitraum) · im Bereich gefunden,"
+        " nicht eingetragen: sensor.bad_ventil (deaktiviert), sensor.bad_demand"
+    )
+    assert lines[1] == (
+        "- Eine deaktivierte Entität zuerst in ihren Einstellungen aktivieren,"
+        " dann unter Ventilöffnungen eintragen."
+    )

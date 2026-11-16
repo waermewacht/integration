@@ -246,3 +246,69 @@ async def test_options_show_the_rooms_before_saving(hass: HomeAssistant) -> None
     result = await submit({CONF_ROOM_ENTITIES: [CLIMATE]})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
+
+
+@pytest.mark.freeze_time(START)
+async def test_other_valve_sources_and_found_valves(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Netatmo's heating_power_request on the climate, a Bosch Smart Home
+    valve with its position; the check names a disabled valve sensor found in
+    a room without a valve."""
+    living, hall = make_rooms(hass)
+    registry = er.async_get(hass)
+    hass.states.async_set(
+        CLIMATE,
+        "heat",
+        {"current_temperature": 21.0, "temperature": 21.0, "heating_power_request": 30},
+    )
+    bosch = registry.async_get_or_create("valve", "bosch_shc", "hall_valve")
+    registry.async_update_entity(bosch.entity_id, area_id=hall)
+    hass.states.async_set(bosch.entity_id, "open", {"current_position": 65})
+    hidden = registry.async_get_or_create(
+        "sensor",
+        "homematicip_local",
+        "bath_level",
+        suggested_object_id="bath_valve_opening",
+        original_name="Valve opening",
+        unit_of_measurement="%",
+        disabled_by=er.RegistryEntryDisabler.INTEGRATION,
+    )
+    bath = ar.async_get(hass).async_create("Bad").id
+    registry.async_update_entity(hidden.entity_id, area_id=bath)
+    thermo_bath = registry.async_get_or_create(
+        "sensor", "test", "bath_temperature", suggested_object_id="bath_temperature"
+    )
+    registry.async_update_entity(thermo_bath.entity_id, area_id=bath)
+    hass.states.async_set(thermo_bath.entity_id, "22.0", TEMPERATURE)
+
+    entry = await setup(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "electricity_price": 30.0,
+            "design_outdoor_temp": -12.0,
+            "rooms": {
+                CONF_ROOM_ENTITIES: [CLIMATE, THERMO, thermo_bath.entity_id],
+                "room_target": 21.0,
+                CONF_VALVE_ENTITIES: [bosch.entity_id],
+            },
+        },
+    )
+    assert result["step_id"] == "rooms_check"
+    check = result["description_placeholders"]["check"]
+    assert "valve 30 % (from climate.living)" in check
+    assert f"valve 65 % (from {bosch.entity_id})" in check
+    assert f"found in the area, not chosen: {hidden.entity_id} (disabled)" in check
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "rooms_ok"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+
+    runtime = entry.runtime_data
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 1)
+    assert runtime.room_log.rooms[living].valve.value == pytest.approx(30)
+    assert runtime.room_log.rooms[hall].valve.value == pytest.approx(65)

@@ -810,15 +810,15 @@ OPTION_HELP = {
     ),
     "room_entities": (
         "Thermostats or heating groups (climate) and/or room thermometers, one or "
-        "more per room. Some also report the valve opening (e.g. Homematic IP heating "
-        "groups via the HCU integration, the widest valve of the room); after OK you see per room what was "
-        "found. Assign each entity (or its device) to the room's area.",
+        "more per room. Some also report the valve opening (e.g. Homematic IP "
+        "heating groups via the HCU integration, Netatmo valves, Uponor); after OK "
+        "you see per room what was found. Assign each entity (or its device) to the "
+        "room's area.",
         "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum "
         "eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen "
-        "von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des "
-        "Raums); nach OK siehst "
-        "du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich "
-        "des Raums zuordnen.",
+        "von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor); nach OK "
+        "siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem "
+        "Bereich des Raums zuordnen.",
     ),
     "room_target": (
         "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on "
@@ -827,14 +827,18 @@ OPTION_HELP = {
         "hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
     ),
     "valve_entities": (
-        "Only if the thermostats above do not report it: sensors with the valve "
-        "opening in % (e.g. channels of a floor heating controller). They count for "
-        "the room of their own area: if the controller sits in another room, give "
-        "each sensor the area of its room.",
-        "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der "
-        "Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie "
-        "zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem "
-        "anderen Raum, jedem Sensor den Bereich seines Raums geben.",
+        "Only if the thermostats above do not report it: sensors or numbers with the "
+        "valve opening in % (e.g. the valve position of radiator thermostats, "
+        "channels of a floor heating controller) or valves (Bosch Smart Home). Some "
+        "integrations create them disabled or under diagnostics: enable them first. "
+        "They count for the room of their own area: if a controller sits in another "
+        "room, give each sensor the area of its room.",
+        "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit "
+        "der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, "
+        "Kanäle eines Fußbodenheizungs-Controllers) oder Ventile (Bosch Smart Home). "
+        "Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann "
+        "zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein "
+        "Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben.",
     ),
 }
 

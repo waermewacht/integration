@@ -82,6 +82,15 @@ T = {
         "kein Ventil bekannt: zählt als ganz offen (Leitraum)",
     ),
     "check_no_temp": ("no temperature yet", "noch keine Temperatur"),
+    "check_found": (
+        "found in the area, not chosen",
+        "im Bereich gefunden, nicht eingetragen",
+    ),
+    "check_disabled": ("disabled", "deaktiviert"),
+    "check_enable": (
+        "To use a disabled entity, enable it in its settings first, then add it under valve openings.",
+        "Eine deaktivierte Entität zuerst in ihren Einstellungen aktivieren, dann unter Ventilöffnungen eintragen.",
+    ),
     "check_no_target": (
         "no target: enter a wish temperature",
         "kein Soll: Wunschtemperatur eintragen",
@@ -396,6 +405,8 @@ class RoomCheckLine:
     valve: float | None = None
     valve_from: tuple[str, ...] = ()
     off: bool = False
+    # Without a valve: entities of the area that look like one (id, disabled).
+    found: tuple[tuple[str, bool], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -428,7 +439,14 @@ def rooms_check_text(check: RoomCheck, lang: int) -> str:
             target = f"{t('check_target')} {_num(room.target, lang, 1)} °C"
             parts.append((f"{target} ({t('check_wish')})", ()))
         if room.valve is None:
-            parts.append((t("check_no_valve"), ()))
+            no_valve = t("check_no_valve")
+            if room.found:
+                found = ", ".join(
+                    f"{e} ({t('check_disabled')})" if disabled else e
+                    for e, disabled in room.found
+                )
+                no_valve += f" · {t('check_found')}: {found}"
+            parts.append((no_valve, ()))
         else:
             valve = f"{t('check_valve')} {_num(room.valve, lang, 0)} %"
             parts.append((valve, room.valve_from))
@@ -451,6 +469,8 @@ def rooms_check_text(check: RoomCheck, lang: int) -> str:
     for entity_id, area in check.no_room:
         hint = t("check_no_room_hint").format(area=area)
         lines.append(f"- **{t('check_no_room')}:** {entity_id} – {hint}")
+    if any(disabled for room in check.rooms for _, disabled in room.found):
+        lines.append(f"- {t('check_enable')}")
     return "\n".join(lines)
 
 

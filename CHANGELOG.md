@@ -5,6 +5,7 @@
 ### Geändert
 
 - **Heizkurve prüfen: Prüfschritt nach dem Speichern.** Änderst du die Räume, zeigt Wärmewacht nach OK je Raum Temperatur, Soll und Ventil mit den Werten von gerade eben und woher sie kommen, dazu Entitäten ohne Bereich und Ventile, deren Bereich zu keinem Raum gehört. Mit „Passt, speichern“ wird gespeichert, mit „Ändern“ geht es zurück ins Formular.
+- **Mehr Quellen für die Ventilöffnung:** Netatmo-Ventile (`heating_power_request`) und Uponor (`pulse_width_modulation`) liest Wärmewacht am Thermostat von selbst, Ventile von Bosch Smart Home lassen sich unter „Ventilöffnungen“ wählen. Hat ein Raum kein Ventil, nennt der Prüfschritt passende Entitäten aus seinem Bereich, auch deaktivierte.
 - **Mehrere Ventile in einem Raum: das am weitesten offene zählt**, nicht mehr der Mittelwert. So rechnet auch eine Homematic-IP-Heizgruppe ihre Ventilöffnung.
 - **Klarere Hilfetexte zu Räumen und Ventilen.** Die Ventilöffnung melden bei Homematic IP über die HCU-Integration die Heizgruppen (das am weitesten offene Ventil des Raums), nicht die Wandthermostate; mit der Homematic-IP-Integration von Home Assistant kommen die Sensoren „Ventilstellung“ ins Feld „Ventilöffnungen“; Ventil-Sensoren eines Controllers in einem anderen Raum brauchen den Bereich ihres Raums.
 
