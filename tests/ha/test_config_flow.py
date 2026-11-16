@@ -69,7 +69,10 @@ async def test_ems_esp_is_found_and_prefilled(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.FORM
     # Nothing disabled: the step without the hint.
     assert result["step_id"] == "user"
-    assert result["description_placeholders"] == {"found": "1"}
+    assert result["description_placeholders"] == {
+        "found": "1",
+        "issues_url": "https://github.com/waermewacht/integration/issues",
+    }
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "WP", "source": "ems_esp:"}
     )
@@ -202,6 +205,7 @@ async def test_homecom_points_to_disabled_entities(hass: HomeAssistant) -> None:
     assert result["step_id"] == "user_disabled"
     assert result["description_placeholders"] == {
         "found": "0",
+        "issues_url": "https://github.com/waermewacht/integration/issues",
         "disabled": "sensor.boschcom_k40_101234567_energy_compressor_ch, "
         "sensor.boschcom_k40_101234567_heat_produced_ch",
     }

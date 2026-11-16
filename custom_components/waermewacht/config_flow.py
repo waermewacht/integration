@@ -750,7 +750,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
-        placeholders = {"found": str(len(matches))}
+        placeholders = {"found": str(len(matches)), "issues_url": ISSUES_URL}
         # The hint on disabled entities only when there are some.
         if disabled := disabled_entities(self.hass):
             placeholders["disabled"] = ", ".join(disabled)
@@ -785,6 +785,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="entities",
             data_schema=entities_schema(values, self._top),
             errors=errors,
+            description_placeholders={"issues_url": ISSUES_URL},
         )
 
     async def _async_counter_kind(self, entities: dict[str, str]) -> str | None:
@@ -1145,6 +1146,10 @@ def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
     return entry.unit_of_measurement if entry else None
 
 
+# Where to report what was not found (as a placeholder: translations may
+# hold no URLs).
+ISSUES_URL = "https://github.com/waermewacht/integration/issues"
+
 # Settings of the heating curve check: a change shows the check step.
 ROOM_KEYS = (CONF_ROOM_ENTITIES, CONF_ROOM_TARGET, CONF_VALVE_ENTITIES)
 
@@ -1461,7 +1466,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 "check": rooms_check_text(
                     self._room_check(self._draft or {}),
                     lang_index(self.hass.config.language),
-                )
+                ),
+                "issues_url": ISSUES_URL,
             },
         )
 

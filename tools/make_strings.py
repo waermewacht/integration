@@ -647,8 +647,8 @@ MORE = (
         "Weitere Felder (von der Vorlage nicht gefunden)",
     ),
     (
-        "The template found nothing for these. Fill one in only if you are sure the entity delivers exactly this; one that only sounds alike gives wrong figures.",
-        "Dafür hat die Vorlage nichts gefunden. Nur ausfüllen, wenn du sicher bist, dass die Entität genau das liefert; eine nur ähnlich klingende ergibt falsche Werte.",
+        "The template found nothing for these. Fill one in only if you are sure the entity delivers exactly this; one that only sounds alike gives wrong figures. Is something missing here that your integration provides? Feel free to let us know ([issue]({issues_url})), then the template fills it in itself.",
+        "Dafür hat die Vorlage nichts gefunden. Nur ausfüllen, wenn du sicher bist, dass die Entität genau das liefert; eine nur ähnlich klingende ergibt falsche Werte. Fehlt hier etwas, das deine Integration liefert? Gib gern Bescheid ([Issue]({issues_url})), dann trägt die Vorlage es künftig selbst ein.",
     ),
 )
 
@@ -1010,8 +1010,10 @@ def _build(lang: int) -> dict:
                     "title": t(("Set up a heat pump", "Wärmepumpe einrichten")),
                     "description": t(
                         (
-                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.",
-                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.",
+                            "Wärmewacht only reads existing entities and never controls the heat pump. Templates found {found} heat pump(s); every entity can be changed in the next step.\n\n"
+                            "Your heat pump is not listed or something is missing? Set it up by hand and feel free to let us know ([issue]({issues_url}) with the “Report for a bug report”): that is how a template comes about.",
+                            "Wärmewacht liest nur vorhandene Entitäten und steuert die Wärmepumpe nie. Vorlagen haben {found} Wärmepumpe(n) gefunden; im nächsten Schritt lässt sich jede Entität ändern.\n\n"
+                            "Deine Wärmepumpe ist nicht dabei oder etwas fehlt? Richte sie von Hand ein und gib gern Bescheid ([Issue]({issues_url}) mit dem „Bericht für Fehlermeldung“): Daraus wird eine Vorlage.",
                         )
                     ),
                     "data": {
@@ -2103,10 +2105,14 @@ TEXTS = {
     "options.step.rooms_check.description": (
         "Wärmewacht found these rooms, with their values right now:\n\n{check}\n\n"
         "The widest valve of a room counts. A room without a known valve counts as "
-        "a lead room with its valve fully open.",
+        "a lead room with its valve fully open. Valves or thermostats not recognised? "
+        "Feel free to let us know ([issue]({issues_url}), with integration and "
+        "device), then Wärmewacht will read them in future.",
         "Diese Räume hat Wärmewacht gefunden, mit den Werten von gerade eben:\n\n"
         "{check}\n\nJe Raum zählt das am weitesten offene Ventil. Ein Raum ohne "
-        "bekanntes Ventil zählt als Leitraum mit ganz offenem Ventil.",
+        "bekanntes Ventil zählt als Leitraum mit ganz offenem Ventil. Ventile oder "
+        "Thermostate nicht erkannt? Gib gern Bescheid ([Issue]({issues_url}), mit "
+        "Integration und Gerät), dann liest Wärmewacht sie künftig mit.",
     ),
     "options.step.rooms_check.menu_options.rooms_ok": (
         "Right, save",
