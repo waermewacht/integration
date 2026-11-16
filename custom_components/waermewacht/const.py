@@ -71,6 +71,9 @@ CONF_MIN_POWER: Final = "min_power_kw"
 CONF_ROOM_ENTITIES: Final = "room_entities"
 CONF_ROOM_TARGET: Final = "room_target"
 CONF_VALVE_ENTITIES: Final = "valve_entities"
+# Setpoints as entities of their own (a thermostat reporting actual and
+# target temperature apart, simon42 95035 #250).
+CONF_TARGET_ENTITIES: Final = "target_entities"
 # Optional (costs, gas comparison, heat load); absent means "not set".
 CONF_ELECTRICITY_PRICE: Final = "electricity_price"  # ct/kWh
 # A price sensor (dynamic tariff): ct/kWh, €/kWh or €/MWh (prices.py); hours

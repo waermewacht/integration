@@ -706,6 +706,7 @@ OPTION_LABELS = {
         "Räume (Thermostate oder Thermometer)",
     ),
     "room_target": ("Wish temperature", "Wunschtemperatur"),
+    "target_entities": ("Setpoints (optional)", "Sollwerte (optional)"),
     "valve_entities": ("Valve openings (optional)", "Ventilöffnungen (optional)"),
 }
 OPTION_HELP = {
@@ -828,6 +829,15 @@ OPTION_HELP = {
         "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich "
         "hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
     ),
+    "target_entities": (
+        "Only if your thermostats report the setpoint as an entity of its own "
+        "(sensor or number in °C): it counts for the room of its area, before the "
+        "thermostat's setpoint. Empty: the thermostats' setpoints or the wish "
+        "temperature.",
+        "Nur wenn deine Thermostate das Soll als eigene Entität melden (Sensor oder "
+        "Zahl in °C): Es zählt für den Raum seines Bereichs, vor dem Soll des "
+        "Thermostats. Leer: die Sollwerte der Thermostate bzw. die Wunschtemperatur.",
+    ),
     "valve_entities": (
         "Only if the thermostats above do not report it: sensors or numbers with the "
         "valve opening in % (e.g. the valve position of radiator thermostats, "
@@ -872,8 +882,8 @@ OPTION_SECTIONS = {
             "Eigene PV und Batterie in den Kosten (optional)",
         ),
         (
-            "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.",
-            "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.",
+            "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on. All meters here are energy meters in kWh (also Wh, MWh), not power: running on or reset every day, with long-term statistics.",
+            "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein. Alle Zähler hier sind Energiezähler in kWh (auch Wh, MWh), keine Leistung: fortlaufend oder täglich zurückgesetzt, mit Langzeitstatistik.",
         ),
         (
             "grid_import_entity",
@@ -922,7 +932,7 @@ OPTION_SECTIONS = {
             "Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben "
             "zeigt, welcher Raum was bekommen hat.",
         ),
-        ("room_entities", "room_target", "valve_entities"),
+        ("room_entities", "room_target", "target_entities", "valve_entities"),
     ),
     "limits": (
         ("Limits and evaluation", "Grenzen und Auswertung"),

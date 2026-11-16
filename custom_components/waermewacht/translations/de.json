@@ -531,7 +531,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein. Alle Zähler hier sind Energiezähler in kWh (auch Wh, MWh), keine Leistung: fortlaufend oder täglich zurückgesetzt, mit Langzeitstatistik."
           },
           "price_change": {
             "name": "Preisänderung ab einem Datum (optional)",
@@ -568,11 +568,13 @@
             "data": {
               "room_entities": "Räume (Thermostate oder Thermometer)",
               "room_target": "Wunschtemperatur",
+              "target_entities": "Sollwerte (optional)",
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
               "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "target_entities": "Nur wenn deine Thermostate das Soll als eigene Entität melden (Sensor oder Zahl in °C): Es zählt für den Raum seines Bereichs, vor dem Soll des Thermostats. Leer: die Sollwerte der Thermostate bzw. die Wunschtemperatur.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) oder Ventile (Bosch Smart Home). Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
@@ -679,7 +681,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein. Alle Zähler hier sind Energiezähler in kWh (auch Wh, MWh), keine Leistung: fortlaufend oder täglich zurückgesetzt, mit Langzeitstatistik.\n\nZähler vorbelegt aus Tarifwacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
           "price_change": {
             "name": "Preisänderung ab einem Datum (optional)",
@@ -716,11 +718,13 @@
             "data": {
               "room_entities": "Räume (Thermostate oder Thermometer)",
               "room_target": "Wunschtemperatur",
+              "target_entities": "Sollwerte (optional)",
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
               "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "target_entities": "Nur wenn deine Thermostate das Soll als eigene Entität melden (Sensor oder Zahl in °C): Es zählt für den Raum seines Bereichs, vor dem Soll des Thermostats. Leer: die Sollwerte der Thermostate bzw. die Wunschtemperatur.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) oder Ventile (Bosch Smart Home). Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
@@ -799,7 +803,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nZähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein. Alle Zähler hier sind Energiezähler in kWh (auch Wh, MWh), keine Leistung: fortlaufend oder täglich zurückgesetzt, mit Langzeitstatistik.\n\nZähler vorbelegt aus Einspeisewacht „{entry}“ – bitte prüfen. Die Aufteilung beginnt erst, wenn du auch den Netzbezug-Zähler wählst."
           },
           "price_change": {
             "name": "Preisänderung ab einem Datum (optional)",
@@ -836,11 +840,13 @@
             "data": {
               "room_entities": "Räume (Thermostate oder Thermometer)",
               "room_target": "Wunschtemperatur",
+              "target_entities": "Sollwerte (optional)",
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
               "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "target_entities": "Nur wenn deine Thermostate das Soll als eigene Entität melden (Sensor oder Zahl in °C): Es zählt für den Raum seines Bereichs, vor dem Soll des Thermostats. Leer: die Sollwerte der Thermostate bzw. die Wunschtemperatur.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) oder Ventile (Bosch Smart Home). Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
@@ -919,7 +925,7 @@
               "battery_charged_entity": "Optional, nur zusammen mit dem Entladezähler.",
               "feed_in_tariff": "Was eigener Strom bei Einspeisung gebracht hätte; leer: 0."
             },
-            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) oder [Einspeisewacht]({einspeisewacht_url}), sind diese Felder schon ausgefüllt."
+            "description": "Nur die Kosten ändern sich, nicht die Arbeitszahlen: Strom der Wärmepumpe aus eigener PV oder Batterie kostet die Einspeisevergütung statt den Netzpreis. Der Netzbezug-Zähler schaltet das ein. Alle Zähler hier sind Energiezähler in kWh (auch Wh, MWh), keine Leistung: fortlaufend oder täglich zurückgesetzt, mit Langzeitstatistik.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) oder [Einspeisewacht]({einspeisewacht_url}), sind diese Felder schon ausgefüllt."
           },
           "price_change": {
             "name": "Preisänderung ab einem Datum (optional)",
@@ -956,11 +962,13 @@
             "data": {
               "room_entities": "Räume (Thermostate oder Thermometer)",
               "room_target": "Wunschtemperatur",
+              "target_entities": "Sollwerte (optional)",
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
               "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
+              "target_entities": "Nur wenn deine Thermostate das Soll als eigene Entität melden (Sensor oder Zahl in °C): Es zählt für den Raum seines Bereichs, vor dem Soll des Thermostats. Leer: die Sollwerte der Thermostate bzw. die Wunschtemperatur.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) oder Ventile (Bosch Smart Home). Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."

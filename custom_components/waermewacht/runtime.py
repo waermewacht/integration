@@ -117,6 +117,7 @@ from .const import (
     CONF_STARTS_OFFSET,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
+    CONF_TARGET_ENTITIES,
     CONF_TEMPLATE,
     CONF_VALVE_ENTITIES,
     DEFAULT_CRITICAL_RUN_MINUTES,
@@ -501,6 +502,7 @@ class HeatPumpRuntime:
         # the start, today's means in the live file, days in the diary.
         self.room_entities: list[str] = list(options.get(CONF_ROOM_ENTITIES) or [])
         self.valve_entities: list[str] = list(options.get(CONF_VALVE_ENTITIES) or [])
+        self.target_entities: list[str] = list(options.get(CONF_TARGET_ENTITIES) or [])
         self.room_target: float | None = options.get(CONF_ROOM_TARGET)
         self.room_map = RoomMap()
         self.room_log = RoomLog()
@@ -730,7 +732,7 @@ class HeatPumpRuntime:
         self.marks.rollover(now, self.totals)
         if self.room_entities:
             self.room_map = resolve_rooms(
-                self.hass, self.room_entities, self.valve_entities
+                self.hass, self.room_entities, self.valve_entities, self.target_entities
             )
             self._judge_rooms()
         if self.hourly:

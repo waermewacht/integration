@@ -85,6 +85,7 @@ from .const import (
     CONF_STARTS_OFFSET,
     CONF_STARTS_PER_DAY,
     CONF_STARTS_PER_HOUR,
+    CONF_TARGET_ENTITIES,
     CONF_TEMPLATE,
     CONF_VALVE_ENTITIES,
     CONF_Z_NUMBER,
@@ -1115,7 +1116,12 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
     ),
     "heat_load": (CONF_RATED_POWER, CONF_MIN_POWER),
     # Heating curve check (rooms.py): rooms by area, optional valves.
-    "rooms": (CONF_ROOM_ENTITIES, CONF_ROOM_TARGET, CONF_VALVE_ENTITIES),
+    "rooms": (
+        CONF_ROOM_ENTITIES,
+        CONF_ROOM_TARGET,
+        CONF_TARGET_ENTITIES,
+        CONF_VALVE_ENTITIES,
+    ),
     "limits": (
         CONF_MIN_ELECTRICITY,
         CONF_SHORT_RUN,
@@ -1219,7 +1225,12 @@ def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
 ISSUES_URL = "https://github.com/waermewacht/integration/issues"
 
 # Settings of the heating curve check: a change shows the check step.
-ROOM_KEYS = (CONF_ROOM_ENTITIES, CONF_ROOM_TARGET, CONF_VALVE_ENTITIES)
+ROOM_KEYS = (
+    CONF_ROOM_ENTITIES,
+    CONF_ROOM_TARGET,
+    CONF_TARGET_ENTITIES,
+    CONF_VALVE_ENTITIES,
+)
 
 
 class WaermewachtOptionsFlow(OptionsFlow):
@@ -1396,6 +1407,18 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 )
             ),
             CONF_ROOM_TARGET: number(10, 30, 0.5, "°C"),
+            CONF_TARGET_ENTITIES: selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=[
+                        selector.EntityFilterSelectorConfig(
+                            domain="sensor", device_class="temperature"
+                        ),
+                        selector.EntityFilterSelectorConfig(domain="number"),
+                        selector.EntityFilterSelectorConfig(domain="input_number"),
+                    ],
+                )
+            ),
             CONF_VALVE_ENTITIES: selector.EntitySelector(
                 selector.EntitySelectorConfig(
                     multiple=True,
@@ -1555,6 +1578,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
             self.hass,
             list(options.get(CONF_ROOM_ENTITIES) or []),
             list(options.get(CONF_VALVE_ENTITIES) or []),
+            list(options.get(CONF_TARGET_ENTITIES) or []),
         )
         wish = options.get(CONF_ROOM_TARGET)
         lines = []
@@ -1608,7 +1632,10 @@ class WaermewachtOptionsFlow(OptionsFlow):
         if not room_entities:
             return None
         found = resolve_rooms(
-            self.hass, room_entities, list(options.get(CONF_VALVE_ENTITIES) or [])
+            self.hass,
+            room_entities,
+            list(options.get(CONF_VALVE_ENTITIES) or []),
+            list(options.get(CONF_TARGET_ENTITIES) or []),
         )
 
         def reports_action(entity_id: str) -> bool:
@@ -1627,6 +1654,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 thermostats=len(sources.climates),
                 thermometers=len(sources.thermometers),
                 valves=len(sources.valves),
+                targets=len(sources.targets),
                 valve_reported=any(reports_valve(c) for c in sources.climates),
                 heating_share=not sources.valves
                 and not any(reports_valve(c) for c in sources.climates)

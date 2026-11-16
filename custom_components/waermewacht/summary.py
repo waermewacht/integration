@@ -68,6 +68,7 @@ T = {
     "thermometer": ("thermometer", "Thermometer"),
     "valves": ("valves", "Ventile"),
     "valve_reported": ("valve reported", "Ventil mitgemeldet"),
+    "target_entity": ("setpoint entity", "Soll-Entität"),
     "heating_share": ("heating share", "Heizanteil"),
     "check_share_on": (
         "heating share instead of a valve: heating now",
@@ -367,6 +368,7 @@ class RoomLine:
     thermostats: int = 0
     thermometers: int = 0
     valves: int = 0  # valve sensors
+    targets: int = 0  # setpoint entities
     valve_reported: bool = False  # a thermostat reports its opening
     heating_share: bool = False  # only whether it heats: its share of time
 
@@ -389,6 +391,8 @@ def rooms_text(rooms: RoomSummary, lang: int) -> str:
             what.append(t("thermostat"))
         if room.thermometers:
             what.append(t("thermometer"))
+        if room.targets:
+            what.append(t("target_entity"))
         if room.valves:
             what.append(f"{room.valves} {t('valves')}")
         elif room.valve_reported:

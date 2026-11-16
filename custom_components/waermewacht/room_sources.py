@@ -113,6 +113,8 @@ class RoomSources:
     climates: list[str] = field(default_factory=list)
     thermometers: list[str] = field(default_factory=list)
     valves: list[str] = field(default_factory=list)
+    # Setpoint entities (sensor or number in °C), before the thermostats'.
+    targets: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -139,7 +141,10 @@ def area_of(hass: HomeAssistant, entity_id: str) -> str | None:
 
 
 def resolve_rooms(
-    hass: HomeAssistant, room_entities: Iterable[str], valve_entities: Iterable[str]
+    hass: HomeAssistant,
+    room_entities: Iterable[str],
+    valve_entities: Iterable[str],
+    target_entities: Iterable[str] = (),
 ) -> RoomMap:
     result = RoomMap()
     areas = ar.async_get(hass)
@@ -160,6 +165,14 @@ def resolve_rooms(
             result.no_room.append(entity_id)
         else:
             result.rooms[area].valves.append(entity_id)
+    for entity_id in target_entities:
+        area = area_of(hass, entity_id)
+        if area is None:
+            result.no_area.append(entity_id)
+        elif area not in result.rooms:
+            result.no_room.append(entity_id)
+        else:
+            result.rooms[area].targets.append(entity_id)
     for area in result.rooms:
         entry = areas.async_get_area(area)
         result.names[area] = entry.name if entry else area
@@ -246,9 +259,20 @@ def read_room(
     else:
         reading.temp = _mean(climate_temps)
         reading.temp_from = climate_temp_from
+    target_values: list[float] = []
+    target_from: list[str] = []
+    for entity_id in sources.targets:
+        state = get(entity_id)
+        if state is not None and (value := _number(state.state)) is not None:
+            target_values.append(value)
+            target_from.append(entity_id)
     if wish is not None:
         reading.target = wish
         reading.target_from = []
+    elif target_values:
+        # Setpoint entities of the room take precedence over the thermostats.
+        reading.target = _mean(target_values)
+        reading.target_from = target_from
     else:
         reading.target = _mean(targets)
     reading.valve = max(valves) if valves else None

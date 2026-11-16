@@ -354,3 +354,26 @@ async def test_heating_share_without_valve(
     await tick(hass, freezer, 1)
     share = log.rooms[living].valve.value
     assert 0 < share < 100
+
+
+@pytest.mark.freeze_time(START)
+async def test_setpoint_entity_of_its_own(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A thermostat reporting actual and target temperature as two sensors
+    (simon42 95035 #250): the setpoint entity of the area counts."""
+    _living, hall = make_rooms(hass)
+    registry = er.async_get(hass)
+    target = registry.async_get_or_create(
+        "sensor", "test", "hall_setpoint", suggested_object_id="hall_setpoint"
+    )
+    registry.async_update_entity(target.entity_id, area_id=hall)
+    hass.states.async_set(target.entity_id, "21.5", TEMPERATURE)
+    entry = await setup(
+        hass,
+        **{CONF_ROOM_ENTITIES: [THERMO], "target_entities": [target.entity_id]},
+    )
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 1)
+    # Thermometer 20.6 °C against the setpoint 21.5 °C.
+    assert entry.runtime_data.room_log.rooms[hall].delta.value == pytest.approx(-0.9)

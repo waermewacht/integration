@@ -1,5 +1,15 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Heizkurve prüfen: Sollwerte als eigene Entitäten.** Meldet dein Thermostat das Soll als eigenen Sensor oder als Zahl, trägst du ihn unter „Sollwerte (optional)“ ein. Er zählt für den Raum seines Bereichs, auch mit Nachtabsenkung, wo eine feste Wunschtemperatur den Raum nachts zu kalt aussehen ließe. (danke an MartyBr, simon42-Forum)
+
+### Geändert
+
+- **Einheit der PV- und Batteriezähler im Formular.** Der Abschnitt „Eigene PV und Batterie in den Kosten“ sagt jetzt, dass Energiezähler in kWh (auch Wh, MWh) gemeint sind, fortlaufend oder täglich zurückgesetzt, keine Leistung. (danke an alteMade, simon42-Forum)
+
 ## 0.18.0 – 2026-11-16
 
 ### Neu

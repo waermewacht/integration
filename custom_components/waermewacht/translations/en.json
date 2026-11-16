@@ -531,7 +531,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on. All meters here are energy meters in kWh (also Wh, MWh), not power: running on or reset every day, with long-term statistics."
           },
           "price_change": {
             "name": "Price change from a date (optional)",
@@ -568,11 +568,13 @@
             "data": {
               "room_entities": "Rooms (thermostats or thermometers)",
               "room_target": "Wish temperature",
+              "target_entities": "Setpoints (optional)",
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
               "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups via the HCU integration, Netatmo valves, Uponor); others only whether they heat, then their heating share counts. After OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
+              "target_entities": "Only if your thermostats report the setpoint as an entity of its own (sensor or number in °C): it counts for the room of its area, before the thermostat's setpoint. Empty: the thermostats' setpoints or the wish temperature.",
               "valve_entities": "Only if the thermostats above do not report it: sensors or numbers with the valve opening in % (e.g. the valve position of radiator thermostats, channels of a floor heating controller), Z-Wave “Valve control” (0-99) or valves (Bosch Smart Home). Some integrations create them disabled or under diagnostics: enable them first. They count for the room of their own area: if a controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
@@ -679,7 +681,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Tarifwacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on. All meters here are energy meters in kWh (also Wh, MWh), not power: running on or reset every day, with long-term statistics.\n\nMeters suggested from Tarifwacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
           "price_change": {
             "name": "Price change from a date (optional)",
@@ -716,11 +718,13 @@
             "data": {
               "room_entities": "Rooms (thermostats or thermometers)",
               "room_target": "Wish temperature",
+              "target_entities": "Setpoints (optional)",
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
               "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups via the HCU integration, Netatmo valves, Uponor); others only whether they heat, then their heating share counts. After OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
+              "target_entities": "Only if your thermostats report the setpoint as an entity of its own (sensor or number in °C): it counts for the room of its area, before the thermostat's setpoint. Empty: the thermostats' setpoints or the wish temperature.",
               "valve_entities": "Only if the thermostats above do not report it: sensors or numbers with the valve opening in % (e.g. the valve position of radiator thermostats, channels of a floor heating controller), Z-Wave “Valve control” (0-99) or valves (Bosch Smart Home). Some integrations create them disabled or under diagnostics: enable them first. They count for the room of their own area: if a controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
@@ -799,7 +803,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nMeters suggested from Einspeisewacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on. All meters here are energy meters in kWh (also Wh, MWh), not power: running on or reset every day, with long-term statistics.\n\nMeters suggested from Einspeisewacht “{entry}” – please check. The split only starts once you also choose the grid import meter."
           },
           "price_change": {
             "name": "Price change from a date (optional)",
@@ -836,11 +840,13 @@
             "data": {
               "room_entities": "Rooms (thermostats or thermometers)",
               "room_target": "Wish temperature",
+              "target_entities": "Setpoints (optional)",
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
               "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups via the HCU integration, Netatmo valves, Uponor); others only whether they heat, then their heating share counts. After OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
+              "target_entities": "Only if your thermostats report the setpoint as an entity of its own (sensor or number in °C): it counts for the room of its area, before the thermostat's setpoint. Empty: the thermostats' setpoints or the wish temperature.",
               "valve_entities": "Only if the thermostats above do not report it: sensors or numbers with the valve opening in % (e.g. the valve position of radiator thermostats, channels of a floor heating controller), Z-Wave “Valve control” (0-99) or valves (Bosch Smart Home). Some integrations create them disabled or under diagnostics: enable them first. They count for the room of their own area: if a controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
@@ -919,7 +925,7 @@
               "battery_charged_entity": "Optional, only together with the discharge meter.",
               "feed_in_tariff": "What own electricity would have earned when fed in; empty: 0."
             },
-            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already."
+            "description": "Only the costs change, not the performance factors: heat pump electricity from own PV or battery costs the feed-in tariff instead of the grid price. The grid import meter switches it on. All meters here are energy meters in kWh (also Wh, MWh), not power: running on or reset every day, with long-term statistics.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) or [Einspeisewacht]({einspeisewacht_url}), these fields are filled in already."
           },
           "price_change": {
             "name": "Price change from a date (optional)",
@@ -956,11 +962,13 @@
             "data": {
               "room_entities": "Rooms (thermostats or thermometers)",
               "room_target": "Wish temperature",
+              "target_entities": "Setpoints (optional)",
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
               "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups via the HCU integration, Netatmo valves, Uponor); others only whether they heat, then their heating share counts. After OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
+              "target_entities": "Only if your thermostats report the setpoint as an entity of its own (sensor or number in °C): it counts for the room of its area, before the thermostat's setpoint. Empty: the thermostats' setpoints or the wish temperature.",
               "valve_entities": "Only if the thermostats above do not report it: sensors or numbers with the valve opening in % (e.g. the valve position of radiator thermostats, channels of a floor heating controller), Z-Wave “Valve control” (0-99) or valves (Bosch Smart Home). Some integrations create them disabled or under diagnostics: enable them first. They count for the room of their own area: if a controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
