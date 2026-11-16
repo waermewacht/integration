@@ -289,9 +289,9 @@
           scenarios: { januar: "Kalte Januarwoche", herbst: "Milder Herbst, zu groß", hybrid: "Hybridanlage", gas: "Gasheizung vor dem Umstieg" },
           stories: {
             januar:
-              "Eine gut eingestellte Luft/Wasser-Wärmepumpe mit Pufferspeicher nach einer Woche Frost: wenige, lange Läufe, Abtauungen, Warmwasser zweimal am Tag.",
+              "Eine gut eingestellte Luft/Wasser-Wärmepumpe mit Pufferspeicher nach einer Woche Frost: wenige, lange Läufe, Abtauungen, Warmwasser zweimal am Tag. Die Heizkurve passt: In der Kälte steht das Ventil im Bad fast ganz offen.",
             herbst:
-              "Dieselbe Wärmepumpe in einem kleinen, gut gedämmten Haus ohne Puffer. Bei mildem Wetter braucht das Haus weit weniger als ihre kleinste Leistung – sie taktet.",
+              "Dieselbe Wärmepumpe in einem kleinen, gut gedämmten Haus ohne Puffer. Bei mildem Wetter braucht das Haus weit weniger als ihre kleinste Leistung – sie taktet. Und die Heizkurve ist höher als nötig: Alle Räume halten ihr Soll, kein Ventil steht im Mittel auch nur halb offen.",
             hybrid:
               "Dieselbe Wärmepumpe in einem älteren, größeren Haus, neben einem Gaskessel: Unter −3 °C heizt der Kessel, darüber die Wärmepumpe. Wärmewacht zeigt den Anteil der Wärmepumpe; Heizlast und Gradtage zählen die Wärme beider, die Arbeitszahlen nur die der Wärmepumpe.",
             gas:
@@ -350,6 +350,12 @@
           cyclingAttrs: (a) =>
             `Letzte 24 Stunden: höchstens ${a.max_starts_per_hour} Starts in einer Stunde (Grenze: mehr als ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} Läufe unter 6 Minuten (Grenze: 3), ${a.short_runs_24h} unter 10 Minuten.`,
+          curveIntro: (rooms) => `${rooms} Räume, Heiztage der letzten 21 Tage je Band der Außentemperatur:`,
+          curveBand: { below_0: "unter 0 °C", "0_5": "0 bis 5 °C", "5_10": "5 bis 10 °C", "10_20": "10 bis 20 °C" },
+          curveVerdict: { lower_possible: "tiefer möglich", fits: "passt", too_low: "eher zu tief" },
+          curveBandText: (b) =>
+            `${b.days} Tage, Ø ${num(b.outdoor, 1)} °C, ${b.held ? "alle Räume halten ihr Soll" : `${b.cold.room} ${num(-b.cold.delta, 1)} K unter Soll`}, ` +
+            `weitestes Ventil ${b.lead_room} Ø ${num(b.lead_valve, 0)} % (höchste Öffnung ${num(b.lead_max, 0)} %)`,
           dropAttrs: (a) =>
             `AZ Heizen ${a.ratio_current}, erwartet ${a.ratio_expected} aus der Vorsaison bei gleichem Temperaturhub (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
           dhwDropAttrs: (a) =>
@@ -405,7 +411,7 @@
             "Gerechnet wird es vom Code der Integration – Läufe, Ladungen, Zeiträume, Rückblick, Kennlinie, Heizlast, Gradtage, Kosten, Gesundheits-Check.",
           rebuilt:
             "Was in Home Assistant an der Laufzeit hängt, ist im Generator nachgebaut: die Buchung als Lauf oder Stillstand, das Tagebuch um Mitternacht, " +
-            "die tägliche Analyse um 3 Uhr und „Auffälliges Takten“. Wärmewacht ist hier seit September 2024 eingerichtet; " +
+            "die tägliche Analyse um 3 Uhr, „Auffälliges Takten“ und die Thermostate der Räume für „Heizkurve prüfen“. Wärmewacht ist hier seit September 2024 eingerichtet; " +
             "die Wochen davor kommen aus dem Rückblick auf die Zähler-Statistik. Wo die Daten für eine Prüfung nicht reichen, bleibt sie unbekannt und nennt den Grund.",
           credits: "Symbole: Material Design Icons (Pictogrammers Free License).",
           plantTitle: "Die erfundene Anlage",
@@ -416,6 +422,9 @@
             `Wärmewacht eingerichtet am ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; die Statistik der Zähler reicht bis 1. Juli 2024 zurück (Rückblick).`,
             ...(d.options.bivalent !== null && d.options.bivalent !== undefined
               ? [`Hybridanlage: Gaskessel mit eigenem Wärmezähler, unter ${num(d.options.bivalent, 0)} °C heizt nur er (bivalent alternativ), Warmwasser immer die Wärmepumpe.`]
+              : []),
+            ...(d.rooms
+              ? [`Heizkurve prüfen: ${d.rooms.names.de.join(", ")} mit erfundenen Thermostaten (Temperatur, Soll, Ventilöffnung), eingerichtet am ${dateFmt(d.rooms.since, { day: "numeric", month: "long", year: "numeric" })}.`]
               : []),
           ],
           plantGas: (d) => [
@@ -438,9 +447,9 @@
           scenarios: { januar: "Cold January week", herbst: "Mild autumn, oversized", hybrid: "Hybrid system", gas: "Gas boiler before the switch" },
           stories: {
             januar:
-              "A well set up air/water heat pump with a buffer tank after a week of frost: few, long runs, defrosts, hot water twice a day.",
+              "A well set up air/water heat pump with a buffer tank after a week of frost: few, long runs, defrosts, hot water twice a day. The heating curve fits: in the cold the bathroom's valve is almost fully open.",
             herbst:
-              "The same heat pump in a small, well insulated house without a buffer. In mild weather the house needs far less than its smallest power – it cycles.",
+              "The same heat pump in a small, well insulated house without a buffer. In mild weather the house needs far less than its smallest power – it cycles. And the heating curve is higher than needed: every room holds its setpoint, no valve is even half open on average.",
             hybrid:
               "The same heat pump in an older, larger house next to a gas boiler: below −3 °C the boiler heats, above it the heat pump. Wärmewacht shows the heat pump's share; heat load and degree days count the heat of both, the performance factors only the heat pump's.",
             gas:
@@ -498,6 +507,12 @@
           cyclingAttrs: (a) =>
             `Last 24 hours: at most ${a.max_starts_per_hour} ${a.max_starts_per_hour === 1 ? "start" : "starts"} within one hour (limit: more than ${a.starts_per_hour_limit}), ` +
             `${a.critical_runs_24h} runs under 6 minutes (limit: 3), ${a.short_runs_24h} under 10 minutes.`,
+          curveIntro: (rooms) => `${rooms} rooms, heating days of the last 21 days per band of the outdoor temperature:`,
+          curveBand: { below_0: "below 0 °C", "0_5": "0 to 5 °C", "5_10": "5 to 10 °C", "10_20": "10 to 20 °C" },
+          curveVerdict: { lower_possible: "lower possible", fits: "fits", too_low: "rather too low" },
+          curveBandText: (b) =>
+            `${b.days} days, avg ${num(b.outdoor, 1)} °C, ${b.held ? "all rooms hold their setpoint" : `${b.cold.room} ${num(-b.cold.delta, 1)} K below setpoint`}, ` +
+            `widest valve ${b.lead_room} avg ${num(b.lead_valve, 0)}% (highest seen ${num(b.lead_max, 0)}%)`,
           dropAttrs: (a) =>
             `COP heating ${a.ratio_current}, expected ${a.ratio_expected} from last season at the same temperature lift (${a.drop_percent > 0 ? "−" : "+"}${num(Math.abs(a.drop_percent), 1)} %).`,
           dhwDropAttrs: (a) =>
@@ -553,7 +568,7 @@
             "The integration's own code computes the rest – runs, charges, periods, look-back, performance curve, heat load, degree days, costs, health check.",
           rebuilt:
             "What depends on Home Assistant's runtime is rebuilt in the generator: booking electricity as running or standby, the diary at midnight, " +
-            "the daily analysis at 3 am and “conspicuous cycling”. Wärmewacht was set up here in September 2024; " +
+            "the daily analysis at 3 am, “conspicuous cycling” and the rooms' thermostats for the heating curve check. Wärmewacht was set up here in September 2024; " +
             "the weeks before come from the look-back on the meters' statistics. Where the data do not suffice for a check, it stays unknown and names the reason.",
           credits: "Icons: Material Design Icons (Pictogrammers Free License).",
           plantTitle: "The made-up installation",
@@ -564,6 +579,9 @@
             `Wärmewacht set up on ${dateFmt(d.setup, { day: "numeric", month: "long", year: "numeric" })}; the meters' statistics go back to 1 July 2024 (look-back).`,
             ...(d.options.bivalent !== null && d.options.bivalent !== undefined
               ? [`Hybrid system: gas boiler with its own heat meter; below ${num(d.options.bivalent, 0)} °C only the boiler heats (bivalent alternative), hot water always the heat pump.`]
+              : []),
+            ...(d.rooms
+              ? [`Heating curve check: ${d.rooms.names.en.join(", ")} with made-up thermostats (temperature, setpoint, valve opening), set up on ${dateFmt(d.rooms.since, { day: "numeric", month: "long", year: "numeric" })}.`]
               : []),
           ],
           plantGas: (d) => [
@@ -798,7 +816,8 @@
           add(id, key, e.s, { ...e.a, ...extra, ...(e.u ? { unit_of_measurement: e.u } : {}), friendly_name: name(key) });
         }
         for (const [key, e] of Object.entries(data.binary || {})) {
-          add(`binary_sensor.waermepumpe_${key}`, key, e.s, { ...e.a, friendly_name: name(key) });
+          // Attributes with names of the user's areas come per language ("al").
+          add(`binary_sensor.waermepumpe_${key}`, key, e.s, { ...(e.al?.[state.lang] ?? e.a), friendly_name: name(key) });
         }
         // The source integration's entities ("Now" card); a gas boiler has none.
         const live = data.live;
@@ -972,6 +991,17 @@
         const w = b.dhw_efficiency_drop.a;
         if (w.change_percent !== null && w.change_percent !== undefined) {
           notes.push(`<li><b>${escapeHtml(name("dhw_efficiency_drop"))}:</b> ${escapeHtml(tx.dhwDropAttrs({ ...w, ratio: num(w.ratio, 2), previous_ratio: num(w.previous_ratio, 2), change: num(w.change_percent, 1) }))}</li>`);
+        }
+        const curve = b.heating_curve_high && (b.heating_curve_high.al?.[state.lang] ?? b.heating_curve_high.a);
+        if (curve?.bands?.length) {
+          const bands = curve.bands.map((band) => {
+            const lead = band.rooms.find((r) => r.room === band.lead_room);
+            const cold = band.rooms.reduce((a, r) => (r.delta < a.delta ? r : a));
+            const held = cold.delta >= -0.2; // rooms.HOLD_K
+            const text = tx.curveBandText({ ...band, held, cold, lead_max: lead?.valve_max ?? band.lead_valve });
+            return `<li>${escapeHtml(tx.curveBand[band.band] ?? band.band)}: ${escapeHtml(text)} → <b>${escapeHtml(tx.curveVerdict[band.verdict] ?? band.verdict)}</b></li>`;
+          });
+          notes.push(`<li><b>${escapeHtml(name("heating_curve_high"))}:</b> ${escapeHtml(tx.curveIntro(curve.rooms_set.length))}<ul>${bands.join("")}</ul></li>`);
         }
         notes.push("</ul>");
         return notes.join("");

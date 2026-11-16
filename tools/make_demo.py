@@ -25,7 +25,10 @@ Rebuilt here, because they live in runtime.py next to Home Assistant:
   reads (`_async_hours`: source counters before the setup, own sensors after);
 - "Auffälliges Takten" (`cycling_problem`), the counting of status texts
   (`_note_status`, here none: the source reports only modes) and the sensor
-  values and attributes of sensor.py and binary_sensor.py.
+  values and attributes of sensor.py and binary_sensor.py;
+- the rooms of "Heizkurve prüfen": made-up thermostats report temperature
+  minus target and valve opening each minute (`room_sources.sample_room`),
+  RoomLog and rooms.check judge them as `_judge_rooms` does.
 """
 
 from __future__ import annotations
@@ -179,6 +182,8 @@ from custom_components.waermewacht.report import (  # noqa: E402
     own_changes,
     own_hour,
 )
+from custom_components.waermewacht.rooms import RoomLog  # noqa: E402
+from custom_components.waermewacht.rooms import check as rooms_check  # noqa: E402
 from custom_components.waermewacht.runs import Defrost, Run, RunTracker  # noqa: E402
 from custom_components.waermewacht.status_messages import (  # noqa: E402
     StatusCounter,
@@ -239,6 +244,38 @@ class House:
 
 
 @dataclass(frozen=True)
+class Room:
+    """A room of the heating curve check (an HA area with a thermostat)."""
+
+    area: str  # area id
+    names: tuple[str, str]  # German, English
+    # Valve opening needed per kelvin of the house's heat demand and kelvin
+    # of the water above the room: emitters small (high) or large (low).
+    need: float
+    offset: float  # K the room sits above its target with the valve free
+
+
+# The rooms are set up this long before the moment of a scenario (the check
+# reads the diary's last 21 days; the reference opening, all of it).
+ROOM_DAYS = 40
+ROOM_LEVEL = 21.0  # °C the rooms are at, for the emitters' temperature gap
+
+
+def _rooms(*needs: float) -> tuple[Room, ...]:
+    """Four rooms; `needs` per room, the bathroom's emitters smallest."""
+    rooms = (
+        ("wohnzimmer", ("Wohnzimmer", "Living room"), 0.05),
+        ("kuche", ("Küche", "Kitchen"), 0.25),
+        ("bad", ("Bad", "Bathroom"), 0.15),
+        ("kinderzimmer", ("Kinderzimmer", "Children's room"), 0.1),
+    )
+    return tuple(
+        Room(area, names, need, offset)
+        for (area, names, offset), need in zip(rooms, needs, strict=True)
+    )
+
+
+@dataclass(frozen=True)
 class Scenario:
     key: str
     title: str
@@ -249,6 +286,8 @@ class Scenario:
     # the heat pump (bivalent alternative, e.g. Hybrid Manager HM200); hot
     # water stays with the heat pump.
     bivalent: float | None = None
+    # Rooms of "Heizkurve prüfen"; none: the section is not set up.
+    rooms: tuple[Room, ...] = ()
 
 
 SCENARIOS = [
@@ -259,6 +298,8 @@ SCENARIOS = [
         House(ua=0.165, limit=15.0, solar_kw=1.2, band_kwh=0.6, min_run=600, min_off=900),
         datetime(2026, 1, 22, 17, 40, tzinfo=TZ),
         1,
+        # The curve fits: the bathroom's valve opens wide in the cold.
+        rooms=_rooms(0.5, 0.38, 0.65, 0.45),
     ),
     # The same unit in a small, well insulated house without a buffer:
     # far above the heat load, it cycles in mild weather.
@@ -268,6 +309,9 @@ SCENARIOS = [
         House(ua=0.085, limit=15.0, solar_kw=0.8, band_kwh=0.09, min_run=240, min_off=300),
         datetime(2025, 10, 29, 17, 40, tzinfo=TZ),
         2,
+        # Same curve, large floor heating for the small heat load: every
+        # room holds its target with the valves at most half open.
+        rooms=_rooms(0.3, 0.25, 0.38, 0.28),
     ),
     # An older, larger house: a boiler takes over below -3 °C.
     Scenario(
@@ -465,6 +509,11 @@ class Sim:
         self.diary: list[dict[str, Any]] = []
         self.spread, self.flow_mean, self.outdoor_mean = Mean(), Mean(), Mean()
         self.outdoor_heating = Mean()
+        # Heating curve check: rooms from ROOM_DAYS before the moment on.
+        self.room_log = RoomLog()
+        self.rooms_from = self.now - ROOM_DAYS * DAY
+        self.room_rng = random.Random(scenario.seed + 100)
+        self.room_noise: dict[str, tuple[float, float]] = {}
         self.started = False
         self.analysis: dict[str, Any] = {}
         self.today: list[dict[str, Any]] = []
@@ -743,6 +792,7 @@ class Sim:
                 self._write_diary(at)
             self.spread, self.flow_mean, self.outdoor_mean = Mean(), Mean(), Mean()
             self.outdoor_heating = Mean()
+            self.room_log = RoomLog()
             prune(self.runs, self.defrosts, at - timedelta(days=HISTORY_DAYS))
             prune_charges(self.charges, at - timedelta(days=HISTORY_DAYS))
         self.outdoor_mean.add(self.outdoor, 60)
@@ -814,6 +864,8 @@ class Sim:
                 "flow": self.flow_mean.as_dict(),
                 "flow_rate": Mean().as_dict(),
                 "outdoor_heating": self.outdoor_heating.as_dict(),
+                # Rooms of the heating curve check, only when set.
+                **({"rooms": self.room_log.diary_entry()} if self.sc.rooms else {}),
                 "classes": day_classes(
                     self.runs,
                     self.tracker.open_run,
@@ -1162,6 +1214,8 @@ class Sim:
                 self.recording = local.date() == self.sc.moment.date()
                 x = local.hour + minute / 60
                 self.demand = demand_kw(self.house, self.w, hour, x)
+                if self.started and self.sc.rooms and at >= self.rooms_from:
+                    self._sample_rooms(minute == 0, heating)
                 draw_kw = self._draw_kw(local)
                 used = 0.0
                 while used < 60.0 - 1e-6:
@@ -1173,6 +1227,29 @@ class Sim:
             self.starts_hours[hour] = self.starts
             hour += HOUR
         self._tick(self.now)
+
+    def _sample_rooms(self, new_hour: bool, heating: bool) -> None:
+        """The thermostats this minute (runtime._on_tick with sample_room).
+
+        A thermostat opens its valve as far as its room needs: the house's
+        demand (in kelvin of heat loss, with sun and wind) over the heating
+        water's gap to the room, which the curve sets. Wide open and still
+        short, the room falls below its target; the further open, the more
+        a proportional thermostat lets the room sag a little.
+        """
+        need = self.demand / self.house.ua
+        water = flow_target(self.outdoor) - 1.5  # mean of flow and return
+        gap = max(water - ROOM_LEVEL, 0.5)
+        for room in self.sc.rooms:
+            if new_hour or room.area not in self.room_noise:
+                rng = self.room_rng
+                self.room_noise[room.area] = (rng.gauss(0, 0.06), rng.gauss(0, 0.08))
+            noise_valve, noise_temp = self.room_noise[room.area]
+            share = room.need * need / gap if heating else 0.0
+            opening = min(max(share + noise_valve, 0.0), 1.0)
+            delta = room.offset + noise_temp - 0.2 * opening
+            delta -= 1.2 * max(share - 1.0, 0.0)
+            self.room_log.add(room.area, delta, round(opening * 100), 60)
 
     def _record_today(self, at: datetime) -> None:
         sample, self._sample = self._sample, {}
@@ -1664,12 +1741,33 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
     aux_used = any(sim.totals.get(Kind.AUX, mode) > 0 for mode in Mode)
     for key in ("aux_mild_weather", "aux_dhw_charges"):
         binary[key]["a"]["aux_used"] = aux_used
+    if sim.sc.rooms:
+        binary["heating_curve_high"] = curve_finding(sim)
     # One status sensor per check in words (sensor.HealthStatus).
     for key, entity in binary.items():
         reason = None if key == "cycling_problem" else entity["a"].get("reason")
         known = entity["s"] in ("on", "off")
         put(f"{key}_status", status(entity["s"] == "on" if known else None, reason))
     return result, binary
+
+
+def curve_finding(sim: Sim) -> dict[str, Any]:
+    """runtime._judge_rooms: the heating curve check from the diary, at the
+    midnight before the moment. The rooms are areas with the user's names:
+    German attributes in "a", English ones in "al" (the demo's language)."""
+    areas = [room.area for room in sim.sc.rooms]
+    result = rooms_check(sim.diary, areas)
+
+    def attributes(lang: int) -> dict[str, Any]:
+        names = {room.area: room.names[lang] for room in sim.sc.rooms}
+        evidence = result.as_attributes(names)
+        evidence["rooms_set"] = [names[a] for a in sorted(areas)]
+        evidence["without_area"] = []
+        evidence["valves_without_room"] = []
+        return Finding(result.problem, result.reason, evidence).as_attributes()
+
+    found = _finding(Finding(result.problem, result.reason))
+    return {**found, "a": attributes(0), "al": {"en": attributes(1)}}
 
 
 def months(sim: Sim) -> list[dict[str, Any]]:
@@ -1988,6 +2086,16 @@ def heat_pump_scenario(scenario: Scenario, w: Weather) -> dict[str, Any]:
             "heating_limit": scenario.house.limit,
             "buffer": scenario.house.band_kwh >= 0.3,
         },
+        # Rooms of "Heizkurve prüfen" (names per language), set up since.
+        "rooms": {
+            "names": {
+                lang: [room.names[i] for room in scenario.rooms]
+                for i, lang in enumerate(("de", "en"))
+            },
+            "since": sim.rooms_from.astimezone(TZ).date().isoformat(),
+        }
+        if scenario.rooms
+        else None,
         "live": live(sim),
         "today": sim.today,
         "sensors": values,
@@ -2029,6 +2137,19 @@ def heat_pump_scenario(scenario: Scenario, w: Weather) -> dict[str, Any]:
         "  "
         + ", ".join(f"{k} {v['s']} ({v['a'].get('reason')})" for k, v in binary.items())
     )
+    if "heating_curve_high" in binary:
+        curve = binary["heating_curve_high"]["a"]
+        print(f"  Heizkurve {curve['verdict']} ({curve['reason']})")
+        for band in curve["bands"]:
+            rooms = ", ".join(
+                f"{r['room']} {r['delta']:+.2f} K {r['valve']} % (max {r['valve_max']})"
+                for r in band["rooms"]
+            )
+            print(
+                f"    {band['band']}: {band['verdict']}, {band['days']} Tage, "
+                f"{band['outdoor']} °C, Leitraum {band['lead_room']} "
+                f"{band['lead_valve']} %; {rooms}"
+            )
     return data
 
 

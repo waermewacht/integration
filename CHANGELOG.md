@@ -5,6 +5,7 @@
 ### Neu
 
 - **Heizkurve prüfen: Heizanteil für Thermostate ohne Ventilstellung.** Meldet ein Thermostat nur, ob es gerade heizt (etwa TP-Link Kasa KE100), nimmt Wärmewacht den Anteil der Zeit, in der es heizt, statt der Ventilöffnung. Der Prüfschritt und die Übersicht im Zahnrad zeigen dann „Heizanteil“. (danke an ottokar, simon42-Forum)
+- **Demo mit Heizkurven-Check.** Die [Demo](https://waermewacht.github.io/integration/) zeigt jetzt auch „Heizkurve höher als nötig“ mit vier erfundenen Räumen: Im milden Herbst halten alle ihr Soll, obwohl kein Ventil auch nur halb offen steht, in der kalten Januarwoche passt die Kurve. Ein Klick auf die Zeile zeigt die Bänder und Räume.
 
 ### Geändert
 
