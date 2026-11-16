@@ -43,7 +43,10 @@ HEATING_ACTIONS = frozenset({"heating", "preheating"})
 # Highest level of a Z-Wave Multilevel Switch (fully open).
 ZWAVE_LEVEL_MAX = 99
 # Entities in a room's area that look like a valve opening (check step).
-VALVE_WORDS = ("valve", "ventil", "heating_demand", "stellantrieb")
+# "pipe_level": the valve opening of Homematic IP Local (translation key of
+# the LEVEL sensor of HmIP-eTRV, -HEATING and (HmIPW-)FALMOT-C12; its unique id
+# ends in "_LEVEL", the name comes from the translation; simon42 95035 #259).
+VALVE_WORDS = ("valve", "ventil", "heating_demand", "stellantrieb", "pipe_level")
 
 
 def climate_valve(attributes: Mapping[str, Any]) -> float | None:

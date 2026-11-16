@@ -441,3 +441,39 @@ async def test_valves_by_device_and_rooms_by_area(
         room_map.rooms[living].valves + room_map.rooms[hall].valves
     ) == sorted(channels)
     assert battery.entity_id not in room_map.no_room + room_map.no_area
+
+
+@pytest.mark.freeze_time(START)
+async def test_homematic_ip_local_channels_by_device(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Homematic IP Local: the valve channel of a FALMOT has the translation
+    key "pipe_level", no word "valve" in its unique id, and the user may have
+    renamed its entity id (simon42 95035 #259)."""
+    living, _hall = make_rooms(hass)
+    entry_for_device = MockConfigEntry(domain="homematicip_local")
+    entry_for_device.add_to_hass(hass)
+    controller = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry_for_device.entry_id, identifiers={("hmip", "falmot2")}
+    )
+    registry = er.async_get(hass)
+    channel = registry.async_get_or_create(
+        "sensor",
+        "homematicip_local",
+        "001234567890ab_3_LEVEL",
+        suggested_object_id="e_4_fbh_kanal_3",
+        device_id=controller.id,
+        unit_of_measurement="%",
+        translation_key="pipe_level",
+        original_name="Kanal 3",
+    )
+    registry.async_update_entity(channel.entity_id, area_id=living)
+    hass.states.async_set(channel.entity_id, "42", {"unit_of_measurement": "%"})
+    entry = await setup(
+        hass,
+        **{
+            CONF_ROOM_ENTITIES: [CLIMATE],
+            CONF_VALVE_ENTITIES: {"device_id": [controller.id]},
+        },
+    )
+    assert entry.runtime_data.room_map.rooms[living].valves == [channel.entity_id]

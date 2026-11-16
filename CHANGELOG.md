@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Behoben
+
+- **Homematic IP Local: Ventil-Kanäle eines Geräts werden erkannt.** Wählst du bei den Ventilöffnungen einen Fußbodenheizungs-Controller (FALMOT) oder ein Heizkörperthermostat als Gerät, findet Wärmewacht jetzt auch dessen „Ventil-Öffnungsgrad“, selbst wenn du die Entitäten umbenannt hast. (danke an the_MiCrO, simon42-Forum)
+
 ## 0.20.0 – 2026-11-16
 
 ### Neu
