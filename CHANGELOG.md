@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Heizkurve (gemessen): unsichere Gerade gekennzeichnet.** Hängt der Vorlauf kaum von der Außentemperatur ab (R² unter 0,3), heißt die Gerade in der Legende „Gerade (unsicher, R² …)“. Das kommt etwa bei einer sehr flachen Heizkurve vor, deren milde Tage an der kleinsten Leistung über dem Soll laufen.
+
 ## 0.19.0 – 2026-11-16
 
 ### Neu

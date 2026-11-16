@@ -179,6 +179,7 @@ const TEXT = {
     signature: "Energiesignatur",
     heatingCurve: "Heizkurve (gemessen)",
     curveDays: "Heiztage",
+    lineUncertain: (r2) => `Gerade (unsicher, R² ${r2})`,
     curveBands: {
       lower_possible: "Heiztage: Kurve könnte tiefer",
       fits: "Heiztage: passt",
@@ -402,6 +403,7 @@ const TEXT = {
     signature: "Energy signature",
     heatingCurve: "Heating curve (measured)",
     curveDays: "Heating days",
+    lineUncertain: (r2) => `Line (uncertain, R² ${r2})`,
     curveBands: {
       lower_possible: "Heating days: curve could be lower",
       fits: "Heating days: fits",
@@ -514,6 +516,8 @@ const COLORS = {
   fits: "#2F6FB0",
   too_low: "#C0392B",
 };
+// Below this R² the measured heating curve's line is marked uncertain.
+const CURVE_R2_SURE = 0.3;
 // Bands of the heating curve check (rooms.py BANDS): [low, high).
 const CURVE_BANDS = { below_0: [-50, 0], "0_5": [0, 5], "5_10": [5, 10], "10_20": [10, 20] };
 // Own energy sensors for the months (translation keys).
@@ -1302,9 +1306,12 @@ class WaermewachtCard extends HTMLElement {
     if (Number.isFinite(at0) && a.slope !== null && a.slope !== undefined) {
       const lo = points[0][0];
       const hi = points[points.length - 1][0];
+      // A weak fit (R² below 0.3): the line hardly says anything, e.g. a
+      // flat curve whose mild days run above it at the smallest power.
+      const weak = a.r_squared !== null && a.r_squared !== undefined && a.r_squared < CURVE_R2_SURE;
       series.push({
         color: COLORS.current,
-        label: t.line,
+        label: weak ? t.lineUncertain(this._num(a.r_squared, 2)) : t.line,
         line: true,
         points: [[lo, at0 + a.slope * lo], [hi, at0 + a.slope * hi]],
       });
