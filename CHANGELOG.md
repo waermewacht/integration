@@ -8,6 +8,10 @@
 
 - **Diagramm der gemessenen Heizkurve.** Die Karte „Kennlinie und Heizlast“ zeigt den Vorlauf jedes Heiztags über der Außentemperatur, dazu die Gerade, die auch „Vorlauf bei 0 °C“ ergibt. Mit dem Heizkurven-Check sind die Tage nach dessen Urteil je Temperaturbereich eingefärbt: Kurve könnte tiefer, passt oder zu tief. (danke an suedschwede, simon42-Forum)
 
+### Behoben
+
+- **Diagramme der Karten: letzte Beschriftung der Temperaturachse vollständig.** Rechts am Rand war sie bisher abgeschnitten (etwa „15 °“ statt „15 °C“).
+
 ### Geändert
 
 - **Einheit der PV- und Batteriezähler im Formular.** Der Abschnitt „Eigene PV und Batterie in den Kosten“ sagt jetzt, dass Energiezähler in kWh (auch Wh, MWh) gemeint sind, fortlaufend oder täglich zurückgesetzt, keine Leistung. (danke an alteMade, simon42-Forum)

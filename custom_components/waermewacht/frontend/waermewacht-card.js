@@ -1505,7 +1505,10 @@ class WaermewachtCard extends HTMLElement {
       grid += `<line class="axis" x1="${L}" x2="${W - 6}" y1="${y(v)}" y2="${y(v)}" stroke-dasharray="2 3"/>`
         + `<text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${this._num(v, stepDigits(step))}</text>`;
     }
-    for (let v = x0; v <= x1; v += 5) grid += `<text x="${x(v)}" y="${H - 6}" text-anchor="middle">${v} °C</text>`;
+    // The last label ends at the right edge instead of being cut off there.
+    for (let v = x0; v <= x1; v += 5) {
+      grid += `<text x="${x(v)}" y="${H - 6}" text-anchor="${v + 5 > x1 ? "end" : "middle"}">${v} °C</text>`;
+    }
     const marks = series.map((s) => {
       const pts = s.points.map((p) => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`);
       const line = s.line && pts.length > 1 ? `<polyline points="${pts.join(" ")}" fill="none" stroke="${s.color}" stroke-width="2"/>` : "";
