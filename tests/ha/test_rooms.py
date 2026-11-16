@@ -410,6 +410,9 @@ async def test_valves_by_device_and_rooms_by_area(
             device_id=controller.id,
             unit_of_measurement="%",
             translation_key="valve_position",
+            # Channels have a name of their own (e.g. "Heizkreislauf 1"):
+            # only then may an entity have an area of its own.
+            original_name=f"Valve position {n}",
         )
         registry.async_update_entity(channel.entity_id, area_id=area)
         hass.states.async_set(
