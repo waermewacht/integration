@@ -164,9 +164,25 @@ def has_target(value: object) -> bool:
 def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
     """The entity ids of an option: entities named directly as they are;
     devices, areas, floors and labels expanded to the entities of `kind` in
-    them (enabled ones only). Older entries stored a plain list."""
+    them (enabled ones only); minus what the target's "exclude" block names
+    (Home Assistant's "exclude target", simon42 95035 #270). Older entries
+    stored a plain list."""
     if not isinstance(value, Mapping):
         return _ids(value)
+    chosen = _expand(hass, value, kind)
+    exclude = value.get("exclude")
+    if not isinstance(exclude, Mapping) or not has_target(exclude):
+        return chosen
+    removed = set(_ids(exclude.get("entity_id")))
+    removed |= set(_expand(hass, {**exclude, "entity_id": []}, kind, every=True))
+    return [e for e in chosen if e not in removed]
+
+
+def _expand(
+    hass: HomeAssistant, value: Mapping[str, Any], kind: str, *, every: bool = False
+) -> list[str]:
+    """The entities of a target without its exclude block; `every`: all
+    entities of its devices, areas, floors and labels (for an exclusion)."""
     direct = _ids(value.get("entity_id"))
     devices = set(_ids(value.get("device_id")))
     areas = set(_ids(value.get("area_id")))
@@ -182,7 +198,7 @@ def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
     for entry in er.async_get(hass).entities.values():
         if entry.disabled_by is not None or entry.entity_id in direct:
             continue
-        if kind not in (KIND_ROOMS, KIND_VALVES):
+        if not every and kind not in (KIND_ROOMS, KIND_VALVES):
             continue  # setpoints: only named directly
         device = device_registry.async_get(entry.device_id) if entry.device_id else None
         # Chosen by name: the device itself or a label.
@@ -192,6 +208,9 @@ def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
             or (device is not None and labels & set(device.labels))
         )
         if not named and area_of(hass, entry.entity_id) not in areas:
+            continue
+        if every:
+            found.append(entry.entity_id)
             continue
         if kind == KIND_ROOMS:
             if entry.domain != "climate":
@@ -203,7 +222,7 @@ def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
         ):
             continue
         found.append(entry.entity_id)
-    if kind == KIND_ROOMS:
+    if kind == KIND_ROOMS and not every:
         found = _groups_first(hass, found)
     return [*direct, *sorted(found)]
 

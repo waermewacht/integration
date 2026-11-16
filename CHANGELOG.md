@@ -4,6 +4,7 @@
 
 ### Geändert
 
+- **Ziel ausnehmen wird beachtet.** Nimmst du bei Räumen oder Ventilöffnungen einen Bereich, ein Gerät oder eine Entität über „Ziel ausnehmen“ aus (Home Assistant 2026.11), zählt Wärmewacht sie nicht mit, etwa einen Raum mit Thermostat, aber ohne Heizung. (danke an the_MiCrO, simon42-Forum)
 - **Heizkurve prüfen: fester Ventilwert zählt nicht.** Bewegt sich ein Ventilwert an mindestens 3 Heiztagen gar nicht, etwa eine als Sensor eingetragene Voreinstellung, zählt der Raum, als hätte er kein Ventil. Die Karte und das Attribut `constant_valves` nennen ihn. So blockiert ein fester Wert das Urteil „höher als nötig“ nicht mehr.
 - **Räume über Bereich oder Etage: Heizungsgruppe statt Wandthermostat.** Liegt im Raum eine Heizungsgruppe, zählt nur sie; ihre Wandthermostate kamen bisher ein zweites Mal dazu. Einzeln gewählte Thermostate zählen weiter.
 

@@ -565,3 +565,27 @@ async def test_area_gives_the_heating_group_only(
     assert target_entities(hass, {"area_id": [living]}, KIND_ROOMS) == [CLIMATE]
     named = {"area_id": [living], "entity_id": [wall.entity_id]}
     assert target_entities(hass, named, KIND_ROOMS) == [wall.entity_id, CLIMATE]
+
+
+@pytest.mark.freeze_time(START)
+async def test_excluded_targets_do_not_count(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Home Assistant's "exclude target": a room left out of an area or floor
+    selection (simon42 95035 #270), by area or by entity."""
+    living, hall = make_rooms(hass)
+    registry = er.async_get(hass)
+    hall_climate = registry.async_get_or_create(
+        "climate", "test", "hall", suggested_object_id="hall"
+    )
+    registry.async_update_entity(hall_climate.entity_id, area_id=hall)
+    both = {"area_id": [living, hall]}
+    assert sorted(target_entities(hass, both, KIND_ROOMS)) == sorted(
+        [CLIMATE, hall_climate.entity_id]
+    )
+    assert target_entities(
+        hass, {**both, "exclude": {"area_id": [hall]}}, KIND_ROOMS
+    ) == [CLIMATE]
+    assert target_entities(
+        hass, {**both, "exclude": {"entity_id": [CLIMATE]}}, KIND_ROOMS
+    ) == [hall_climate.entity_id]
