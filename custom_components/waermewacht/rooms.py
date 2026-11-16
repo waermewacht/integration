@@ -59,6 +59,9 @@ BANDS: tuple[tuple[float, float, str], ...] = (
 HOLD_K = 0.2  # at most this much below the target still holds it
 TOO_LOW_K = 0.5  # clearly below the target
 WARM_K = 0.5  # clearly above the target (rooms without valve data)
+# A valve value moving less than this, never closed or fully open: fixed.
+CONSTANT_K = 0.1
+CONSTANT_EDGE = 0.5
 THROTTLED_PERCENT = 50.0  # widest valve at most half open on average
 OPEN_SHARE = 0.9  # valve near the highest opening seen for the room
 
@@ -165,6 +168,8 @@ class CurveCheck:
     verdict: str | None  # LOWER_POSSIBLE / FITS / TOO_LOW, None: no verdict
     reason: str | None
     bands: tuple[BandVerdict, ...] = ()
+    # Rooms whose valve value never moves: judged as without a valve.
+    constant_valves: tuple[str, ...] = ()
 
     @property
     def problem(self) -> bool | None:
@@ -176,6 +181,7 @@ class CurveCheck:
         names = names or {}
         return {
             "verdict": self.verdict,
+            "constant_valves": [names.get(r, r) for r in self.constant_valves],
             "bands": [
                 {
                     "band": b.band,
@@ -242,13 +248,14 @@ def check(diary: Sequence[Mapping[str, Any]], rooms: Iterable[str]) -> CurveChec
             continue
         if (label := _band(float(entry["outdoor"]))) is not None:
             per_band.setdefault(label, []).append(entry)
+    constant = _constant_valves([d for days in per_band.values() for d in days], wanted)
     bands = [
-        _judge_band(label, per_band[label], wanted, ref)
+        _judge_band(label, per_band[label], wanted, ref, constant)
         for _low, _high, label in BANDS
         if len(per_band.get(label, [])) >= MIN_BAND_DAYS
     ]
     if not bands:
-        return CurveCheck(None, TOO_FEW_DAYS)
+        return CurveCheck(None, TOO_FEW_DAYS, constant_valves=tuple(sorted(constant)))
     verdicts = {b.verdict for b in bands}
     if TOO_LOW in verdicts:
         verdict = TOO_LOW
@@ -256,7 +263,32 @@ def check(diary: Sequence[Mapping[str, Any]], rooms: Iterable[str]) -> CurveChec
         verdict = LOWER_POSSIBLE
     else:
         verdict = FITS
-    return CurveCheck(verdict, None, tuple(bands))
+    return CurveCheck(verdict, None, tuple(bands), tuple(sorted(constant)))
+
+
+def _constant_valves(days: Sequence[Mapping[str, Any]], wanted: set[str]) -> set[str]:
+    """Rooms whose valve value never moves on at least MIN_BAND_DAYS heating
+    days: the same all day (mean = highest) and from day to day, neither
+    closed nor fully open. No valve opening but a fixed figure, e.g. a valve
+    pre-setting entered as a template sensor (simon42 PN, 77 %): it would block
+    "lower possible" for good. Such a room counts as without a valve."""
+    found = set()
+    for room in wanted:
+        values = [
+            (float(e["valve"]), float(e.get("valve_max") or e["valve"]))
+            for d in days
+            if (e := (d.get("rooms") or {}).get(room)) and e.get("valve") is not None
+        ]
+        if len(values) < MIN_BAND_DAYS:
+            continue
+        means = [v for v, _ in values]
+        if (
+            all(abs(high - v) <= CONSTANT_K for v, high in values)
+            and max(means) - min(means) <= CONSTANT_K
+            and CONSTANT_EDGE < means[0] < 100 - CONSTANT_EDGE
+        ):
+            found.add(room)
+    return found
 
 
 def _judge_band(
@@ -264,6 +296,7 @@ def _judge_band(
     days: Sequence[Mapping[str, Any]],
     wanted: set[str],
     ref: Mapping[str, float],
+    constant: set[str] = frozenset(),  # type: ignore[assignment]
 ) -> BandVerdict:
     outdoor = sum(float(d["outdoor"]) for d in days) / len(days)
     flows = [f for d in days if (f := _flow_mean(d)) is not None]
@@ -279,14 +312,14 @@ def _judge_band(
         valves = [
             (e["valve"], h)
             for e, h in zip(entries, hours, strict=True)
-            if e.get("valve") is not None
+            if e.get("valve") is not None and room not in constant
         ]
         valve = (
             sum(v * h for v, h in valves) / sum(h for _, h in valves)
             if valves
             else None
         )
-        room_ref = ref.get(room)
+        room_ref = None if room in constant else ref.get(room)
         room_bands.append(
             RoomBand(
                 room,

@@ -215,11 +215,13 @@ const TEXT = {
       heating_curve_high: (a, n) => {
         const bands = a.bands || [];
         const b = bands.find((x) => x.verdict === "too_low") || bands.find((x) => x.verdict === "lower_possible");
-        if (!b) return bands.length ? "Räume halten ihr Soll, Kurve passt" : "";
+        // A valve that never moves (a fixed value, e.g. a pre-setting): said.
+        const fixed = (a.constant_valves || []).length ? ` · fester Ventilwert, zählt nicht: ${a.constant_valves.join(", ")}` : "";
+        if (!b) return bands.length ? `Räume halten ihr Soll, Kurve passt${fixed}` : fixed.slice(3);
         const where = `bei ${n(b.outdoor, 0)} °C`;
-        if (b.verdict === "too_low") return `${where} bleibt ein Raum unter Soll – Kurve eher zu tief`;
-        if (b.estimate_kelvin != null) return `${where} ca. ${n(b.estimate_kelvin, 1)} K tiefer möglich`;
-        return `${where} weitestes Ventil ${b.lead_room} Ø ${n(b.lead_valve, 0)} % – tiefer möglich`;
+        if (b.verdict === "too_low") return `${where} bleibt ein Raum unter Soll – Kurve eher zu tief${fixed}`;
+        if (b.estimate_kelvin != null) return `${where} ca. ${n(b.estimate_kelvin, 1)} K tiefer möglich${fixed}`;
+        return `${where} weitestes Ventil ${b.lead_room} Ø ${n(b.lead_valve, 0)} % – tiefer möglich${fixed}`;
       },
     },
     fine: "In Ordnung",
@@ -436,11 +438,12 @@ const TEXT = {
       heating_curve_high: (a, n) => {
         const bands = a.bands || [];
         const b = bands.find((x) => x.verdict === "too_low") || bands.find((x) => x.verdict === "lower_possible");
-        if (!b) return bands.length ? "Rooms hold their setpoint, curve fits" : "";
+        const fixed = (a.constant_valves || []).length ? ` · fixed valve value, not counted: ${a.constant_valves.join(", ")}` : "";
+        if (!b) return bands.length ? `Rooms hold their setpoint, curve fits${fixed}` : fixed.slice(3);
         const where = `at ${n(b.outdoor, 0)} °C`;
-        if (b.verdict === "too_low") return `${where} a room stays below setpoint – curve rather too low`;
-        if (b.estimate_kelvin != null) return `${where} about ${n(b.estimate_kelvin, 1)} K lower possible`;
-        return `${where} widest valve ${b.lead_room} avg ${n(b.lead_valve, 0)} % – lower possible`;
+        if (b.verdict === "too_low") return `${where} a room stays below setpoint – curve rather too low${fixed}`;
+        if (b.estimate_kelvin != null) return `${where} about ${n(b.estimate_kelvin, 1)} K lower possible${fixed}`;
+        return `${where} widest valve ${b.lead_room} avg ${n(b.lead_valve, 0)} % – lower possible${fixed}`;
       },
       cycling_problem: (a, n) => `max. ${n(a.max_starts_per_hour, 0)} starts/h · ${n(a.short_runs_24h, 0)} short runs`
         + (a.starts_per_day_limit ? ` · ${n(a.starts_24h, 0)} starts in 24 h (limit ${n(a.starts_per_day_limit, 0)})` : ""),

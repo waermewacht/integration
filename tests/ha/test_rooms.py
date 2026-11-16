@@ -20,6 +20,7 @@ from custom_components.waermewacht.const import (
     DOMAIN,
 )
 from custom_components.waermewacht.room_sources import (
+    KIND_ROOMS,
     KIND_VALVES,
     level_number,
     target_entities,
@@ -537,3 +538,30 @@ async def test_level_numbers_of_a_heating_actuator(
     found = target_entities(hass, {"area_id": [living]}, KIND_VALVES)
     assert channel in found
     assert shutter not in found
+
+
+@pytest.mark.freeze_time(START)
+async def test_area_gives_the_heating_group_only(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Rooms by area: where a heating group is, its member thermostats (a
+    wall thermostat's own climate entity) do not count again (95035 #259);
+    a thermostat chosen by name always counts."""
+    living, _hall = make_rooms(hass)
+    registry = er.async_get(hass)
+    wall = registry.async_get_or_create(
+        "climate", "test", "living_wall", suggested_object_id="living_wall"
+    )
+    registry.async_update_entity(wall.entity_id, area_id=living)
+    hass.states.async_set(
+        wall.entity_id, "heat", {"current_temperature": 22.0, "temperature": 22.0}
+    )
+    # The room's climate.living is the heating group.
+    hass.states.async_set(
+        CLIMATE,
+        "heat",
+        {"current_temperature": 22.8, "temperature": 22.5, "is_group": True},
+    )
+    assert target_entities(hass, {"area_id": [living]}, KIND_ROOMS) == [CLIMATE]
+    named = {"area_id": [living], "entity_id": [wall.entity_id]}
+    assert target_entities(hass, named, KIND_ROOMS) == [wall.entity_id, CLIMATE]

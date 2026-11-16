@@ -203,7 +203,47 @@ def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
         ):
             continue
         found.append(entry.entity_id)
+    if kind == KIND_ROOMS:
+        found = _groups_first(hass, found)
     return [*direct, *sorted(found)]
+
+
+# A heating group stands for its room: Homematic IP (HCU: attribute
+# is_group; Homematic IP Local: device HmIP-HEATING, the CCU's group).
+GROUP_WORDS = ("heizungsgruppe", "heizgruppe", "heating group", "heating_group")
+
+
+def _is_group(hass: HomeAssistant, entry: er.RegistryEntry) -> bool:
+    state = hass.states.get(entry.entity_id)
+    if state is not None and state.attributes.get("is_group") is True:
+        return True
+    device = dr.async_get(hass).async_get(entry.device_id) if entry.device_id else None
+    model = str(device.model or "") if device else ""
+    if model.upper().startswith(("HMIP-HEATING", "HMIPW-HEATING")):
+        return True
+    words = " ".join(
+        str(x or "") for x in (entry.entity_id, entry.original_name)
+    ).lower()
+    return any(word in words for word in GROUP_WORDS)
+
+
+def _groups_first(hass: HomeAssistant, climates: list[str]) -> list[str]:
+    """Thermostats found by area, floor, device or label: where a room has a
+    heating group, the group only. Its members (a wall thermostat's own
+    climate entity, simon42 95035 #259) report the same room again."""
+    registry = er.async_get(hass)
+    by_area: dict[str | None, list[str]] = {}
+    for entity_id in climates:
+        by_area.setdefault(area_of(hass, entity_id), []).append(entity_id)
+    kept: list[str] = []
+    for members in by_area.values():
+        groups = [
+            e
+            for e in members
+            if (entry := registry.async_get(e)) and _is_group(hass, entry)
+        ]
+        kept.extend(groups or members)
+    return kept
 
 
 def valve_candidates(

@@ -226,3 +226,22 @@ def test_check_text_heating_share() -> None:
         "- **Küche:** 21 °C, Soll 21 °C, Heizanteil statt Ventil: heizt gerade"
         " · aus climate.kueche"
     )
+
+
+def test_fixed_valve_value_counts_as_no_valve() -> None:
+    """A valve pre-setting entered as a template sensor (77 %, never moving)
+    would block "lower possible": the room counts as without a valve and is
+    named; a warm lead room then gives the verdict."""
+    diary = [day(6.0, {"bath": room(0.8, 77, 77)}) for _ in range(3)]
+    result = check(diary, ["bath"])
+    assert result.constant_valves == ("bath",)
+    assert result.verdict == LOWER_POSSIBLE
+    assert result.bands[0].estimate_k is not None
+    assert result.as_attributes({"bath": "Bad"})["constant_valves"] == ["Bad"]
+
+
+def test_moving_or_fully_open_valve_is_not_fixed() -> None:
+    moving = [day(6.0, {"bath": room(0.0, 20 + i, 40)}) for i in range(3)]
+    assert check(moving, ["bath"]).constant_valves == ()
+    open_ = [day(6.0, {"bath": room(0.8, 100, 100)}) for _ in range(3)]
+    assert check(open_, ["bath"]).constant_valves == ()
