@@ -5,8 +5,10 @@ from __future__ import annotations
 from custom_components.waermewacht.adopt import (
     forget_offered_early,
     known_signals,
+    moved_match,
     own_match,
     preferred_entities,
+    replacements,
     signals_to_adopt,
 )
 from custom_components.waermewacht.model import Signal
@@ -130,3 +132,59 @@ def test_entry_moves_to_the_backup_heater_in_hundredths() -> None:
     assert preferred_entities(match, moved) == {}
     own = {**CONFIGURED, "aux_heating": "sensor.my_heater"}
     assert preferred_entities(match, own) == {}
+
+
+def test_renamed_heat_pump_is_found_again() -> None:
+    """EMS-ESP switched to "multiple instances": every entity got the MQTT
+    base in front, the old ones are gone (waermewacht#9)."""
+    configured = {
+        "heat_heating": "sensor.boiler_nrgheat",
+        "elec_heating": "sensor.boiler_meterheat",
+        "compressor": "binary_sensor.boiler_hpcompon",
+    }
+    new = Match(
+        EMS_ESP,
+        "ems-esp",
+        {
+            Signal.HEAT_HEATING: "sensor.ems_esp_boiler_nrgheat",
+            Signal.ELEC_HEATING: "sensor.ems_esp_boiler_meterheat",
+            Signal.COMPRESSOR: "binary_sensor.ems_esp_boiler_hpcompon",
+        },
+    )
+    stale = set(configured.values())
+    match = moved_match([new], configured, stale, "ems_esp:", set())
+    assert match is new
+    assert replacements(match, configured, stale) == {
+        "heat_heating": "sensor.ems_esp_boiler_nrgheat",
+        "elec_heating": "sensor.ems_esp_boiler_meterheat",
+        "compressor": "binary_sensor.ems_esp_boiler_hpcompon",
+    }
+    # Nothing gone: no search. Another entry's heat pump is not taken.
+    assert moved_match([new], configured, set(), "ems_esp:", set()) is None
+    assert (
+        moved_match([new], configured, stale, "ems_esp:", {"ems_esp:ems-esp"}) is None
+    )
+    # Two free heat pumps: which one cannot be told.
+    other = Match(EMS_ESP, "ems-esp2", dict(new.entities))
+    assert moved_match([new, other], configured, stale, "ems_esp:", set()) is None
+
+
+def test_partly_gone_entities_stay_with_the_own_heat_pump() -> None:
+    configured = {
+        "heat_heating": "sensor.boiler_nrgheat",
+        "elec_heating": "sensor.boiler_meterheat_old",
+    }
+    mine = Match(
+        EMS_ESP,
+        "",
+        {
+            Signal.HEAT_HEATING: "sensor.boiler_nrgheat",
+            Signal.ELEC_HEATING: "sensor.boiler_meterheat",
+        },
+    )
+    stale = {"sensor.boiler_meterheat_old"}
+    match = moved_match([mine], configured, stale, "ems_esp:", set())
+    assert match is mine
+    assert replacements(match, configured, stale) == {
+        "elec_heating": "sensor.boiler_meterheat"
+    }

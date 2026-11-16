@@ -99,3 +99,45 @@ def own_match(matches: Iterable[Match], configured: Mapping[str, str]) -> Match 
         if shared > overlap:
             best, overlap = match, shared
     return best
+
+
+def moved_match(
+    matches: Iterable[Match],
+    configured: Mapping[str, str],
+    stale: set[str],
+    own_key: str | None,
+    taken: set[str],
+) -> Match | None:
+    """The heat pump of a template entry when a reconfigure looks again,
+    because some of its entities are gone (`stale`: no state or unavailable).
+    A source can rename all of them at once (EMS-ESP's entity format
+    "multiple instances" puts the MQTT base in front, waermewacht#9). The
+    match still sharing entities with the entry, else the one with the
+    entry's source key ("template:prefix"), else the only match no other entry
+    uses (`taken`: their source keys). None when nothing is stale or the heat
+    pump cannot be told."""
+    if not stale & set(configured.values()):
+        return None
+    candidates = list(matches)
+    if (match := own_match(candidates, configured)) is not None:
+        return match
+    for match in candidates:
+        if f"{match.template.key}:{match.prefix}" == own_key:
+            return match
+    free = [m for m in candidates if f"{m.template.key}:{m.prefix}" not in taken]
+    return free[0] if len(free) == 1 else None
+
+
+def replacements(
+    match: Match, configured: Mapping[str, str], stale: set[str]
+) -> dict[str, str]:
+    """{signal: new entity} for the configured signals whose entity is gone
+    and which the match has under another id."""
+    return {
+        key: match.entities[Signal(key)]
+        for key, entity_id in configured.items()
+        if entity_id in stale
+        and key in Signal._value2member_map_
+        and Signal(key) in match.entities
+        and match.entities[Signal(key)] != entity_id
+    }

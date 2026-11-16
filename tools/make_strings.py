@@ -2198,6 +2198,19 @@ def _add_cost_hints(data: dict, lang: int) -> None:
         steps[step_id] = variant
 
 
+# Reconfigure: entities of the entry were gone, the template found them again.
+MOVED_HINT = (
+    "Some entities of this entry are gone, the template found the heat pump again "
+    "(e.g. after the source changed its naming): {moved}. Check and take them over "
+    "with OK. What Wärmewacht has counted so far stays; the old counters keep "
+    "their statistics for the look-back.",
+    "Einige Entitäten dieses Eintrags gibt es nicht mehr, die Vorlage hat die "
+    "Wärmepumpe neu gefunden (z. B. nach einem geänderten Namensformat in der "
+    "Quelle): {moved}. Prüfen und mit OK übernehmen. Was Wärmewacht bisher gezählt "
+    "hat, bleibt; die alten Zähler behalten ihre Statistik für den Rückblick.",
+)
+
+
 def build(lang: int) -> dict:
     data = _build(lang)
     steps = data["config"]["step"]
@@ -2206,6 +2219,12 @@ def build(lang: int) -> dict:
     steps["user_disabled"] = {
         **user,
         "description": user["description"] + "\n\n" + DISABLED_HINT[lang],
+    }
+    # The entities step again, with the entities found anew (reconfigure).
+    entities = steps["entities"]
+    steps["entities_moved"] = {
+        **entities,
+        "description": MOVED_HINT[lang] + "\n\n" + entities["description"],
     }
     _add_gas(data, lang)
     for path, texts in TEXTS.items():

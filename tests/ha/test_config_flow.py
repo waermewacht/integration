@@ -967,3 +967,56 @@ async def test_reconfigure_found_heat_pump_keeps_the_unique_id(
     )
     assert result["reason"] == "reconfigure_successful"
     assert entry.unique_id == "ems_esp:boiler"
+
+
+async def test_reconfigure_finds_the_heat_pump_again(hass: HomeAssistant) -> None:
+    """EMS-ESP switched to "multiple instances": the entities got the MQTT
+    base in front and the old ones are gone (waermewacht#9). Reconfigure
+    offers the new ones, keeps the old counters for the backfill and moves
+    the source key."""
+    registry = er.async_get(hass)
+    for domain, key in (
+        ("sensor", "nrgheat"),
+        ("sensor", "meterheat"),
+        ("binary_sensor", "hpcompon"),
+    ):
+        new = registry.async_get_or_create(
+            domain,
+            "mqtt",
+            f"ems-esp_boiler_{key}",
+            suggested_object_id=f"ems_esp_boiler_{key}",
+        )
+        hass.states.async_set(
+            new.entity_id, "off" if domain == "binary_sensor" else "100.0", ENERGY
+        )
+    old = {
+        "heat_heating": "sensor.boiler_nrgheat",
+        "elec_heating": "sensor.boiler_meterheat",
+        "compressor": "binary_sensor.boiler_hpcompon",
+    }
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        unique_id="ems_esp:",
+        data={**entry_data(), CONF_ENTITIES: old},
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["step_id"] == "entities_moved"
+    assert (
+        "sensor.boiler_nrgheat → sensor.ems_esp_boiler_nrgheat"
+        in result["description_placeholders"]["moved"]
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], unchanged_input(result)
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ENTITIES]["heat_heating"] == "sensor.ems_esp_boiler_nrgheat"
+    assert entry.data[CONF_ENTITIES]["compressor"] == (
+        "binary_sensor.ems_esp_boiler_hpcompon"
+    )
+    assert entry.data["history"]["sensor.ems_esp_boiler_nrgheat"] == [
+        "sensor.boiler_nrgheat"
+    ]
+    assert "binary_sensor.ems_esp_boiler_hpcompon" not in entry.data["history"]
+    assert entry.unique_id == "ems_esp:ems-esp"

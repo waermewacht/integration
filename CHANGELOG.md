@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Neu konfigurieren findet die Wärmepumpe wieder.** Legt die Quelle neue Entitäten an und die alten verschwinden, etwa nach dem Umstellen von EMS-ESP auf das Namensformat „Mehrfachinstanzen“, sucht *Neu konfigurieren* bei einem Eintrag mit Vorlage die Wärmepumpe neu und trägt die neuen Entitäten ein. Das Formular nennt, was ersetzt wurde. Was Wärmewacht bisher gezählt hat, bleibt, und die alten Zähler dienen weiter dem Rückblick. (danke an @cheyrich)
+
 ## 0.16.0 – 2026-11-16
 
 ### Neu

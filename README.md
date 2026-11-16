@@ -88,7 +88,7 @@ Für eine Gasheizung vor dem Umstieg genügen Gaszähler und Außentemperatur, s
 | [Daikin Altherma über P1P2MQTT](https://github.com/Arnold-n/P1P2Serial) (MQTT) | Vorlage, erprobt an zwei Altherma 3; Arbeitszahlen, Takte und Abtauen, Zähler in ganzen kWh |
 | beliebige Wärme- und Stromzähler | manuelle Zuordnung |
 
-Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem. Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
+Die EMS-ESP-Vorlage erkennt die Wärmepumpe am Gerät `boiler`. Sie braucht Kompressorstatus (`hpcompon`) und die Zähler für Heizen. Sie findet die Entitäten über die Entitäten-Registry, nicht über die Entity-ID. Umbenennen und alle Namensformate von EMS-ESP sind deshalb kein Problem; stellst du das Format bei einem bestehenden Eintrag um, siehe [Neu konfigurieren](#neue-entitäten-der-quelle). Die Betriebsart (`hpactivity`) versteht sie in allen Sprachen von EMS-ESP und im Index-Format.
 
 Bei Hybridanlagen (Öl- oder Gaskessel plus Hybrid Manager HM200) ist das Gerät `boiler` der Kessel; die Wärmepumpe steht unter dem Gerät `heatpump`. Dafür gibt es die Vorlage „EMS-ESP Heatpump“ (Beta): Wärmepumpe aus `heatpump_…` (Kompressor aus der Drehzahl `hpcompspd`), Kessel, Außen- und Speichertemperatur aus `boiler_…`. Wie Wärmewacht den Kessel behandelt, steht unter [Hybridanlage](#hybridanlage).
 
@@ -267,6 +267,8 @@ Jedes optionale Feld darf leer bleiben. Quellen der Vorgaben in [docs/ENTWICKLUN
 Kennt eine Vorlage nach einem Update ein neues Signal (etwa die Warmwasser-Temperatur), trägt Wärmewacht es beim Start selbst ein, wenn es dieselbe Wärmepumpe betrifft und der Eintrag noch keins hat. Was du unter *Neu konfigurieren* bewusst entfernst, bleibt entfernt.
 
 Benennst du eine Quelle um (Entity-ID in den Entitäts-Einstellungen, *Entity-IDs neu erstellen* am Gerät), zieht Wärmewacht die neue ID selbst nach und lädt den Eintrag kurz danach neu. *Neu konfigurieren* ist dafür nicht nötig; Verlauf und Statistik bleiben, weil Home Assistant sie mit umbenennt.
+
+<a id="neue-entitäten-der-quelle"></a>Legt die Quelle dagegen **neue** Entitäten an und die alten verschwinden (etwa wenn du bei EMS-ESP das Namensformat auf „Mehrfachinstanzen“ umstellst: Dann bekommt jede unique_id die MQTT-Basis vorangestellt), wähle *Neu konfigurieren*. Bei einem Eintrag mit Vorlage sucht Wärmewacht die Wärmepumpe dann neu und trägt die neuen Entitäten für die verschwundenen ein; das Formular nennt, was es ersetzt hat. Was Wärmewacht bisher gezählt hat, bleibt. Die alten Zähler behalten ihre Statistik und dienen weiter dem Rückblick.
 
 ## Gasheizung vor dem Umstieg
 

@@ -40,7 +40,7 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
-from .adopt import known_signals
+from .adopt import known_signals, moved_match, replacements
 from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_AUX_MILD_FROM,
@@ -697,6 +697,10 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         # unchanged, it is kept (the check can be wrong, e.g. a lifetime
         # counter that restarted at 0 twice at the same hour).
         self._counter_warned: dict[str, str] | None = None
+        # Reconfigure: entities the template found again under a new id
+        # ({old: new}), and the source key of the heat pump found then.
+        self._moved: dict[str, str] = {}
+        self._moved_key: str | None = None
 
     @staticmethod
     @callback
@@ -781,11 +785,16 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             if error is None:
                 return await self._async_finish(values)
             errors["base"] = error
+        placeholders = {"issues_url": ISSUES_URL}
+        if self._moved:
+            placeholders["moved"] = ", ".join(
+                f"{old} → {new}" for old, new in sorted(self._moved.items())
+            )
         return self.async_show_form(
-            step_id="entities",
+            step_id="entities_moved" if self._moved else "entities",
             data_schema=entities_schema(values, self._top),
             errors=errors,
-            description_placeholders={"issues_url": ISSUES_URL},
+            description_placeholders=placeholders,
         )
 
     async def _async_counter_kind(self, entities: dict[str, str]) -> str | None:
@@ -830,11 +839,54 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._prefill = dict(entry.data[CONF_ENTITIES])
         if entry.data.get(CONF_TEMPLATE):
             self._top = set(self._prefill)
+            self._find_moved(entry)
         if entry.data.get(CONF_KIND) == KIND_GAS:
             if entry.data.get(CONF_FUEL) == FUEL_OIL:
                 return await self.async_step_oil()
             return await self.async_step_gas()
         return await self.async_step_entities()
+
+    def _find_moved(self, entry: ConfigEntry) -> None:
+        """Look for the heat pump again when entities of the entry are gone,
+        e.g. after the source changed its naming (waermewacht#9): the form
+        then shows the new ones."""
+        template = entry.data.get(CONF_TEMPLATE)
+        configured: dict[str, str] = dict(entry.data.get(CONF_ENTITIES) or {})
+
+        def gone(entity_id: str) -> bool:
+            state = self.hass.states.get(entity_id)
+            return state is None or state.state == STATE_UNAVAILABLE
+
+        stale = {e for e in configured.values() if e and gone(e)}
+        if not stale:
+            return
+        taken = {
+            other.unique_id
+            for other in self.hass.config_entries.async_entries(DOMAIN)
+            if other.entry_id != entry.entry_id and other.unique_id
+        }
+        match = moved_match(
+            [m for m in detect(self.hass) if m.template.key == template],
+            configured,
+            stale,
+            entry.unique_id,
+            taken,
+        )
+        if match is None:
+            return
+        new = replacements(match, configured, stale)
+        if not new:
+            return
+        self._moved = {configured[key]: entity_id for key, entity_id in new.items()}
+        self._moved_key = _source_key(match)
+        self._prefill = {**configured, **new}
+        self._top = {*(self._top or ()), *new}
+
+    async def async_step_entities_moved(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """The entities step, shown with the entities found again."""
+        return await self.async_step_entities(user_input)
 
     async def async_step_gas(
         self, user_input: dict[str, Any] | None = None
@@ -962,12 +1014,27 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 if entry.data.get(CONF_TEMPLATE)
                 else self._moved_unique_id(entry, _manual_unique_id(entities))
             )
+            history = dict(entry.data.get(CONF_HISTORY) or {})
+            if self._moved_key and self._moved_key != entry.unique_id:
+                # The heat pump was found again under a new source key.
+                unique_id = self._moved_unique_id(entry, self._moved_key)
+            for old, new in self._moved.items():
+                # The old counter keeps its statistics: kept for the backfill.
+                if new in entities.values() and any(
+                    entities.get(s.value) == new for s in ENERGY_SIGNALS
+                ):
+                    history[new] = [old, *history.pop(old, [])]
             # The update listener reloads the entry.
             return self.async_update_and_abort(
                 entry,
                 unique_id=unique_id,
                 data={
                     **entry.data,
+                    **(
+                        {CONF_HISTORY: history}
+                        if history != (entry.data.get(CONF_HISTORY) or {})
+                        else {}
+                    ),
                     CONF_ENTITIES: entities,
                     CONF_KNOWN_SIGNALS: _known(
                         entry.data.get(CONF_TEMPLATE),
