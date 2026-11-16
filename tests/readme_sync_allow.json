@@ -1,0 +1,10 @@
+{
+  "replace": {
+    "Demo-erfundene_Daten": "Demo-sample_data",
+    "1/AZ = a + b · Hub": "1/factor = a + b · lift",
+    "warmepumpe_befund_effizienz": "warmepumpe_check_efficiency",
+    "mobile_app_mein_handy": "mobile_app_my_phone",
+    "<HA-Adresse>": "<HA address>",
+    "gruende": "reasons"
+  }
+}
