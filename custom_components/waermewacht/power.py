@@ -340,6 +340,15 @@ def with_power(
         attributes["classes"] = [
             {**row, **by_lower.get(row["lower"], {})} for row in attributes["classes"]
         ]
+    # The other season's power per class beside its run time shares.
+    other_name = "current" if duty.get("season") == "previous" else "previous"
+    other = (duty.get("power") or {}).get(other_name)
+    if isinstance(other, PowerFigures) and attributes.get("other_classes"):
+        by_lower = {c.lower: c.as_dict() for c in other.classes}
+        attributes["other_classes"] = [
+            {**row, **by_lower.get(row["lower"], {})}
+            for row in attributes["other_classes"]
+        ]
     if figures_too:
         attributes.update(headline(duty))
         attributes["expected_continuous_below_measured"] = duty.get(

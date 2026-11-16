@@ -1227,6 +1227,7 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
             "previous",
             "weeks",
             "classes",
+            "other_classes",
             "points",
             # Own electricity per mode (allocation.py).
             "own_share_by_mode",

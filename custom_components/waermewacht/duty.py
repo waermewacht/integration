@@ -347,6 +347,11 @@ def duty_attributes(duty: Mapping[str, Any], key: str) -> dict[str, Any]:
         "other_season": None
         if not isinstance(other, DutyFigures)
         else getattr(other, key),
+        # The other season's classes beside it in the card's charts (only
+        # those with enough hours; not recorded).
+        "other_classes": []
+        if not isinstance(other, DutyFigures)
+        else [c.as_dict() for c in other.classes if c.hours >= MIN_CLASS_HOURS],
         "expected_continuous_below": duty.get("expected_continuous_below"),
         "short_run_minutes": duty.get("short_run_minutes"),
     }

@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+### Neu
+
+- **Takte: laufende Saison neben der Vorsaison.** Die Diagramme „Laufzeit Heizen“ und „Heizleistung je Außentemperatur“ zeigen neben der Vorsaison jetzt auch die laufende Saison als zweite Linie, soweit ihre Temperaturklassen genug Stunden haben. So siehst du, ob sich am Takten oder an der kleinsten Leistung etwas geändert hat.
+
 ### Geändert
 
 - **Heizkurve (gemessen): unsichere Gerade gekennzeichnet.** Hängt der Vorlauf kaum von der Außentemperatur ab (R² unter 0,3), heißt die Gerade in der Legende „Gerade (unsicher, R² …)“. Das kommt etwa bei einer sehr flachen Heizkurve vor, deren milde Tage an der kleinsten Leistung über dem Soll laufen.

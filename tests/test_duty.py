@@ -220,3 +220,28 @@ def test_choose() -> None:
     assert choose(found, empty) == "previous"
     assert choose(empty, found) == "current"
     assert choose(empty, empty) == "previous"
+
+
+def test_other_season_classes_beside_the_chosen() -> None:
+    """In autumn the sensors show the previous season; the current one's
+    classes with enough hours come along for the card's second line."""
+    from custom_components.waermewacht.duty import (
+        DutyClass,
+        DutyFigures,
+        duty_attributes,
+    )
+
+    previous = DutyFigures([DutyClass(0.0, 100.0, 300000.0, 20)], 2.0, None, None, None)
+    current = DutyFigures(
+        [DutyClass(6.0, 30.0, 27000.0, 10), DutyClass(8.0, 5.0, 1800.0, 2)],
+        None,
+        "too_few_hours",
+        None,
+        None,
+    )
+    attributes = duty_attributes(
+        {"season": "previous", "previous": previous, "current": current},
+        "continuous_below",
+    )
+    assert [c["lower"] for c in attributes["other_classes"]] == [6.0]
+    assert attributes["other_classes"][0]["share_percent"] == 25.0

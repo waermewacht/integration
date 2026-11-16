@@ -1067,31 +1067,52 @@ class WaermewachtCard extends HTMLElement {
       line: true,
       points: rows.map((c) => [c.lower + 1, c.share_percent]),
     }];
+    // The other season beside it (duty.py "other_classes"): in autumn the
+    // current one, as far as it has enough hours, up to the warmest class the
+    // shown season reaches.
+    const top = rows[rows.length - 1].lower;
+    const others = (state.attributes.other_classes || []).filter((c) => c.lower <= top);
+    const otherName = this._otherSeasonName(t, state.attributes.season);
+    if (others.length >= 2 && otherName) {
+      series.push({
+        color: COLORS.elecDhw,
+        label: `${t.dutySeries} · ${otherName}`,
+        line: true,
+        points: others.map((c) => [c.lower + 1, c.share_percent]),
+      });
+    }
     const title = (name) => this._seasonTitle(t, name, state.attributes.season);
     return `<div class="charts">${this._xyChart(title(t.dutyChart), "%", series, this._entities.continuous_below, 0, 0)}`
-      + `${this._powerChart(t, state.attributes, rows)}</div>`;
+      + `${this._powerChart(t, state.attributes, rows, others, otherName)}</div>`;
   }
 
   /** Demand and smallest heat per full heating hour per outdoor class
    * (power.py), the largest measured power as a dot in the coldest class:
    * where the demand falls below the smallest power, the unit has to cycle. */
-  _powerChart(t, a, rows) {
+  _powerChart(t, a, rows, others = [], otherName = "") {
     const has = (v) => v !== null && v !== undefined;
-    const line = (key, color, label) => ({
+    const line = (key, color, label, from = rows) => ({
       color,
       label,
       line: true,
-      points: rows.filter((c) => has(c[key])).map((c) => [c.lower + 1, c[key]]),
+      points: from.filter((c) => has(c[key])).map((c) => [c.lower + 1, c[key]]),
     });
     const series = [
       line("demand_kw", COLORS.previous, t.powerDemand),
       line("min_kw", COLORS.current, t.powerMin),
+      // The other season's smallest power: does the unit cycle as before?
+      ...(otherName ? [line("min_kw", COLORS.heatDhw, `${t.powerMin} · ${otherName}`, others)] : []),
     ].filter((s) => s.points.length >= 2);
     if (!series.length) return "";
     if (has(a.measured_max_kw) && has(a.measured_max_class)) {
       series.push({ color: COLORS.outdoor, label: t.powerMax, points: [[a.measured_max_class + 1, a.measured_max_kw]] });
     }
     return this._xyChart(this._seasonTitle(t, t.powerChart, a.season), "kW", series, this._entities.continuous_below, 0, 1);
+  }
+
+  /** Name of the season the charts show beside the chosen one. */
+  _otherSeasonName(t, season) {
+    return { previous: t.current, current: t.previousSeason }[season] || "";
   }
 
   /** Chart title with the season its classes come from (duty.py "season"):
