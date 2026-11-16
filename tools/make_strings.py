@@ -811,11 +811,12 @@ OPTION_HELP = {
     "room_entities": (
         "Thermostats or heating groups (climate) and/or room thermometers, one or "
         "more per room. Some also report the valve opening (e.g. Homematic IP heating "
-        "groups, the widest valve of the room); after OK you see per room what was "
+        "groups via the HCU integration, the widest valve of the room); after OK you see per room what was "
         "found. Assign each entity (or its device) to the room's area.",
         "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum "
         "eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen "
-        "von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst "
+        "von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des "
+        "Raums); nach OK siehst "
         "du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich "
         "des Raums zuordnen.",
     ),

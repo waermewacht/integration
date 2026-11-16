@@ -390,7 +390,7 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
@@ -538,7 +538,7 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
@@ -658,7 +658,7 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
@@ -778,7 +778,7 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP über die HCU-Integration, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
               "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
