@@ -36,6 +36,10 @@ from homeassistant.helpers import entity_registry as er
 VALVE_ATTRIBUTES = ("valve_position", "heating_power_request", "pulse_width_modulation")
 # The position of an entity of the valve domain (0-100).
 VALVE_POSITION = "current_position"
+# Without any valve opening: the climate's action (heating or not) gives the
+# share of time a thermostat heats (all thermostats report hvac_action).
+HVAC_ACTION = "hvac_action"
+HEATING_ACTIONS = frozenset({"heating", "preheating"})
 # Highest level of a Z-Wave Multilevel Switch (fully open).
 ZWAVE_LEVEL_MAX = 99
 # Entities in a room's area that look like a valve opening (check step).
@@ -184,6 +188,8 @@ class RoomReading:
     target_from: list[str] = field(default_factory=list)
     valve: float | None = None
     valve_from: list[str] = field(default_factory=list)
+    # The valve is the heating share: 100 while a thermostat heats, else 0.
+    share: bool = False
     off: bool = False  # a thermostat is switched off
 
 
@@ -202,6 +208,9 @@ def read_room(
     valves: list[float] = []
     climate_temps: list[float] = []
     climate_temp_from: list[str] = []
+    actions: dict[str, str] = {}
+    # Any valve source at all (even without a value this minute): no share.
+    has_valve = bool(sources.valves)
     for entity_id in sources.climates:
         state = get(entity_id)
         if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
@@ -219,6 +228,9 @@ def read_room(
         if (value := climate_valve(attributes)) is not None:
             valves.append(value)
             reading.valve_from.append(entity_id)
+        has_valve = has_valve or any(k in attributes for k in VALVE_ATTRIBUTES)
+        if isinstance(action := attributes.get(HVAC_ACTION), str):
+            actions[entity_id] = action
     for entity_id in sources.thermometers:
         state = get(entity_id)
         if state is not None and (value := _number(state.state)) is not None:
@@ -240,6 +252,14 @@ def read_room(
     else:
         reading.target = _mean(targets)
     reading.valve = max(valves) if valves else None
+    if reading.valve is None and not has_valve and actions:
+        # No valve opening anywhere in the room: whether a thermostat heats
+        # (TP-Link Kasa KE100 and others report only that). Sampled each
+        # minute, the day's mean is the share of time it heats.
+        heating = [e for e, a in actions.items() if a in HEATING_ACTIONS]
+        reading.valve = 100.0 if heating else 0.0
+        reading.valve_from = heating or list(actions)
+        reading.share = True
     return reading
 
 

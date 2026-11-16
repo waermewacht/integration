@@ -141,6 +141,7 @@ from .profiles import (
     parse_compressor,
 )
 from .room_sources import (
+    HVAC_ACTION,
     VALVE_ATTRIBUTES,
     area_of,
     level_number,
@@ -1563,10 +1564,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
             reading = read_room(
                 self.hass.states.get, sources, None if wish is None else float(wish)
             )
-            # A room without a valve: entities of its area that look like one.
+            # A room without a valve (or only its heating share): entities of
+            # its area that look like one.
             found_valves = (
                 ()
-                if reading.valve is not None
+                if reading.valve is not None and not reading.share
                 else tuple(
                     valve_candidates(
                         self.hass, area, options.get(CONF_VALVE_ENTITIES) or []
@@ -1583,6 +1585,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     valve=reading.valve,
                     valve_from=tuple(reading.valve_from),
                     off=reading.off,
+                    share=reading.share,
                     found=found_valves,
                 )
             )
@@ -1608,6 +1611,10 @@ class WaermewachtOptionsFlow(OptionsFlow):
             self.hass, room_entities, list(options.get(CONF_VALVE_ENTITIES) or [])
         )
 
+        def reports_action(entity_id: str) -> bool:
+            state = self.hass.states.get(entity_id)
+            return state is not None and HVAC_ACTION in state.attributes
+
         def reports_valve(entity_id: str) -> bool:
             state = self.hass.states.get(entity_id)
             return state is not None and any(
@@ -1621,6 +1628,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 thermometers=len(sources.thermometers),
                 valves=len(sources.valves),
                 valve_reported=any(reports_valve(c) for c in sources.climates),
+                heating_share=not sources.valves
+                and not any(reports_valve(c) for c in sources.climates)
+                and any(reports_action(c) for c in sources.climates),
             )
             for area, sources in sorted(
                 found.rooms.items(), key=lambda item: found.names.get(item[0], "")

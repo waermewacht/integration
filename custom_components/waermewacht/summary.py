@@ -68,6 +68,15 @@ T = {
     "thermometer": ("thermometer", "Thermometer"),
     "valves": ("valves", "Ventile"),
     "valve_reported": ("valve reported", "Ventil mitgemeldet"),
+    "heating_share": ("heating share", "Heizanteil"),
+    "check_share_on": (
+        "heating share instead of a valve: heating now",
+        "Heizanteil statt Ventil: heizt gerade",
+    ),
+    "check_share_off": (
+        "heating share instead of a valve: not heating now",
+        "Heizanteil statt Ventil: heizt gerade nicht",
+    ),
     "no_area": ("without an area, not counted", "ohne Bereich, zählt nicht"),
     "no_room": (
         "valve without a room in its area",
@@ -359,6 +368,7 @@ class RoomLine:
     thermometers: int = 0
     valves: int = 0  # valve sensors
     valve_reported: bool = False  # a thermostat reports its opening
+    heating_share: bool = False  # only whether it heats: its share of time
 
 
 @dataclass(frozen=True)
@@ -383,6 +393,8 @@ def rooms_text(rooms: RoomSummary, lang: int) -> str:
             what.append(f"{room.valves} {t('valves')}")
         elif room.valve_reported:
             what.append(t("valve_reported"))
+        elif room.heating_share:
+            what.append(t("heating_share"))
         parts.append(f"{room.name} ({', '.join(what)})")
     text = ", ".join(parts) or "–"
     if rooms.no_area:
@@ -405,6 +417,7 @@ class RoomCheckLine:
     valve: float | None = None
     valve_from: tuple[str, ...] = ()
     off: bool = False
+    share: bool = False  # the valve is the heating share (100 or 0 now)
     # Without a valve: entities of the area that look like one (id, disabled).
     found: tuple[tuple[str, bool], ...] = ()
 
@@ -448,7 +461,11 @@ def rooms_check_text(check: RoomCheck, lang: int) -> str:
                 no_valve += f" · {t('check_found')}: {found}"
             parts.append((no_valve, ()))
         else:
-            valve = f"{t('check_valve')} {_num(room.valve, lang, 0)} %"
+            valve = (
+                t("check_share_on" if room.valve > 0 else "check_share_off")
+                if room.share
+                else f"{t('check_valve')} {_num(room.valve, lang, 0)} %"
+            )
             parts.append((valve, room.valve_from))
         sources = {src for _, src in parts if src}
         if len(sources) == 1 and all(src for _, src in parts):

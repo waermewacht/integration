@@ -12,7 +12,8 @@ known the valve openings) the question becomes answerable (simon42 95035
   with a half open valve is the controller at work, not a curve too low.
 
 Per local day and room (rooms are HA areas; several thermometers of one
-area are averaged, of several valves the widest counts, room_sources.py):
+area are averaged, of several valves the widest counts; a thermostat without
+any valve opening gives its heating share, room_sources.py):
 the mean of temperature minus target and the mean valve opening (%), sampled once a minute all day (RoomLog), written to
 the diary. Per outdoor band (the day's mean outdoor temperature) over the
 heating days of the last CHECK_DAYS days:
@@ -21,12 +22,12 @@ heating days of the last CHECK_DAYS days:
   near the highest opening seen for it (a valve may be limited below 100 %
   in its settings), or no valve is known;
 - "lower_possible": every room at most HOLD_K below its target and either
-  the widest valve stays at most THROTTLED_PERCENT open on average, or (no
-  valve known: the rooms are lead rooms with open valves) every room at
-  least WARM_K above its target;
+  the widest valve stays at most THROTTLED_PERCENT open on average, or every
+  room at least WARM_K above its target (too warm with its valve open: also
+  lead rooms without a known valve, or whose thermostat keeps it open);
 - "fits" otherwise.
 
-Without valves the warmest margin also gives an estimate in kelvin of flow:
+Without a valve throttling, the warm margin also gives an estimate in kelvin of flow:
 a room dT too warm means the water may be dT * (1 + (flow - room) /
 (room - outdoor)) cooler (heat balance of house and emitters, linear; a
 radiator's exponent is left out). With valves no kelvin figure is given:
@@ -309,14 +310,13 @@ def _judge_band(
     holds = bool(room_bands) and all(r.delta >= -HOLD_K for r in room_bands)
     if too_low:
         verdict = TOO_LOW
-    elif holds and lead is not None:
-        if (lead.valve or 0.0) <= THROTTLED_PERCENT:
-            verdict = LOWER_POSSIBLE
-    elif holds:
-        margin = min(r.delta for r in room_bands)
-        if margin >= WARM_K:
-            verdict = LOWER_POSSIBLE
-            estimate = _estimate(margin, flow, outdoor)
+    elif holds and lead is not None and (lead.valve or 0.0) <= THROTTLED_PERCENT:
+        verdict = LOWER_POSSIBLE
+    elif holds and (margin := min(r.delta for r in room_bands)) >= WARM_K:
+        # Every room too warm, whatever its valve: also a lead room whose
+        # thermostat keeps its valve open (heating share near 100 %).
+        verdict = LOWER_POSSIBLE
+        estimate = _estimate(margin, flow, outdoor)
     return BandVerdict(
         label,
         verdict,

@@ -811,12 +811,14 @@ OPTION_HELP = {
     "room_entities": (
         "Thermostats or heating groups (climate) and/or room thermometers, one or "
         "more per room. Some also report the valve opening (e.g. Homematic IP "
-        "heating groups via the HCU integration, Netatmo valves, Uponor); after OK "
+        "heating groups via the HCU integration, Netatmo valves, Uponor); others "
+        "only whether they heat, then their heating share counts. After OK "
         "you see per room what was found. Assign each entity (or its device) to the "
         "room's area.",
         "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum "
         "eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen "
-        "von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor); nach OK "
+        "von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere "
+        "nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK "
         "siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem "
         "Bereich des Raums zuordnen.",
     ),

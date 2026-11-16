@@ -196,3 +196,33 @@ def test_check_text_names_found_valves() -> None:
         "- Eine deaktivierte Entität zuerst in ihren Einstellungen aktivieren,"
         " dann unter Ventilöffnungen eintragen."
     )
+
+
+def test_too_warm_with_open_valve_is_lower_possible() -> None:
+    """A lead room whose thermostat keeps its valve open (heating share near
+    100 %) and is still 0.8 K too warm: the curve could be lower."""
+    diary = [day(6.0, {"living": room(0.8, 97, 100)}) for _ in range(3)]
+    result = check(diary, ["living"])
+    assert result.verdict == LOWER_POSSIBLE
+    assert result.bands[0].estimate_k is not None
+
+
+def test_check_text_heating_share() -> None:
+    check = RoomCheck(
+        (
+            RoomCheckLine(
+                "Küche",
+                temp=21.0,
+                temp_from=("climate.kueche",),
+                target=21.0,
+                target_from=("climate.kueche",),
+                valve=100.0,
+                valve_from=("climate.kueche",),
+                share=True,
+            ),
+        )
+    )
+    assert rooms_check_text(check, 1) == (
+        "- **Küche:** 21 °C, Soll 21 °C, Heizanteil statt Ventil: heizt gerade"
+        " · aus climate.kueche"
+    )

@@ -327,3 +327,30 @@ def test_zwave_valve_level_in_percent() -> None:
     )
     assert valve_value(percent) == 40
     assert not level_number(State("number.y", "200", {"min": 0, "max": 255}))
+
+
+@pytest.mark.freeze_time(START)
+async def test_heating_share_without_valve(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A thermostat that reports only whether it heats (TP-Link Kasa KE100):
+    the share of minutes it heats stands in for the valve opening."""
+    living, _hall = make_rooms(hass)
+    hass.states.async_set(
+        CLIMATE,
+        "heat",
+        {"current_temperature": 21.0, "temperature": 21.0, "hvac_action": "heating"},
+    )
+    entry = await setup(hass, **{CONF_ROOM_ENTITIES: [CLIMATE]})
+    log = entry.runtime_data.room_log
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 1)
+    hass.states.async_set(
+        CLIMATE,
+        "heat",
+        {"current_temperature": 21.0, "temperature": 21.0, "hvac_action": "idle"},
+    )
+    await tick(hass, freezer, 1)
+    await tick(hass, freezer, 1)
+    share = log.rooms[living].valve.value
+    assert 0 < share < 100
