@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.20.2 – 2026-11-16
 
 ### Behoben
 
