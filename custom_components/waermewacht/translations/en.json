@@ -390,9 +390,9 @@
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostats (climate) and/or room thermometers, one or more per room. Thermostats like Homematic IP also report their valve opening. Assign each entity (or its device) to the room's area.",
+              "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups, the widest valve of the room); after OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
-              "valve_entities": "Sensors with the valve opening in %, if your thermostats do not report it themselves (e.g. channels of a floor heating actuator). They count for the room of their area."
+              "valve_entities": "Only if the thermostats above do not report it: sensors with the valve opening in % (e.g. channels of a floor heating controller). They count for the room of their own area: if the controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
           },
@@ -443,6 +443,14 @@
           "z_number": "Only for counters in m³: from the gas bill."
         },
         "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
+      },
+      "rooms_check": {
+        "title": "Heating curve check: is this right?",
+        "description": "Wärmewacht found these rooms, with their values right now:\n\n{check}\n\nThe widest valve of a room counts. A room without a known valve counts as a lead room with its valve fully open.",
+        "menu_options": {
+          "rooms_ok": "Right, save",
+          "rooms_change": "Change"
+        }
       },
       "init_tarifwacht": {
         "title": "Settings",
@@ -530,9 +538,9 @@
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostats (climate) and/or room thermometers, one or more per room. Thermostats like Homematic IP also report their valve opening. Assign each entity (or its device) to the room's area.",
+              "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups, the widest valve of the room); after OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
-              "valve_entities": "Sensors with the valve opening in %, if your thermostats do not report it themselves (e.g. channels of a floor heating actuator). They count for the room of their area."
+              "valve_entities": "Only if the thermostats above do not report it: sensors with the valve opening in % (e.g. channels of a floor heating controller). They count for the room of their own area: if the controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
           },
@@ -650,9 +658,9 @@
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostats (climate) and/or room thermometers, one or more per room. Thermostats like Homematic IP also report their valve opening. Assign each entity (or its device) to the room's area.",
+              "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups, the widest valve of the room); after OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
-              "valve_entities": "Sensors with the valve opening in %, if your thermostats do not report it themselves (e.g. channels of a floor heating actuator). They count for the room of their area."
+              "valve_entities": "Only if the thermostats above do not report it: sensors with the valve opening in % (e.g. channels of a floor heating controller). They count for the room of their own area: if the controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
           },
@@ -770,9 +778,9 @@
               "valve_entities": "Valve openings (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostats (climate) and/or room thermometers, one or more per room. Thermostats like Homematic IP also report their valve opening. Assign each entity (or its device) to the room's area.",
+              "room_entities": "Thermostats or heating groups (climate) and/or room thermometers, one or more per room. Some also report the valve opening (e.g. Homematic IP heating groups, the widest valve of the room); after OK you see per room what was found. Assign each entity (or its device) to the room's area.",
               "room_target": "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on purpose to keep its valve open, or for rooms with thermometers only.",
-              "valve_entities": "Sensors with the valve opening in %, if your thermostats do not report it themselves (e.g. channels of a floor heating actuator). They count for the room of their area."
+              "valve_entities": "Only if the thermostats above do not report it: sensors with the valve opening in % (e.g. channels of a floor heating controller). They count for the room of their own area: if the controller sits in another room, give each sensor the area of its room."
             },
             "description": "Rooms tell whether the heating curve could be lower: a room whose valve throttles holds its setpoint anyway, the room with the valve open the widest decides. Rooms are grouped by their Home Assistant area; the summary above shows which room got what."
           },

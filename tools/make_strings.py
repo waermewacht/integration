@@ -809,12 +809,15 @@ OPTION_HELP = {
         "nicht der Stromverbrauch; zeigt, ob Takten in der Übergangszeit zu erwarten ist.",
     ),
     "room_entities": (
-        "Thermostats (climate) and/or room thermometers, one or more per room. "
-        "Thermostats like Homematic IP also report their valve opening. Assign each "
-        "entity (or its device) to the room's area.",
-        "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. "
-        "Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität "
-        "(oder ihr Gerät) dem Bereich des Raums zuordnen.",
+        "Thermostats or heating groups (climate) and/or room thermometers, one or "
+        "more per room. Some also report the valve opening (e.g. Homematic IP heating "
+        "groups, the widest valve of the room); after OK you see per room what was "
+        "found. Assign each entity (or its device) to the room's area.",
+        "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum "
+        "eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen "
+        "von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst "
+        "du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich "
+        "des Raums zuordnen.",
     ),
     "room_target": (
         "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on "
@@ -823,12 +826,14 @@ OPTION_HELP = {
         "hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
     ),
     "valve_entities": (
-        "Sensors with the valve opening in %, if your thermostats do not report it "
-        "themselves (e.g. channels of a floor heating actuator). They count for the "
-        "room of their area.",
-        "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst "
-        "melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum "
-        "ihres Bereichs.",
+        "Only if the thermostats above do not report it: sensors with the valve "
+        "opening in % (e.g. channels of a floor heating controller). They count for "
+        "the room of their own area: if the controller sits in another room, give "
+        "each sensor the area of its room.",
+        "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der "
+        "Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie "
+        "zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem "
+        "anderen Raum, jedem Sensor den Bereich seines Raums geben.",
     ),
 }
 
@@ -2083,6 +2088,27 @@ def _add_oil(data: dict, lang: int) -> None:
 
 # Single texts: {dotted path: (en, de)}.
 TEXTS = {
+    # Check after saving changed rooms (config_flow, step rooms_check).
+    "options.step.rooms_check.title": (
+        "Heating curve check: is this right?",
+        "Heizkurve prüfen: Passt das?",
+    ),
+    "options.step.rooms_check.description": (
+        "Wärmewacht found these rooms, with their values right now:\n\n{check}\n\n"
+        "The widest valve of a room counts. A room without a known valve counts as "
+        "a lead room with its valve fully open.",
+        "Diese Räume hat Wärmewacht gefunden, mit den Werten von gerade eben:\n\n"
+        "{check}\n\nJe Raum zählt das am weitesten offene Ventil. Ein Raum ohne "
+        "bekanntes Ventil zählt als Leitraum mit ganz offenem Ventil.",
+    ),
+    "options.step.rooms_check.menu_options.rooms_ok": (
+        "Right, save",
+        "Passt, speichern",
+    ),
+    "options.step.rooms_check.menu_options.rooms_change": (
+        "Change",
+        "Ändern",
+    ),
     "config.error.own_entity": (
         "A sensor of Wärmewacht itself is chosen as a source: the entry would read its own results. Choose the entities of the heat pump or the boiler.",
         "Als Quelle ist ein Sensor von Wärmewacht selbst gewählt: Der Eintrag würde seine eigenen Ergebnisse lesen. Bitte die Entitäten der Wärmepumpe bzw. der Therme wählen.",

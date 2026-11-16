@@ -13,7 +13,14 @@ from custom_components.waermewacht.rooms import (
     RoomLog,
     check,
 )
-from custom_components.waermewacht.summary import RoomLine, RoomSummary, rooms_text
+from custom_components.waermewacht.summary import (
+    RoomCheck,
+    RoomCheckLine,
+    RoomLine,
+    RoomSummary,
+    rooms_check_text,
+    rooms_text,
+)
 
 
 def day(outdoor: float, rooms: dict, heating_hours: float = 6.0) -> dict:
@@ -127,6 +134,41 @@ def test_summary_text() -> None:
         no_area=("sensor.flur",),
     )
     assert rooms_text(rooms, 1) == (
-        "Wohnzimmer (Thermostat, Ventil gemeldet), Treppe (Thermometer, 2 Ventile)"
+        "Wohnzimmer (Thermostat, Ventil mitgemeldet), Treppe (Thermometer, 2 Ventile)"
         " · ohne Bereich, zählt nicht: sensor.flur"
     )
+
+
+def test_check_text_names_values_and_sources() -> None:
+    check = RoomCheck(
+        (
+            RoomCheckLine(
+                "Treppe",
+                temp=21.1,
+                temp_from=("climate.treppe",),
+                target=21.5,
+                target_from=("climate.treppe",),
+                valve=40.0,
+                valve_from=("climate.treppe",),
+            ),
+            RoomCheckLine(
+                "Flur",
+                temp=20.64,
+                temp_from=("sensor.flur",),
+                target=21.0,
+            ),
+            RoomCheckLine("Bad", off=True),
+        ),
+        no_area=("sensor.lose",),
+        no_room=(("sensor.kanal_1", "Abstellraum"),),
+    )
+    assert rooms_check_text(check, 1).splitlines() == [
+        "- **Treppe:** 21,1 °C, Soll 21,5 °C, Ventil 40 % · aus climate.treppe",
+        "- **Flur:** 20,6 °C (aus sensor.flur), Soll 21 °C (Wunschtemperatur),"
+        " kein Ventil bekannt: zählt als ganz offen (Leitraum)",
+        "- **Bad:** Thermostat aus: der Raum zählt solange nicht",
+        "- **Ohne Bereich, zählt nicht:** sensor.lose – der Entität oder ihrem"
+        " Gerät einen Bereich geben",
+        "- **Ventil ohne Raum:** sensor.kanal_1 – Bereich Abstellraum, dort ist"
+        " kein Raum gewählt: dem Sensor selbst den Bereich seines Raums geben",
+    ]

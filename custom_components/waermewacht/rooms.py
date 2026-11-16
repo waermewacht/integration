@@ -1,6 +1,6 @@
 """Heating curve check from the rooms: could the curve be lower? Pure Python.
 
-docs/GESUNDHEITSCHECK.md 4.16. Wärmewacht sees what the heat pump delivers,
+docs/GESUNDHEITSCHECK.md 4.18. Wärmewacht sees what the heat pump delivers,
 not whether the rooms are warm enough. With room temperatures (and where
 known the valve openings) the question becomes answerable (simon42 95035
 #220 ff.):
@@ -11,9 +11,9 @@ known the valve openings) the question becomes answerable (simon42 95035
 - Thermostats regulate proportionally: a room a little below its setpoint
   with a half open valve is the controller at work, not a curve too low.
 
-Per local day and room (rooms are HA areas; several thermometers or valves
-of one area are averaged): the mean of temperature minus target and the
-mean valve opening (%), sampled once a minute all day (RoomLog), written to
+Per local day and room (rooms are HA areas; several thermometers of one
+area are averaged, of several valves the widest counts, room_sources.py):
+the mean of temperature minus target and the mean valve opening (%), sampled once a minute all day (RoomLog), written to
 the diary. Per outdoor band (the day's mean outdoor temperature) over the
 heating days of the last CHECK_DAYS days:
 

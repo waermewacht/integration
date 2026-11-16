@@ -36,6 +36,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import section
+from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
@@ -139,9 +140,18 @@ from .profiles import (
     find,
     parse_compressor,
 )
-from .room_sources import VALVE_ATTRIBUTE, resolve_rooms
+from .room_sources import VALVE_ATTRIBUTE, area_of, read_room, resolve_rooms
 from .sisters import suggestions
-from .summary import RoomLine, RoomSummary, boiler_summary, heat_pump_summary
+from .summary import (
+    RoomCheck,
+    RoomCheckLine,
+    RoomLine,
+    RoomSummary,
+    boiler_summary,
+    heat_pump_summary,
+    lang_index,
+    rooms_check_text,
+)
 from .templates import TEMPLATES
 
 # Form sections and the signals in them.
@@ -1128,8 +1138,15 @@ def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
     return entry.unit_of_measurement if entry else None
 
 
+# Settings of the heating curve check: a change shows the check step.
+ROOM_KEYS = (CONF_ROOM_ENTITIES, CONF_ROOM_TARGET, CONF_VALVE_ENTITIES)
+
+
 class WaermewachtOptionsFlow(OptionsFlow):
     """Thresholds, season start, prices and design outdoor temperature."""
+
+    # Options waiting for the check of the rooms (step rooms_check).
+    _draft: dict[str, Any] | None = None
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -1140,7 +1157,10 @@ class WaermewachtOptionsFlow(OptionsFlow):
             return await self.async_step_gas()
         errors: dict[str, str] = {}
         placeholders: dict[str, str] = {}
-        options: dict[str, Any] = dict(self.config_entry.options)
+        # Back from the check of the rooms: the form with what was entered.
+        options: dict[str, Any] = dict(
+            self._draft if self._draft is not None else self.config_entry.options
+        )
         if user_input is not None:
             data = {
                 k: v
@@ -1211,10 +1231,19 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     "unit": _unit_of(self.hass, valve) or "–",
                 }
             elif not errors:
+                if data.get(CONF_ROOM_ENTITIES) and any(
+                    data.get(k) != self.config_entry.options.get(k) for k in ROOM_KEYS
+                ):
+                    # Rooms changed: show what was found before saving.
+                    self._draft = data
+                    return await self.async_step_rooms_check()
                 return self.async_create_entry(data=data)
             options = data
-        # Sections open: the one an error is about, those with suggestions.
+        # Sections open: the one an error is about, those with suggestions,
+        # the rooms when coming back from their check.
         expanded = {ERROR_SECTIONS[e] for e in errors.values() if e in ERROR_SECTIONS}
+        if self._draft is not None:
+            expanded.add("rooms")
         step_id = "init"
         if user_input is None and not options.get(SISTERS_OFFERED):
             # Once: meters and price sensor from Tarifwacht or Einspeisewacht.
@@ -1403,6 +1432,73 @@ class WaermewachtOptionsFlow(OptionsFlow):
             data_schema=schema,
             errors=errors,
             description_placeholders=placeholders,
+        )
+
+    async def async_step_rooms_check(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """After saving changed rooms: each room with its values now and
+        where they come from, then save or change (Andy 16.11.: a hint right
+        at the chosen thermostat is not possible in a Home Assistant form)."""
+        return self.async_show_menu(
+            step_id="rooms_check",
+            menu_options=["rooms_ok", "rooms_change"],
+            description_placeholders={
+                "check": rooms_check_text(
+                    self._room_check(self._draft or {}),
+                    lang_index(self.hass.config.language),
+                )
+            },
+        )
+
+    async def async_step_rooms_ok(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return self.async_create_entry(data=self._draft or {})
+
+    async def async_step_rooms_change(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self.async_step_init()
+
+    def _room_check(self, options: Mapping[str, Any]) -> RoomCheck:
+        """Each room with its values now, for the check step."""
+        found = resolve_rooms(
+            self.hass,
+            list(options.get(CONF_ROOM_ENTITIES) or []),
+            list(options.get(CONF_VALVE_ENTITIES) or []),
+        )
+        wish = options.get(CONF_ROOM_TARGET)
+        lines = []
+        for area, sources in sorted(
+            found.rooms.items(), key=lambda item: found.names.get(item[0], "")
+        ):
+            reading = read_room(
+                self.hass.states.get, sources, None if wish is None else float(wish)
+            )
+            lines.append(
+                RoomCheckLine(
+                    found.names.get(area, area),
+                    temp=reading.temp,
+                    temp_from=tuple(reading.temp_from),
+                    target=reading.target,
+                    target_from=tuple(reading.target_from),
+                    valve=reading.valve,
+                    valve_from=tuple(reading.valve_from),
+                    off=reading.off,
+                )
+            )
+        areas = ar.async_get(self.hass)
+
+        def area_name(entity_id: str) -> str:
+            area = area_of(self.hass, entity_id)
+            entry = areas.async_get_area(area) if area else None
+            return entry.name if entry else (area or "–")
+
+        return RoomCheck(
+            tuple(lines),
+            tuple(found.no_area),
+            tuple((e, area_name(e)) for e in found.no_room),
         )
 
     def _room_summary(self, options: Mapping[str, Any]) -> RoomSummary | None:

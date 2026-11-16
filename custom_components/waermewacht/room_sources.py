@@ -6,7 +6,10 @@ device's) groups them into rooms, so several valves of one room (e.g. the
 channels of a floor heating actuator) need no form of their own. A climate
 entity gives the room temperature (`current_temperature`), the target
 (`temperature`) and, where the integration reports it, the valve opening
-(`valve_position`, %; Homematic IP). Thermometers in an area take precedence
+(`valve_position`, %; a Homematic IP heating group reports the widest
+channel of its floor heating controllers or radiator thermostats). Valve
+sensors need an area of their own where their device sits elsewhere (the
+channels of a floor heating controller in the utility room). Thermometers in an area take precedence
 over the thermostats' own temperature. A fixed wish temperature replaces the
 thermostats' targets (a thermostat set high on purpose to keep its valve
 open, simon42 95035 #238).
@@ -98,40 +101,85 @@ def _mean(values: list[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
+@dataclass
+class RoomReading:
+    """What one room shows now, and from which entities."""
+
+    temp: float | None = None
+    temp_from: list[str] = field(default_factory=list)
+    target: float | None = None
+    target_from: list[str] = field(default_factory=list)
+    valve: float | None = None
+    valve_from: list[str] = field(default_factory=list)
+    off: bool = False  # a thermostat is switched off
+
+
+def read_room(
+    get: Callable[[str], State | None],
+    sources: RoomSources,
+    wish: float | None,
+) -> RoomReading:
+    """The room now. Thermometers take precedence over the thermostats'
+    temperature; the wish replaces their targets. Several valves: the widest
+    counts (a Homematic IP heating group reports the widest of its channels
+    the same way, hcu_integration climate.py). `get`: hass.states.get."""
+    reading = RoomReading()
+    temps: list[float] = []
+    targets: list[float] = []
+    valves: list[float] = []
+    climate_temps: list[float] = []
+    climate_temp_from: list[str] = []
+    for entity_id in sources.climates:
+        state = get(entity_id)
+        if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            continue
+        if state.state == STATE_OFF:
+            reading.off = True
+            continue
+        attributes = state.attributes
+        if (value := _number(attributes.get("current_temperature"))) is not None:
+            climate_temps.append(value)
+            climate_temp_from.append(entity_id)
+        if (value := _number(attributes.get("temperature"))) is not None:
+            targets.append(value)
+            reading.target_from.append(entity_id)
+        if (value := _number(attributes.get(VALVE_ATTRIBUTE))) is not None:
+            valves.append(value)
+            reading.valve_from.append(entity_id)
+    for entity_id in sources.thermometers:
+        state = get(entity_id)
+        if state is not None and (value := _number(state.state)) is not None:
+            temps.append(value)
+            reading.temp_from.append(entity_id)
+    for entity_id in sources.valves:
+        state = get(entity_id)
+        if state is not None and (value := _number(state.state)) is not None:
+            valves.append(value)
+            reading.valve_from.append(entity_id)
+    if temps:
+        reading.temp = _mean(temps)
+    else:
+        reading.temp = _mean(climate_temps)
+        reading.temp_from = climate_temp_from
+    if wish is not None:
+        reading.target = wish
+        reading.target_from = []
+    else:
+        reading.target = _mean(targets)
+    reading.valve = max(valves) if valves else None
+    return reading
+
+
 def sample_room(
     get: Callable[[str], State | None],
     sources: RoomSources,
     wish: float | None,
 ) -> tuple[float | None, float | None]:
     """Temperature minus target (K) and valve opening (%) of a room now;
-    None where unknown. A thermostat switched off takes its room out.
-    `get`: hass.states.get."""
-    temps: list[float] = []
-    targets: list[float] = []
-    valves: list[float] = []
-    climate_temps: list[float] = []
-    for entity_id in sources.climates:
-        state = get(entity_id)
-        if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-            continue
-        if state.state == STATE_OFF:
-            return None, None
-        attributes = state.attributes
-        if (value := _number(attributes.get("current_temperature"))) is not None:
-            climate_temps.append(value)
-        if (value := _number(attributes.get("temperature"))) is not None:
-            targets.append(value)
-        if (value := _number(attributes.get(VALVE_ATTRIBUTE))) is not None:
-            valves.append(value)
-    for entity_id in sources.thermometers:
-        state = get(entity_id)
-        if state is not None and (value := _number(state.state)) is not None:
-            temps.append(value)
-    for entity_id in sources.valves:
-        state = get(entity_id)
-        if state is not None and (value := _number(state.state)) is not None:
-            valves.append(value)
-    temp = _mean(temps) if temps else _mean(climate_temps)
-    target = wish if wish is not None else _mean(targets)
-    delta = None if temp is None or target is None else temp - target
-    return delta, _mean(valves)
+    None where unknown. A thermostat switched off takes its room out."""
+    reading = read_room(get, sources, wish)
+    if reading.off:
+        return None, None
+    if reading.temp is None or reading.target is None:
+        return None, reading.valve
+    return reading.temp - reading.target, reading.valve

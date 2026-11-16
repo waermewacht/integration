@@ -390,9 +390,9 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
-              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+              "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },
@@ -443,6 +443,14 @@
           "z_number": "Nur für Zähler in m³: aus der Gasrechnung."
         },
         "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
+      },
+      "rooms_check": {
+        "title": "Heizkurve prüfen: Passt das?",
+        "description": "Diese Räume hat Wärmewacht gefunden, mit den Werten von gerade eben:\n\n{check}\n\nJe Raum zählt das am weitesten offene Ventil. Ein Raum ohne bekanntes Ventil zählt als Leitraum mit ganz offenem Ventil.",
+        "menu_options": {
+          "rooms_ok": "Passt, speichern",
+          "rooms_change": "Ändern"
+        }
       },
       "init_tarifwacht": {
         "title": "Einstellungen",
@@ -530,9 +538,9 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
-              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+              "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },
@@ -650,9 +658,9 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
-              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+              "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },
@@ -770,9 +778,9 @@
               "valve_entities": "Ventilöffnungen (optional)"
             },
             "data_description": {
-              "room_entities": "Thermostate (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Thermostate wie Homematic IP melden auch ihre Ventilöffnung. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
+              "room_entities": "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen von Homematic IP, das am weitesten offene Ventil des Raums); nach OK siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem Bereich des Raums zuordnen.",
               "room_target": "Leer: die Sollwerte der Thermostate. Eintragen, wenn ein Thermostat absichtlich hoch steht, damit sein Ventil offen bleibt, oder für Räume nur mit Thermometer.",
-              "valve_entities": "Sensoren mit der Ventilöffnung in %, falls deine Thermostate sie nicht selbst melden (z. B. Kanäle eines Fußbodenheizungs-Aktors). Sie zählen für den Raum ihres Bereichs."
+              "valve_entities": "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren mit der Ventilöffnung in % (z. B. Kanäle eines Fußbodenheizungs-Controllers). Sie zählen für den Raum ihres eigenen Bereichs: Hängt der Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben."
             },
             "description": "Räume zeigen, ob die Heizkurve tiefer könnte: Ein Raum, dessen Ventil drosselt, hält sein Soll ohnehin; es zählt der Raum mit dem am weitesten offenen Ventil. Die Räume ergeben sich aus den Bereichen in Home Assistant; die Übersicht oben zeigt, welcher Raum was bekommen hat."
           },

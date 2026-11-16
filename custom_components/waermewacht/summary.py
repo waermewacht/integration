@@ -67,11 +67,41 @@ T = {
     "thermostat": ("thermostat", "Thermostat"),
     "thermometer": ("thermometer", "Thermometer"),
     "valves": ("valves", "Ventile"),
-    "valve_reported": ("valve reported", "Ventil gemeldet"),
+    "valve_reported": ("valve reported", "Ventil mitgemeldet"),
     "no_area": ("without an area, not counted", "ohne Bereich, zählt nicht"),
     "no_room": (
         "valve without a room in its area",
         "Ventil ohne Raum in seinem Bereich",
+    ),
+    "check_from": ("from", "aus"),
+    "check_target": ("target", "Soll"),
+    "check_valve": ("valve", "Ventil"),
+    "check_wish": ("wish temperature", "Wunschtemperatur"),
+    "check_no_valve": (
+        "no valve known: counts as fully open (lead room)",
+        "kein Ventil bekannt: zählt als ganz offen (Leitraum)",
+    ),
+    "check_no_temp": ("no temperature yet", "noch keine Temperatur"),
+    "check_no_target": (
+        "no target: enter a wish temperature",
+        "kein Soll: Wunschtemperatur eintragen",
+    ),
+    "check_off": (
+        "thermostat off: the room does not count meanwhile",
+        "Thermostat aus: der Raum zählt solange nicht",
+    ),
+    "check_no_area": (
+        "Without an area, not counted",
+        "Ohne Bereich, zählt nicht",
+    ),
+    "check_no_area_hint": (
+        "give the entity or its device an area",
+        "der Entität oder ihrem Gerät einen Bereich geben",
+    ),
+    "check_no_room": ("Valve without a room", "Ventil ohne Raum"),
+    "check_no_room_hint": (
+        "area {area}, where no room is chosen: give the sensor itself the area of its room",
+        "Bereich {area}, dort ist kein Raum gewählt: dem Sensor selbst den Bereich seines Raums geben",
     ),
     "template": ("Template", "Vorlage"),
     "own": ("own mapping", "eigene Zuordnung"),
@@ -353,6 +383,77 @@ def rooms_text(rooms: RoomSummary, lang: int) -> str:
     return text
 
 
+@dataclass(frozen=True)
+class RoomCheckLine:
+    """One room as the check after saving shows it: values now and where
+    they come from."""
+
+    name: str
+    temp: float | None = None
+    temp_from: tuple[str, ...] = ()
+    target: float | None = None
+    target_from: tuple[str, ...] = ()  # empty with a value: the wish
+    valve: float | None = None
+    valve_from: tuple[str, ...] = ()
+    off: bool = False
+
+
+@dataclass(frozen=True)
+class RoomCheck:
+    rooms: tuple[RoomCheckLine, ...] = ()
+    no_area: tuple[str, ...] = ()
+    no_room: tuple[tuple[str, str], ...] = ()  # (entity, name of its area)
+
+
+def rooms_check_text(check: RoomCheck, lang: int) -> str:
+    """The check after saving the rooms, one line per room:
+    "**Stairs:** 21.1 °C, target 21.5 °C, valve 40 % · from climate.stairs"."""
+    t = lambda key: T[key][lang]  # noqa: E731
+    lines = []
+    for room in check.rooms:
+        if room.off:
+            lines.append(f"- **{room.name}:** {t('check_off')}")
+            continue
+        parts: list[tuple[str, tuple[str, ...]]] = []
+        if room.temp is None:
+            parts.append((t("check_no_temp"), ()))
+        else:
+            parts.append((f"{_num(room.temp, lang, 1)} °C", room.temp_from))
+        if room.target is None:
+            parts.append((t("check_no_target"), ()))
+        elif room.target_from:
+            target = f"{t('check_target')} {_num(room.target, lang, 1)} °C"
+            parts.append((target, room.target_from))
+        else:
+            target = f"{t('check_target')} {_num(room.target, lang, 1)} °C"
+            parts.append((f"{target} ({t('check_wish')})", ()))
+        if room.valve is None:
+            parts.append((t("check_no_valve"), ()))
+        else:
+            valve = f"{t('check_valve')} {_num(room.valve, lang, 0)} %"
+            parts.append((valve, room.valve_from))
+        sources = {src for _, src in parts if src}
+        if len(sources) == 1 and all(src for _, src in parts):
+            # One source for all: named once at the end.
+            text = ", ".join(value for value, _ in parts)
+            text += f" · {t('check_from')} {', '.join(sources.pop())}"
+        else:
+            text = ", ".join(
+                f"{value} ({t('check_from')} {', '.join(src)})" if src else value
+                for value, src in parts
+            )
+        lines.append(f"- **{room.name}:** {text}")
+    if check.no_area:
+        lines.append(
+            f"- **{t('check_no_area')}:** {', '.join(check.no_area)}"
+            f" – {t('check_no_area_hint')}"
+        )
+    for entity_id, area in check.no_room:
+        hint = t("check_no_room_hint").format(area=area)
+        lines.append(f"- **{t('check_no_room')}:** {entity_id} – {hint}")
+    return "\n".join(lines)
+
+
 def heat_pump_summary(
     entities: Mapping[str, Any],
     options: Mapping[str, Any],
@@ -549,3 +650,8 @@ def boiler_summary(
     if not price_value:
         hints.append(h(price_key))
     return _lines(lines, hints, lang)
+
+
+def lang_index(language: str | None) -> int:
+    """0 English, 1 German (the texts' index)."""
+    return _lang(language)
