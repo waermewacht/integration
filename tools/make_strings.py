@@ -829,13 +829,15 @@ OPTION_HELP = {
     "valve_entities": (
         "Only if the thermostats above do not report it: sensors or numbers with the "
         "valve opening in % (e.g. the valve position of radiator thermostats, "
-        "channels of a floor heating controller) or valves (Bosch Smart Home). Some "
+        "channels of a floor heating controller), Z-Wave “Valve control” (0-99) or "
+        "valves (Bosch Smart Home). Some "
         "integrations create them disabled or under diagnostics: enable them first. "
         "They count for the room of their own area: if a controller sits in another "
         "room, give each sensor the area of its room.",
         "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit "
         "der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, "
-        "Kanäle eines Fußbodenheizungs-Controllers) oder Ventile (Bosch Smart Home). "
+        "Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) "
+        "oder Ventile (Bosch Smart Home). "
         "Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann "
         "zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein "
         "Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben.",

@@ -143,6 +143,7 @@ from .profiles import (
 from .room_sources import (
     VALVE_ATTRIBUTES,
     area_of,
+    level_number,
     read_room,
     resolve_rooms,
     valve_candidates,
@@ -1229,6 +1230,10 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     for v in data.get(CONF_VALVE_ENTITIES) or []
                     if not v.startswith("valve.")
                     and _unit_of(self.hass, v) != PERCENTAGE
+                    and not (
+                        (state := self.hass.states.get(v)) is not None
+                        and level_number(state)
+                    )
                 ),
                 None,
             ):

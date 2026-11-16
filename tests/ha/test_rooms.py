@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
@@ -18,6 +18,7 @@ from custom_components.waermewacht.const import (
     CONF_VALVE_ENTITIES,
     DOMAIN,
 )
+from custom_components.waermewacht.room_sources import level_number, valve_value
 
 from .conftest import (
     ACTIVITY,
@@ -312,3 +313,17 @@ async def test_other_valve_sources_and_found_valves(
     await tick(hass, freezer, 1)
     assert runtime.room_log.rooms[living].valve.value == pytest.approx(30)
     assert runtime.room_log.rooms[hall].valve.value == pytest.approx(65)
+
+
+def test_zwave_valve_level_in_percent() -> None:
+    """Z-Wave "Valve control": a number 0-99 without a unit, 99 = open."""
+    level = State("number.spirit_valve_control", "99", {"min": 0, "max": 99})
+    assert valve_value(level) == pytest.approx(100)
+    half = State("number.spirit_valve_control", "33", {"min": 0, "max": 99})
+    assert valve_value(half) == pytest.approx(33.33, abs=0.01)
+    # A number in % stays as it is; another number without a unit too.
+    percent = State(
+        "number.x", "40", {"min": 0, "max": 100, "unit_of_measurement": "%"}
+    )
+    assert valve_value(percent) == 40
+    assert not level_number(State("number.y", "200", {"min": 0, "max": 255}))

@@ -10,8 +10,9 @@ entity gives the room temperature (`current_temperature`), the target
 hcu_integration, the widest channel of its floor heating controllers or
 radiator thermostats; `heating_power_request` of a Netatmo valve room, 0-100;
 `pulse_width_modulation` of an Uponor room, the actuators' PWM share in %;
-research 16.11.). Valve entities are sensors or numbers in % or entities of
-the valve domain (`current_position`, 0-100; Bosch Smart Home). They need an
+research 16.11.). Valve entities are sensors or numbers in %, numbers 0-99
+without a unit (Z-Wave "Valve control") or entities of the valve domain
+(`current_position`, 0-100; Bosch Smart Home). They need an
 area of their own where their device sits elsewhere (the channels of a floor
 heating controller in the utility room). Thermometers in an area take
 precedence over the thermostats' own temperature. A fixed wish temperature replaces the
@@ -35,6 +36,8 @@ from homeassistant.helpers import entity_registry as er
 VALVE_ATTRIBUTES = ("valve_position", "heating_power_request", "pulse_width_modulation")
 # The position of an entity of the valve domain (0-100).
 VALVE_POSITION = "current_position"
+# Highest level of a Z-Wave Multilevel Switch (fully open).
+ZWAVE_LEVEL_MAX = 99
 # Entities in a room's area that look like a valve opening (check step).
 VALVE_WORDS = ("valve", "ventil", "heating_demand", "stellantrieb")
 
@@ -47,12 +50,28 @@ def climate_valve(attributes: Mapping[str, Any]) -> float | None:
     return None
 
 
+def level_number(state: State) -> bool:
+    """A number without a unit from 0 to 99: the level of a Z-Wave Multilevel
+    Switch ("Valve control" of a Z-Wave thermostat, 99 = fully open; Eurotronic
+    Spirit Z-Wave Plus manual 6.5: the valve opening in percent)."""
+    attributes = state.attributes
+    return (
+        state.domain == "number"
+        and not attributes.get("unit_of_measurement")
+        and _number(attributes.get("min")) == 0
+        and _number(attributes.get("max")) == ZWAVE_LEVEL_MAX
+    )
+
+
 def valve_value(state: State) -> float | None:
-    """Opening of a valve entity: the state of a sensor or number in %, the
-    position of a valve."""
+    """Opening of a valve entity in %: the state of a sensor or number in %,
+    a Z-Wave level 0-99, the position of a valve."""
     if state.domain == "valve":
         return _number(state.attributes.get(VALVE_POSITION))
-    return _number(state.state)
+    value = _number(state.state)
+    if value is not None and level_number(state):
+        return min(value * 100 / ZWAVE_LEVEL_MAX, 100.0)
+    return value
 
 
 def valve_candidates(
@@ -67,7 +86,9 @@ def valve_candidates(
     for entry in er.async_get(hass).entities.values():
         if entry.entity_id in skip or entry.domain not in ("sensor", "number", "valve"):
             continue
-        if entry.domain != "valve" and entry.unit_of_measurement != "%":
+        if entry.domain == "sensor" and entry.unit_of_measurement != "%":
+            continue
+        if entry.domain == "number" and entry.unit_of_measurement not in ("%", None):
             continue
         words = " ".join(
             str(x or "")
