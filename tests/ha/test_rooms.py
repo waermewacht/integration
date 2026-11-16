@@ -10,6 +10,7 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant, State
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -199,7 +200,10 @@ async def test_options_show_the_rooms_before_saving(hass: HomeAssistant) -> None
         )
 
     result = await submit(
-        {CONF_ROOM_ENTITIES: [CLIMATE, THERMO], CONF_VALVE_ENTITIES: [VALVE, LOOSE]}
+        {
+            CONF_ROOM_ENTITIES: {"entity_id": [CLIMATE, THERMO]},
+            CONF_VALVE_ENTITIES: {"entity_id": [VALVE, LOOSE]},
+        }
     )
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "rooms_check"
@@ -225,13 +229,13 @@ async def test_options_show_the_rooms_before_saving(hass: HomeAssistant) -> None
         str(k): (k.description or {}).get("suggested_value")
         for k in rooms_section.schema.schema
     }
-    assert suggested[CONF_ROOM_ENTITIES] == [CLIMATE, THERMO]
+    assert suggested[CONF_ROOM_ENTITIES] == {"entity_id": [CLIMATE, THERMO]}
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {
             "electricity_price": 30.0,
             "design_outdoor_temp": -12.0,
-            "rooms": {CONF_ROOM_ENTITIES: [CLIMATE]},
+            "rooms": {CONF_ROOM_ENTITIES: {"entity_id": [CLIMATE]}},
         },
     )
     assert result["step_id"] == "rooms_check"
@@ -239,12 +243,12 @@ async def test_options_show_the_rooms_before_saving(hass: HomeAssistant) -> None
         result["flow_id"], {"next_step_id": "rooms_ok"}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options[CONF_ROOM_ENTITIES] == [CLIMATE]
+    assert entry.options[CONF_ROOM_ENTITIES] == {"entity_id": [CLIMATE]}
     assert entry.options["electricity_price"] == 30.0
     await hass.async_block_till_done()
 
     # Unchanged rooms: saved without the check.
-    result = await submit({CONF_ROOM_ENTITIES: [CLIMATE]})
+    result = await submit({CONF_ROOM_ENTITIES: {"entity_id": [CLIMATE]}})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
 
@@ -291,9 +295,11 @@ async def test_other_valve_sources_and_found_valves(
             "electricity_price": 30.0,
             "design_outdoor_temp": -12.0,
             "rooms": {
-                CONF_ROOM_ENTITIES: [CLIMATE, THERMO, thermo_bath.entity_id],
+                CONF_ROOM_ENTITIES: {
+                    "entity_id": [CLIMATE, THERMO, thermo_bath.entity_id]
+                },
                 "room_target": 21.0,
-                CONF_VALVE_ENTITIES: [bosch.entity_id],
+                CONF_VALVE_ENTITIES: {"entity_id": [bosch.entity_id]},
             },
         },
     )
@@ -377,3 +383,58 @@ async def test_setpoint_entity_of_its_own(
     await tick(hass, freezer, 1)
     # Thermometer 20.6 °C against the setpoint 21.5 °C.
     assert entry.runtime_data.room_log.rooms[hall].delta.value == pytest.approx(-0.9)
+
+
+@pytest.mark.freeze_time(START)
+async def test_valves_by_device_and_rooms_by_area(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A floor heating controller chosen as a device gives all its valve
+    channels at once, an area all its thermostats (simon42 95035 #255);
+    other % sensors of the device do not count."""
+    living, hall = make_rooms(hass)
+    devices = dr.async_get(hass)
+    entry_for_device = MockConfigEntry(domain="test")
+    entry_for_device.add_to_hass(hass)
+    controller = devices.async_get_or_create(
+        config_entry_id=entry_for_device.entry_id, identifiers={("test", "falmot")}
+    )
+    registry = er.async_get(hass)
+    channels = []
+    for n, area in ((1, living), (2, hall)):
+        channel = registry.async_get_or_create(
+            "sensor",
+            "test",
+            f"falmot_valve_position_{n}",
+            suggested_object_id=f"falmot_valve_position_{n}",
+            device_id=controller.id,
+            unit_of_measurement="%",
+            translation_key="valve_position",
+        )
+        registry.async_update_entity(channel.entity_id, area_id=area)
+        hass.states.async_set(
+            channel.entity_id, str(30 * n), {"unit_of_measurement": "%"}
+        )
+        channels.append(channel.entity_id)
+    battery = registry.async_get_or_create(
+        "sensor",
+        "test",
+        "falmot_battery",
+        device_id=controller.id,
+        unit_of_measurement="%",
+        translation_key="battery",
+    )
+    entry = await setup(
+        hass,
+        **{
+            CONF_ROOM_ENTITIES: {"area_id": [living], "entity_id": [THERMO]},
+            CONF_VALVE_ENTITIES: {"device_id": [controller.id]},
+        },
+    )
+    room_map = entry.runtime_data.room_map
+    assert room_map.rooms[living].climates == [CLIMATE]
+    assert room_map.rooms[hall].thermometers == [THERMO]
+    assert sorted(
+        room_map.rooms[living].valves + room_map.rooms[hall].valves
+    ) == sorted(channels)
+    assert battery.entity_id not in room_map.no_room + room_map.no_area

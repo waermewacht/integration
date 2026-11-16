@@ -4,6 +4,7 @@
 
 ### Neu
 
+- **Heizkurve prüfen: Geräte, Labels und Bereiche statt jeder Entität einzeln.** Bei den Ventilöffnungen kannst du jetzt ein Gerät (etwa den Fußbodenheizungs-Controller) oder ein Label wählen, Wärmewacht nimmt dann alle Ventil-Kanäle darin, auch später hinzukommende. Bei den Räumen gehen ganze Bereiche oder Etagen, dann zählen alle Thermostate darin. Bestehende Einstellungen bleiben, wie sie sind. (danke an the_MiCrO, simon42-Forum)
 - **Takte: laufende Saison neben der Vorsaison.** Die Diagramme „Laufzeit Heizen“ und „Heizleistung je Außentemperatur“ zeigen neben der Vorsaison jetzt auch die laufende Saison als zweite Linie, soweit ihre Temperaturklassen genug Stunden haben. So siehst du, ob sich am Takten oder an der kleinsten Leistung etwas geändert hat.
 
 ### Geändert

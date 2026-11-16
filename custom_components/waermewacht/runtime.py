@@ -257,7 +257,16 @@ from .report import (
     own_totals,
     statistics_rows,
 )
-from .room_sources import RoomMap, resolve_rooms, sample_room
+from .room_sources import (
+    KIND_ROOMS,
+    KIND_TARGETS,
+    KIND_VALVES,
+    RoomMap,
+    has_target,
+    resolve_rooms,
+    sample_room,
+    target_entities,
+)
 from .rooms import RoomLog
 from .rooms import check as rooms_check
 from .runs import (
@@ -500,9 +509,12 @@ class HeatPumpRuntime:
         }
         # Heating curve check (rooms.py): rooms resolved from their areas at
         # the start, today's means in the live file, days in the diary.
-        self.room_entities: list[str] = list(options.get(CONF_ROOM_ENTITIES) or [])
-        self.valve_entities: list[str] = list(options.get(CONF_VALVE_ENTITIES) or [])
-        self.target_entities: list[str] = list(options.get(CONF_TARGET_ENTITIES) or [])
+        # The options as stored: entity ids, or targets with devices, areas,
+        # floors and labels, expanded when the rooms are resolved.
+        self.room_option = options.get(CONF_ROOM_ENTITIES)
+        self.valve_option = options.get(CONF_VALVE_ENTITIES)
+        self.target_option = options.get(CONF_TARGET_ENTITIES)
+        self.room_entities = has_target(self.room_option)
         self.room_target: float | None = options.get(CONF_ROOM_TARGET)
         self.room_map = RoomMap()
         self.room_log = RoomLog()
@@ -732,7 +744,10 @@ class HeatPumpRuntime:
         self.marks.rollover(now, self.totals)
         if self.room_entities:
             self.room_map = resolve_rooms(
-                self.hass, self.room_entities, self.valve_entities, self.target_entities
+                self.hass,
+                target_entities(self.hass, self.room_option, KIND_ROOMS),
+                target_entities(self.hass, self.valve_option, KIND_VALVES),
+                target_entities(self.hass, self.target_option, KIND_TARGETS),
             )
             self._judge_rooms()
         if self.hourly:

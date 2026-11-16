@@ -143,11 +143,17 @@ from .profiles import (
 )
 from .room_sources import (
     HVAC_ACTION,
+    KIND_ROOMS,
+    KIND_TARGETS,
+    KIND_VALVES,
     VALVE_ATTRIBUTES,
     area_of,
+    direct_entities,
+    has_target,
     level_number,
     read_room,
     resolve_rooms,
+    target_entities,
     valve_candidates,
 )
 from .sisters import suggestions
@@ -1224,6 +1230,9 @@ def _unit_of(hass: HomeAssistant, entity_id: str) -> str | None:
 # hold no URLs).
 ISSUES_URL = "https://github.com/waermewacht/integration/issues"
 
+# Options with a target selector (entities, devices, areas, floors, labels).
+TARGET_OPTIONS = (CONF_ROOM_ENTITIES, CONF_VALVE_ENTITIES)
+
 # Settings of the heating curve check: a change shows the check step.
 ROOM_KEYS = (
     CONF_ROOM_ENTITIES,
@@ -1270,6 +1279,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                         k: v
                         for k, v in (user_input[name] or {}).items()
                         if v not in ("", None)
+                        and not (isinstance(v, dict) and not has_target(v))
                     }
                 )
             data[SISTERS_OFFERED] = True
@@ -1311,7 +1321,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
             elif valve := next(
                 (
                     v
-                    for v in data.get(CONF_VALVE_ENTITIES) or []
+                    # Only the entities named directly: devices and labels
+                    # give what looks like a valve opening anyway.
+                    for v in direct_entities(data.get(CONF_VALVE_ENTITIES))
                     if not v.startswith("valve.")
                     and _unit_of(self.hass, v) != PERCENTAGE
                     and not (
@@ -1327,7 +1339,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     "unit": _unit_of(self.hass, valve) or "–",
                 }
             elif not errors:
-                if data.get(CONF_ROOM_ENTITIES) and any(
+                if has_target(data.get(CONF_ROOM_ENTITIES)) and any(
                     data.get(k) != self.config_entry.options.get(k) for k in ROOM_KEYS
                 ):
                     # Rooms changed: show what was found before saving.
@@ -1395,10 +1407,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
             CONF_FEED_IN_TARIFF: number(0, 100, 0.001, "ct/kWh"),
             CONF_RATED_POWER: number(0.5, 50, 0.1, "kW"),
             CONF_MIN_POWER: number(0.2, 20, 0.1, "kW"),
-            CONF_ROOM_ENTITIES: selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    multiple=True,
-                    filter=[
+            # Entities, or areas, floors, devices and labels: their
+            # thermostats count (room_sources.target_entities).
+            CONF_ROOM_ENTITIES: selector.TargetSelector(
+                selector.TargetSelectorConfig(
+                    entity=[
                         selector.EntityFilterSelectorConfig(domain="climate"),
                         selector.EntityFilterSelectorConfig(
                             domain="sensor", device_class="temperature"
@@ -1419,10 +1432,12 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     ],
                 )
             ),
-            CONF_VALVE_ENTITIES: selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    multiple=True,
-                    filter=[
+            # Entities, or devices, labels, areas and floors: what looks like a
+            # valve opening in them counts (the channels of a floor heating
+            # controller at once, simon42 95035 #255).
+            CONF_VALVE_ENTITIES: selector.TargetSelector(
+                selector.TargetSelectorConfig(
+                    entity=[
                         selector.EntityFilterSelectorConfig(domain="sensor"),
                         selector.EntityFilterSelectorConfig(domain="number"),
                         # Bosch Smart Home: a valve with its position.
@@ -1457,7 +1472,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 return vol.Required(
                     key, default=str(value) if key == CONF_SEASON_START else value
                 )
-            return vol.Optional(key, description={"suggested_value": options.get(key)})
+            value = options.get(key)
+            if key in TARGET_OPTIONS and isinstance(value, list):
+                # Stored before the target selector: a plain list of entities.
+                value = {"entity_id": value}
+            return vol.Optional(key, description={"suggested_value": value})
 
         schema = vol.Schema({marker(key): fields[key] for key in OPTION_TOP})
         # Hybrid system whose boiler reports only its fuel: heat = fuel x η.
@@ -1576,9 +1595,9 @@ class WaermewachtOptionsFlow(OptionsFlow):
         """Each room with its values now, for the check step."""
         found = resolve_rooms(
             self.hass,
-            list(options.get(CONF_ROOM_ENTITIES) or []),
-            list(options.get(CONF_VALVE_ENTITIES) or []),
-            list(options.get(CONF_TARGET_ENTITIES) or []),
+            target_entities(self.hass, options.get(CONF_ROOM_ENTITIES), KIND_ROOMS),
+            target_entities(self.hass, options.get(CONF_VALVE_ENTITIES), KIND_VALVES),
+            target_entities(self.hass, options.get(CONF_TARGET_ENTITIES), KIND_TARGETS),
         )
         wish = options.get(CONF_ROOM_TARGET)
         lines = []
@@ -1595,7 +1614,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 if reading.valve is not None and not reading.share
                 else tuple(
                     valve_candidates(
-                        self.hass, area, options.get(CONF_VALVE_ENTITIES) or []
+                        self.hass,
+                        area,
+                        target_entities(
+                            self.hass, options.get(CONF_VALVE_ENTITIES), KIND_VALVES
+                        ),
                     )
                 )
             )
@@ -1628,14 +1651,16 @@ class WaermewachtOptionsFlow(OptionsFlow):
 
     def _room_summary(self, options: Mapping[str, Any]) -> RoomSummary | None:
         """What each room (area) of the heating curve check holds."""
-        room_entities = list(options.get(CONF_ROOM_ENTITIES) or [])
+        room_entities = target_entities(
+            self.hass, options.get(CONF_ROOM_ENTITIES), KIND_ROOMS
+        )
         if not room_entities:
             return None
         found = resolve_rooms(
             self.hass,
             room_entities,
-            list(options.get(CONF_VALVE_ENTITIES) or []),
-            list(options.get(CONF_TARGET_ENTITIES) or []),
+            target_entities(self.hass, options.get(CONF_VALVE_ENTITIES), KIND_VALVES),
+            target_entities(self.hass, options.get(CONF_TARGET_ENTITIES), KIND_TARGETS),
         )
 
         def reports_action(entity_id: str) -> bool:

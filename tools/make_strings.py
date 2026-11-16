@@ -815,13 +815,15 @@ OPTION_HELP = {
         "heating groups via the HCU integration, Netatmo valves, Uponor); others "
         "only whether they heat, then their heating share counts. After OK "
         "you see per room what was found. Assign each entity (or its device) to the "
-        "room's area.",
+        "room's area. Whole areas or floors also work: then all thermostats in them "
+        "count.",
         "Thermostate bzw. Heizgruppen (climate) und/oder Raumthermometer, je Raum "
         "eines oder mehrere. Manche melden die Ventilöffnung mit (z. B. Heizgruppen "
         "von Homematic IP über die HCU-Integration, Netatmo-Ventile, Uponor), andere "
         "nur, ob sie heizen: Dann zählt ihr Heizanteil. Nach OK "
         "siehst du je Raum, was gefunden wurde. Jede Entität (oder ihr Gerät) dem "
-        "Bereich des Raums zuordnen.",
+        "Bereich des Raums zuordnen. Ganze Bereiche oder Etagen gehen auch: Dann "
+        "zählen alle Thermostate darin.",
     ),
     "room_target": (
         "Empty: the thermostats' setpoints. Set it if a thermostat is turned up on "
@@ -845,14 +847,18 @@ OPTION_HELP = {
         "valves (Bosch Smart Home). Some "
         "integrations create them disabled or under diagnostics: enable them first. "
         "They count for the room of their own area: if a controller sits in another "
-        "room, give each sensor the area of its room.",
+        "room, give each sensor the area of its room. Choose a device (e.g. the "
+        "floor heating controller) or a label to take all its valve channels at "
+        "once.",
         "Nur wenn die Thermostate oben sie nicht mitmelden: Sensoren oder Zahlen mit "
         "der Ventilöffnung in % (z. B. Ventilstellung der Heizkörperthermostate, "
         "Kanäle eines Fußbodenheizungs-Controllers), „Valve control“ von Z-Wave (0–99) "
         "oder Ventile (Bosch Smart Home). "
         "Manche Integrationen legen sie deaktiviert oder unter Diagnose an: dann "
         "zuerst aktivieren. Sie zählen für den Raum ihres eigenen Bereichs: Hängt ein "
-        "Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben.",
+        "Controller in einem anderen Raum, jedem Sensor den Bereich seines Raums geben. "
+        "Wähle ein Gerät (z. B. den Fußbodenheizungs-Controller) oder ein Label, um "
+        "alle Ventil-Kanäle darin auf einmal zu nehmen.",
     ),
 }
 

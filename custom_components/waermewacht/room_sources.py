@@ -78,6 +78,99 @@ def valve_value(state: State) -> float | None:
     return value
 
 
+def looks_like_valve(entry: er.RegistryEntry) -> bool:
+    """A sensor or number in % (or 0-99 without a unit), or a valve, whose
+    id, translation key, name or unique id speaks of a valve."""
+    if entry.domain not in ("sensor", "number", "valve"):
+        return False
+    if entry.domain == "sensor" and entry.unit_of_measurement != "%":
+        return False
+    if entry.domain == "number" and entry.unit_of_measurement not in ("%", None):
+        return False
+    words = " ".join(
+        str(x or "")
+        for x in (
+            entry.entity_id,
+            entry.translation_key,
+            entry.original_name,
+            entry.unique_id,
+        )
+    ).lower()
+    return any(word in words for word in VALVE_WORDS)
+
+
+# What a device, area, floor or label stands for in a target (rooms: the
+# thermostats in it; thermometers only by name, so that no fridge sensor
+# counts; valves: what looks like a valve opening).
+KIND_ROOMS = "rooms"
+KIND_VALVES = "valves"
+KIND_TARGETS = "targets"
+TARGET_KEYS = ("entity_id", "device_id", "area_id", "floor_id", "label_id")
+
+
+def _ids(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value] if value else []
+    if isinstance(value, (list, tuple, set)):
+        return [str(v) for v in value if v]
+    return []
+
+
+def direct_entities(value: object) -> list[str]:
+    """The entities an option names directly (no devices, areas, labels)."""
+    if isinstance(value, Mapping):
+        return _ids(value.get("entity_id"))
+    return _ids(value)
+
+
+def has_target(value: object) -> bool:
+    """Whether an option (a list of entity ids, or a target with devices,
+    areas, floors and labels) names anything."""
+    if isinstance(value, Mapping):
+        return any(_ids(value.get(key)) for key in TARGET_KEYS)
+    return bool(_ids(value))
+
+
+def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
+    """The entity ids of an option: entities named directly as they are;
+    devices, areas, floors and labels expanded to the entities of `kind` in
+    them (enabled ones only). Older entries stored a plain list."""
+    if not isinstance(value, Mapping):
+        return _ids(value)
+    direct = _ids(value.get("entity_id"))
+    devices = set(_ids(value.get("device_id")))
+    areas = set(_ids(value.get("area_id")))
+    labels = set(_ids(value.get("label_id")))
+    if floors := set(_ids(value.get("floor_id"))):
+        areas |= {
+            a.id for a in ar.async_get(hass).async_list_areas() if a.floor_id in floors
+        }
+    if not (devices or areas or labels):
+        return direct
+    device_registry = dr.async_get(hass)
+    found: list[str] = []
+    for entry in er.async_get(hass).entities.values():
+        if entry.disabled_by is not None or entry.entity_id in direct:
+            continue
+        if kind == KIND_ROOMS:
+            if entry.domain != "climate":
+                continue
+        elif kind == KIND_VALVES:
+            if not looks_like_valve(entry):
+                continue
+        else:
+            continue  # setpoints: only named directly
+        device = device_registry.async_get(entry.device_id) if entry.device_id else None
+        if (
+            (entry.device_id and entry.device_id in devices)
+            or area_of(hass, entry.entity_id) in areas
+            or labels & set(entry.labels)
+            or (device is not None and labels & set(device.labels))
+        ):
+            found.append(entry.entity_id)
+    return [*direct, *sorted(found)]
+
+
 def valve_candidates(
     hass: HomeAssistant, area: str, chosen: Iterable[str]
 ) -> list[tuple[str, bool]]:
@@ -88,17 +181,7 @@ def valve_candidates(
     skip = set(chosen)
     found = []
     for entry in er.async_get(hass).entities.values():
-        if entry.entity_id in skip or entry.domain not in ("sensor", "number", "valve"):
-            continue
-        if entry.domain == "sensor" and entry.unit_of_measurement != "%":
-            continue
-        if entry.domain == "number" and entry.unit_of_measurement not in ("%", None):
-            continue
-        words = " ".join(
-            str(x or "")
-            for x in (entry.entity_id, entry.translation_key, entry.original_name)
-        ).lower()
-        if not any(word in words for word in VALVE_WORDS):
+        if entry.entity_id in skip or not looks_like_valve(entry):
             continue
         if area_of(hass, entry.entity_id) != area:
             continue
