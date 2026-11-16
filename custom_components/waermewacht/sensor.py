@@ -53,7 +53,7 @@ from .entity import HeatPumpEntity
 from .gas_sensor import gas_sensors
 from .health import STATUS_OPTIONS, status
 from .heat_load import heat_load_as_dict
-from .heating_curve import flow_curve_as_dict
+from .heating_curve import flow_curve_as_dict, flow_curve_points
 from .model import (
     AUX_SIGNALS,
     BOILER_HEAT_SIGNALS,
@@ -880,6 +880,8 @@ def _flow_at_zero_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         **figures,
         "previous_season": None if previous is None else _round(previous.at_zero, 1),
         "previous_slope": None if previous is None else _round(previous.slope, 2),
+        # The days behind the line, for the card's chart (not recorded).
+        "points": flow_curve_points(result),
     }
 
 
@@ -1225,6 +1227,7 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
             "previous",
             "weeks",
             "classes",
+            "points",
             # Own electricity per mode (allocation.py).
             "own_share_by_mode",
             "kwh_own_by_mode",

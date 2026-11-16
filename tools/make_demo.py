@@ -157,6 +157,7 @@ from custom_components.waermewacht.heat_load import (  # noqa: E402
 from custom_components.waermewacht.heating_curve import (  # noqa: E402
     flow_curve,
     flow_curve_as_dict,
+    flow_curve_points,
 )
 from custom_components.waermewacht.model import Activity, Mode, Signal  # noqa: E402
 from custom_components.waermewacht.periods import (  # noqa: E402
@@ -1597,6 +1598,7 @@ def sensors(sim: Sim) -> tuple[dict[str, Any], dict[str, Any]]:
         **flow_attributes,
         previous_season=_r(flow_before.at_zero, 1),
         previous_slope=_r(flow_before.slope, 2),
+        points=flow_curve_points(flow_now),
     )
     dd, ddp = a["degree_days"], a["degree_days_previous"]
     dds = a["degree_days_same_period"]

@@ -115,3 +115,20 @@ def test_circuit_curve_and_reasons() -> None:
     # Below CIRCUIT_MIN_FLOW the circuit counts as off.
     _, flow, outdoor = build(days(20, -4.0, 10.0), curve=lambda t: CIRCUIT_MIN_FLOW - 1)
     assert circuit_flow_curve(flow, outdoor, BERLIN).days == ()
+
+
+def test_points_for_the_chart() -> None:
+    from custom_components.waermewacht.heating_curve import (
+        FlowCurve,
+        FlowDay,
+        flow_curve_points,
+    )
+
+    curve = FlowCurve(
+        (FlowDay(date(2026, 1, 1), -2.04, 31.26), FlowDay(date(2026, 1, 2), 5.0, 27.0)),
+        29.0,
+        -0.6,
+        0.9,
+        7.0,
+    )
+    assert flow_curve_points(curve) == [[-2.0, 31.3], [5.0, 27.0]]

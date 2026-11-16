@@ -177,6 +177,13 @@ const TEXT = {
     sameLastYear: "Vorjahr bis heute",
     curve: "AZ-Kennlinie Heizen",
     signature: "Energiesignatur",
+    heatingCurve: "Heizkurve (gemessen)",
+    curveDays: "Heiztage",
+    curveBands: {
+      lower_possible: "Heiztage: Kurve könnte tiefer",
+      fits: "Heiztage: passt",
+      too_low: "Heiztage: zu tief",
+    },
     current: "Laufende Saison",
     previousSeason: "Vorsaison",
     weeks: "Wochen",
@@ -393,6 +400,13 @@ const TEXT = {
     sameLastYear: "last year to date",
     curve: "Performance curve heating",
     signature: "Energy signature",
+    heatingCurve: "Heating curve (measured)",
+    curveDays: "Heating days",
+    curveBands: {
+      lower_possible: "Heating days: curve could be lower",
+      fits: "Heating days: fits",
+      too_low: "Heating days: too low",
+    },
     current: "Current season",
     previousSeason: "Previous season",
     weeks: "Weeks",
@@ -495,7 +509,13 @@ const COLORS = {
   elecDhw: "#8DB3DD",
   standby: "#9AA0A6",
   outdoor: "#D9A400",
+  // Verdict of the heating curve check per band (rooms.py).
+  lower_possible: "#3C9A5F",
+  fits: "#2F6FB0",
+  too_low: "#C0392B",
 };
+// Bands of the heating curve check (rooms.py BANDS): [low, high).
+const CURVE_BANDS = { below_0: [-50, 0], "0_5": [0, 5], "5_10": [5, 10], "10_20": [10, 20] };
 // Own energy sensors for the months (translation keys).
 const MONTH_KEYS = ["heat_heating", "heat_dhw", "electricity_heating", "electricity_dhw", "standby"];
 // Sensors of the season whose attribute period_start says where it began
@@ -1184,6 +1204,8 @@ class WaermewachtCard extends HTMLElement {
     }
     const signature = this._signature(t, "heat_load_per_kelvin");
     if (signature) charts.push(signature);
+    const heatingCurve = this._heatingCurve(t);
+    if (heatingCurve) charts.push(heatingCurve);
     const flow = this._state("flow_at_zero")?.attributes || {};
     const perDegree = this._state("heat_per_degree_day_season")?.attributes || {};
     const previous = (v, digits, unit = "") => (v !== undefined && v !== null ? `${t.previous} ${this._num(v, digits)}${unit}` : "");
@@ -1246,6 +1268,48 @@ class WaermewachtCard extends HTMLElement {
     if (a.eur !== null && a.eur !== undefined) parts.push(t.lowerFlowEuro(this._num(a.eur, 0)));
     parts.push(a.period === "previous_season" ? t.previousSeason : t.seasonSoFar);
     return this._tile(this._entities.lower_flow_saving, t.lowerFlow, parts.join(" · "), t.lowerFlowValue(this._num(kwh, 0)));
+  }
+
+  /** The measured heating curve (attributes of "flow at 0 °C",
+   * heating_curve.py): flow of each heating day over its outdoor mean and
+   * the line through them. With the heating curve check (rooms.py), the
+   * days take the colour of their band's verdict. */
+  _heatingCurve(t) {
+    const state = this._state("flow_at_zero");
+    if (!state) return "";
+    const a = state.attributes;
+    const points = (a.points || []).filter((p) => Array.isArray(p) && p.length === 2)
+      .sort((p, q) => p[0] - q[0]);
+    if (points.length < 2) return "";
+    const verdicts = {};
+    for (const b of this._state("heating_curve_high")?.attributes?.bands || []) {
+      if (CURVE_BANDS[b.band] && t.curveBands[b.verdict]) verdicts[b.band] = b.verdict;
+    }
+    const bandOf = (x) => Object.keys(CURVE_BANDS)
+      .find((k) => x >= CURVE_BANDS[k][0] && x < CURVE_BANDS[k][1]);
+    const groups = {};
+    for (const p of points) {
+      const key = verdicts[bandOf(p[0])] || "days";
+      (groups[key] ||= []).push(p);
+    }
+    const series = Object.entries(groups).map(([key, pts]) => ({
+      color: key === "days" ? COLORS.standby : COLORS[key],
+      label: key === "days" ? t.curveDays : t.curveBands[key],
+      line: false,
+      points: pts,
+    }));
+    const at0 = state.state === "" ? NaN : Number(state.state);
+    if (Number.isFinite(at0) && a.slope !== null && a.slope !== undefined) {
+      const lo = points[0][0];
+      const hi = points[points.length - 1][0];
+      series.push({
+        color: COLORS.current,
+        label: t.line,
+        line: true,
+        points: [[lo, at0 + a.slope * lo], [hi, at0 + a.slope * hi]],
+      });
+    }
+    return this._xyChart(t.heatingCurve, "°C", series, this._entities.flow_at_zero, undefined, 1);
   }
 
   /** Energy signature of a heat load sensor (attributes of heat_load.py):

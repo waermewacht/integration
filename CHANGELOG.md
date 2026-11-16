@@ -6,6 +6,8 @@
 
 - **Heizkurve prüfen: Sollwerte als eigene Entitäten.** Meldet dein Thermostat das Soll als eigenen Sensor oder als Zahl, trägst du ihn unter „Sollwerte (optional)“ ein. Er zählt für den Raum seines Bereichs, auch mit Nachtabsenkung, wo eine feste Wunschtemperatur den Raum nachts zu kalt aussehen ließe. (danke an MartyBr, simon42-Forum)
 
+- **Diagramm der gemessenen Heizkurve.** Die Karte „Kennlinie und Heizlast“ zeigt den Vorlauf jedes Heiztags über der Außentemperatur, dazu die Gerade, die auch „Vorlauf bei 0 °C“ ergibt. Mit dem Heizkurven-Check sind die Tage nach dessen Urteil je Temperaturbereich eingefärbt: Kurve könnte tiefer, passt oder zu tief. (danke an suedschwede, simon42-Forum)
+
 ### Geändert
 
 - **Einheit der PV- und Batteriezähler im Formular.** Der Abschnitt „Eigene PV und Batterie in den Kosten“ sagt jetzt, dass Energiezähler in kWh (auch Wh, MWh) gemeint sind, fortlaufend oder täglich zurückgesetzt, keine Leistung. (danke an alteMade, simon42-Forum)

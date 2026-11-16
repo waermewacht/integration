@@ -184,6 +184,11 @@ def _curve(days: list[FlowDay]) -> FlowCurve:
     return FlowCurve(tuple(days), a + b * AT_OUTDOOR, b, r2, spread)
 
 
+def flow_curve_points(result: FlowCurve) -> list[list[float]]:
+    """[outdoor, flow] of each day behind the line (the card's chart)."""
+    return [[round(d.mean_outdoor, 1), round(d.flow, 1)] for d in result.days]
+
+
 def flow_curve_as_dict(result: FlowCurve) -> dict[str, Any]:
     def r(value: float | None, digits: int) -> float | None:
         return None if value is None else round(value, digits)
