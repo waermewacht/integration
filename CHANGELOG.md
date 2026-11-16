@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Behoben
+
+- **Homematic IP Local: FALMOT-Kanäle als „Level“.** Zeigt Homematic IP Local die Ventilöffnung eines Fußbodenheizungs-Controllers als Zahl „Level ch1“ in %, nimmt Wärmewacht sie jetzt mit, wenn du den Controller als Gerät oder über ein Label wählst. Über einen Bereich zählt so ein „Level“ nur bei Heizungsstellantrieben, nicht bei Rollläden. (danke an the_MiCrO, simon42-Forum)
+
 ## 0.20.1 – 2026-11-16
 
 ### Behoben

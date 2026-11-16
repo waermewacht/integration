@@ -102,6 +102,33 @@ def looks_like_valve(entry: er.RegistryEntry) -> bool:
     return any(word in words for word in VALVE_WORDS)
 
 
+# A "level" in % is a valve opening only on a heating actuator: Homematic IP
+# Local shows the LEVEL of a FALMOT channel as "Level ch1" (a number, no
+# translation key; simon42 95035 #265), but blinds and dimmers have a level
+# too. Words of a device model that is a heating actuator.
+HEATING_MODELS = ("falmot", "etrv", "heating", "trv", "thermostat", "valve", "ventil")
+NOT_A_VALVE = ("battery", "batterie", "signal", "duty", "rssi", "humidity")
+
+
+def _level_in_percent(entry: er.RegistryEntry) -> bool:
+    if entry.domain not in ("sensor", "number") or entry.unit_of_measurement != "%":
+        return False
+    words = " ".join(
+        str(x or "")
+        for x in (entry.entity_id, entry.translation_key, entry.original_name)
+    ).lower()
+    return "level" in words and not any(word in words for word in NOT_A_VALVE)
+
+
+def _heating_model(device: dr.DeviceEntry | None) -> bool:
+    model = (
+        " ".join(str(x or "") for x in (device.model, device.model_id))
+        if device
+        else ""
+    )
+    return any(word in model.lower() for word in HEATING_MODELS)
+
+
 # What a device, area, floor or label stands for in a target (rooms: the
 # thermostats in it; thermometers only by name, so that no fridge sensor
 # counts; valves: what looks like a valve opening).
@@ -155,22 +182,27 @@ def target_entities(hass: HomeAssistant, value: object, kind: str) -> list[str]:
     for entry in er.async_get(hass).entities.values():
         if entry.disabled_by is not None or entry.entity_id in direct:
             continue
+        if kind not in (KIND_ROOMS, KIND_VALVES):
+            continue  # setpoints: only named directly
+        device = device_registry.async_get(entry.device_id) if entry.device_id else None
+        # Chosen by name: the device itself or a label.
+        named = bool(
+            (entry.device_id and entry.device_id in devices)
+            or labels & set(entry.labels)
+            or (device is not None and labels & set(device.labels))
+        )
+        if not named and area_of(hass, entry.entity_id) not in areas:
+            continue
         if kind == KIND_ROOMS:
             if entry.domain != "climate":
                 continue
-        elif kind == KIND_VALVES:
-            if not looks_like_valve(entry):
-                continue
-        else:
-            continue  # setpoints: only named directly
-        device = device_registry.async_get(entry.device_id) if entry.device_id else None
-        if (
-            (entry.device_id and entry.device_id in devices)
-            or area_of(hass, entry.entity_id) in areas
-            or labels & set(entry.labels)
-            or (device is not None and labels & set(device.labels))
+        elif not looks_like_valve(entry) and not (
+            # A level in % counts on a device or label chosen by name, in an
+            # area only on a heating actuator (not a blind).
+            _level_in_percent(entry) and (named or _heating_model(device))
         ):
-            found.append(entry.entity_id)
+            continue
+        found.append(entry.entity_id)
     return [*direct, *sorted(found)]
 
 
@@ -182,9 +214,15 @@ def valve_candidates(
     step: some integrations create them disabled or as diagnostics
     (Homematic IP Local, ViCare, Zigbee `pi_heating_demand`)."""
     skip = set(chosen)
+    device_registry = dr.async_get(hass)
     found = []
     for entry in er.async_get(hass).entities.values():
-        if entry.entity_id in skip or not looks_like_valve(entry):
+        if entry.entity_id in skip:
+            continue
+        device = device_registry.async_get(entry.device_id) if entry.device_id else None
+        if not looks_like_valve(entry) and not (
+            _level_in_percent(entry) and _heating_model(device)
+        ):
             continue
         if area_of(hass, entry.entity_id) != area:
             continue

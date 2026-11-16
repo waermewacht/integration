@@ -19,7 +19,12 @@ from custom_components.waermewacht.const import (
     CONF_VALVE_ENTITIES,
     DOMAIN,
 )
-from custom_components.waermewacht.room_sources import level_number, valve_value
+from custom_components.waermewacht.room_sources import (
+    KIND_VALVES,
+    level_number,
+    target_entities,
+    valve_value,
+)
 
 from .conftest import (
     ACTIVITY,
@@ -477,3 +482,58 @@ async def test_homematic_ip_local_channels_by_device(
         },
     )
     assert entry.runtime_data.room_map.rooms[living].valves == [channel.entity_id]
+
+
+@pytest.mark.freeze_time(START)
+async def test_level_numbers_of_a_heating_actuator(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Homematic IP Local may show a FALMOT channel as a number "Level ch1"
+    in % without a translation key (simon42 95035 #265): it counts when the
+    device is chosen, or in an area on a heating actuator; a blind's level in
+    the same area does not."""
+    living, _hall = make_rooms(hass)
+    entry_for_device = MockConfigEntry(domain="homematicip_local")
+    entry_for_device.add_to_hass(hass)
+    devices = dr.async_get(hass)
+    falmot = devices.async_get_or_create(
+        config_entry_id=entry_for_device.entry_id,
+        identifiers={("hmip", "falmot3")},
+        model="HmIPW-FALMOT-C12",
+    )
+    blind = devices.async_get_or_create(
+        config_entry_id=entry_for_device.entry_id,
+        identifiers={("hmip", "broll")},
+        model="HmIP-BROLL",
+    )
+    registry = er.async_get(hass)
+
+    def level(device: dr.DeviceEntry, uid: str, name: str) -> str:
+        made = registry.async_get_or_create(
+            "number",
+            "homematicip_local",
+            uid,
+            suggested_object_id=uid.lower(),
+            device_id=device.id,
+            unit_of_measurement="%",
+            original_name=name,
+        )
+        registry.async_update_entity(made.entity_id, area_id=living)
+        hass.states.async_set(made.entity_id, "33.5", {"unit_of_measurement": "%"})
+        return made.entity_id
+
+    channel = level(falmot, "002CA4099D587E_1_LEVEL", "Level ch1")
+    shutter = level(blind, "00AA_4_LEVEL", "Level ch4")
+    # By device.
+    entry = await setup(
+        hass,
+        **{
+            CONF_ROOM_ENTITIES: [CLIMATE],
+            CONF_VALVE_ENTITIES: {"device_id": [falmot.id]},
+        },
+    )
+    assert entry.runtime_data.room_map.rooms[living].valves == [channel]
+    # By area: the actuator's level, not the blind's.
+    found = target_entities(hass, {"area_id": [living]}, KIND_VALVES)
+    assert channel in found
+    assert shutter not in found
