@@ -609,10 +609,11 @@
           "restart": {
             "name": "Auswertung neu beginnen (optional)",
             "data": {
-              "analysis_from": "Auswertung ab"
+              "analysis_from": "Auswertung ab",
+              "analysis_from_clear": "Datum entfernen, wieder alles auswerten"
             },
             "data_description": {
-              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+              "analysis_from": "Leer: alle Tage."
             },
             "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
@@ -769,10 +770,11 @@
           "restart": {
             "name": "Auswertung neu beginnen (optional)",
             "data": {
-              "analysis_from": "Auswertung ab"
+              "analysis_from": "Auswertung ab",
+              "analysis_from_clear": "Datum entfernen, wieder alles auswerten"
             },
             "data_description": {
-              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+              "analysis_from": "Leer: alle Tage."
             },
             "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
@@ -901,10 +903,11 @@
           "restart": {
             "name": "Auswertung neu beginnen (optional)",
             "data": {
-              "analysis_from": "Auswertung ab"
+              "analysis_from": "Auswertung ab",
+              "analysis_from_clear": "Datum entfernen, wieder alles auswerten"
             },
             "data_description": {
-              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+              "analysis_from": "Leer: alle Tage."
             },
             "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
@@ -1033,10 +1036,11 @@
           "restart": {
             "name": "Auswertung neu beginnen (optional)",
             "data": {
-              "analysis_from": "Auswertung ab"
+              "analysis_from": "Auswertung ab",
+              "analysis_from_clear": "Datum entfernen, wieder alles auswerten"
             },
             "data_description": {
-              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+              "analysis_from": "Leer: alle Tage."
             },
             "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }

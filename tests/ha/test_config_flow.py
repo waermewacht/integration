@@ -939,12 +939,23 @@ async def test_options_analysis_from(hass: HomeAssistant) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["analysis_from"] == "2026-10-01"
+    # The date picker cannot be emptied: a stored date brings a check box.
     result = await hass.config_entries.options.async_init(entry.entry_id)
+    restart = result["data_schema"].schema["restart"].schema.schema
+    assert "analysis_from_clear" in [str(k) for k in restart]
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {**REQUIRED_OPTIONS, "restart": {}}
+        result["flow_id"],
+        {
+            **REQUIRED_OPTIONS,
+            "restart": {"analysis_from": "2026-10-01", "analysis_from_clear": True},
+        },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert "analysis_from" not in entry.options
+    assert "analysis_from_clear" not in entry.options
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    restart = result["data_schema"].schema["restart"].schema.schema
+    assert "analysis_from_clear" not in [str(k) for k in restart]
 
 
 async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:

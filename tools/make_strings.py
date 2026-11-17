@@ -679,6 +679,10 @@ OPTION_LABELS = {
     ),
     "season_start_month": ("Season starts in", "Saison beginnt im"),
     "analysis_from": ("Evaluation from", "Auswertung ab"),
+    "analysis_from_clear": (
+        "Remove the date, evaluate everything again",
+        "Datum entfernen, wieder alles auswerten",
+    ),
     "aux_mild_from": (
         "Backup heater: mild weather from",
         "Heizstab: milde Witterung ab",
@@ -745,8 +749,8 @@ OPTION_HELP = {
         "Die laufende Saison wird aus der Statistik neu berechnet.",
     ),
     "analysis_from": (
-        "Empty: all days. Remove the date to evaluate everything again.",
-        "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten.",
+        "Empty: all days.",
+        "Leer: alle Tage.",
     ),
     "aux_mild_from": (
         "Daily mean outdoor temperature from which the heat pump should heat alone.",
@@ -973,7 +977,7 @@ OPTION_SECTIONS = {
             "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are.",
             "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind.",
         ),
-        ("analysis_from",),
+        ("analysis_from", "analysis_from_clear"),
     ),
 }
 

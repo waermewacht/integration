@@ -609,10 +609,11 @@
           "restart": {
             "name": "Start the evaluation afresh (optional)",
             "data": {
-              "analysis_from": "Evaluation from"
+              "analysis_from": "Evaluation from",
+              "analysis_from_clear": "Remove the date, evaluate everything again"
             },
             "data_description": {
-              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+              "analysis_from": "Empty: all days."
             },
             "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
@@ -769,10 +770,11 @@
           "restart": {
             "name": "Start the evaluation afresh (optional)",
             "data": {
-              "analysis_from": "Evaluation from"
+              "analysis_from": "Evaluation from",
+              "analysis_from_clear": "Remove the date, evaluate everything again"
             },
             "data_description": {
-              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+              "analysis_from": "Empty: all days."
             },
             "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
@@ -901,10 +903,11 @@
           "restart": {
             "name": "Start the evaluation afresh (optional)",
             "data": {
-              "analysis_from": "Evaluation from"
+              "analysis_from": "Evaluation from",
+              "analysis_from_clear": "Remove the date, evaluate everything again"
             },
             "data_description": {
-              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+              "analysis_from": "Empty: all days."
             },
             "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
@@ -1033,10 +1036,11 @@
           "restart": {
             "name": "Start the evaluation afresh (optional)",
             "data": {
-              "analysis_from": "Evaluation from"
+              "analysis_from": "Evaluation from",
+              "analysis_from_clear": "Remove the date, evaluate everything again"
             },
             "data_description": {
-              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+              "analysis_from": "Empty: all days."
             },
             "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }

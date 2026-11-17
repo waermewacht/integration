@@ -62,6 +62,9 @@ CONF_SEASON_START: Final = "season_start_month"
 # Analyses start afresh on this day ("YYYY-MM-DD"; issue #10): curves,
 # heat load and findings leave the days before out, the counters not.
 CONF_ANALYSIS_FROM: Final = "analysis_from"
+# Form field only: the date picker of Home Assistant cannot be emptied,
+# so a stored date is removed with this check box.
+CONF_ANALYSIS_FROM_CLEAR: Final = "analysis_from_clear"
 # Health check (docs/GESUNDHEITSCHECK.md), own assumptions.
 CONF_AUX_MILD_FROM: Final = "aux_mild_from"  # °C day mean
 CONF_EFFICIENCY_DROP: Final = "efficiency_drop_percent"

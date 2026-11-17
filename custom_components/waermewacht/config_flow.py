@@ -45,6 +45,7 @@ from .adopt import known_signals, moved_match, replacements
 from .charges import DISINFECTION_TEMP_C
 from .const import (
     CONF_ANALYSIS_FROM,
+    CONF_ANALYSIS_FROM_CLEAR,
     CONF_AUX_MILD_FROM,
     CONF_BATTERY_CHARGED_ENTITY,
     CONF_BATTERY_DISCHARGED_ENTITY,
@@ -1310,6 +1311,8 @@ class WaermewachtOptionsFlow(OptionsFlow):
                 )
             data[SISTERS_OFFERED] = True
             self._apply_starts_now(data, options)
+            if data.pop(CONF_ANALYSIS_FROM_CLEAR, False):
+                data.pop(CONF_ANALYSIS_FROM, None)
             changes, change_error = apply_price_change(
                 list(options.get(CONF_PRICE_CHANGES) or []),
                 user_input.get(SECTION_PRICE_CHANGE),
@@ -1544,6 +1547,11 @@ class WaermewachtOptionsFlow(OptionsFlow):
         starts_now = self._starts_now(mapped)
         for name, keys in OPTIONAL_SECTIONS.items():
             part = {marker(key): fields[key] for key in keys}
+            if name == "restart" and options.get(CONF_ANALYSIS_FROM):
+                # A stored date: the date picker cannot be emptied.
+                part[vol.Optional(CONF_ANALYSIS_FROM_CLEAR, default=False)] = (
+                    selector.BooleanSelector()
+                )
             if name == "limits" and starts_now is not None:
                 part[
                     vol.Optional(

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Behoben
+
+- **„Auswertung ab“ lässt sich wieder entfernen:** Das Datumsfeld von Home Assistant kann man nicht leeren. Ist ein Datum gespeichert, gibt es darunter jetzt den Haken „Datum entfernen, wieder alles auswerten“.
+
 ## 0.23.0 – 2026-11-17
 
 ### Neu
