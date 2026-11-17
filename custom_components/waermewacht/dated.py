@@ -113,3 +113,20 @@ def states(
         values = {**values, **{f: change[f] for f in fields if f in change}}
         result.append((date.fromisoformat(str(change[CHANGE_FROM])), dict(values)))
     return result
+
+
+def analysis_day(value: Any) -> date | None:
+    """The day of the option "analysis from" ("YYYY-MM-DD"; issue #10),
+    None if unset or not a date."""
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError:
+        return None
+
+
+def analysis_start(value: Any, tz: tzinfo) -> datetime | None:
+    """Local midnight of the option "analysis from", None if unset."""
+    day = analysis_day(value)
+    return None if day is None else datetime.combine(day, time(), tz)

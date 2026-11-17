@@ -181,6 +181,7 @@ const TEXT = {
     signature: "Energiesignatur",
     heatingCurve: "Heizkurve (gemessen)",
     curveDays: "Heiztage",
+    curveOutliers: "Ausreißer (nicht in der Geraden)",
     lineUncertain: (r2) => `Gerade (unsicher, R² ${r2})`,
     curveBands: {
       lower_possible: "Heiztage: Kurve könnte tiefer",
@@ -408,6 +409,7 @@ const TEXT = {
     signature: "Energy signature",
     heatingCurve: "Heating curve (measured)",
     curveDays: "Heating days",
+    curveOutliers: "Outliers (not in the line)",
     lineUncertain: (r2) => `Line (uncertain, R² ${r2})`,
     curveBands: {
       lower_possible: "Heating days: curve could be lower",
@@ -517,6 +519,8 @@ const COLORS = {
   elecDhw: "#8DB3DD",
   standby: "#9AA0A6",
   outdoor: "#D9A400",
+  // Days left out of the measured heating curve's line (heating_curve.py).
+  outlier: "rgba(154, 160, 166, 0.35)",
   // Verdict of the heating curve check per band (rooms.py).
   lower_possible: "#3C9A5F",
   fits: "#2F6FB0",
@@ -1310,7 +1314,8 @@ class WaermewachtCard extends HTMLElement {
   /** The measured heating curve (attributes of "flow at 0 °C",
    * heating_curve.py): flow of each heating day over its outdoor mean and
    * the line through them. With the heating curve check (rooms.py), the
-   * days take the colour of their band's verdict. */
+   * days take the colour of their band's verdict. Outliers left out of the
+   * line (outlier_points) are drawn pale. */
   _heatingCurve(t) {
     const state = this._state("flow_at_zero");
     if (!state) return "";
@@ -1335,6 +1340,10 @@ class WaermewachtCard extends HTMLElement {
       line: false,
       points: pts,
     }));
+    const outliers = (a.outlier_points || []).filter((p) => Array.isArray(p) && p.length === 2);
+    if (outliers.length) {
+      series.unshift({ color: COLORS.outlier, label: t.curveOutliers, line: false, points: outliers });
+    }
     const at0 = state.state === "" ? NaN : Number(state.state);
     if (Number.isFinite(at0) && a.slope !== null && a.slope !== undefined) {
       const lo = points[0][0];

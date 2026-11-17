@@ -477,6 +477,8 @@
     "error": {
       "battery_both": "Batterie: bitte Lade- und Entladezähler wählen oder keinen.",
       "meter_unit": "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
+      "meter_no_statistics": "{entity} hat keine Langzeitstatistik mit Summe (Zustandsklasse „Summenwert“ oder „Steigender Summenwert“), dann zählt jede Stunde als Netzstrom. Der Helfer „Kombinieren der Zustände mehrerer Sensoren“ hat die Zustandsklasse „Messwert“; eine Sensor-Gruppe mit eingestellter Zustandsklasse geht.",
+      "analysis_from_future": "„Auswertung ab“ liegt in der Zukunft.",
       "valve_unit": "Ventilöffnungen müssen in % sein: {entity} hat die Einheit {unit}.",
       "price_unit": "{entity} meldet seinen Preis in „{unit}“. Möglich sind {units}.",
       "change_from_required": "Preisänderung: Bitte „Gültig ab“ angeben.",
@@ -603,6 +605,16 @@
               "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
+          },
+          "restart": {
+            "name": "Auswertung neu beginnen (optional)",
+            "data": {
+              "analysis_from": "Auswertung ab"
+            },
+            "data_description": {
+              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+            },
+            "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
         },
         "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
@@ -753,6 +765,16 @@
               "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
+          },
+          "restart": {
+            "name": "Auswertung neu beginnen (optional)",
+            "data": {
+              "analysis_from": "Auswertung ab"
+            },
+            "data_description": {
+              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+            },
+            "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
         },
         "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
@@ -875,6 +897,16 @@
               "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
+          },
+          "restart": {
+            "name": "Auswertung neu beginnen (optional)",
+            "data": {
+              "analysis_from": "Auswertung ab"
+            },
+            "data_description": {
+              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+            },
+            "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
         },
         "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."
@@ -997,6 +1029,16 @@
               "starts_now": "Nur ohne Startzähler der Wärmepumpe. Die Starts eintragen, die die Wärmepumpe anzeigt; Wärmewacht zählt ab diesem Wert weiter. Jederzeit wieder korrigierbar."
             },
             "description": "Ab wann eine Prüfung auffällig ist und wie Arbeitszahlen und Saisons gezählt werden. Die Vorgaben passen für die meisten Wärmepumpen; nur ändern, wenn eine Prüfung bei deiner zu streng oder zu locker ist."
+          },
+          "restart": {
+            "name": "Auswertung neu beginnen (optional)",
+            "data": {
+              "analysis_from": "Auswertung ab"
+            },
+            "data_description": {
+              "analysis_from": "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten."
+            },
+            "description": "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind."
           }
         },
         "description": "{summary}\n\nZähler und Sensoren änderst du nicht hier: Tauschen, ergänzen oder entfernen geht beim Eintrag unter ⋮ → Neu konfigurieren."

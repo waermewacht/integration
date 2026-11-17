@@ -87,6 +87,7 @@ from .charges import (
 )
 from .charges import prune as prune_charges
 from .const import (
+    CONF_ANALYSIS_FROM,
     CONF_AUX_MILD_FROM,
     CONF_BATTERY_CHARGED_ENTITY,
     CONF_BATTERY_DISCHARGED_ENTITY,
@@ -150,7 +151,7 @@ from .cycling import (
     starts_per_year,
     starts_projection,
 )
-from .dated import Dated, Price, dated, value_at
+from .dated import Dated, Price, analysis_start, dated, value_at
 from .day_counters import async_wrong_counters, wrong_kind
 from .degree_days import DegreeDays, daily_degree_days, degree_days, year_before
 from .duty import (
@@ -641,6 +642,8 @@ class HeatPumpRuntime:
         self.marks = PeriodMarks(
             self.tz, int(options.get(CONF_SEASON_START, DEFAULT_SEASON_START_MONTH))
         )
+        # Analyses afresh from this local midnight (option, issue #10).
+        self.analysis_from = analysis_start(options.get(CONF_ANALYSIS_FROM), self.tz)
         self.runs: list[Run] = []
         self.defrosts: list[Defrost] = []
         # Times without a known compressor state longer than the gap
@@ -1433,7 +1436,7 @@ class HeatPumpRuntime:
         spans = factor_spans(local(current), local(previous), local(month), yesterday)
         return {
             name: efficiency_factor(
-                self.diary,
+                self.analysis_diary(),
                 first,
                 last,
                 min_days=min_days,
@@ -1471,14 +1474,14 @@ class HeatPumpRuntime:
         short_minutes = self.short_seconds / 60
         seasons: dict[str, DutyFigures] = {
             "current": duty_figures(
-                self.diary,
+                self.analysis_diary(),
                 local(current),
                 yesterday,
                 short_minutes=short_minutes,
                 statistics=statistics,
             ),
             "previous": duty_figures(
-                self.diary,
+                self.analysis_diary(),
                 local(previous),
                 local(current) - timedelta(days=1),
                 short_minutes=short_minutes,
@@ -1560,7 +1563,7 @@ class HeatPumpRuntime:
         power: dict[str, Any] = {}
         for name, (first, last) in spans.items():
             found, days, from_statistics = full_hours(
-                self.diary, minutes, first, last, self.tz
+                self.analysis_diary(), minutes, first, last, self.tz
             )
             duty = self.duty.get(name)
             power[name] = power_figures(
@@ -1599,7 +1602,20 @@ class HeatPumpRuntime:
             Period.SEASON, current - timedelta(days=1), self.tz, self.marks.season_month
         )
         assert previous is not None
+        if self.analysis_from is not None:
+            # A fresh start: nothing before it, a previous season only when
+            # the day lies before the current one.
+            current = max(current, min(self.analysis_from, now))
+            previous = min(max(previous, self.analysis_from), current)
         return current, previous
+
+    def analysis_diary(self) -> list[dict[str, Any]]:
+        """The diary for the analyses: without the days before the option
+        "analysis from" (the counters and the projection keep all)."""
+        if self.analysis_from is None:
+            return self.diary
+        first = self.analysis_from.astimezone(self.tz).date().isoformat()
+        return [e for e in self.diary if str(e.get("day", "")) >= first]
 
     async def _async_refresh_analysis(self, now: datetime) -> None:
         """Performance curve of the current and the previous season (never
@@ -1716,7 +1732,7 @@ class HeatPumpRuntime:
                 now, hours, outdoor, current, previous, compared, temps
             )
             today = now.astimezone(self.tz).date()
-            self.spread_7d = spread_figure(self.diary, today)
+            self.spread_7d = spread_figure(self.analysis_diary(), today)
             self.efficiency_factors = self._efficiency_factors(
                 now,
                 current,
@@ -1745,18 +1761,22 @@ class HeatPumpRuntime:
             self.oversize = oversizing(
                 self.heat_load, self.rated_power, min_kw=self.min_power
             )
-            self.findings["standby_rise"] = standby_rise(self.diary, today, self.tz)
+            self.findings["standby_rise"] = standby_rise(
+                self.analysis_diary(), today, self.tz
+            )
             self.findings["dhw_efficiency_drop"] = dhw_efficiency_drop(
-                self.diary, today, min_electricity=self.min_electricity
+                self.analysis_diary(), today, min_electricity=self.min_electricity
             )
             self.defrost_week = defrost_figures(
                 self.defrosts, outdoor, now - timedelta(days=7), now
             )
             first = current.astimezone(self.tz).date()
             self.defrost_classes = compare_defrost_classes(
-                defrost_classes(self.diary, first, today - timedelta(days=1)),
                 defrost_classes(
-                    self.diary,
+                    self.analysis_diary(), first, today - timedelta(days=1)
+                ),
+                defrost_classes(
+                    self.analysis_diary(),
                     previous.astimezone(self.tz).date(),
                     first - timedelta(days=1),
                 ),
@@ -2330,7 +2350,7 @@ class HeatPumpRuntime:
         """Heating curve check from the rooms in the diary (rooms.py)."""
         if not self.room_entities:
             return
-        result = rooms_check(self.diary, self.room_map.rooms)
+        result = rooms_check(self.analysis_diary(), self.room_map.rooms)
         evidence = result.as_attributes(self.room_map.names)
         evidence["rooms_set"] = [
             self.room_map.names.get(a, a) for a in sorted(self.room_map.rooms)

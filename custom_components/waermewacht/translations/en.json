@@ -477,6 +477,8 @@
     "error": {
       "battery_both": "Battery: please choose the charge and the discharge meter, or neither.",
       "meter_unit": "{entity} is no energy meter in Wh, kWh or MWh.",
+      "meter_no_statistics": "{entity} has no long-term statistics with a sum (state class “Total” or “Total increasing”), so every hour would count as grid electricity. A helper that combines several sensors has the state class “Measurement”; a sensor group with the state class set works.",
+      "analysis_from_future": "“Evaluation from” lies in the future.",
       "valve_unit": "Valve openings must be in %: {entity} has the unit {unit}.",
       "price_unit": "{entity} reports its price in “{unit}”. Possible are {units}.",
       "change_from_required": "Price change: please enter “Valid from”.",
@@ -603,6 +605,16 @@
               "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
+          },
+          "restart": {
+            "name": "Start the evaluation afresh (optional)",
+            "data": {
+              "analysis_from": "Evaluation from"
+            },
+            "data_description": {
+              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+            },
+            "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
         },
         "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
@@ -753,6 +765,16 @@
               "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
+          },
+          "restart": {
+            "name": "Start the evaluation afresh (optional)",
+            "data": {
+              "analysis_from": "Evaluation from"
+            },
+            "data_description": {
+              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+            },
+            "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
         },
         "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
@@ -875,6 +897,16 @@
               "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
+          },
+          "restart": {
+            "name": "Start the evaluation afresh (optional)",
+            "data": {
+              "analysis_from": "Evaluation from"
+            },
+            "data_description": {
+              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+            },
+            "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
         },
         "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."
@@ -997,6 +1029,16 @@
               "starts_now": "Only shown without a start counter of the heat pump. Enter the starts the heat pump shows; Wärmewacht counts on from this value. Correct it again any time."
             },
             "description": "When a check counts as conspicuous, and how ratios and seasons are counted. The defaults fit most heat pumps; change them only if a check is too strict or too lax for yours."
+          },
+          "restart": {
+            "name": "Start the evaluation afresh (optional)",
+            "data": {
+              "analysis_from": "Evaluation from"
+            },
+            "data_description": {
+              "analysis_from": "Empty: all days. Remove the date to evaluate everything again."
+            },
+            "description": "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are."
           }
         },
         "description": "{summary}\n\nMeters and sensors are not changed here: swap, add or remove them on the entry under ⋮ → Reconfigure."

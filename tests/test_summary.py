@@ -307,3 +307,20 @@ def test_source_temperature_named_only_when_mapped() -> None:
         brine, options, None, "de", no_statistics={Signal.SOURCE_TEMP}
     )
     assert "Quelltemperatur ohne Langzeitstatistik" in text
+
+
+@pytest.mark.parametrize(
+    ("language", "shown"),
+    [
+        ("de", "**Auswertung ab:** 01.10.2026"),
+        ("en", "**Evaluation from:** 2026-10-01"),
+    ],
+)
+def test_analysis_from_is_shown(language: str, shown: str) -> None:
+    """A fresh start of the evaluation is easy to forget: shown on top."""
+    options = {"electricity_price": 27.75, "analysis_from": "2026-10-01"}
+    assert shown in heat_pump_summary(EMS_ESP, options, "EMS-ESP", language)
+    without = heat_pump_summary(
+        EMS_ESP, {"electricity_price": 27.75}, "EMS-ESP", language
+    )
+    assert "2026" not in without

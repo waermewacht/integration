@@ -670,3 +670,44 @@ async def test_runs_continuously_from_a_runtime_counter_without_starts(
     )
     assert short.state == "unknown"
     assert short.attributes["reason"] == "too_few_hours"
+
+
+async def test_analysis_from_cuts_the_seasons_and_the_diary(
+    hass: HomeAssistant,
+) -> None:
+    """Option "analysis from" (issue #10): the seasons of the analyses start
+    there at the earliest, and the diary of the analyses leaves the days
+    before it out; the stored diary keeps them."""
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    hass.states.async_set(HEAT_HEATING, "72.0", ENERGY)
+    hass.states.async_set(ELEC_HEATING, "18.0", ENERGY)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data=entry_data(
+            entities={"heat_heating": HEAT_HEATING, "elec_heating": ELEC_HEATING}
+        ),
+        options={"analysis_from": "2026-11-10"},
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    runtime = entry.runtime_data
+    now = datetime(2026, 11, 17, 12, tzinfo=UTC)
+    current, previous = runtime.seasons(now)
+    start = datetime(2026, 11, 9, 23, tzinfo=UTC)  # local midnight 10.11.
+    assert current == start
+    assert previous == start  # no previous season after a fresh start
+    runtime.diary = [
+        {"day": "2026-11-09"},
+        {"day": "2026-11-10"},
+        {"day": "2026-11-11"},
+    ]
+    assert [e["day"] for e in runtime.analysis_diary()] == ["2026-11-10", "2026-11-11"]
+    assert len(runtime.diary) == 3
+    # Without the option: the seasons from July as ever.
+    runtime.analysis_from = None
+    current, previous = runtime.seasons(now)
+    assert current == datetime(2026, 6, 30, 22, tzinfo=UTC)
+    assert previous == datetime(2025, 6, 30, 22, tzinfo=UTC)
+    assert runtime.analysis_diary() is runtime.diary

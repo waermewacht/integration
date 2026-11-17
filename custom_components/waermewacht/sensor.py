@@ -882,6 +882,8 @@ def _flow_at_zero_attributes(runtime: HeatPumpRuntime) -> dict[str, Any]:
         "previous_slope": None if previous is None else _round(previous.slope, 2),
         # The days behind the line, for the card's chart (not recorded).
         "points": flow_curve_points(result),
+        # Days left out of the line as outliers (heating_curve.mark_outliers).
+        "outlier_points": flow_curve_points(result, outliers=True),
     }
 
 
@@ -1229,6 +1231,7 @@ class HeatPumpSensor(HeatPumpEntity, SensorEntity):
             "classes",
             "other_classes",
             "points",
+            "outlier_points",
             # Own electricity per mode (allocation.py).
             "own_share_by_mode",
             "kwh_own_by_mode",

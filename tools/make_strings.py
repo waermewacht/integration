@@ -678,6 +678,7 @@ OPTION_LABELS = {
         "Starts gesamt (Stand jetzt, z. B. vom Display der Wärmepumpe)",
     ),
     "season_start_month": ("Season starts in", "Saison beginnt im"),
+    "analysis_from": ("Evaluation from", "Auswertung ab"),
     "aux_mild_from": (
         "Backup heater: mild weather from",
         "Heizstab: milde Witterung ab",
@@ -742,6 +743,10 @@ OPTION_HELP = {
     "season_start_month": (
         "The current season is recomputed from the statistics.",
         "Die laufende Saison wird aus der Statistik neu berechnet.",
+    ),
+    "analysis_from": (
+        "Empty: all days. Remove the date to evaluate everything again.",
+        "Leer: alle Tage. Datum löschen, um wieder alles auszuwerten.",
     ),
     "aux_mild_from": (
         "Daily mean outdoor temperature from which the heat pump should heat alone.",
@@ -959,6 +964,17 @@ OPTION_SECTIONS = {
             "starts_now",
         ),
     ),
+    "restart": (
+        (
+            "Start the evaluation afresh (optional)",
+            "Auswertung neu beginnen (optional)",
+        ),
+        (
+            "For example after a new heat pump or a replaced part: the days before this date are left out of the performance curve, heating curve, heat load and findings. Counters, performance factors and costs stay as they are.",
+            "Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils: Die Tage vor diesem Datum lässt Wärmewacht bei Kennlinie, Heizkurve, Heizlast und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind.",
+        ),
+        ("analysis_from",),
+    ),
 }
 
 
@@ -1144,6 +1160,18 @@ def _build(lang: int) -> dict:
                     (
                         "{entity} is no energy meter in Wh, kWh or MWh.",
                         "{entity} ist kein Energiezähler in Wh, kWh oder MWh.",
+                    )
+                ),
+                "meter_no_statistics": t(
+                    (
+                        "{entity} has no long-term statistics with a sum (state class “Total” or “Total increasing”), so every hour would count as grid electricity. A helper that combines several sensors has the state class “Measurement”; a sensor group with the state class set works.",
+                        "{entity} hat keine Langzeitstatistik mit Summe (Zustandsklasse „Summenwert“ oder „Steigender Summenwert“), dann zählt jede Stunde als Netzstrom. Der Helfer „Kombinieren der Zustände mehrerer Sensoren“ hat die Zustandsklasse „Messwert“; eine Sensor-Gruppe mit eingestellter Zustandsklasse geht.",
+                    )
+                ),
+                "analysis_from_future": t(
+                    (
+                        "“Evaluation from” lies in the future.",
+                        "„Auswertung ab“ liegt in der Zukunft.",
                     )
                 ),
                 "valve_unit": t(

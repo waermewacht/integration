@@ -59,6 +59,9 @@ CONF_STARTS_PER_DAY: Final = "starts_per_day"
 CONF_STARTS_NOW: Final = "starts_now"
 CONF_STARTS_OFFSET: Final = "starts_offset"
 CONF_SEASON_START: Final = "season_start_month"
+# Analyses start afresh on this day ("YYYY-MM-DD"; issue #10): curves,
+# heat load and findings leave the days before out, the counters not.
+CONF_ANALYSIS_FROM: Final = "analysis_from"
 # Health check (docs/GESUNDHEITSCHECK.md), own assumptions.
 CONF_AUX_MILD_FROM: Final = "aux_mild_from"  # °C day mean
 CONF_EFFICIENCY_DROP: Final = "efficiency_drop_percent"

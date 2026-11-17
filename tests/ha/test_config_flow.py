@@ -681,7 +681,11 @@ async def test_options_price_sensor_unit(hass: HomeAssistant) -> None:
     assert "electricity_price" not in entry.options
 
 
-KWH = {"unit_of_measurement": "kWh", "device_class": "energy"}
+KWH = {
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing",
+}
 
 
 def suggested_costs(result: Any) -> dict[str, Any]:
@@ -883,6 +887,62 @@ async def test_options_house_meters(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options["grid_import_entity"] == "sensor.grid_import"
     assert entry.options["feed_in_tariff"] == 8.0
+
+
+async def test_options_house_meter_without_statistics(hass: HomeAssistant) -> None:
+    """A combined PV sensor without a sum in the statistics (state class
+    measurement, forum 95035 #289): every hour would be grid electricity."""
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    for meter in ("sensor.grid_import", "sensor.feed_in"):
+        hass.states.async_set(meter, "100", KWH)
+    hass.states.async_set(
+        "sensor.pv_combined", "100", {**KWH, "state_class": "measurement"}
+    )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    meters = {
+        "grid_import_entity": "sensor.grid_import",
+        "feed_in_entity": "sensor.feed_in",
+        "pv_entity": "sensor.pv_combined",
+    }
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**REQUIRED_OPTIONS, "pv": meters}
+    )
+    assert result["errors"] == {"base": "meter_no_statistics"}
+    assert result["description_placeholders"]["entity"] == "sensor.pv_combined"
+    assert collapsed(result)["pv"] is False
+    hass.states.async_set("sensor.pv_combined", "100", KWH)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**REQUIRED_OPTIONS, "pv": meters}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_options_analysis_from(hass: HomeAssistant) -> None:
+    """Evaluation afresh from a day: its own collapsed section, not in the
+    future, removed again by clearing it."""
+    entry = MockConfigEntry(domain=DOMAIN, title="WP", data=entry_data())
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert collapsed(result)["restart"] is True
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {**REQUIRED_OPTIONS, "restart": {"analysis_from": "2999-01-01"}},
+    )
+    assert result["errors"] == {"base": "analysis_from_future"}
+    assert collapsed(result)["restart"] is False
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {**REQUIRED_OPTIONS, "restart": {"analysis_from": "2026-10-01"}},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["analysis_from"] == "2026-10-01"
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**REQUIRED_OPTIONS, "restart": {}}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert "analysis_from" not in entry.options
 
 
 async def test_new_template_signals_are_taken_over(hass: HomeAssistant) -> None:

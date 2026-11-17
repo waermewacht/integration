@@ -16,6 +16,13 @@ From the long-term statistics, hour by hour:
 - A least-squares line through the days; its value at 0 °C is the figure,
   its slope the steepness of the curve (K flow per K outdoor, negative). At
   least MIN_DAYS days spanning MIN_SPREAD K, otherwise unknown with reasons.
+- Outliers stay out of the line (waermewacht/integration#10: the first
+  weeks of a new heat pump, screed drying, a fault): a Theil-Sen line (the
+  median of the pairwise slopes, robust against up to ~29 % outliers) finds
+  them, a day more than OUTLIER_FACTOR robust deviations (1.4826 x median
+  absolute residual), and at least OUTLIER_MIN_K, away from it is left out;
+  the least-squares line goes through the rest. Only when at least MIN_DAYS
+  days remain; the chart shows the left-out days pale.
 
 The hourly flow mean includes the pauses of a run within the hour, so the
 figure is a little below the set curve; it compares like with like between
@@ -35,7 +42,7 @@ are the same.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, tzinfo
 from typing import Any
 
@@ -57,6 +64,14 @@ FLOW_MAX = 80.0
 CIRCUIT_MIN_FLOW = 25.0
 CIRCUIT_DAY_BELOW = G20_15.limit
 
+# Outliers (own assumptions): farther from the robust line than this many
+# robust standard deviations, and at least this many kelvin.
+OUTLIER_FACTOR = 3.0
+OUTLIER_MIN_K = 4.0
+# The Theil-Sen slope over at most this many days (pairs grow with n²; a
+# season holds up to ~250 heating days, ~31,000 pairs): every n-th day.
+THEIL_SEN_MAX_DAYS = 400
+
 TOO_FEW_DAYS = "too_few_days"
 SPREAD_TOO_SMALL = "spread_too_small"
 
@@ -66,13 +81,14 @@ class FlowDay:
     day: date
     mean_outdoor: float
     flow: float  # heat-weighted mean flow of the counted hours
+    outlier: bool = False  # left out of the line (_curve)
 
 
 @dataclass(frozen=True)
 class FlowCurve:
     """Flow temperature over outdoor temperature of one period."""
 
-    days: tuple[FlowDay, ...]
+    days: tuple[FlowDay, ...]  # all of them, outliers marked
     at_zero: float | None  # °C flow at AT_OUTDOOR, None with reasons
     slope: float | None  # K flow per K outdoor
     r_squared: float | None
@@ -180,13 +196,65 @@ def _curve(days: list[FlowDay]) -> FlowCurve:
         reasons.append(SPREAD_TOO_SMALL)
     if reasons:
         return FlowCurve(tuple(days), None, None, None, spread, tuple(reasons))
-    a, b, r2 = fit_line([(d.mean_outdoor, d.flow) for d in days])
+    days = mark_outliers(days)
+    kept = [d for d in days if not d.outlier]
+    a, b, r2 = fit_line([(d.mean_outdoor, d.flow) for d in kept])
     return FlowCurve(tuple(days), a + b * AT_OUTDOOR, b, r2, spread)
 
 
-def flow_curve_points(result: FlowCurve) -> list[list[float]]:
-    """[outdoor, flow] of each day behind the line (the card's chart)."""
-    return [[round(d.mean_outdoor, 1), round(d.flow, 1)] for d in result.days]
+def _median(values: list[float]) -> float:
+    ordered = sorted(values)
+    n = len(ordered)
+    mid = n // 2
+    return ordered[mid] if n % 2 else (ordered[mid - 1] + ordered[mid]) / 2
+
+
+def theil_sen(points: list[tuple[float, float]]) -> tuple[float, float] | None:
+    """Robust line y = a + b·x: b the median of the pairwise slopes, a the
+    median of y - b·x. None without two distinct x values."""
+    step = max(1, -(-len(points) // THEIL_SEN_MAX_DAYS))
+    sample = points[::step]
+    slopes = [
+        (y2 - y1) / (x2 - x1)
+        for i, (x1, y1) in enumerate(sample)
+        for x2, y2 in sample[i + 1 :]
+        if x2 != x1
+    ]
+    if not slopes:
+        return None
+    b = _median(slopes)
+    return _median([y - b * x for x, y in points]), b
+
+
+def mark_outliers(days: list[FlowDay]) -> list[FlowDay]:
+    """The days with those far from the robust line marked; unchanged when
+    fewer than MIN_DAYS would remain or the days span less than MIN_SPREAD."""
+    line = theil_sen([(d.mean_outdoor, d.flow) for d in days])
+    if line is None:
+        return days
+    a, b = line
+    residuals = [d.flow - (a + b * d.mean_outdoor) for d in days]
+    mad = _median([abs(r) for r in residuals])
+    limit = max(OUTLIER_MIN_K, OUTLIER_FACTOR * 1.4826 * mad)
+    marked = [
+        replace(d, outlier=abs(r) > limit) for d, r in zip(days, residuals, strict=True)
+    ]
+    kept = [d.mean_outdoor for d in marked if not d.outlier]
+    if len(kept) < MIN_DAYS or max(kept) - min(kept) < MIN_SPREAD:
+        return days
+    return marked
+
+
+def flow_curve_points(
+    result: FlowCurve, *, outliers: bool = False
+) -> list[list[float]]:
+    """[outdoor, flow] of each day behind the line (the card's chart), or
+    with `outliers` of each day left out of it."""
+    return [
+        [round(d.mean_outdoor, 1), round(d.flow, 1)]
+        for d in result.days
+        if d.outlier == outliers
+    ]
 
 
 def flow_curve_as_dict(result: FlowCurve) -> dict[str, Any]:
@@ -197,7 +265,8 @@ def flow_curve_as_dict(result: FlowCurve) -> dict[str, Any]:
         "at_zero": r(result.at_zero, 1),
         "slope": r(result.slope, 2),
         "r_squared": r(result.r_squared, 2),
-        "days": len(result.days),
+        "days": sum(1 for d in result.days if not d.outlier),
+        "outliers": sum(1 for d in result.days if d.outlier),
         "spread": r(result.spread, 1),
         "reasons": list(result.reasons),
     }

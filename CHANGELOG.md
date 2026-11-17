@@ -1,5 +1,16 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Auswertung neu beginnen:** Im Zahnrad gibt es den eingeklappten Abschnitt „Auswertung neu beginnen“ mit dem Feld „Auswertung ab“. Etwa nach dem Einbau einer neuen Wärmepumpe oder dem Tausch eines Bauteils lässt Wärmewacht die Tage davor bei AZ-Kennlinie, Heizkurve, Heizlast, Gütegrad und Befunden weg. Zähler, Arbeitszahlen und Kosten bleiben, wie sie sind. (danke an @obert99)
+- **Gemessene Heizkurve ohne Ausreißer:** Tage weit neben der Geraden, etwa die ersten Wochen einer neuen Anlage, zählen nicht mehr mit und erscheinen in der Karte blass. Neue Attribute `outliers` und `outlier_points`. (danke an @obert99)
+
+### Geändert
+
+- **Formular prüft die Hauszähler:** Hat Netzbezug-, Einspeise-, PV- oder Batteriezähler keine Langzeitstatistik mit Summe, meldet das Formular das, statt still jede Stunde als Netzstrom zu rechnen. Der häufigste Fall: zwei PV-Anlagen mit dem Helfer „Kombinieren der Zustände mehrerer Sensoren“ zusammengefasst; eine Sensor-Gruppe mit eingestellter Zustandsklasse geht. (danke an eazy, simon42-Forum)
+
 ## 0.22.0 – 2026-11-17
 
 ### Neu

@@ -39,10 +39,12 @@ from homeassistant.data_entry_flow import section
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
+from homeassistant.util import dt as dt_util
 
 from .adopt import known_signals, moved_match, replacements
 from .charges import DISINFECTION_TEMP_C
 from .const import (
+    CONF_ANALYSIS_FROM,
     CONF_AUX_MILD_FROM,
     CONF_BATTERY_CHARGED_ENTITY,
     CONF_BATTERY_DISCHARGED_ENTITY,
@@ -113,6 +115,7 @@ from .const import (
 from .costs import BOILER_EFFICIENCY_HS
 from .counter import UNIT_FACTORS
 from .dated import CHANGE_FROM as DATED_FROM
+from .dated import analysis_day
 from .day_counters import async_wrong_counters, wrong_kind
 from .duty import MINUTE_FACTORS
 from .entity import own_entities
@@ -1158,6 +1161,8 @@ OPTIONAL_SECTIONS: dict[str, tuple[str, ...]] = {
         CONF_DISINFECTION_TEMP,
         CONF_SEASON_START,
     ),
+    # Analyses afresh from a day (issue #10), e.g. a new heat pump.
+    "restart": (CONF_ANALYSIS_FROM,),
 }
 # Settings with a default: always stored (the form shows the default).
 OPTION_DEFAULTS: dict[str, Any] = {
@@ -1176,6 +1181,8 @@ ERROR_SECTIONS = {
     "price_unit": "costs",
     "battery_both": "pv",
     "meter_unit": "pv",
+    "meter_no_statistics": "pv",
+    "analysis_from_future": "restart",
     "valve_unit": "rooms",
     "change_from_required": "price_change",
     "change_empty": "price_change",
@@ -1337,6 +1344,24 @@ class WaermewachtOptionsFlow(OptionsFlow):
             ):
                 errors["base"] = "meter_unit"
                 placeholders = {"entity": wrong}
+            elif missing := next(
+                (
+                    data[key]
+                    for key in HOUSE_METERS
+                    if data.get(key)
+                    and (state := self.hass.states.get(data[key])) is not None
+                    and state.attributes.get("state_class") not in STATISTIC_CLASSES
+                ),
+                None,
+            ):
+                # Without sums in the long-term statistics every hour counts
+                # as grid electricity (allocation.py, forum 95035 #289).
+                errors["base"] = "meter_no_statistics"
+                placeholders = {"entity": missing}
+            elif (
+                start := analysis_day(data.get(CONF_ANALYSIS_FROM))
+            ) is not None and start > dt_util.now().date():
+                errors["base"] = "analysis_from_future"
             elif valve := next(
                 (
                     v
@@ -1480,6 +1505,7 @@ class WaermewachtOptionsFlow(OptionsFlow):
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
+            CONF_ANALYSIS_FROM: selector.DateSelector(),
         }
 
         def marker(key: str) -> vol.Marker:

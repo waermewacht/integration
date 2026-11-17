@@ -19,7 +19,14 @@ from custom_components.waermewacht.costs import (
     dated_base_share,
     electricity_cost,
 )
-from custom_components.waermewacht.dated import Dated, dated, states, value_at
+from custom_components.waermewacht.dated import (
+    Dated,
+    analysis_day,
+    analysis_start,
+    dated,
+    states,
+    value_at,
+)
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.model import Mode
 from custom_components.waermewacht.prices import PricedDay, period_gas_price
@@ -187,3 +194,18 @@ def test_overview_line_and_states() -> None:
         {CONF_GAS_PRICE: 14.0, CONF_GAS_BASE_PRICE: 120.0},
         {CONF_GAS_PRICE: 14.0, CONF_GAS_BASE_PRICE: 240.0},
     ]
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("2026-10-01", "2026-10-01"), ("", None), (None, None), ("nonsense", None)],
+)
+def test_analysis_day(value: str | None, expected: str | None) -> None:
+    day = analysis_day(value)
+    assert (day.isoformat() if day else None) == expected
+
+
+def test_analysis_start_is_local_midnight() -> None:
+    start = analysis_start("2026-10-01", ZoneInfo("Europe/Berlin"))
+    assert start is not None
+    assert start.astimezone(UTC) == datetime(2026, 9, 30, 22, tzinfo=UTC)

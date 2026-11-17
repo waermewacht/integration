@@ -16,6 +16,7 @@ from typing import Any
 
 from .allocation import PROPORTIONAL, rule_for
 from .const import (
+    CONF_ANALYSIS_FROM,
     CONF_BATTERY_CHARGED_ENTITY,
     CONF_BOILER_EFFICIENCY,
     CONF_BOILER_TYPE,
@@ -47,7 +48,7 @@ from .const import (
     TANK,
 )
 from .costs import BOILER_EFFICIENCY_HS
-from .dated import CHANGE_FROM, sorted_changes
+from .dated import CHANGE_FROM, analysis_day, sorted_changes
 from .model import (
     AUX_SIGNALS,
     ELEC_SIGNALS,
@@ -153,6 +154,7 @@ T = {
     "boiler": ("boiler", "Kessel"),
     "price": ("Electricity price", "Strompreis"),
     "price_changes": ("Price changes", "Preisänderungen"),
+    "analysis_from": ("Evaluation from", "Auswertung ab"),
     "from": ("from", "ab"),
     "ch_electricity": ("electricity", "Strom"),
     "ch_electricity_base": ("electricity base", "Strom-Grundpreis"),
@@ -590,6 +592,10 @@ def heat_pump_summary(
     if month != DEFAULT_SEASON_START_MONTH:
         limits.append(f"{t('season_from')} {MONTHS[month - 1][lang]}")
     lines.append(f"**{t('limits')}:** {', '.join(limits)}")
+    # A fresh start of the analyses (issue #10): easy to forget, so shown.
+    if (start := analysis_day(options.get(CONF_ANALYSIS_FROM))) is not None:
+        when = start.strftime("%d.%m.%Y") if lang else start.isoformat()
+        lines.append(f"**{t('analysis_from')}:** {when}")
 
     hints = []
     h = lambda key: HINTS[key][lang]  # noqa: E731

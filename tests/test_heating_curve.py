@@ -117,6 +117,55 @@ def test_circuit_curve_and_reasons() -> None:
     assert circuit_flow_curve(flow, outdoor, BERLIN).days == ()
 
 
+def merged(*parts):
+    """hours, flow, outdoor of several build() results together."""
+    return tuple({k: v for part in parts for k, v in part[i].items()} for i in range(3))
+
+
+def test_outliers_of_a_new_heat_pump_stay_out_of_the_line() -> None:
+    """Issue #10: the first days of a new heat pump (screed drying, set-up)
+    run far above the curve; they would tilt the line upwards."""
+    from custom_components.waermewacht.heating_curve import (
+        flow_curve_as_dict,
+        flow_curve_points,
+    )
+
+    first = {date(2026, 10, 1) + timedelta(days=i): 8.0 + i * 0.5 for i in range(10)}
+    result = flow_curve(
+        *merged(build(days(40, -4.0, 12.0)), build(first, curve=lambda t: 50.0)),
+        BERLIN,
+    )
+    assert result.slope == pytest.approx(-0.5)
+    assert result.at_zero == pytest.approx(35.0)
+    assert sum(d.outlier for d in result.days) == 10
+    assert len(flow_curve_points(result)) == 40
+    assert all(p[1] == 50.0 for p in flow_curve_points(result, outliers=True))
+    figures = flow_curve_as_dict(result)
+    assert (figures["days"], figures["outliers"]) == (40, 10)
+
+
+def test_ordinary_scatter_is_no_outlier() -> None:
+    """Days a few kelvin off the line (wind, sun, a charge) all count."""
+    temps = days(30, -4.0, 12.0)
+    wobble = dict(
+        zip(temps.values(), [2.5, -3.0, 1.0, -1.5, 3.5, -2.0] * 5, strict=True)
+    )
+    result = flow_curve(
+        *build(temps, curve=lambda t: 35.0 - 0.5 * t + wobble[t]), BERLIN
+    )
+    assert not any(d.outlier for d in result.days)
+
+
+def test_outliers_only_with_enough_days_left() -> None:
+    """When leaving them out would leave fewer than 14 days, all stay."""
+    first = {date(2026, 10, 1) + timedelta(days=i): 8.0 + i for i in range(4)}
+    result = flow_curve(
+        *merged(build(days(12, -4.0, 12.0)), build(first, curve=lambda t: 50.0)),
+        BERLIN,
+    )
+    assert not any(d.outlier for d in result.days)
+
+
 def test_points_for_the_chart() -> None:
     from custom_components.waermewacht.heating_curve import (
         FlowCurve,
