@@ -499,8 +499,8 @@ FIELD_HELP = {
         "Ein Wärmemengenzähler für Heizen und Warmwasser (z. B. zwischen Wärmepumpe und Pufferspeicher). Wärmewacht bucht ihn auf die laufende Betriebsart; für Warmwasser braucht es die Betriebsart. Dann die Wärme je Betriebsart leer lassen; Kühlen behält einen eigenen Zähler.",
     ),
     "elec_total": (
-        "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty.",
-        "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen.",
+        "Only if the compressor electricity exists as one meter for all modes; then leave the fields per mode empty. If this meter also counts the backup heater (e.g. a meter in front of the whole heat pump), leave the backup heater fields empty.",
+        "Nur, wenn es den Kompressorstrom nur als einen Zähler für alle Betriebsarten gibt; dann die Felder je Betriebsart leer lassen. Zählt dieser Zähler auch den Heizstab mit (etwa ein Zähler vor der ganzen Wärmepumpe), die Heizstab-Felder leer lassen.",
     ),
     "aux_total": (
         "Only if the backup heater exists as one meter for all modes; then leave the fields per mode empty.",
