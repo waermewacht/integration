@@ -148,6 +148,8 @@ const TEXT = {
     withDhw: (v) => `mit Warmwasser ${v} %`,
     // Own electricity (PV, battery) per mode, attribute own_share_by_mode.
     ownShare: (parts) => `eigen: ${parts}`,
+    // Own and grid electricity of the period (kwh_own, kwh_from_grid).
+    ownKwh: (own, grid, parts) => `eigen ${own} kWh${parts ? ` (${parts})` : ""} · Netz ${grid} kWh`,
     ownModes: { heating: "Heizen", dhw: "WW", cooling: "Kühlen" },
     previous: "Vorsaison",
     factorField: (lo, hi) => `Feldtest Nov–März ${lo}–${hi}`,
@@ -374,6 +376,7 @@ const TEXT = {
     charges: (n, m) => `${n}× · mean ${m} min`,
     withDhw: (v) => `with hot water ${v} %`,
     ownShare: (parts) => `own: ${parts}`,
+    ownKwh: (own, grid, parts) => `own ${own} kWh${parts ? ` (${parts})` : ""} · grid ${grid} kWh`,
     ownModes: { heating: "heating", dhw: "DHW", cooling: "cooling" },
     previous: "previous season",
     factorField: (lo, hi) => `field test Nov–Mar ${lo}–${hi}`,
@@ -1188,14 +1191,20 @@ class WaermewachtCard extends HTMLElement {
       .map((key) => this._own(key, t.tiles[key], key.startsWith("cost_") ? this._ownShare(t, key) : "")));
   }
 
-  /** "own: heating 31 %, DHW 58 %": the share of own electricity (PV,
-   * battery) per mode, only with the grid import meter (allocation.py). */
+  /** "own 102 kWh (heating 31 %, DHW 58 %) · grid 287 kWh": own electricity
+   * (PV, battery) and grid electricity of the period, with the own share per
+   * mode; only with the grid import meter (allocation.py). Without the kWh
+   * (older versions) the shares alone, "own: heating 31 %". */
   _ownShare(t, key) {
-    const shares = this._state(key)?.attributes.own_share_by_mode;
-    if (!shares) return "";
+    const a = this._state(key)?.attributes || {};
+    const shares = a.own_share_by_mode || {};
     const parts = Object.keys(t.ownModes)
       .filter((mode) => shares[mode] !== undefined && shares[mode] !== null)
       .map((mode) => `${t.ownModes[mode]} ${this._num(shares[mode] * 100, 0)} %`);
+    if (typeof a.kwh_own === "number" && typeof a.kwh_from_grid === "number") {
+      const kwh = (v) => this._num(v, v < 10 ? 1 : 0);
+      return t.ownKwh(kwh(a.kwh_own), kwh(a.kwh_from_grid), parts.join(", "));
+    }
     return parts.length ? t.ownShare(parts.join(", ")) : "";
   }
 

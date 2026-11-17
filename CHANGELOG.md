@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Karte „Kosten“: eigener Strom und Netzstrom in kWh.** Mit Netzbezug-Zähler zeigen „Strom Monat“ und „Strom Saison“ jetzt auch, wie viele kWh aus PV oder Batterie und wie viele aus dem Netz kamen, etwa „eigen 102 kWh (Heizen 31 %, WW 58 %) · Netz 287 kWh“. Bisher standen dort nur die Anteile. (danke an Joachim-xo, simon42-Forum)
+
 ## 0.21.0 – 2026-11-16
 
 ### Geändert
