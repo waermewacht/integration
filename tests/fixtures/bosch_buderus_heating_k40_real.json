@@ -1,0 +1,1900 @@
+{
+ "gateway": "101987654",
+ "entities": [
+  {
+   "entity_id": "binary_sensor.heating_anlagenstorung",
+   "unique_id": "101987654:system_fault",
+   "original_name": "Anlagenstörung",
+   "state": "on",
+   "attributes": {
+    "device_class": "problem",
+    "friendly_name": "Heating Anlagenstörung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "binary_sensor.heating_cloud_bedienung_moglich",
+   "unique_id": "101987654:cloud_control",
+   "original_name": "Cloud-Bedienung möglich",
+   "state": "on",
+   "attributes": {
+    "friendly_name": "Heating Cloud-Bedienung möglich"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "binary_sensor.heating_cr_20_rf_batterie_schwach",
+   "unique_id": "101987654:devices:device1:battery",
+   "original_name": "CR 20 RF – Batterie schwach",
+   "state": "on",
+   "attributes": {
+    "device_class": "battery",
+    "friendly_name": "Heating CR 20 RF – Batterie schwach"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "binary_sensor.heating_urlaubsmodus_aktiv",
+   "unique_id": "101987654:holiday_active",
+   "original_name": "Urlaubsmodus aktiv",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heating Urlaubsmodus aktiv"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "binary_sensor.heating_warmepumpe_abtauung_aktiv_berechnet",
+   "unique_id": "101987654:heatSources:calculated_defrost_active",
+   "original_name": "Wärmepumpe – Abtauung aktiv (berechnet)",
+   "state": "off",
+   "attributes": {
+    "device_class": "running",
+    "friendly_name": "Heating Wärmepumpe – Abtauung aktiv (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "calendar.heating_urlaubszeiten",
+   "unique_id": "101987654:holiday_periods",
+   "original_name": "Urlaubszeiten",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heating Urlaubszeiten"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "climate.heating_heizkreis_1",
+   "unique_id": "101987654:heatingCircuits:hc1:climate",
+   "original_name": "Heizkreis 1",
+   "state": "heat",
+   "attributes": {
+    "friendly_name": "Heating Heizkreis 1"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "event.heating_anlagenmeldungen",
+   "unique_id": "101987654:system_notifications",
+   "original_name": "Anlagenmeldungen",
+   "state": "2026-11-01T08:00:00+00:00",
+   "attributes": {
+    "friendly_name": "Heating Anlagenmeldungen"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "event.heating_warmepumpe_abtauung_berechnet",
+   "unique_id": "101987654:heatSources:calculated_defrost",
+   "original_name": "Wärmepumpe – Abtauung (berechnet)",
+   "state": "unknown",
+   "attributes": {
+    "friendly_name": "Heating Wärmepumpe – Abtauung (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_hk_1_absenktemperatur",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:eco:control",
+   "original_name": "HK 1: Absenktemperatur",
+   "state": "18.2",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating HK 1: Absenktemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_hk_1_heiztemperatur",
+   "unique_id": "101987654:heatingCircuits:hc1:temperatureLevels:comfort2:control",
+   "original_name": "HK 1: Heiztemperatur",
+   "state": "20.8",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating HK 1: Heiztemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_hk_1_manueller_sollwert",
+   "unique_id": "101987654:heatingCircuits:hc1:manualRoomSetpoint:control",
+   "original_name": "HK 1: Manueller Sollwert",
+   "state": "18.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating HK 1: Manueller Sollwert"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_warmwasser_dauer_extra_warmwasser",
+   "unique_id": "101987654:dhwCircuits:dhw1:chargeDuration:control",
+   "original_name": "Warmwasser: Dauer Extra-Warmwasser",
+   "state": "65.6",
+   "attributes": {
+    "unit_of_measurement": "min",
+    "friendly_name": "Heating Warmwasser: Dauer Extra-Warmwasser"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_warmwasser_extra_warmwasser_sollwert",
+   "unique_id": "101987654:dhwCircuits:dhw1:singleChargeSetpoint:control",
+   "original_name": "Warmwasser: Extra-Warmwasser Sollwert",
+   "state": "53.4",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Warmwasser: Extra-Warmwasser Sollwert"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_warmwasser_startschwelle_eco",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:eco:control",
+   "original_name": "Warmwasser: Startschwelle Eco+",
+   "state": "45.3",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Warmwasser: Startschwelle Eco+"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_warmwasser_startschwelle_eco_2",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:low:control",
+   "original_name": "Warmwasser: Startschwelle Eco",
+   "state": "39.1",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Warmwasser: Startschwelle Eco"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "number.heating_warmwasser_startschwelle_komfort",
+   "unique_id": "101987654:dhwCircuits:dhw1:temperatureLevels:high:control",
+   "original_name": "Warmwasser: Startschwelle Komfort",
+   "state": "46.4",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Warmwasser: Startschwelle Komfort"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.heating_anlage_flustermodus",
+   "unique_id": "101987654:system:silentMode:enabled:control",
+   "original_name": "Anlage: Flüstermodus",
+   "state": "off",
+   "attributes": {
+    "options": [
+     "off",
+     "auto",
+     "on"
+    ],
+    "friendly_name": "Heating Anlage: Flüstermodus"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.heating_anlage_saisonumschaltung",
+   "unique_id": "101987654:system:seasonOptimizer:mode:control",
+   "original_name": "Anlage: Saisonumschaltung",
+   "state": "forced_heat",
+   "attributes": {
+    "options": [
+     "off",
+     "automatic",
+     "forced_heat",
+     "forced_cool"
+    ],
+    "friendly_name": "Heating Anlage: Saisonumschaltung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.heating_hk_1_betriebsart",
+   "unique_id": "101987654:heatingCircuits:hc1:operationMode:control",
+   "original_name": "HK 1: Betriebsart",
+   "state": "manual",
+   "attributes": {
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "Heating HK 1: Betriebsart"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "select.heating_warmwasser_betriebsart",
+   "unique_id": "101987654:dhwCircuits:dhw1:operationMode:control",
+   "original_name": "Warmwasser: Betriebsart",
+   "state": "ownprogram",
+   "attributes": {
+    "options": [
+     "off",
+     "low",
+     "high",
+     "ownprogram",
+     "eco"
+    ],
+    "friendly_name": "Heating Warmwasser: Betriebsart"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_aktive_meldungen",
+   "unique_id": "101987654:active_notifications",
+   "original_name": "Aktive Meldungen",
+   "state": "1",
+   "attributes": {
+    "friendly_name": "Heating Aktive Meldungen"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_aktive_storungen",
+   "unique_id": "101987654:active_faults",
+   "original_name": "Aktive Störungen",
+   "state": "1",
+   "attributes": {
+    "friendly_name": "Heating Aktive Störungen"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_3_wege_ventil_warmwasser_vw1",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.DHWValve",
+   "original_name": "Anlage – 3-Wege-Ventil Warmwasser (VW1)",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – 3-Wege-Ventil Warmwasser (VW1)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_4_wege_ventil_vr4",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.FourwayValve",
+   "original_name": "Anlage – 4-Wege-Ventil (VR4)",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – 4-Wege-Ventil (VR4)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_aussentemperatur",
+   "unique_id": "101987654:gateway:outdoor_temperature",
+   "original_name": "Anlage – Außentemperatur",
+   "state": "14.4",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Anlage – Außentemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_aussentemperatur_cloud",
+   "unique_id": "101987654:gateway:outdoor_temperature:source_cloud",
+   "original_name": "Anlage – Außentemperatur (Cloud)",
+   "state": "14.5",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Anlage – Außentemperatur (Cloud)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_aussentemperatur_lokal",
+   "unique_id": "101987654:gateway:outdoor_temperature:source_local",
+   "original_name": "Anlage – Außentemperatur (lokal)",
+   "state": "14.7",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Anlage – Außentemperatur (lokal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_evu_sperre",
+   "unique_id": "101987654:local_only:system:powerConstraints:externalInputs:appliancePowerBlock:status",
+   "original_name": "Anlage – EVU-Sperre",
+   "state": "inactive",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "active",
+     "inactive"
+    ],
+    "friendly_name": "Heating Anlage – EVU-Sperre"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_flustermodus",
+   "unique_id": "101987654:local_only:system:powerConstraints:silentMode:status",
+   "original_name": "Anlage – Flüstermodus",
+   "state": "inactive",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "active",
+     "inactive"
+    ],
+    "friendly_name": "Heating Anlage – Flüstermodus"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_flustermodus_aktiv_signal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.SilentModeActive",
+   "original_name": "Anlage – Flüstermodus aktiv (Signal)",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Flüstermodus aktiv (Signal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_gedampfte_aussentemperatur",
+   "unique_id": "101987654:local_only:signals:SC.DampOutdTemp",
+   "original_name": "Anlage – Gedämpfte Außentemperatur",
+   "state": "12.3",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Anlage – Gedämpfte Außentemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_heiz_kuhlzustand",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.CH.GSOState",
+   "original_name": "Anlage – Heiz-/Kühlzustand",
+   "state": "heat",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "idle",
+     "heat",
+     "cool"
+    ],
+    "friendly_name": "Heating Anlage – Heiz-/Kühlzustand"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_heizleistung_thermisch",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CompressorPower",
+   "original_name": "Anlage – Heizleistung (thermisch)",
+   "state": "0.0",
+   "attributes": {
+    "device_class": "power",
+    "unit_of_measurement": "kW",
+    "state_class": "measurement",
+    "friendly_name": "Heating Anlage – Heizleistung (thermisch)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_installationsdatum",
+   "unique_id": "101987654:installation_date",
+   "original_name": "Anlage – Installationsdatum",
+   "state": "2026-05-01",
+   "attributes": {
+    "device_class": "date",
+    "friendly_name": "Heating Anlage – Installationsdatum"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_inverter_uberhitzt",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.InverterOverheated",
+   "original_name": "Anlage – Inverter überhitzt",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Inverter überhitzt"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kompressor_lauft_anzeigesignal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HMI.CompressorActive",
+   "original_name": "Anlage – Kompressor läuft (Anzeigesignal)",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Kompressor läuft (Anzeigesignal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kompressor_lauft_warmepumpensignal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CompressorStatus",
+   "original_name": "Anlage – Kompressor läuft (Wärmepumpensignal)",
+   "state": "unavailable",
+   "attributes": {},
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kompressordrehzahl_signal",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CompressorSpeedActual",
+   "original_name": "Anlage – Kompressordrehzahl (Signal)",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Anlage – Kompressordrehzahl (Signal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kondensatwannenheizung",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.DripPanHeater",
+   "original_name": "Anlage – Kondensatwannenheizung",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Kondensatwannenheizung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kondensatwannentemperatur_ta4",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.DripPanTemp",
+   "original_name": "Anlage – Kondensatwannentemperatur (TA4)",
+   "state": "10.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Anlage – Kondensatwannentemperatur (TA4)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kuhlung_aktiv",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.Cooling.Active",
+   "original_name": "Anlage – Kühlung aktiv",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Kühlung aktiv"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_kurbelwannenheizung",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CrankcaseHeater",
+   "original_name": "Anlage – Kurbelwannenheizung",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Kurbelwannenheizung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_leistungsbegrenzung_aktiv",
+   "unique_id": "101987654:system:powerLimitation:active",
+   "original_name": "Anlage – Leistungsbegrenzung aktiv",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Heating Anlage – Leistungsbegrenzung aktiv"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_primare_heizungspumpe_pc0",
+   "unique_id": "101987654:local_only:signals:SRC.CUHP.HP1.CHPumpRelay",
+   "original_name": "Anlage – Primäre Heizungspumpe (PC0)",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Anlage – Primäre Heizungspumpe (PC0)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_anlage_volumenstrom_primar_pc0_signal",
+   "unique_id": "101987654:local_only:signals:SRC.SystemPumpVolumeFlow",
+   "original_name": "Anlage – Volumenstrom primär (PC0, Signal)",
+   "state": "unavailable",
+   "attributes": {},
+   "disabled_by_default": true
+  },
+  {
+   "entity_id": "sensor.heating_ausseneinheit_softwareversion",
+   "unique_id": "101987654:outdoor_unit_software_version",
+   "original_name": "Außeneinheit – Softwareversion",
+   "state": "9.17.2-aea82289",
+   "attributes": {
+    "friendly_name": "Heating Außeneinheit – Softwareversion"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_gateway_datenverarbeitungsstatus",
+   "unique_id": "101987654:gateway:dataProcessing:status",
+   "original_name": "Gateway – Datenverarbeitungsstatus",
+   "state": "completed",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "in_progress",
+     "completed"
+    ],
+    "friendly_name": "Heating Gateway – Datenverarbeitungsstatus"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_aktivitat_berechnet",
+   "unique_id": "101987654:heatingCircuits:hc1:calculated_activity",
+   "original_name": "Heizkreis 1 – Aktivität (berechnet)",
+   "state": "idle",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "heating",
+     "cooling",
+     "defrosting",
+     "idle",
+     "off"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Aktivität (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_aktuelle_luftfeuchtigkeit",
+   "unique_id": "101987654:heatingCircuits:hc1:actualHumidity",
+   "original_name": "Heizkreis 1 – Aktuelle Luftfeuchtigkeit",
+   "state": "65.5",
+   "attributes": {
+    "device_class": "humidity",
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Heizkreis 1 – Aktuelle Luftfeuchtigkeit"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_betriebsart_2",
+   "unique_id": "101987654:heatingCircuits:hc1:cooling:operationMode",
+   "original_name": "Heizkreis 1 – Betriebsart",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "manual",
+     "auto"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Betriebsart"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_betriebsstatus",
+   "unique_id": "101987654:gateway:heating_status",
+   "original_name": "Heizkreis 1 – Betriebsstatus",
+   "state": "heating_manual_on",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "ch_enabled",
+     "ch_disabled",
+     "emergency_mode",
+     "floor_drying",
+     "summer_idle",
+     "boost",
+     "away",
+     "holiday",
+     "cooling_manual_on",
+     "cooling_manual_off",
+     "heating_manual_on",
+     "heating_manual_off",
+     "heating_auto"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Betriebsstatus"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_boost",
+   "unique_id": "101987654:heatingCircuits:hc1:boostMode",
+   "original_name": "Heizkreis 1 – Boost",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heating Heizkreis 1 – Boost"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_heiz_kuhlbetrieb",
+   "unique_id": "101987654:heatingCircuits:hc1:heatCoolMode",
+   "original_name": "Heizkreis 1 – Heiz-/Kühlbetrieb",
+   "state": "heat_cool",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "heat",
+     "cool",
+     "heat_cool"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Heiz-/Kühlbetrieb"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_heizkreispumpe",
+   "unique_id": "101987654:local_only:heatingCircuits:hc1:pumpStatus",
+   "original_name": "Heizkreis 1 – Heizkreispumpe",
+   "state": "on",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Heizkreispumpe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_kuhlen_raum_solltemperatur",
+   "unique_id": "101987654:heatingCircuits:hc1:cooling:roomTempSetpoint",
+   "original_name": "Heizkreis 1 – Kühlen: Raum-Solltemperatur",
+   "state": "24.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Heizkreis 1 – Kühlen: Raum-Solltemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_raumtemperatur",
+   "unique_id": "101987654:heatingCircuits:hc1:roomtemperature",
+   "original_name": "Heizkreis 1 – Raumtemperatur",
+   "state": "24.9",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Heizkreis 1 – Raumtemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_sommer_winterbetrieb",
+   "unique_id": "101987654:heatingCircuits:hc1:currentSuWiMode",
+   "original_name": "Heizkreis 1 – Sommer-/Winterbetrieb",
+   "state": "forced",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "forced",
+     "cooling"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Sommer-/Winterbetrieb"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_taupunkt_berechnet",
+   "unique_id": "101987654:heatingCircuits:hc1:calculated_dew_point",
+   "original_name": "Heizkreis 1 – Taupunkt (berechnet)",
+   "state": "14.41",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Heizkreis 1 – Taupunkt (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_wunschtemperatur",
+   "unique_id": "101987654:heatingCircuits:hc1:currentRoomSetpoint",
+   "original_name": "Heizkreis 1 – Wunschtemperatur",
+   "state": "22.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Heizkreis 1 – Wunschtemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_heizkreis_1_zeitprogramm_kuhlung",
+   "unique_id": "101987654:heatingCircuits:hc1:cooling:switchPrograms:A",
+   "original_name": "Heizkreis 1 – Zeitprogramm Kühlung",
+   "state": "on",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Heizkreis 1 – Zeitprogramm Kühlung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_abluft_lufterstufe",
+   "unique_id": "101987654:local_only:ventilation:zone1:exhaustFanLevel",
+   "original_name": "Lüftungszone 1 – Abluft-Lüfterstufe",
+   "state": "red",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "min",
+     "red",
+     "nom",
+     "max",
+     "dem"
+    ],
+    "friendly_name": "Heating Lüftungszone 1 – Abluft-Lüfterstufe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_betriebsart",
+   "unique_id": "101987654:ventilation:zone1:operationMode",
+   "original_name": "Lüftungszone 1 – Betriebsart",
+   "state": "dem",
+   "attributes": {
+    "friendly_name": "Heating Lüftungszone 1 – Betriebsart"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_maximale_innenluftqualitat",
+   "unique_id": "101987654:local_only:ventilation:zone1:maxIndoorAirQuality",
+   "original_name": "Lüftungszone 1 – Höchster Luftqualitätswert innen",
+   "state": "585.2",
+   "attributes": {
+    "unit_of_measurement": "ppm",
+    "state_class": "measurement",
+    "friendly_name": "Heating Lüftungszone 1 – Höchster Luftqualitätswert innen"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_maximale_relative_luftfeuchtigkeit",
+   "unique_id": "101987654:local_only:ventilation:zone1:maxRelativeHumidity",
+   "original_name": "Lüftungszone 1 – Höchste relative Luftfeuchte",
+   "state": "46.8",
+   "attributes": {
+    "device_class": "humidity",
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Lüftungszone 1 – Höchste relative Luftfeuchte"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_restlaufzeit",
+   "unique_id": "101987654:ventilation:zone1:filter:remainingTime",
+   "original_name": "Lüftungszone 1 – Restlaufzeit",
+   "state": "277197.2",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "min",
+    "state_class": "measurement",
+    "friendly_name": "Heating Lüftungszone 1 – Restlaufzeit"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_zeitprogramm_luftung",
+   "unique_id": "101987654:ventilation:zone1:switchPrograms:cp",
+   "original_name": "Lüftungszone 1 – Zeitprogramm Lüftung",
+   "state": "red",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "min",
+     "red",
+     "nom",
+     "max",
+     "dem",
+     "off"
+    ],
+    "friendly_name": "Heating Lüftungszone 1 – Zeitprogramm Lüftung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_luftungszone_1_zulufttemperatur",
+   "unique_id": "101987654:local_only:ventilation:zone1:sensors:supplyTemp",
+   "original_name": "Lüftungszone 1 – Zulufttemperatur",
+   "state": "19.7",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Lüftungszone 1 – Zulufttemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_nachster_urlaub",
+   "unique_id": "101987654:next_holiday",
+   "original_name": "Nächster Urlaub",
+   "state": "unknown",
+   "attributes": {
+    "device_class": "timestamp",
+    "friendly_name": "Heating Nächster Urlaub"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmeerzeuger",
+   "unique_id": "101987654:heat_generator",
+   "original_name": "Wärmeerzeuger",
+   "state": "Compress CS5800iAW 12 E",
+   "attributes": {
+    "friendly_name": "Heating Wärmeerzeuger"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_aktuelle_leistungszahl_berechnet",
+   "unique_id": "101987654:heatSources:calculated_cop",
+   "original_name": "Wärmepumpe – Aktuelle Leistungszahl (berechnet)",
+   "state": "unknown",
+   "attributes": {
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Aktuelle Leistungszahl (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_aktuelle_modulation",
+   "unique_id": "101987654:gateway:modulation",
+   "original_name": "Wärmepumpe – Aktuelle Modulation",
+   "state": "0.0",
+   "attributes": {
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Aktuelle Modulation"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_aktuelle_warmeanforderung",
+   "unique_id": "101987654:heatSources:actualHeatDemand:values",
+   "original_name": "Wärmepumpe – Aktuelle Wärmeanforderung",
+   "state": "ch",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "none",
+     "ch",
+     "dhw",
+     "frost",
+     "ch_dhw",
+     "ch_frost",
+     "dhw_frost",
+     "ch_dhw_frost",
+     ""
+    ],
+    "friendly_name": "Heating Wärmepumpe – Aktuelle Wärmeanforderung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_anzahl_der_starts_gesamt",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:total",
+   "original_name": "Wärmepumpe – Anzahl der Starts Gesamt",
+   "state": "2031",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Anzahl der Starts Gesamt"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_anzahl_der_starts_heizung",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:ch",
+   "original_name": "Wärmepumpe – Anzahl der Starts Heizung",
+   "state": "1185",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Anzahl der Starts Heizung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_anzahl_der_starts_kuhlung",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:cooling",
+   "original_name": "Wärmepumpe – Anzahl der Starts Kühlung",
+   "state": "446",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Anzahl der Starts Kühlung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_anzahl_der_starts_warmwasser",
+   "unique_id": "101987654:heatSources:hs1:numberOfStarts:dhw",
+   "original_name": "Wärmepumpe – Anzahl der Starts Warmwasser",
+   "state": "698",
+   "attributes": {
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Anzahl der Starts Warmwasser"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_austrittstemperatur_kondensator_tc3",
+   "unique_id": "101987654:heatSources:hs1:supplyFlowCondenserTemp",
+   "original_name": "Wärmepumpe – Austrittstemperatur Kondensator (TC3)",
+   "state": "23.1",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Austrittstemperatur Kondensator (TC3)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_betriebszeit_gesamt",
+   "unique_id": "101987654:heatSources:hs1:workingTime:total",
+   "original_name": "Wärmepumpe – Betriebszeit Gesamt",
+   "state": "5801.69",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "h",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Betriebszeit Gesamt"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_betriebszeit_heizung",
+   "unique_id": "101987654:heatSources:hs1:workingTime:ch",
+   "original_name": "Wärmepumpe – Betriebszeit Heizung",
+   "state": "3596.31",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "h",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Betriebszeit Heizung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_betriebszeit_kuhlung",
+   "unique_id": "101987654:heatSources:hs1:workingTime:cooling",
+   "original_name": "Wärmepumpe – Betriebszeit Kühlung",
+   "state": "1638.36",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "h",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Betriebszeit Kühlung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_betriebszeit_warmwasser",
+   "unique_id": "101987654:heatSources:hs1:workingTime:dhw",
+   "original_name": "Wärmepumpe – Betriebszeit Warmwasser",
+   "state": "993.57",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "h",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Betriebszeit Warmwasser"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_drehzahl_primare_heizungspumpe_pc0",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:heatCarrierPumpSpeed",
+   "original_name": "Wärmepumpe – Drehzahl primäre Heizungspumpe (PC0)",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Drehzahl primäre Heizungspumpe (PC0)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_elektrische_leistung_heizstab",
+   "unique_id": "101987654:local_only:heatSources:eHeater:powerElecActual",
+   "original_name": "Wärmepumpe – Elektrische Leistung Heizstab",
+   "state": "0.0",
+   "attributes": {
+    "device_class": "power",
+    "unit_of_measurement": "W",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Elektrische Leistung Heizstab"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_elektrische_leistung_kompressor",
+   "unique_id": "101987654:local_only:heatSources:compressor:powerElecActual",
+   "original_name": "Wärmepumpe – Elektrische Leistung Kompressor",
+   "state": "23.8",
+   "attributes": {
+    "device_class": "power",
+    "unit_of_measurement": "W",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Elektrische Leistung Kompressor"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_energiemanagement_status",
+   "unique_id": "101987654:heatSources:emStatus",
+   "original_name": "Wärmepumpe – Energiemanagement-Status",
+   "state": "inactive",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "not_connected",
+     "inactive",
+     "active_ch",
+     "active_dhw",
+     "active_em",
+     "connected",
+     "active",
+     "error"
+    ],
+    "friendly_name": "Heating Wärmepumpe – Energiemanagement-Status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_arbeitszahl_aktuelles_jahr_berechnet",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:calculated_performance_factor_current_year",
+   "original_name": "Wärmepumpe – Gesamt – Arbeitszahl aktuelles Jahr (berechnet)",
+   "state": "2.9",
+   "attributes": {
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Arbeitszahl aktuelles Jahr (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_arbeitszahl_heute_berechnet",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:calculated_performance_factor_today",
+   "original_name": "Wärmepumpe – Gesamt – Arbeitszahl heute (berechnet)",
+   "state": "4.49",
+   "attributes": {
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Arbeitszahl heute (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_arbeitszahl_seit_inbetriebnahme_berechnet",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:calculated_performance_factor_since_commissioning",
+   "original_name": "Wärmepumpe – Gesamt – Arbeitszahl seit Inbetriebnahme (berechnet)",
+   "state": "2.96",
+   "attributes": {
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Arbeitszahl seit Inbetriebnahme (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_erzeugte_warme",
+   "unique_id": "101987654:gateway:total_heat_produced",
+   "original_name": "Wärmepumpe – Gesamt – Erzeugte Wärme",
+   "state": "18715.72",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Erzeugte Wärme"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_erzeugte_warme_gestern_anlagenaufzeichnung",
+   "unique_id": "101987654:recordings:heatSources:emon:total:outputProduced:yesterday",
+   "original_name": "Wärmepumpe – Gesamt – Erzeugte Wärme gestern (Anlagenaufzeichnung)",
+   "state": "21.13",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Erzeugte Wärme gestern (Anlagenaufzeichnung)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_strom_gestern_anlagenaufzeichnung",
+   "unique_id": "101987654:recordings:heatSources:emon:total:electricity:yesterday",
+   "original_name": "Wärmepumpe – Gesamt – Strom gestern (Anlagenaufzeichnung)",
+   "state": "5.54",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Strom gestern (Anlagenaufzeichnung)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_stromverbrauch",
+   "unique_id": "101987654:gateway:total_electricity",
+   "original_name": "Wärmepumpe – Gesamt – Stromverbrauch",
+   "state": "5581.08",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Stromverbrauch"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_stromverbrauch_elektrischer_zuheizer",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:eheater",
+   "original_name": "Wärmepumpe – Gesamt – Stromverbrauch elektrischer Zuheizer",
+   "state": "11.92",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Stromverbrauch elektrischer Zuheizer"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_stromverbrauch_warmepumpe",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:compressor",
+   "original_name": "Wärmepumpe – Gesamt – Stromverbrauch Wärmepumpe",
+   "state": "5171.74",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Stromverbrauch Wärmepumpe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_umweltenergie_berechnet",
+   "unique_id": "101987654:gateway:environmental_energy",
+   "original_name": "Wärmepumpe – Gesamt – Umweltenergie (berechnet)",
+   "state": "11793.20",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Umweltenergie (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_ventilation",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:ventilation",
+   "original_name": "Wärmepumpe – Gesamt – Ventilation",
+   "state": "309.65",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Ventilation"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_gesamt_ventilation_heat_recovered",
+   "unique_id": "101987654:heatSources:emon:totalConsumption:ventilationHeatRecovered",
+   "original_name": "Wärmepumpe – Gesamt – Ventilation Heat Recovered",
+   "state": "3631.00",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Gesamt – Ventilation Heat Recovered"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_heissgastemperatur_tr6",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:hotGasTemp",
+   "original_name": "Wärmepumpe – Heißgastemperatur (TR6)",
+   "state": "23.0",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Heißgastemperatur (TR6)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_heizung_erzeugte_warme",
+   "unique_id": "101987654:gateway:heating_heat_produced",
+   "original_name": "Wärmepumpe – Heizung – Erzeugte Wärme",
+   "state": "6991.61",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total",
+    "friendly_name": "Heating Wärmepumpe – Heizung – Erzeugte Wärme"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_heizung_stromverbrauch",
+   "unique_id": "101987654:gateway:heating_electricity",
+   "original_name": "Wärmepumpe – Heizung – Stromverbrauch",
+   "state": "1927.30",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Heizung – Stromverbrauch"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_heizung_stromverbrauch_elektrischer_zuheizer",
+   "unique_id": "101987654:heatSources:emon:chConsumption:eheater",
+   "original_name": "Wärmepumpe – Heizung – Stromverbrauch elektrischer Zuheizer",
+   "state": "0.0",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Heizung – Stromverbrauch elektrischer Zuheizer"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_heizung_stromverbrauch_warmepumpe",
+   "unique_id": "101987654:heatSources:emon:chConsumption:compressor",
+   "original_name": "Wärmepumpe – Heizung – Stromverbrauch Wärmepumpe",
+   "state": "2480.80",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Heizung – Stromverbrauch Wärmepumpe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_hochdrucktemperatur_jr1",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:highPressureTemp",
+   "original_name": "Wärmepumpe – Hochdrucktemperatur (JR1)",
+   "state": "11.8",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Hochdrucktemperatur (JR1)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_kaltekreis_status",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:status",
+   "original_name": "Wärmepumpe – Kältekreis-Status",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "idle",
+     "startup",
+     "heating",
+     "cooling",
+     "defrost",
+     "passive_defrost",
+     "shutoff",
+     "alarm",
+     "test_mode",
+     "off",
+     "dhw",
+     "pool",
+     "pool_heat"
+    ],
+    "friendly_name": "Heating Wärmepumpe – Kältekreis-Status"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_kuhlung_erzeugte_kuhlenergie",
+   "unique_id": "101987654:heatSources:emon:coolingConsumption:outputProduced",
+   "original_name": "Wärmepumpe – Kühlung – Erzeugte Kühlenergie",
+   "state": "3724.32",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total",
+    "friendly_name": "Heating Wärmepumpe – Kühlung – Erzeugte Kühlenergie"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_kuhlung_stromverbrauch_warmepumpe",
+   "unique_id": "101987654:heatSources:emon:coolingConsumption:compressor",
+   "original_name": "Wärmepumpe – Kühlung – Stromverbrauch Wärmepumpe",
+   "state": "773.54",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Kühlung – Stromverbrauch Wärmepumpe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_letzte_abtauung_berechnet",
+   "unique_id": "101987654:heatSources:calculated_last_defrost",
+   "original_name": "Wärmepumpe – Letzte Abtauung (berechnet)",
+   "state": "unknown",
+   "attributes": {
+    "device_class": "timestamp",
+    "friendly_name": "Heating Wärmepumpe – Letzte Abtauung (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_luftansaugtemperatur_tl2",
+   "unique_id": "101987654:local_only:heatSources:sensors:evaporatorTemp_tl2",
+   "original_name": "Wärmepumpe – Luftansaugtemperatur (TL2)",
+   "state": "11.3",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Luftansaugtemperatur (TL2)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_lufterdrehzahl_ausseneinheit_pl3",
+   "unique_id": "101987654:local_only:heatSources:hs1:oduFanSpeed",
+   "original_name": "Wärmepumpe – Lüfterdrehzahl Außeneinheit (PL3)",
+   "state": "0",
+   "attributes": {
+    "unit_of_measurement": "%",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Lüfterdrehzahl Außeneinheit (PL3)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_mittlere_laufzeit_je_start_heizen_berechnet",
+   "unique_id": "101987654:heatSources:hs1:calculated_run_time_per_start_heating",
+   "original_name": "Wärmepumpe – Mittlere Laufzeit je Start Heizen (berechnet)",
+   "state": "144.7",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "min",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Mittlere Laufzeit je Start Heizen (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_niederdrucktemperatur_jr0",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:lowPressureTemp",
+   "original_name": "Wärmepumpe – Niederdrucktemperatur (JR0)",
+   "state": "11.3",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Niederdrucktemperatur (JR0)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_rucklauf_zum_warmeerzeuger",
+   "unique_id": "101987654:gateway:return_temperature",
+   "original_name": "Wärmepumpe – Rücklauf zum Wärmeerzeuger",
+   "state": "23.2",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Rücklauf zum Wärmeerzeuger"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_rucklauf_zum_warmeerzeuger_cloud",
+   "unique_id": "101987654:gateway:return_temperature:source_cloud",
+   "original_name": "Wärmepumpe – Rücklauf zum Wärmeerzeuger (Cloud)",
+   "state": "25.3",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Wärmepumpe – Rücklauf zum Wärmeerzeuger (Cloud)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_rucklauf_zum_warmeerzeuger_lokal",
+   "unique_id": "101987654:gateway:return_temperature:source_local",
+   "original_name": "Wärmepumpe – Rücklauf zum Wärmeerzeuger (lokal)",
+   "state": "28.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "friendly_name": "Heating Wärmepumpe – Rücklauf zum Wärmeerzeuger (lokal)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_spreizung_primarkreis_berechnet",
+   "unique_id": "101987654:heatSources:calculated_primary_spread",
+   "original_name": "Wärmepumpe – Spreizung Primärkreis (berechnet)",
+   "state": "unknown",
+   "attributes": {
+    "device_class": "temperature_delta",
+    "unit_of_measurement": "K",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Spreizung Primärkreis (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_status_elektrischer_zuheizer",
+   "unique_id": "101987654:heatSources:Source:eHeater:status",
+   "original_name": "Wärmepumpe – Status elektrischer Zuheizer",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "dhw",
+     "pool",
+     "pool_heat",
+     "defrost",
+     "alarm"
+    ],
+    "friendly_name": "Heating Wärmepumpe – Status elektrischer Zuheizer"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_status_kompressor",
+   "unique_id": "101987654:heatSources:compressor:status",
+   "original_name": "Wärmepumpe – Status Kompressor",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "heating",
+     "cooling",
+     "dhw",
+     "pool",
+     "pool_heat",
+     "defrost",
+     "alarm"
+    ],
+    "friendly_name": "Heating Wärmepumpe – Status Kompressor"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_systemdruck",
+   "unique_id": "101987654:gateway:system_pressure",
+   "original_name": "Wärmepumpe – Systemdruck",
+   "state": "1.8",
+   "attributes": {
+    "device_class": "pressure",
+    "unit_of_measurement": "bar",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Systemdruck"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_systemdruckstatus_berechnet",
+   "unique_id": "101987654:system_pressure_status",
+   "original_name": "Wärmepumpe – Systemdruckstatus (berechnet)",
+   "state": "normal",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "critical_low",
+     "low",
+     "normal",
+     "high",
+     "critical_high"
+    ],
+    "friendly_name": "Heating Wärmepumpe – Systemdruckstatus (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_temperatur_saugleitung_tr5",
+   "unique_id": "101987654:local_only:heatSources:hs1:refrigerant:suctionGasTemp",
+   "original_name": "Wärmepumpe – Temperatur Saugleitung (TR5)",
+   "state": "20.6",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Temperatur Saugleitung (TR5)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_volumenstrom_primar",
+   "unique_id": "101987654:local_only:heatSources:hs1:pumpVolumeFlow",
+   "original_name": "Wärmepumpe – Volumenstrom primär",
+   "state": "0",
+   "attributes": {
+    "device_class": "volume_flow_rate",
+    "unit_of_measurement": "L/h",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Volumenstrom primär"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_vorlauf_sollwert_aktuell",
+   "unique_id": "101987654:local_only:heatSources:currentSupplySetpoint",
+   "original_name": "Wärmepumpe – Vorlauf-Sollwert aktuell",
+   "state": "23.9",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Vorlauf-Sollwert aktuell"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_vorlauf_uber_sollwert_berechnet",
+   "unique_id": "101987654:heatSources:calculated_supply_overshoot",
+   "original_name": "Wärmepumpe – Vorlauf über Sollwert (berechnet)",
+   "state": "unavailable",
+   "attributes": {
+    "device_class": "temperature_delta",
+    "unit_of_measurement": "K",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Vorlauf über Sollwert (berechnet)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_vorlauftemperatur_anlage",
+   "unique_id": "101987654:gateway:supply_temperature",
+   "original_name": "Wärmepumpe – Vorlauftemperatur Anlage",
+   "state": "21.7",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Vorlauftemperatur Anlage"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_vorlauftemperatur_primar_tc1",
+   "unique_id": "101987654:local_only:heatSources:additionalHeater:flowTemp",
+   "original_name": "Wärmepumpe – Vorlauftemperatur primär (TC1)",
+   "state": "27.9",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Wärmepumpe – Vorlauftemperatur primär (TC1)"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_warmwasser_erzeugte_warme",
+   "unique_id": "101987654:gateway:hot_water_heat_produced",
+   "original_name": "Wärmepumpe – Warmwasser – Erzeugte Wärme",
+   "state": "6000.34",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total",
+    "friendly_name": "Heating Wärmepumpe – Warmwasser – Erzeugte Wärme"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_warmwasser_stromverbrauch",
+   "unique_id": "101987654:gateway:hot_water_electricity",
+   "original_name": "Wärmepumpe – Warmwasser – Stromverbrauch",
+   "state": "2199.93",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Warmwasser – Stromverbrauch"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_warmwasser_stromverbrauch_elektrischer_zuheizer",
+   "unique_id": "101987654:heatSources:emon:dhwConsumption:eheater",
+   "original_name": "Wärmepumpe – Warmwasser – Stromverbrauch elektrischer Zuheizer",
+   "state": "10.65",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Warmwasser – Stromverbrauch elektrischer Zuheizer"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmepumpe_warmwasser_stromverbrauch_warmepumpe",
+   "unique_id": "101987654:heatSources:emon:dhwConsumption:compressor",
+   "original_name": "Wärmepumpe – Warmwasser – Stromverbrauch Wärmepumpe",
+   "state": "2307.3",
+   "attributes": {
+    "device_class": "energy",
+    "unit_of_measurement": "kWh",
+    "state_class": "total_increasing",
+    "friendly_name": "Heating Wärmepumpe – Warmwasser – Stromverbrauch Wärmepumpe"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_aktueller_sollwert",
+   "unique_id": "101987654:dhwCircuits:dhw1:currentSetpoint",
+   "original_name": "Warmwasser – Aktueller Sollwert",
+   "state": "17.2",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Warmwasser – Aktueller Sollwert"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_aktuelles_temperaturniveau",
+   "unique_id": "101987654:dhwCircuits:dhw1:currentTemperatureLevel",
+   "original_name": "Warmwasser – Aktuelles Temperaturniveau",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "low",
+     "high",
+     "eco"
+    ],
+    "friendly_name": "Heating Warmwasser – Aktuelles Temperaturniveau"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_betriebsstatus",
+   "unique_id": "101987654:gateway:hot_water_status",
+   "original_name": "Warmwasser – Betriebsstatus",
+   "state": "auto",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "dhw_enabled",
+     "dhw_disabled",
+     "auto",
+     "manual_off",
+     "manual_on_low",
+     "manual_on_eco",
+     "manual_on_high",
+     "extra",
+     "away",
+     "holiday",
+     "floor_drying",
+     "td"
+    ],
+    "friendly_name": "Heating Warmwasser – Betriebsstatus"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_restzeit_extra_warmwasser",
+   "unique_id": "101987654:dhwCircuits:dhw1:chargeRemainingTime",
+   "original_name": "Warmwasser – Restzeit Extra-Warmwasser",
+   "state": "0.0",
+   "attributes": {
+    "device_class": "duration",
+    "unit_of_measurement": "min",
+    "state_class": "measurement",
+    "friendly_name": "Heating Warmwasser – Restzeit Extra-Warmwasser"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_thermische_desinfektion",
+   "unique_id": "101987654:dhwCircuits:dhw1:tdMode",
+   "original_name": "Warmwasser – Thermische Desinfektion",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "off",
+     "on",
+     "stop",
+     "start"
+    ],
+    "friendly_name": "Heating Warmwasser – Thermische Desinfektion"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_thermische_desinfektion_lauft",
+   "unique_id": "101987654:local_only:dhwCircuits:dhw1:tdrunningStatus",
+   "original_name": "Warmwasser – Thermische Desinfektion läuft",
+   "state": "off",
+   "attributes": {
+    "device_class": "enum",
+    "options": [
+     "on",
+     "off"
+    ],
+    "friendly_name": "Heating Warmwasser – Thermische Desinfektion läuft"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "sensor.heating_warmwasser_warmwasser_isttemperatur",
+   "unique_id": "101987654:gateway:hot_water_temperature",
+   "original_name": "Warmwasser – Warmwasser-Isttemperatur",
+   "state": "56.9",
+   "attributes": {
+    "device_class": "temperature",
+    "unit_of_measurement": "°C",
+    "state_class": "measurement",
+    "friendly_name": "Heating Warmwasser – Warmwasser-Isttemperatur"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.heating_anlage_abwesenheit",
+   "unique_id": "101987654:system:awayMode:enabled:control",
+   "original_name": "Anlage: Abwesenheit",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heating Anlage: Abwesenheit"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.heating_warmwasser_absenkung_bei_storung",
+   "unique_id": "101987654:dhwCircuits:dhw1:reduceTempOnAlarm:control",
+   "original_name": "Warmwasser: Absenkung bei Störung",
+   "state": "on",
+   "attributes": {
+    "friendly_name": "Heating Warmwasser: Absenkung bei Störung"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "switch.heating_warmwasser_extra_warmwasser",
+   "unique_id": "101987654:dhwCircuits:dhw1:charge:control",
+   "original_name": "Warmwasser: Extra-Warmwasser",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heating Warmwasser: Extra-Warmwasser"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "update.heating_firmware",
+   "unique_id": "101987654:firmware_update",
+   "original_name": "Firmware",
+   "state": "off",
+   "attributes": {
+    "device_class": "firmware",
+    "friendly_name": "Heating Firmware"
+   },
+   "disabled_by_default": false
+  },
+  {
+   "entity_id": "water_heater.heating_warmwasser",
+   "unique_id": "101987654:dhwCircuits:dhw1:water_heater",
+   "original_name": "Warmwasser",
+   "state": "ownprogram",
+   "attributes": {
+    "friendly_name": "Heating Warmwasser"
+   },
+   "disabled_by_default": false
+  }
+ ]
+}

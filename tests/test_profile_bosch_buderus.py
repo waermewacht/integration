@@ -243,3 +243,73 @@ def test_flow_rate_falls_back_from_the_primary_circuit() -> None:
     ]
     (match,) = find(BOSCH_BUDERUS, signal)
     assert match.entities[Signal.FLOW_RATE] == "sensor.primary_flow_rate_pc0_signal"
+
+
+REAL = "bosch_buderus_heating_k40_real.json"
+R = "sensor.heating_"
+
+REAL_EXPECTED = {
+    Signal.HEAT_HEATING: R + "warmepumpe_heizung_erzeugte_warme",
+    Signal.HEAT_DHW: R + "warmepumpe_warmwasser_erzeugte_warme",
+    Signal.HEAT_COOLING: R + "warmepumpe_kuhlung_erzeugte_kuhlenergie",
+    Signal.ELEC_HEATING: R + "warmepumpe_heizung_stromverbrauch_warmepumpe",
+    Signal.ELEC_DHW: R + "warmepumpe_warmwasser_stromverbrauch_warmepumpe",
+    Signal.ELEC_COOLING: R + "warmepumpe_kuhlung_stromverbrauch_warmepumpe",
+    Signal.AUX_HEATING: R + "warmepumpe_heizung_stromverbrauch_elektrischer_zuheizer",
+    Signal.AUX_DHW: R + "warmepumpe_warmwasser_stromverbrauch_elektrischer_zuheizer",
+    # HP1 disabled by default at the real installation too.
+    Signal.COMPRESSOR: R + "anlage_kompressor_lauft_anzeigesignal",
+    Signal.ACTIVITY: R + "warmepumpe_status_kompressor",
+    Signal.COOLING_FLAG: R + "anlage_kuhlung_aktiv",
+    Signal.COOLING_MODE: R + "heizkreis_1_heiz_kuhlbetrieb",
+    Signal.STARTS_TOTAL: R + "warmepumpe_anzahl_der_starts_gesamt",
+    Signal.RUNTIME_HEATING: R + "warmepumpe_betriebszeit_heizung",
+    Signal.STARTS_HEATING: R + "warmepumpe_anzahl_der_starts_heizung",
+    Signal.OUTDOOR_TEMP: R + "anlage_aussentemperatur",
+    Signal.FLOW_TEMP: R + "warmepumpe_vorlauftemperatur_primar_tc1",
+    Signal.RETURN_TEMP: R + "warmepumpe_rucklauf_zum_warmeerzeuger",
+    Signal.FLOW_RATE: R + "warmepumpe_volumenstrom_primar",
+    Signal.DHW_TEMP: R + "warmwasser_warmwasser_isttemperatur",
+    Signal.SYSTEM_PRESSURE: R + "warmepumpe_systemdruck",
+}
+
+
+def real_rows() -> list[dict]:
+    return load_fixture(REAL)["entities"]
+
+
+def test_real_installation_finds_every_signal() -> None:
+    """A real Bosch Compress 5800i AW with K40RF (German names, local
+    access): every signal, the energy as lifetime counters in kWh."""
+    rows_ = real_rows()
+    (match,) = find(
+        BOSCH_BUDERUS,
+        [
+            RegistryEntry(
+                e["entity_id"],
+                PLATFORM,
+                e["unique_id"],
+                e["original_name"],
+                usable=not e["disabled_by_default"],
+            )
+            for e in rows_
+        ],
+    )
+    assert match.prefix == GATEWAY
+    assert match.entities == REAL_EXPECTED
+    assert match.missing == []
+    known = {e["entity_id"]: e["attributes"] for e in rows_}
+    for signal in ENERGY_SIGNALS:
+        if signal in match.entities:
+            attributes = known[match.entities[signal]]
+            assert attributes["unit_of_measurement"] == "kWh", signal
+            assert attributes["device_class"] == "energy", signal
+
+
+def test_real_compressor_status_options_are_mapped() -> None:
+    (status,) = [
+        e
+        for e in real_rows()
+        if e["unique_id"] == f"{GATEWAY}:heatSources:compressor:status"
+    ]
+    assert set(status["attributes"]["options"]) == set(BOSCH_BUDERUS.activity_values)
