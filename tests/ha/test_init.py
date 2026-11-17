@@ -318,6 +318,7 @@ async def test_repair_issue_for_missing_entity(
     assert "flow_temp: no registry entry, no state" in message
     assert "hours left out: none" in message
     assert "price sensor: none" in message
+    assert "house meters: none" in message
     assert FLOW not in message
 
     hass.states.async_set(FLOW, "28.0", TEMPERATURE)

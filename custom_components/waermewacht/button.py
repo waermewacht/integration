@@ -14,7 +14,18 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import WaermewachtConfigEntry, is_gas
-from .const import CONF_ENTITIES, CONF_MANUAL_UNIT, CONF_TEMPLATE, DOMAIN, VERSION
+from .const import (
+    CONF_BATTERY_CHARGED_ENTITY,
+    CONF_BATTERY_DISCHARGED_ENTITY,
+    CONF_ENTITIES,
+    CONF_FEED_IN_ENTITY,
+    CONF_GRID_IMPORT_ENTITY,
+    CONF_MANUAL_UNIT,
+    CONF_PV_ENTITY,
+    CONF_TEMPLATE,
+    DOMAIN,
+    VERSION,
+)
 from .entity import HeatPumpEntity
 from .gas_runtime import GasRuntime
 from .issue_report import build, show, text
@@ -94,7 +105,51 @@ def _heat_pump_lines(
         ("jumps not booked", str(len(runtime.jumps))),
         ("hours left out", _rejected_hours(runtime.rejected_hours)),
         ("price sensor", _price_sensor(hass, runtime)),
+        ("house meters", _house_meters(hass, entry, runtime)),
     ]
+
+
+# House meters of the own-electricity split (allocation.py), report keys.
+HOUSE_METERS = (
+    ("grid_import", CONF_GRID_IMPORT_ENTITY),
+    ("feed_in", CONF_FEED_IN_ENTITY),
+    ("pv", CONF_PV_ENTITY),
+    ("battery_charged", CONF_BATTERY_CHARGED_ENTITY),
+    ("battery_discharged", CONF_BATTERY_DISCHARGED_ENTITY),
+)
+
+
+def _house_meters(
+    hass: HomeAssistant, entry: WaermewachtConfigEntry, runtime: HeatPumpRuntime
+) -> str:
+    """Unit and state class of each house meter (without a sum in the
+    statistics every hour counts as grid electricity, forum 95035 #294) and
+    the hours of this month without their statistics."""
+    parts = []
+    for key, option in HOUSE_METERS:
+        entity_id = entry.options.get(option)
+        if not entity_id:
+            continue
+        state = hass.states.get(entity_id)
+        if state is None:
+            parts.append(f"{key} not found")
+            continue
+        unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) or "no unit"
+        state_class = state.attributes.get(ATTR_STATE_CLASS) or "no state class"
+        parts.append(f"{key} {unit} {state_class}")
+    if not parts:
+        return "none"
+    feed = runtime.prices
+    start = runtime.marks.starts.get(Period.MONTH)
+    totals = runtime.energy(Period.MONTH)
+    found = (
+        None
+        if feed is None or start is None or totals is None
+        else feed.allocation(start, totals)
+    )
+    if found is not None:
+        parts.append(f"hours all grid month {found.hours_all_grid}")
+    return "; ".join(parts)
 
 
 def _rejected_hours(found: dict[str, list[datetime]]) -> str:

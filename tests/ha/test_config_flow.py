@@ -539,6 +539,7 @@ async def test_options_form_few_fields_on_top(hass: HomeAssistant) -> None:
         "heat_load": True,
         "rooms": True,
         "limits": True,
+        "restart": True,
         "price_change": True,
     }
     # No section has a default (the frontend would take it over the values
@@ -788,6 +789,7 @@ async def test_options_suggest_meters_and_price_from_tarifwacht(
         "heat_load": True,
         "rooms": True,
         "limits": True,
+        "restart": True,
         "price_change": True,
     }
 

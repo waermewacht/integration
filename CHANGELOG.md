@@ -9,7 +9,7 @@
 
 ### Geändert
 
-- **Formular prüft die Hauszähler:** Hat Netzbezug-, Einspeise-, PV- oder Batteriezähler keine Langzeitstatistik mit Summe, meldet das Formular das, statt still jede Stunde als Netzstrom zu rechnen. Der häufigste Fall: zwei PV-Anlagen mit dem Helfer „Kombinieren der Zustände mehrerer Sensoren“ zusammengefasst; eine Sensor-Gruppe mit eingestellter Zustandsklasse geht. (danke an eazy, simon42-Forum)
+- **Formular prüft die Hauszähler:** Hat Netzbezug-, Einspeise-, PV- oder Batteriezähler keine Langzeitstatistik mit Summe, meldet das Formular das, statt still jede Stunde als Netzstrom zu rechnen. Der häufigste Fall: zwei PV-Anlagen mit dem Helfer „Kombinieren der Zustände mehrerer Sensoren“ zusammengefasst; eine Sensor-Gruppe mit eingestellter Zustandsklasse geht. Der „Bericht für Fehlermeldung“ nennt dazu Einheit und Zustandsklasse jedes Hauszählers und die Stunden des Monats ohne ihre Statistik. (danke an eazy und octek0815, simon42-Forum)
 
 ## 0.22.0 – 2026-11-17
 
