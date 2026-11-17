@@ -1053,7 +1053,9 @@ async def test_homecom_local_status_is_kept_outside_the_form(
     assert result["data"][CONF_ENTITIES]["activity_local"] == local.entity_id
     entry = result["result"]
 
-    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], form_input(result, heating=heating, operation=operation)
     )

@@ -188,8 +188,9 @@ async def test_local_refrigerant_status_stands_in_while_the_cloud_is_unknown(
     # The sign-in is lost: the cloud status is unknown, the local one decides.
     hass.states.async_set(ACTIVITY, "unknown")
     await tick(hass, freezer, 1)
-    # "heating" before any "dhw" is not safe (hot water in the spec words).
-    assert runtime.tracker.activity is None
+    # "heating" before any "dhw" is not safe (hot water in the spec words):
+    # the activity is unknown (the tracker keeps the last one, without since).
+    assert runtime.tracker.activity_since is None
     hass.states.async_set(LOCAL, "defrost")
     await tick(hass, freezer, 4)
     assert runtime.tracker.activity is Activity.DEFROST
