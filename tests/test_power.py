@@ -10,10 +10,12 @@ import pytest
 from custom_components.waermewacht.energy import Kind, Totals
 from custom_components.waermewacht.model import Mode
 from custom_components.waermewacht.power import (
+    MIN_DEMAND_DAYS,
     MIN_POWER_HOURS,
     NO_PARTIAL_LOAD,
     TOO_FEW_HOURS,
     PowerFigures,
+    daily_demand,
     day_full_hours,
     day_hours,
     full_hours,
@@ -153,15 +155,45 @@ def test_power_figures() -> None:
     assert cold_class.max_kw == pytest.approx(quantile(cold, 0.95))
     assert cold_class.min_kw == pytest.approx(quantile(cold, 0.10))
     assert mild_class.median_kw == pytest.approx(quantile(mild, 0.5))
-    # Demand: all hours of the class (26 at -7 °C, 21 at +7 °C).
-    assert cold_class.demand_kw == pytest.approx((sum(cold) + 9.0) / 26)
-    assert mild_class.demand_kw is None  # 21 hours < 24
+    # Demand from days: one day per class is too few, the third day has
+    # only 3 outdoor values.
+    assert cold_class.demand_kw is None and cold_class.demand_days == 1
+    assert mild_class.demand_kw is None and mild_class.demand_days == 1
+    assert cold_class.hours == 24
     assert figures.min_kw == pytest.approx(quantile(mild, 0.5))
     assert figures.min_class == 6.0
     assert figures.max_kw == cold_class.max_kw
     assert figures.max_class == -8.0
     assert figures.reason is None and figures.min_reason is None
     assert figures.full_hours == 44
+
+
+def test_demand_from_days_with_a_night_setback() -> None:
+    """Heat pump off at night (a forum user's hybrid, 17.11.2026): the cold
+    night hours take no heat, the day catches up. By hour the demand would
+    fall with the cold; by day it is the day's heat over its hours, in the
+    class of the day's mean."""
+    hours: dict[datetime, Totals] = {}
+    outdoor: dict[datetime, float] = {}
+    days = [DAY + timedelta(days=n) for n in range(MIN_DEMAND_DAYS + 2)]
+    for n, day in enumerate(days):
+        for i, hour in enumerate(day_hours(day, BERLIN)):
+            night = i < 6
+            outdoor[hour] = 0.0 if night else 4.0
+            if n < MIN_DEMAND_DAYS + 1:  # the last day has no statistics
+                hours[hour] = hour_totals(0.0 if night else 2.0)
+    # One day with too few outdoor values does not count.
+    for hour in day_hours(days[MIN_DEMAND_DAYS], BERLIN)[:5]:
+        del outdoor[hour]
+    demand = daily_demand(hours, outdoor, days[0], days[-1], BERLIN)
+    # Day mean (6 x 0 + 18 x 4) / 24 = 3 °C: class 2.
+    assert demand == {2.0: (pytest.approx(36.0 * MIN_DEMAND_DAYS), 72.0, 3)}
+    figures = power_figures(
+        hours, hours, outdoor, set(), days[0], days[-1], BERLIN, shares={}
+    )
+    (row,) = figures.classes
+    assert row.lower == 2.0 and row.demand_kw == pytest.approx(1.5)
+    assert row.as_dict()["demand_days"] == MIN_DEMAND_DAYS
 
 
 def test_power_figures_without_partial_load_or_hours() -> None:

@@ -11,7 +11,11 @@ and derives, without a field and without a speed signal:
 
 - per class the smallest (10th percentile), the median and the largest
   (95th percentile) heat per full heating hour, and the demand: the heating
-  heat of all hours of the class over their number;
+  heat of the days whose outdoor mean falls in the class over their hours.
+  Days, not hours: with a time program, a night setback or a blocking time
+  the coldest hours (the night) take little or no heat and the warmer ones
+  (the morning) catch up, so hourly demand would fall with the cold (a
+  forum user's hybrid off from 23:00, 17.11.2026);
 - "smallest measured power": the smallest class median among the classes
   in which the unit heats less than half of the time (own assumption: there
   it mostly runs at its lower limit);
@@ -39,6 +43,7 @@ from datetime import UTC, date, datetime, timedelta, tzinfo
 from typing import Any
 
 from .curve import class_lower
+from .degree_days import MIN_DAY_HOURS, valid_outdoor
 from .energy import Kind, Totals
 from .model import Mode
 from .runs import Run
@@ -46,7 +51,9 @@ from .runs import Run
 HOUR = timedelta(hours=1)
 FULL_HOUR_MINUTES = 55.0  # own assumption (trial 14.11.2026)
 MIN_POWER_HOURS = 12  # full hours a class needs (own assumption)
-MIN_DEMAND_HOURS = 24.0  # hours a class needs for its demand (as duty.py)
+# Days a class needs for its demand (own assumption, as the bands of
+# heating_curve.py); a day counts with MIN_DAY_HOURS outdoor values.
+MIN_DEMAND_DAYS = 3
 PARTIAL_SHARE = 0.5  # heats less than half the time: at its lower limit
 LOW_QUANTILE = 0.10
 HIGH_QUANTILE = 0.95
@@ -172,8 +179,9 @@ class PowerClass:
     min_kw: float | None  # 10th percentile
     median_kw: float | None
     max_kw: float | None  # 95th percentile
-    hours: float  # all hours of the class (behind the demand)
+    hours: float  # hours of the days behind the demand
     demand_kw: float | None
+    demand_days: int = 0
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -182,6 +190,7 @@ class PowerClass:
             "median_kw": _round(self.median_kw),
             "max_kw": _round(self.max_kw),
             "demand_kw": _round(self.demand_kw),
+            "demand_days": self.demand_days,
         }
 
 
@@ -245,17 +254,12 @@ def power_figures(
         ):
             continue
         heat.setdefault(class_lower(temperature), []).append(kwh)
-    demand: dict[float, list[float]] = {}
-    for hour, temperature in outdoor.items():
-        if lo <= hour < hi and (totals := building.get(hour)) is not None:
-            row = demand.setdefault(class_lower(temperature), [0.0, 0.0])
-            row[0] += totals.heat(Mode.HEATING)
-            row[1] += 1
+    demand = daily_demand(building, outdoor, first, last, tz)
     classes = []
     for lower in sorted(heat.keys() | demand.keys()):
         values = heat.get(lower, [])
         enough = len(values) >= MIN_POWER_HOURS
-        kwh, count = demand.get(lower, (0.0, 0.0))
+        kwh, count, day_count = demand.get(lower, (0.0, 0.0, 0))
         classes.append(
             PowerClass(
                 lower=lower,
@@ -264,7 +268,10 @@ def power_figures(
                 median_kw=quantile(values, 0.5) if enough else None,
                 max_kw=quantile(values, HIGH_QUANTILE) if enough else None,
                 hours=count,
-                demand_kw=max(kwh, 0.0) / count if count >= MIN_DEMAND_HOURS else None,
+                demand_kw=max(kwh, 0.0) / count
+                if day_count >= MIN_DEMAND_DAYS
+                else None,
+                demand_days=day_count,
             )
         )
     usable = [c for c in classes if c.median_kw is not None]
@@ -291,6 +298,34 @@ def power_figures(
         days=days,
         days_from_statistics=days_from_statistics,
     )
+
+
+def daily_demand(
+    building: Mapping[datetime, Totals],
+    outdoor: Mapping[datetime, float],
+    first: date,
+    last: date,
+    tz: tzinfo,
+) -> dict[float, tuple[float, float, int]]:
+    """Per class of the daily outdoor mean: heating heat, hours and days of
+    the days first … last. A day counts with MIN_DAY_HOURS valid outdoor
+    values (degree_days.py) and energy statistics for the day."""
+    result: dict[float, tuple[float, float, int]] = {}
+    day = first
+    while day <= last:
+        hours = day_hours(day, tz)
+        temps = [v for h in hours if valid_outdoor(v := outdoor.get(h))]
+        known = [t for h in hours if (t := building.get(h)) is not None]
+        if len(temps) >= MIN_DAY_HOURS and known:
+            lower = class_lower(sum(temps) / len(temps))
+            kwh, count, days = result.get(lower, (0.0, 0.0, 0))
+            result[lower] = (
+                kwh + sum(t.heat(Mode.HEATING) for t in known),
+                count + len(hours),
+                days + 1,
+            )
+        day += timedelta(days=1)
+    return result
 
 
 def _round(value: float | None, digits: int = 2) -> float | None:

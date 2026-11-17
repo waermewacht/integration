@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Behoben
+
+- **Heizleistung je Außentemperatur: Bedarf aus Tagesmitteln.** Mit Nachtabsenkung, Zeitprogramm oder Sperrzeit fiel der Bedarf in der Karte „Takte“ mit der Kälte, weil die kalten Nachtstunden kaum Wärme bekommen. Jetzt zählt je Tag die Heizwärme, eingeordnet nach dem Tagesmittel draußen; eine Klasse braucht dafür 3 Tage. Neues Attribut `demand_days` in `classes`. (danke an sjheinz, simon42-Forum)
+
 ## 0.23.1 – 2026-11-17
 
 ### Behoben
