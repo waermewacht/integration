@@ -208,6 +208,21 @@ def test_own_share_per_mode() -> None:
     assert dhw_share == pytest.approx(0.929, abs=1e-3)
 
 
+def test_backup_heater_on_pv_surplus_costs_the_feed_in_tariff() -> None:
+    """A backup heater switched on only with PV surplus (SmartGrid, e.g.
+    from 4 kW PV; a forum user's Daikin, 31.10.): its hours take hardly
+    anything from the grid, so it costs the feed-in tariff, not the grid
+    price. The backup heater is part of the split (Totals.electricity)."""
+    hours = {h(i): Totals({"aux_dhw": 3.0}) for i in (12, 13)}
+    flows = {h(i): HourFlows(purchase=0.05, feed_in=1.5, pv=6.0) for i in (12, 13)}
+    found = allocate(hours, flows, {}, 0.30, split(PROPORTIONAL))
+    assert found.kwh_own == pytest.approx(5.93, abs=0.01)
+    assert found.kwh_grid == pytest.approx(0.07, abs=0.01)
+    assert found.by_mode["dhw"][1] == pytest.approx(found.kwh_own)
+    # What the own electricity saved against the grid price.
+    assert found.saving_eur == pytest.approx(5.93 * (0.30 - 0.08), abs=0.01)
+
+
 def test_hours_without_meters_are_grid_per_mode() -> None:
     found = allocate(
         {h(0): Totals({"elec_dhw": 2.0, "elec_cooling": 1.0})},
