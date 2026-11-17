@@ -49,7 +49,7 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .activity import combine
+from .activity import combine, local_activity
 from .averages import Mean
 from .backfill import (
     COARSE_WINDOW,
@@ -336,7 +336,9 @@ DIARY_DAYS = 1100
 # "unavailable" here means no measurement, not a source that is down:
 # EMS-ESP 3.9 marks the flow of Bosch/Buderus heat pumps unavailable below
 # their measuring range (about 900 l/h; 3.8 showed -1). No repair issue.
-NO_VALUE_UNAVAILABLE = frozenset({Signal.FLOW_RATE})
+# The local activity only stands in for the cloud one (ACTIVITY_LOCAL): its
+# outage is no reason for a repair note either.
+NO_VALUE_UNAVAILABLE = frozenset({Signal.FLOW_RATE, Signal.ACTIVITY_LOCAL})
 # Last rejected counter jumps with their readings, for the diagnostics.
 JUMPS_KEPT = 5
 # Performance curve and heat load: shortly after the start, then daily.
@@ -492,6 +494,9 @@ class HeatPumpRuntime:
         self.heat_modes = frozenset(m for m in Mode if has_heat(self.entities, m))
         # The activity entity showed a value that carries no activity here.
         self._activity_foreign = False
+        # The local stand-in activity (ACTIVITY_LOCAL) has reported "dhw", so
+        # its "heating" means space heating (activity.local_activity).
+        self._local_speaks_dhw = False
         # The compressor entity's last value when it was neither on/off nor
         # a number (a status text such as "state_4"): no runs are counted.
         self._compressor_text: str | None = None
@@ -2763,13 +2768,36 @@ class HeatPumpRuntime:
     def _activity_of(
         self, states: dict[Signal, str | None], compressor: bool | None
     ) -> Activity | None:
-        """Activity from raw states of the activity entity and its parts."""
+        """Activity from raw states of the activity entity and its parts;
+        while the activity entity is unknown or unavailable, from the local
+        stand-in (ACTIVITY_LOCAL) if there is one."""
         base = (
             self.template.parse_activity(states.get(Signal.ACTIVITY))
             if Signal.ACTIVITY in self._activity_configured
             else None
         )
+        if base is None and self._activity_missing(states):
+            base = self._local_activity()
         return combine(base, states, self._activity_configured, compressor)
+
+    def _activity_missing(self, states: Mapping[Signal, str | None]) -> bool:
+        """The activity entity has no value now (not a foreign one)."""
+        return Signal.ACTIVITY in self._activity_configured and states.get(
+            Signal.ACTIVITY
+        ) in (None, "unknown", "unavailable", "")
+
+    def _local_activity(self) -> Activity | None:
+        """The local stand-in's activity, None without one or if not safe."""
+        entity_id = self.entities.get(Signal.ACTIVITY_LOCAL)
+        if entity_id is None:
+            return None
+        state = self.hass.states.get(entity_id)
+        found = local_activity(
+            state.state if state is not None else None, self._local_speaks_dhw
+        )
+        if found is not None:
+            self._count("activity:local")
+        return found
 
     @property
     def _activity_needs_compressor(self) -> bool:
@@ -2839,6 +2867,16 @@ class HeatPumpRuntime:
                 self.spawn(self.async_save(), "save", cancel=False)
                 self._notify()
             if self._activity_needs_compressor:
+                self._apply_activity(at)
+        elif signal is Signal.ACTIVITY_LOCAL:
+            if state.state.strip().casefold() == "dhw" and not self._local_speaks_dhw:
+                self._local_speaks_dhw = self._dirty = True
+            current = {
+                s: st.state
+                for s in self._activity_configured
+                if (st := self.hass.states.get(self.entities[s])) is not None
+            }
+            if self._activity_missing(current):
                 self._apply_activity(at)
         elif signal in self._activity_configured:
             if signal is Signal.ACTIVITY and self.template.is_foreign_activity(
@@ -3609,6 +3647,10 @@ class HeatPumpRuntime:
             "hot": self._hot,
             "swapped": self._swapped,
             "activity_foreign": self._activity_foreign,
+            # Kept with its entity: another entity has to show "dhw" again.
+            "local_speaks_dhw": self.entities.get(Signal.ACTIVITY_LOCAL)
+            if self._local_speaks_dhw
+            else None,
             "status": self.status.as_dict(),
             "verdict_entities": self._verdict_entities(),
             "backfill_until": _iso(self.backfill_until),
@@ -3684,6 +3726,9 @@ class HeatPumpRuntime:
         self._hot = data.get("hot", False)
         self._swapped = data.get("swapped")
         self._activity_foreign = data.get("activity_foreign", False)
+        self._local_speaks_dhw = data.get("local_speaks_dhw") is not None and data.get(
+            "local_speaks_dhw"
+        ) == self.entities.get(Signal.ACTIVITY_LOCAL)
         self.status = StatusCounter.from_dict(data.get("status"))
         self.flow_rate = Mean.from_dict(data.get("flow_rate"))
         self._flow_verdict = data.get("flow_verdict")

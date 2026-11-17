@@ -216,6 +216,7 @@ SECTIONS: dict[str, tuple[Signal, ...]] = {
     ),
 }
 FORM_SIGNALS = tuple(s for signals in SECTIONS.values() for s in signals)
+FORM_KEYS = frozenset(s.value for s in FORM_SIGNALS)
 # Sections that came after the first release of the form.
 LATER_SECTIONS = frozenset({"boiler", "totals"})
 
@@ -697,6 +698,9 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._prefill: dict[str, str] = {}
         # Signals the template found for the heat pump (known once set up).
         self._found: set[str] = set()
+        # Signals the template found that the form does not show
+        # (ACTIVITY_LOCAL): stored with the entry as found.
+        self._hidden: dict[str, str] = {}
         # Fields shown in the mode sections (a template's); None: all.
         self._top: set[str] | None = None
         # Entity -> other entities of the same counter (backfill only).
@@ -733,6 +737,11 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     s.value: e for s, e in match.entities.items() if s in FORM_SIGNALS
                 }
                 self._found = {s.value for s in match.entities}
+                self._hidden = {
+                    s.value: e
+                    for s, e in match.entities.items()
+                    if s not in FORM_SIGNALS
+                }
                 self._top = set(self._prefill)
                 self._history = {
                     match.entities[s]: aliases for s, aliases in match.history.items()
@@ -1015,6 +1024,15 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_finish(self, entities: dict[str, str]) -> ConfigFlowResult:
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
+            # Signals outside the form (ACTIVITY_LOCAL) stay as they are.
+            entities = {
+                **{
+                    key: entity_id
+                    for key, entity_id in (entry.data.get(CONF_ENTITIES) or {}).items()
+                    if key not in FORM_KEYS
+                },
+                **entities,
+            }
             # An own mapping is identified by its first counter, a found
             # heat pump by its source, which a reconfigure does not change.
             unique_id = (
@@ -1051,6 +1069,7 @@ class WaermewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 },
             )
+        entities = {**self._hidden, **entities}
         unique_id = self._unique_id or _manual_unique_id(entities)
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()

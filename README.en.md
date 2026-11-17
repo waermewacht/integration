@@ -100,6 +100,7 @@ The HomeCom template needs the energy per mode ("Wärme erzeugt Heizung", "Strom
 - **Day values from the cloud:** the energy arrives as the day's sum, up to two hours late. Wärmewacht books it when it arrives, so "today" lags behind. The cloud never delivers the last one or two hours of a day (observed up to 0.5 kWh per day).
 - **Standby:** electricity of a fetch that brought no heat of the same mode.
 - **Activity only from `bosch_homecom` 1.6.1 on:** Only from this version on is there the sensor "Compressor status", and with it defrosts, the flow-return spread and the mean flow temperature. It comes from the cloud, about a minute later than at the heat pump, and is missing while the cloud cannot be reached. Wärmewacht adds it to an existing entry at the next start by itself.
+- **Stand-in during a cloud outage (local access, `bosch_homecom` 1.6.3 on):** While the "Compressor status" is unknown, for example after a lost SingleKey sign-in, Wärmewacht takes the local sensor "Refrigerant circuit". So defrosts and the mode of runs are not lost. It takes "heating" only once the refrigerant circuit has reported "hot water": according to the specification some gateways report no hot water there, and then "heating" could also be a hot water charge. No field of its own; Wärmewacht finds the sensor itself and adds it to existing entries at the next start.
 - **No flow rate:** `bosch_homecom` reports "L/min" but delivers l/h.
 
 If you run EMS-ESP, use EMS-ESP: meters in 0.01 kWh every minute, and the activity.

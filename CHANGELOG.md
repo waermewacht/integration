@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+### Neu
+
+- **Bosch HomeCom: lokaler Ersatz für den Kompressorstatus.** Fällt die Cloud aus, etwa nach einer verlorenen SingleKey-Anmeldung, nimmt Wärmewacht den lokalen Sensor „Kältekreis“ (`bosch_homecom` ab 1.6.3 mit lokalem Zugang). Abtauungen und die Betriebsart der Läufe gehen dann nicht mehr verloren. Ohne neues Feld: Wärmewacht findet den Sensor selbst und ergänzt bestehende Einträge beim nächsten Start.
+
 ### Geändert
 
 - **Karte „Kosten“: eigener Strom und Netzstrom in kWh.** Mit Netzbezug-Zähler zeigen „Strom Monat“ und „Strom Saison“ jetzt auch, wie viele kWh aus PV oder Batterie und wie viele aus dem Netz kamen, etwa „eigen 102 kWh (Heizen 31 %, WW 58 %) · Netz 287 kWh“. Bisher standen dort nur die Anteile. (danke an Joachim-xo, simon42-Forum)

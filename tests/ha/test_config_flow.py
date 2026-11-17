@@ -1020,3 +1020,42 @@ async def test_reconfigure_finds_the_heat_pump_again(hass: HomeAssistant) -> Non
     ]
     assert "binary_sensor.ems_esp_boiler_hpcompon" not in entry.data["history"]
     assert entry.unique_id == "ems_esp:ems-esp"
+
+
+async def test_homecom_local_status_is_kept_outside_the_form(
+    hass: HomeAssistant,
+) -> None:
+    """The local refrigerant status (ACTIVITY_LOCAL) is found by the template
+    but not shown in the form: stored at the setup, kept by a reconfigure."""
+    add_homecom(hass, enabled=True)
+    local = er.async_get(hass).async_get_or_create(
+        "sensor",
+        "bosch_homecom",
+        "101234567-local_refrigerant_status",
+        suggested_object_id="boschcom_k40_101234567_kaltekreis",
+    )
+    hass.states.async_set(local.entity_id, "off")
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "WP", "source": "bosch_homecom:101234567"}
+    )
+    heating = {
+        "heat_heating": "sensor.boschcom_k40_101234567_heat_produced_ch",
+        "elec_heating": "sensor.boschcom_k40_101234567_energy_compressor_ch",
+    }
+    operation = {"compressor": "sensor.boschcom_k40_101234567_local_compressor_speed"}
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], form_input(result, heating=heating, operation=operation)
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_ENTITIES]["activity_local"] == local.entity_id
+    entry = result["result"]
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], form_input(result, heating=heating, operation=operation)
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_ENTITIES]["activity_local"] == local.entity_id

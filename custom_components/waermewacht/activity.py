@@ -35,6 +35,34 @@ OFF = ("off", "false", "0")
 # Words of a set operating mode that cools (HeishaMon "Cool", "Auto(Cool)").
 COOLING_WORDS = ("cool", "kühl")
 
+# The local refrigerant status of a Bosch K40 gateway (bosch_homecom
+# "local_refrigerant_status", /heatSources/hs1/refrigerant/status), standing
+# in for the cloud compressor status while that is unknown (Signal
+# ACTIVITY_LOCAL). A K40RF on firmware 15.00.01 answers with the compressor
+# status words (off, heating, dhw, cooling, defrost, ...); the API spec lists
+# refrigerant states without hot water (idle, startup, heating, ...), where
+# "heating" may well include a hot water charge. So "heating" counts only
+# once the entity has reported "dhw" (`speaks_dhw`); every word that means
+# the same in both is taken at once, all others leave the activity unknown.
+LOCAL_ACTIVITY: dict[str, Activity] = {
+    "off": Activity.OFF,
+    "idle": Activity.OFF,
+    "shutoff": Activity.OFF,
+    "dhw": Activity.DHW,
+    "cooling": Activity.COOLING,
+    "defrost": Activity.DEFROST,
+    "passive_defrost": Activity.DEFROST,
+}
+
+
+def local_activity(state: str | None, speaks_dhw: bool) -> Activity | None:
+    """The activity from the local refrigerant status; None if unknown or
+    not safe to tell (see LOCAL_ACTIVITY)."""
+    key = (state or "").strip().casefold()
+    if key == "heating":
+        return Activity.HEATING if speaks_dhw else None
+    return LOCAL_ACTIVITY.get(key)
+
 
 def cooling_mode(state: str | None) -> bool:
     """Whether a set operating mode means cooling."""

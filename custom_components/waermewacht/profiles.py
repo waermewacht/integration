@@ -591,6 +591,10 @@ BOSCH_HOMECOM = Template(
             (_S, "compressor_modulation"),
         ),
         Signal.ACTIVITY: ((_S, "compressor_status"),),
+        # Local refrigerant status (bosch_homecom 1.6.3 on, local access):
+        # stands in while the cloud status is unknown, e.g. after a lost
+        # SingleKey sign-in (activity.local_activity).
+        Signal.ACTIVITY_LOCAL: ((_S, "local_refrigerant_status"),),
         Signal.STARTS_TOTAL: ((_S, "compressor_starts"),),
         Signal.OUTDOOR_TEMP: ((_S, "outdoor_temp"),),
         Signal.FLOW_TEMP: ((_S, "supply_temperature"),),

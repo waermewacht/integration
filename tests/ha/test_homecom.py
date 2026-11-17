@@ -140,3 +140,85 @@ async def test_fetch_just_before_midnight_stays_in_its_month(
     assert month.attributes["electricity_kwh"] == 0
     assert month.attributes["heat_kwh"] == 0
     assert value(hass, entry, "electricity_heating") == pytest.approx(2.5)
+
+
+ACTIVITY = BASE + "kompressorstatus"
+LOCAL = BASE + "kaltekreis"
+
+
+@pytest.mark.freeze_time(START)
+async def test_local_refrigerant_status_stands_in_while_the_cloud_is_unknown(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A lost SingleKey sign-in leaves the cloud compressor status unknown;
+    the local refrigerant status stands in. "heating" only after "dhw"."""
+    from custom_components.waermewacht.model import Activity
+
+    await hass.config.async_set_time_zone("Europe/Berlin")
+    fetch(hass, 2.0, 8.0)
+    hass.states.async_set(SPEED, "0", {"unit_of_measurement": "%"})
+    hass.states.async_set(ACTIVITY, "off")
+    hass.states.async_set(LOCAL, "off")
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="WP",
+        data={
+            CONF_NAME: "WP",
+            CONF_TEMPLATE: "bosch_homecom",
+            CONF_ENTITIES: {
+                "heat_heating": HEAT,
+                "elec_heating": ELEC,
+                "compressor": SPEED,
+                "activity": ACTIVITY,
+                "activity_local": LOCAL,
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    runtime = entry.runtime_data
+
+    hass.states.async_set(ACTIVITY, "heating")
+    hass.states.async_set(LOCAL, "heating")
+    hass.states.async_set(SPEED, "40")
+    await tick(hass, freezer, 10)
+    assert runtime.tracker.activity is Activity.HEATING
+
+    # The sign-in is lost: the cloud status is unknown, the local one decides.
+    hass.states.async_set(ACTIVITY, "unknown")
+    await tick(hass, freezer, 1)
+    # "heating" before any "dhw" is not safe (hot water in the spec words).
+    assert runtime.tracker.activity is None
+    hass.states.async_set(LOCAL, "defrost")
+    await tick(hass, freezer, 4)
+    assert runtime.tracker.activity is Activity.DEFROST
+    hass.states.async_set(LOCAL, "dhw")
+    await tick(hass, freezer, 1)
+    assert runtime.tracker.activity is Activity.DHW
+    assert value(hass, entry, "defrosts_today") == 1
+    # Now its "heating" is space heating.
+    hass.states.async_set(LOCAL, "heating")
+    await tick(hass, freezer, 1)
+    assert runtime.tracker.activity is Activity.HEATING
+
+    # The cloud is back and wins: a local defrost does not count.
+    hass.states.async_set(ACTIVITY, "heating")
+    await tick(hass, freezer, 1)
+    hass.states.async_set(LOCAL, "defrost")
+    await tick(hass, freezer, 4)
+    assert runtime.tracker.activity is Activity.HEATING
+    hass.states.async_set(LOCAL, "heating")
+    await tick(hass, freezer, 1)
+    assert value(hass, entry, "defrosts_today") == 1
+    # A local outage raises no repair note.
+    hass.states.async_set(LOCAL, "unavailable")
+    await tick(hass, freezer, 90)
+    from homeassistant.helpers import issue_registry as ir
+
+    issues = [
+        i
+        for i in ir.async_get(hass).issues.values()
+        if i.domain == DOMAIN and "source_unavailable" in i.issue_id
+    ]
+    assert not issues

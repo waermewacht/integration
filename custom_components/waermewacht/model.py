@@ -69,6 +69,11 @@ class Signal(StrEnum):
     # Operation.
     COMPRESSOR = "compressor"
     ACTIVITY = "activity"
+    # A second activity entity that stands in only while ACTIVITY is unknown
+    # or unavailable (activity.local_activity): the local refrigerant status
+    # of a Bosch K40 gateway when the cloud sign-in is lost. Found by the
+    # template only, never in the form.
+    ACTIVITY_LOCAL = "activity_local"
     # Activity from several entities (activity.py): on/off flags, and the set
     # operating mode telling cooling from heating behind one valve position.
     DEFROST_FLAG = "defrost_flag"

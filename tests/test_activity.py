@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from custom_components.waermewacht.activity import combine, cooling_mode
+from custom_components.waermewacht.activity import (
+    combine,
+    cooling_mode,
+    local_activity,
+)
 from custom_components.waermewacht.model import Activity, Signal
 
 FLAGS = {Signal.DEFROST_FLAG, Signal.DHW_FLAG, Signal.COOLING_FLAG, Signal.HEATING_FLAG}
@@ -93,3 +97,20 @@ def test_activity_entity_stands_in_for_a_missing_flag() -> None:
     assert combine(Activity.DHW, {**states, Signal.DHW_FLAG: "off"}, with_dhw) is (
         Activity.HEATING
     )
+
+
+def test_local_refrigerant_status_stands_in_safely() -> None:
+    """The local status of a K40 gateway (bosch_homecom): words that mean the
+    same in both vocabularies at once, "heating" only once it said "dhw"."""
+    assert local_activity("defrost", speaks_dhw=False) is Activity.DEFROST
+    assert local_activity("passive_defrost", speaks_dhw=False) is Activity.DEFROST
+    assert local_activity("dhw", speaks_dhw=False) is Activity.DHW
+    assert local_activity("off", speaks_dhw=False) is Activity.OFF
+    assert local_activity("idle", speaks_dhw=False) is Activity.OFF
+    assert local_activity("cooling", speaks_dhw=False) is Activity.COOLING
+    # "heating" may include hot water where the gateway has no "dhw".
+    assert local_activity("heating", speaks_dhw=False) is None
+    assert local_activity("heating", speaks_dhw=True) is Activity.HEATING
+    # Unknown, unavailable and words without a safe meaning stay unknown.
+    for state in ("unknown", "unavailable", "", None, "startup", "alarm", "pool"):
+        assert local_activity(state, speaks_dhw=True) is None
