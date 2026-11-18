@@ -287,6 +287,7 @@ Diese Prüfungen schützen die Zahlen von Wärmewacht selbst. Sie sind robust (P
 - Je Modus und Zähler (Wärme und Strom des Modus): Laufzeit des Kompressors in diesem Modus seit dem letzten Zuwachs des Zählers. Ohne Betriebsart: Laufzeit insgesamt gegen die Summe der Wärmezähler.
 - Grenze: 60 min bei Zählern mit 0,01 kWh, 6 h bei ganzzahligen Zählern und Tageswerten aus der Cloud (HomeCom: bis 2 h Verzug, letzte 1–2 h des Tages fehlen, `ENTWICKLUNG.md` §4).
 - Begründung 60 min: Bei kleinster Leistung (einige 100 W Strom) wächst ein 0,01-kWh-Zähler in einer Stunde um Dutzende Schritte. Werte **eigene Annahme** mit großer Reserve.
+- **Gelernter Takt** (seit 0.23.3, GitHub #11): Manche Quellen schreiben einen Zähler mit Nachkommastellen nur alle paar Stunden (Luxtronik: „Eingesetzte Energie Heizung“ alle 2 h um gut 1 kWh). Wärmewacht merkt sich je Zähler die Laufzeit zwischen den letzten 5 Anstiegen (`rise_gaps`, gespeichert) und meldet erst ab dem Dreifachen des Medians (bei weniger als 3 Anstiegen des kleinsten), höchstens nach 6 h, nie unter der Grenze oben. Faktor 3 und Obergrenze **eigene Annahme**: Läuft der Kompressor nur zeitweise, ist die Laufzeit zwischen zwei Anstiegen kürzer als ihr Abstand auf der Uhr.
 - Abtauen ist kein Zuwachs der Wärme (Höchststand gehalten), dauert aber nur 3–4 min.
 - `unavailable`/`unknown` zählt nicht als Stillstand des Zählers; das deckt b) ab.
 - Verschwindet beim nächsten Zuwachs. Laufzeit seit dem letzten Zuwachs je Zähler im Haupt-Store (wird ohnehin alle 10 min gespeichert).

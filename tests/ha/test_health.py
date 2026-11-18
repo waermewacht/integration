@@ -102,6 +102,45 @@ async def test_counter_standing_still_while_running(
 
 
 @pytest.mark.freeze_time(START)
+async def test_slow_counter_learns_its_gap(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A source that updates its electricity counter only every 2 hours
+    (Luxtronik, GitHub #11): once its usual gap is known, 2 hours without a
+    rise are normal, 6 hours are not."""
+    entry = await setup(hass)
+    hass.states.async_set(COMPRESSOR, "on")
+    hass.states.async_set(ACTIVITY, "Heizen")
+    await tick(hass, freezer, 11)
+    heat, elec = 1000.5, 300.5
+
+    async def run(minutes: int) -> None:
+        nonlocal heat
+        for _ in range(minutes // 10):  # the heat rises every 10 minutes
+            heat += 0.3
+            hass.states.async_set(HEAT_HEATING, f"{heat:.2f}", ENERGY)
+            await tick(hass, freezer, 10)
+
+    for step in range(3):
+        await run(120)
+        if step == 0:
+            # Not learned yet: after an hour the counter counts as stuck.
+            found = issue(hass, entry, "counter_stuck")
+            assert found.translation_placeholders["entities"] == ELEC_HEATING
+        else:
+            assert issue(hass, entry, "counter_stuck") is None
+        elec += 1.1
+        hass.states.async_set(ELEC_HEATING, f"{elec:.2f}", ENERGY)
+        await tick(hass, freezer, 1)
+        assert issue(hass, entry, "counter_stuck") is None
+    await run(350)
+    assert issue(hass, entry, "counter_stuck") is None
+    await run(10)
+    found = issue(hass, entry, "counter_stuck")
+    assert found.translation_placeholders["entities"] == ELEC_HEATING
+
+
+@pytest.mark.freeze_time(START)
 async def test_no_standstill_while_the_compressor_is_off(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:

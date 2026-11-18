@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Behoben
+
+- **„Zähler steht still“ bei Zählern, die nur alle paar Stunden steigen:** Luxtronik schreibt den Strom „Eingesetzte Energie Heizung“ nur alle 2 Stunden, Wärmewacht meldete ihn deshalb nach einer Stunde Laufzeit als stillstehend. Jetzt merkt sich Wärmewacht den üblichen Abstand jedes Zählers und meldet erst beim Dreifachen, höchstens nach 6 Stunden. (danke an @mroesch99)
+
 ## 0.23.2 – 2026-11-17
 
 ### Behoben

@@ -12,6 +12,7 @@ import logging
 from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from datetime import date, datetime, time, timedelta
 from functools import partial
+from statistics import median
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.recorder import get_instance
@@ -331,6 +332,14 @@ STUCK_DECIMAL = timedelta(minutes=60)
 STUCK_COARSE = timedelta(hours=6)
 # Previous-day values move once a day: more than a day of running.
 STUCK_PREVIOUS_DAY = timedelta(hours=30)
+# Some sources update a counter only every few hours (Luxtronik: the
+# electricity input every 2 hours, GitHub #11). The running time between
+# two rises is learned per counter: a counter is stuck only after
+# STUCK_LEARNED_FACTOR times its usual gap (median of the last
+# RISE_GAPS_KEPT, the smallest while fewer than 3), at most STUCK_COARSE.
+# Own assumptions.
+STUCK_LEARNED_FACTOR = 3.0
+RISE_GAPS_KEPT = 5
 UNAVAILABLE_LIMIT = timedelta(minutes=60)
 # Daily diary kept in the history file (about 150 bytes a day).
 DIARY_DAYS = 1100
@@ -529,6 +538,8 @@ class HeatPumpRuntime:
         self.status = StatusCounter()
         self._efficiency_on = False
         self._stuck_seconds: dict[str, float] = {}  # running time without rise
+        # Running time between the last rises per counter (seconds).
+        self._rise_gaps: dict[str, list[float]] = {}
         self._unavailable_since: dict[str, datetime] = {}
         self._last_tick: datetime | None = None
         self.outdoor = Mean()  # outdoor temperature today, for the diary
@@ -2227,10 +2238,15 @@ class HeatPumpRuntime:
             coarse = self.template.day_values or any(
                 s not in self.decimal for s in signals
             )
-            limit = STUCK_COARSE if coarse else STUCK_DECIMAL
+            limit = (STUCK_COARSE if coarse else STUCK_DECIMAL).total_seconds()
+            if (usual := self._usual_gap(key)) is not None:
+                limit = max(
+                    limit,
+                    min(STUCK_LEARNED_FACTOR * usual, STUCK_COARSE.total_seconds()),
+                )
             if self.template.previous_day:
-                limit = STUCK_PREVIOUS_DAY
-            if seconds >= limit.total_seconds():
+                limit = STUCK_PREVIOUS_DAY.total_seconds()
+            if seconds >= limit:
                 stuck.extend(self.entities[s] for s in signals)
         longest = max(self._stuck_seconds.values(), default=0.0)
         self._set_issue("counter_stuck", stuck, hours=f"{longest / 3600:.1f}")
@@ -2244,6 +2260,23 @@ class HeatPumpRuntime:
             unavailable,
             minutes=str(int(UNAVAILABLE_LIMIT.total_seconds() // 60)),
         )
+
+    def _usual_gap(self, key: str) -> float | None:
+        """Usual running time between two rises of a counter (seconds)."""
+        gaps = self._rise_gaps.get(key)
+        if not gaps:
+            return None
+        if len(gaps) < 3:
+            return min(gaps)
+        return median(gaps)
+
+    def _note_rise(self, key: str) -> None:
+        """A counter rose: keep its running time since the last rise."""
+        seconds = self._stuck_seconds.pop(key, None)
+        if seconds:
+            gaps = self._rise_gaps.setdefault(key, [])
+            gaps.append(seconds)
+            del gaps[:-RISE_GAPS_KEPT]
 
     def _heat_counters(self) -> list[Signal]:
         """The heat counters of the heat pump (per mode and the common one)."""
@@ -2976,7 +3009,11 @@ class HeatPumpRuntime:
         update = counter.update(kwh, at)
         if update.event is CounterEvent.JUMP:
             self._note_jump(signal, before, kwh, previous, at)
-        if rose or update.event is CounterEvent.RESET:
+        if rose:
+            self._note_rise(signal.value)
+            if signal in HEAT_SIGNALS.values() or signal is Signal.HEAT_TOTAL:
+                self._note_rise("heat")
+        elif update.event is CounterEvent.RESET:
             self._stuck_seconds.pop(signal.value, None)
             if signal in HEAT_SIGNALS.values() or signal is Signal.HEAT_TOTAL:
                 self._stuck_seconds.pop("heat", None)
@@ -3656,6 +3693,7 @@ class HeatPumpRuntime:
                 else None
             ),
             "stuck_seconds": {k: round(v) for k, v in self._stuck_seconds.items()},
+            "rise_gaps": {k: [round(g) for g in v] for k, v in self._rise_gaps.items()},
             "outdoor": self.outdoor.as_dict(),
             "outdoor_heating": self.outdoor_heating.as_dict(),
             "source_heating": self.source_heating.as_dict(),
@@ -3732,6 +3770,10 @@ class HeatPumpRuntime:
             self._starts_seen = (seen[0], int(seen[1]), datetime.fromisoformat(seen[2]))
         self._stuck_seconds = {
             k: float(v) for k, v in data.get("stuck_seconds", {}).items()
+        }
+        self._rise_gaps = {
+            k: [float(g) for g in v][-RISE_GAPS_KEPT:]
+            for k, v in (data.get("rise_gaps") or {}).items()
         }
         self.outdoor = Mean.from_dict(data.get("outdoor"))
         self.outdoor_heating = Mean.from_dict(data.get("outdoor_heating"))
