@@ -1079,6 +1079,8 @@ The long-term statistics of the deleted sensors stay in Home Assistant until you
 
 ## Reporting issues
 
+Questions, ideas and experiences are welcome in the [Discussions](https://github.com/waermewacht/integration/discussions). For bugs:
+
 Please open an [issue](https://github.com/waermewacht/integration/issues) with the heat pump model and the **report for a bug report**: press *Wärmewacht → entry → device → Diagnostic → Report for a bug report*. The report shows up as a notification (bell at the bottom left) to copy. It holds the versions, the mapping by role (integration, unit, state class, state), the settings, which sensors are unknown and why, and open repair issues. Entity ids, names and areas are not in it. Still read it before sharing and delete what you would rather not show. Please report security vulnerabilities privately, see [SECURITY.md](SECURITY.md).
 
 ### What is in the diagnostics file?

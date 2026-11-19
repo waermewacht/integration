@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **README:** Fragen, Ideen und Erfahrungen gern in den neuen GitHub-Discussions; Fehler weiter als Issue.
+
 ## 0.23.3 – 2026-11-18
 
 ### Behoben

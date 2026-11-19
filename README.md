@@ -1079,6 +1079,8 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 ## Fehler melden
 
+Fragen, Ideen und Erfahrungen sind in den [Discussions](https://github.com/waermewacht/integration/discussions) gut aufgehoben. Für Fehler:
+
 Bitte als [Issue](https://github.com/waermewacht/integration/issues), mit dem Modell der Wärmepumpe und dem **Bericht für Fehlermeldung**: *Wärmewacht → Eintrag → Gerät → Diagnose → Bericht für Fehlermeldung* drücken. Der Bericht erscheint als Benachrichtigung (Glocke unten links) zum Kopieren. Er enthält Versionen, die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand), die Einstellungen, welche Sensoren unbekannt sind und warum, und offene Reparaturhinweise. Entity-IDs, Namen und Bereiche stehen nicht darin. Lies ihn trotzdem vor dem Teilen und lösche, was du nicht zeigen willst. Sicherheitslücken bitte vertraulich melden, siehe [SECURITY.md](SECURITY.md).
 
 ### Was steht in der Diagnose-Datei?
